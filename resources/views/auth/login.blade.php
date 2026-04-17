@@ -36,7 +36,8 @@
 
                         <!-- Logo -->
                         <div class="text-center mb-4">
-                            <img src="{{ asset('assets/images/logo.png') }}" class="img-fluid" alt="Logo">
+                            {{-- <img src="{{ asset('assets/images/logo.png') }}" class="img-fluid" alt="Logo"> --}}
+                            <img src="{{ asset('storage/company_logo/' . getSetting('company_logo')) }}" class="img-fluid" alt="Logo">
                         </div>
 
                         <!-- Heading -->
@@ -100,7 +101,7 @@
                             </div>
 
                             @if (Route::has('password.request'))
-                                <a href="#{{-- route('password.request') --}}"
+                                <a href="{{ route('password.request') }}"
                                    class="text-primary fw-medium link-hover">
                                     Forgot Password?
                                 </a>
@@ -121,7 +122,8 @@
                         <!-- Footer -->
                         <div class="text-center">
                             <p class="fw-medium text-gray mb-0">
-                                © {{ date('Y') }} Mayank Cattle Food Pvt. Ltd.
+                                {{-- © {{ date('Y') }} Mayank Cattle Food Pvt. Ltd. --}}
+                                {{ getSetting('copyright_msg') }}
                             </p>
                         </div>
 

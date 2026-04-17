@@ -232,7 +232,7 @@ $(document).ready(function () {
 					"status" : "0",
 					"Action" : ""
 				}
-				
+
 			],
 			"columns": [
 				{
@@ -285,7 +285,7 @@ $(document).ready(function () {
 							if(row['status'] == "0") { var class_name = "bg-success";var status_name ="Active" } else { var class_name = "bg-danger";var status_name ="Inactive"}
 				return '<span class="badge badge-pill badge-status '+class_name+'" >'+status_name+'</span>';
 					}
-				}, 
+				},
 				{
 					"render": function (data, type, row) {
 						return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="edit-contacts.html"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_contact"><i class="ti ti-trash text-danger"></i> Delete</a><a class="dropdown-item" href="contact-details.html"><i class="ti ti-eye text-blue-light"></i> Preview</a></div></div>';
@@ -293,15 +293,15 @@ $(document).ready(function () {
 				}
 			]
 		});
-		
+
 	}
 
-   
+
 	// Leads List - Catalogue Management
 
 	if($('#leads_list').length > 0) {
 		$('#leads_list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,"autoWidth": true,
@@ -319,7 +319,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},	
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -341,8 +341,8 @@ $(document).ready(function () {
 						"product_name" : "Mono Potassium Phosphate",
 						"category" : "BlueSky Industries",
 						"company_image" : "assets/images/water-soluble-fertilizer-pro-1.jpg",
-						
-						
+
+
 						"created_date" : "29 Sep 2023, 04:15 pm",
 						"owner" : "Guilory Berggren",
 						"source" : "Referrals",
@@ -356,8 +356,8 @@ $(document).ready(function () {
 						"product_name" : "Mono Ammonium Phosphate",
 						"category" : "SilverHawk",
 						"company_image" : "assets/images/water-soluble-fertilizer-pro-3.jpg",
-						
-						
+
+
 						"created_date" : "04 Oct 2023, 10:18 am",
 						"owner" : "Jami Carlile",
 						"source" : "Campaigns",
@@ -371,8 +371,8 @@ $(document).ready(function () {
 						"product_name" : "NPK",
 						"category" : "SummitPeak",
 						"company_image" : "assets/images/water-soluble-fertilizer-pro-4.jpg",
-						
-						
+
+
 						"created_date" : "17 Oct 2023, 03:31 pm",
 						"owner" : "Theresa Nelson",
 						"source" : "Google",
@@ -386,8 +386,8 @@ $(document).ready(function () {
 						"product_name" : "Calcium Nitrate",
 						"category" : "RiverStone Ventur",
 						"company_image" : "assets/images/water-soluble-fertilizer-pro-5.jpg",
-						
-						
+
+
 						"created_date" : "24 Oct 2023, 09:14 pm",
 						"owner" : "Smith Cooper",
 						"source" : "Paid Social",
@@ -401,8 +401,8 @@ $(document).ready(function () {
 						"product_name" : "Potassium Sulphate",
 						"category" : "Bright Bridge Grp",
 						"company_image" : "assets/images/water-soluble-fertilizer-pro-6.jpg",
-						
-						
+
+
 						"created_date" : "08 Nov 2023, 09:56 am",
 						"owner" : "Martin Lewis",
 						"source" : "Referrals",
@@ -416,8 +416,8 @@ $(document).ready(function () {
 						"product_name" : "Potassium Schoenite",
 						"category" : "CoastalStar Co.",
 						"company_image" : "assets/images/water-soluble-fertilizer-pro-7.jpg",
-						
-						
+
+
 						"created_date" : "14 Nov 2023, 04:19 pm",
 						"owner" : "Newell Egan",
 						"source" : "Campaigns",
@@ -445,8 +445,8 @@ $(document).ready(function () {
 						"product_name" : "Potassium Nitrate",
 						"category" : "Golden Gate Ltd",
 						"company_image" : "assets/images/water-soluble-fertilizer-pro-8.jpg",
-						
-						
+
+
 						"created_date" : "10 Dec 2023, 06:43 am",
 						"owner" : "Craig Brown",
 						"source" : "Paid Social",
@@ -480,7 +480,7 @@ $(document).ready(function () {
 				{ "render": function ( data, type, row ){
 					return '<h2 class="d-flex align-items-center"><a href="company-details.html" class="avatar avatar-sm border rounded p-1 me-2"><img class="w-auto h-auto" src="'+row['company_image']+'" alt="User Image"></a><a href="company-details.html" class="d-flex flex-column">'+row['category']+'<span class="text-default"></span></a></h2>';
 				}},
-				
+
 				{ "render": function ( data, type, row ){
 					if(row['status'] == "0") { var class_name = "bg-success";var status_name ="Closed" } else if(row['status'] == "1") { var class_name = "bg-danger";var status_name ="Lost" } else if(row['status'] == "2") { var class_name = "bg-pending";var status_name ="Not Contacted"}
 					else { var class_name = "bg-warning";var status_name ="Contacted"}
@@ -496,12 +496,12 @@ $(document).ready(function () {
 			]
 		});
 	}
-		
+
 	// Faq List
 
 	// if($('#faqlist').length > 0) {
 	// 	$('#faqlist').DataTable({
-	// 			"bFilter": false, 
+	// 			"bFilter": false,
 	// 			"bInfo": false,
 	// 				"ordering": true,
 	// 			"autoWidth": true,
@@ -519,7 +519,7 @@ $(document).ready(function () {
 	// 			initComplete: (settings, json)=>{
 	// 				$('.dataTables_paginate').appendTo('.datatable-paginate');
 	// 				$('.dataTables_length').appendTo('.datatable-length');
-	// 			},  
+	// 			},
 	// 			"data": [
 	// 				{
 	// 					"id": 1,
@@ -646,7 +646,7 @@ $(document).ready(function () {
 	// 			{ "render": function ( data, type, row ){
 	// 				if(row['status'] == "0") { var class_name = "bg-success";var status_name ="Active" } if(row['status'] == "1") { var class_name = "bg-success";var status_name ="Active" } else { var class_name = "bg-danger";var status_name ="Inactive"}
 	// 				return '<span class="badge badge-pill badge-status '+class_name+'" >'+status_name+'</span>';
-	// 			}},                 
+	// 			}},
 	// 			{ "render": function ( data, type, row ){
 	// 				return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#edit_faq"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_faq"><i class="ti ti-trash text-danger"></i> Delete</a></div></div>';
 	// 			}}
@@ -658,7 +658,7 @@ $(document).ready(function () {
 
 	if($('#deal_list').length > 0) {
 		$('#deal_list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -676,7 +676,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data": [
 					{
 						"id": 1,
@@ -843,7 +843,7 @@ $(document).ready(function () {
 
 	if($('#testimonials_list').length > 0) {
 		$('#testimonials_list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -861,7 +861,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -984,7 +984,7 @@ $(document).ready(function () {
 						"status" : "1",
 						"Action" : ""
 					}
-					
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -993,7 +993,7 @@ $(document).ready(function () {
 				{ "render": function ( data, type, row ){
 					return '<div class="set-star rating-select"><i class="fa fa-star"></i></div>';
 				}},
-				
+
 				{ "render": function ( data, type, row ){
 					return '<h2 class="d-flex align-items-center"><a href="#" class="avatar avatar-sm border me-2"><img class="w-auto h-auto" src="'+row['customer_image']+'" alt="User Image"></a><a href="javascript:void(0);" class="d-flex flex-column">'+row['customer_name']+'<span class="text-default">'+row['customer_designation']+' </span></a></h2>';
 				}},
@@ -1007,7 +1007,7 @@ $(document).ready(function () {
 						return starsHtml;
 					}
 					},
-					
+
 				{ "data": "content" },
 				{ "data": "createdat" },
 				{ "render": function ( data, type, row ){
@@ -1017,9 +1017,9 @@ $(document).ready(function () {
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="#"  data-bs-toggle="modal" data-bs-target="#edit_testimonials"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_testimonials"><i class="ti ti-trash text-danger"></i> Delete</a></div></div>';
 				}},
-				
+
 			]
-				
+
 		});
 	}
 
@@ -1151,7 +1151,7 @@ $(document).ready(function () {
 
 	if($('#customer-reporttable').length > 0) {
 		$('#customer-reporttable').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 			"bInfo": false,
 				"ordering": true,
 				"autoWidth": true,
@@ -1169,7 +1169,7 @@ $(document).ready(function () {
 			initComplete: (settings, json)=>{
 				$('.dataTables_paginate').appendTo('.datatable-paginate');
 				$('.dataTables_length').appendTo('.datatable-length');
-			},    
+			},
 			"data":[
 				{
 					"id" : 1,
@@ -1403,7 +1403,7 @@ $(document).ready(function () {
 					"status" : "0",
 					"Action" : ""
 				}
-				
+
 			],
 		"columns": [
 			{ "render": function ( data, type, row ){
@@ -1427,7 +1427,7 @@ $(document).ready(function () {
 
 	if($('#recent-project').length > 0) {
 		$('#recent-project').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 			"bInfo": false,
 			"ordering": false,
 			"paging":false,
@@ -1477,9 +1477,9 @@ $(document).ready(function () {
 					"client" : "2",
 					"due_date" : "06 Oct 2023"
 				}
-				
+
 			],
-			
+
 		"columns": [
 			{ "render": function ( data, type, row ){
 				return '<h2 class="d-flex align-items-center"><a href="project-details.html" class="avatar avatar-sm border me-2"><img class="w-auto h-auto" src="'+row['priority_img']+'" alt="User Image"></a><a href="project-details.html">'+row['priority_name']+'</a></h2>';
@@ -1498,7 +1498,7 @@ $(document).ready(function () {
 
 	if($('#lead-project').length > 0) {
 		$('#lead-project').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 			"bInfo": false,
 			"ordering": false,
 			"paging":false,
@@ -1539,7 +1539,7 @@ $(document).ready(function () {
 					"phone" : "+1 454478787",
 					"status" : "1"
 				}
-		
+
 			],
 		"columns": [
 			{ "data": "lead" },
@@ -1557,7 +1557,7 @@ $(document).ready(function () {
 
 	if($('#deals-project').length > 0) {
 		$('#deals-project').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 			"bInfo": false,
 			"ordering": false,
 			"paging":false,
@@ -1602,7 +1602,7 @@ $(document).ready(function () {
 					"probability" : "5%",
 					"status" : "2"
 				}
-		
+
 			],
 		"columns": [
 			{ "data": "deal_name" },
@@ -1621,7 +1621,7 @@ $(document).ready(function () {
 
 	if($('#pipeline-list').length > 0) {
 		$('#pipeline-list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -1639,7 +1639,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -1729,7 +1729,7 @@ $(document).ready(function () {
 						"status" : "1",
 						"Action" : ""
 					}
-					
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -1745,7 +1745,7 @@ $(document).ready(function () {
 							if(row['stage'] == "0") { var class_name = "success";var status_name ="Win" } else if(row['stage'] == "1") { var class_name = "violet";var status_name ="In Pipeline" } else if(row['stage'] == "2") { var class_name = "green";var status_name ="Conversation"} else if(row['stage'] == "2") { var class_name = "info";var status_name ="Follow Up"} else  { var class_name = "danger";var status_name ="Lost"}
 					return '<div class="pipeline-progress d-flex align-items-center"><div class="progress"><div class="progress-bar progress-bar-'+class_name+'" role="progressbar"></div></div><span>'+status_name+'</span></div>';
 					}
-				},                      
+				},
 				{ "data": "createdat" },
 				{ "render": function ( data, type, row ){
 					if(row['status'] == "0") { var class_name = "bg-success";var status_name ="Active" } if(row['status'] == "1") { var class_name = "bg-success";var status_name ="Active" } else { var class_name = "bg-danger";var status_name ="Inactive"}
@@ -1754,9 +1754,9 @@ $(document).ready(function () {
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#offcanvas_edit" href="#"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_pipeline"><i class="ti ti-trash text-danger"></i> Delete</a></div></div>';
 				}},
-				
+
 			]
-				
+
 		});
 	}
 
@@ -1764,7 +1764,7 @@ $(document).ready(function () {
 
 	if($('#campaign-list').length > 0) {
 		$('#campaign-list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -1782,7 +1782,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -1961,20 +1961,20 @@ $(document).ready(function () {
 					"render": function (data, type, row) {
 					return '<ul class="project-mem"><li><a href="#"><img src="'+row['mem_image1']+'" alt="img"></a></li><li><a href="#"><img src="'+row['mem_image2']+'" alt="img"></a></li><li><a href="#"><img src="'+row['mem_image3']+'" alt="img"></a></li><li class="more-set"><a href="#">3+</a></li></ul>';
 					}
-				},                      
-				{ "data": "start_date" },                 
+				},
+				{ "data": "start_date" },
 				{ "data": "end_date" },
 				{ "render": function ( data, type, row ){
 					if(row['status'] == "0") { var class_name = "success";var status_name ="Success" } else if(row['status'] == "1") { var class_name = "warning";var status_name ="Pending" } else if(row['status'] == "2") { var class_name = "danger";var status_name ="Bounced" } else if(row['status'] == "3") { var class_name = "green";var status_name ="Running" } else { var class_name = "info";var status_name ="Paused"}
 					return '<span class="badge badge-pill badge-status bg-'+class_name+'" >'+status_name+'</span>';
-				}},                 
+				}},
 				{ "data": "created_date" },
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#offcanvas_edit" href="#"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_campaign"><i class="ti ti-trash text-danger"></i> Delete</a></div></div>';
 				}},
-				
+
 			]
-				
+
 		});
 	}
 
@@ -1982,7 +1982,7 @@ $(document).ready(function () {
 
 	if($('#campaign-complete').length > 0) {
 		$('#campaign-complete').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -2000,7 +2000,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('#datatable-paginate');
 					$('.dataTables_length').appendTo('#datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -2179,20 +2179,20 @@ $(document).ready(function () {
 					"render": function (data, type, row) {
 					return '<ul class="project-mem"><li><a href="#"><img src="'+row['mem_image1']+'" alt="img"></a></li><li><a href="#"><img src="'+row['mem_image2']+'" alt="img"></a></li><li><a href="#"><img src="'+row['mem_image3']+'" alt="img"></a></li><li class="more-set"><a href="#">3+</a></li></ul>';
 					}
-				},                      
-				{ "data": "start_date" },                 
+				},
+				{ "data": "start_date" },
 				{ "data": "end_date" },
 				{ "render": function ( data, type, row ){
 					if(row['status'] == "0") { var class_name = "success";var status_name ="Success" } else if(row['status'] == "1") { var class_name = "warning";var status_name ="Pending" } else if(row['status'] == "2") { var class_name = "danger";var status_name ="Bounced" } else if(row['status'] == "3") { var class_name = "green";var status_name ="Running" } else { var class_name = "info";var status_name ="Paused"}
 					return '<span class="badge badge-pill badge-status bg-'+class_name+'" >'+status_name+'</span>';
-				}},                 
+				}},
 				{ "data": "created_date" },
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#offcanvas_edit" href="#"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_campaign"><i class="ti ti-trash text-danger"></i> Delete</a></div></div>';
 				}},
-				
+
 			]
-				
+
 		});
 	}
 
@@ -2200,7 +2200,7 @@ $(document).ready(function () {
 
 	if($('#campaign-archieve').length > 0) {
 		$('#campaign-archieve').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -2218,7 +2218,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -2317,20 +2317,20 @@ $(document).ready(function () {
 					"render": function (data, type, row) {
 					return '<ul class="project-mem"><li><a href="#"><img src="'+row['mem_image1']+'" alt="img"></a></li><li><a href="#"><img src="'+row['mem_image2']+'" alt="img"></a></li><li><a href="#"><img src="'+row['mem_image3']+'" alt="img"></a></li><li class="more-set"><a href="#">3+</a></li></ul>';
 					}
-				},                      
-				{ "data": "start_date" },                 
+				},
+				{ "data": "start_date" },
 				{ "data": "end_date" },
 				{ "render": function ( data, type, row ){
 					if(row['status'] == "0") { var class_name = "success";var status_name ="Success" } else if(row['status'] == "1") { var class_name = "warning";var status_name ="Pending" } else if(row['status'] == "2") { var class_name = "danger";var status_name ="Bounced" } else if(row['status'] == "3") { var class_name = "green";var status_name ="Running" } else { var class_name = "info";var status_name ="Paused"}
 					return '<span class="badge badge-pill badge-status bg-'+class_name+'" >'+status_name+'</span>';
-				}},                 
+				}},
 				{ "data": "created_date" },
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#offcanvas_edit" href="#"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_campaign"><i class="ti ti-trash text-danger"></i> Delete</a></div></div>';
 				}},
-				
+
 			]
-				
+
 		});
 	}
 
@@ -2338,7 +2338,7 @@ $(document).ready(function () {
 
 	if($('#project-list').length > 0) {
 		$('#project-list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -2356,7 +2356,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : "#12145",
@@ -2647,12 +2647,12 @@ $(document).ready(function () {
 				}},
 				{ "render": function ( data, type, row ){
 					return '<h2 class="d-flex align-items-center"><a href="company-details.html" class="avatar avatar-sm border me-2"><img class="w-auto h-auto" src="'+row['client_img']+'" alt="User Image"></a><a href="company-details.html">'+row['client']+'</a></h2>';
-				}},   
+				}},
 				{ "render": function ( data, type, row ){
 					if(row['status'] == "0") { var class_name = "danger";var status_name ="High" } else if(row['status'] == "1") { var class_name = "warning";var status_name ="Medium" }  else { var class_name = "success";var status_name ="Low"}
 					return '<span class="priority badge badge-tag badge-'+class_name+'-light" ><i class="ti ti-square-rounded-filled"></i>'+status_name+'</span>';
-				}},    
-				{ "data": "start_date" },                 
+				}},
+				{ "data": "start_date" },
 				{ "data": "end_date" },
 				{ "data": "type" },
 				{
@@ -2660,24 +2660,24 @@ $(document).ready(function () {
 							if(row['stage'] == "0") { var class_name = "success";var status_name ="Completed" } else if(row['stage'] == "1") { var class_name = "info";var status_name ="Develop" } else if(row['stage'] == "2") { var class_name = "warning";var status_name ="Design"}  else  { var class_name = "violet";var status_name ="Plan"}
 					return '<div class="pipeline-progress d-flex align-items-center"><div class="progress"><div class="progress-bar progress-bar-'+class_name+'" role="progressbar"></div></div><span>'+status_name+'</span></div>';
 					}
-				},   
+				},
 				{ "render": function ( data, type, row ){
 					if(row['status'] == "0") { var class_name = "bg-success";var status_name ="Active" }  else { var class_name = "bg-danger";var status_name ="Inactive"}
 					return '<span class="badge badge-pill badge-status '+class_name+'" >'+status_name+'</span>';
-				}},       
+				}},
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item " data-bs-toggle="offcanvas" data-bs-target="#offcanvas_edit" href="#"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_project"><i class="ti ti-trash text-danger"></i> Delete</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-clipboard-copy text-green"></i> Clone this Project</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-printer text-info"></i> Print</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-subtask"></i> Add New Task</a></div></div>';
 				}},
-				
+
 			]
-				
+
 		});
 	}
 	// Estimations List
 
 	if($('#estimations-list').length > 0) {
 		$('#estimations-list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -2695,7 +2695,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : "#274738",
@@ -2710,9 +2710,9 @@ $(document).ready(function () {
 						"date" : "15 Oct 2023",
 						"customer_name" : "Darlee Robertson",
 						"customer_image" : "assets/img/profiles/avatar-19.jpg",
-						"customer_no" : "Facility Manager",	
+						"customer_no" : "Facility Manager",
 						"status": "3",
-						"status_no" : "Sent",					
+						"status_no" : "Sent",
 						"Action" : ""
 					},
 					{
@@ -2729,8 +2729,8 @@ $(document).ready(function () {
 						"customer_name" : "Sharon Roy",
 						"customer_image" : "assets/img/profiles/avatar-20.jpg",
 						"customer_no" : "Installer",
-						"status" : "0",						
-						"status_no" : "Accepted",						
+						"status" : "0",
+						"status_no" : "Accepted",
 						"Action" : ""
 					},
 					{
@@ -2746,9 +2746,9 @@ $(document).ready(function () {
 						"date" : "24 Oct 2023",
 						"customer_name" : "Vaughan Lewis",
 						"customer_image" : "assets/img/profiles/avatar-21.jpg",
-						"customer_no" : "Senior  Manager",		
-						"status" : "1",				
-						"status_no" : "Draft",				
+						"customer_no" : "Senior  Manager",
+						"status" : "1",
+						"status_no" : "Draft",
 						"Action" : ""
 					},
 					{
@@ -2765,8 +2765,8 @@ $(document).ready(function () {
 						"customer_name" : "Jessica Louise",
 						"customer_image" : "assets/img/profiles/avatar-23.jpg",
 						"customer_no" : "Test Engineer",
-						"status" : "0",						
-						"status_no" : "Accepted",						
+						"status" : "0",
+						"status_no" : "Accepted",
 						"Action" : ""
 					},
 					{
@@ -2783,8 +2783,8 @@ $(document).ready(function () {
 						"customer_name" : "Carol Thomas",
 						"customer_image" : "assets/img/profiles/avatar-16.jpg",
 						"customer_no" : "UI /UX Designer",
-						"status" : "2",						
-						"status_no" : "Declined",						
+						"status" : "2",
+						"status_no" : "Declined",
 						"Action" : ""
 					},
 					{
@@ -2801,8 +2801,8 @@ $(document).ready(function () {
 						"customer_name" : "Dawn Mercha",
 						"customer_image" : "assets/img/profiles/avatar-22.jpg",
 						"customer_no" : "Technician",
-						"status" : "1",						
-						"status_no" : "Draft",						
+						"status" : "1",
+						"status_no" : "Draft",
 						"Action" : ""
 					},
 					{
@@ -2819,8 +2819,8 @@ $(document).ready(function () {
 						"customer_name" : "Rachel Hampton",
 						"customer_image" : "assets/img/profiles/avatar-24.jpg",
 						"customer_no" : "Software Developer",
-						"status" : "3",						
-						"status_no" : "Sent",						
+						"status" : "3",
+						"status_no" : "Sent",
 						"Action" : ""
 					},
 					{
@@ -2837,8 +2837,8 @@ $(document).ready(function () {
 						"customer_name" : "Jonelle Curtiss",
 						"customer_image" : "assets/img/profiles/avatar-24.jpg",
 						"customer_no" : "Supervisor",
-						"status" : "0",						
-						"status_no" : "Accepted",						
+						"status" : "0",
+						"status_no" : "Accepted",
 						"Action" : ""
 					},
 					{
@@ -2855,8 +2855,8 @@ $(document).ready(function () {
 						"customer_name" : "Jonathan Smith",
 						"customer_image" : "assets/img/profiles/avatar-26.jpg",
 						"customer_no" : "Team Lead Dev",
-						"status" : "2",						
-						"status_no" : "Declined",						
+						"status" : "2",
+						"status_no" : "Declined",
 						"Action" : ""
 					},
 					{
@@ -2873,8 +2873,8 @@ $(document).ready(function () {
 						"customer_name" : "Brook Carter",
 						"customer_image" : "assets/img/profiles/avatar-01.jpg",
 						"customer_no" : "Team Lead Dev",
-						"status" : "0",						
-						"status_no" : "Accepted",						
+						"status" : "0",
+						"status_no" : "Accepted",
 						"Action" : ""
 					},
 				],
@@ -2896,23 +2896,23 @@ $(document).ready(function () {
 				{ "data": "Amount" },
 				{ "render": function ( data, type, row ){
 					return '<h2 class="d-flex align-items-center"><a href="#" class="avatar avatar-sm border me-2"><img class="w-auto h-auto" src="'+row['pro_img']+'" alt="User Image"></a><a href="#">'+row['name']+'</a></h2>';
-				}},   
-				{ "data": "date" },                 
+				}},
+				{ "data": "date" },
 				{ "data": "expiry_date" },
-				  				
+
 				{ "render": function ( data, type, row ){
 					return '<h2 class="d-flex align-items-center"><a href="#" class="avatar avatar-sm me-2"><img class="w-auto h-auto" src="'+row['customer_image']+'" alt="User Image"></a><a href="javascript:void(0);" class="d-flex flex-column">'+row['customer_name']+'<span class="text-default">'+row['customer_no']+' </span></a></h2>';
-				}}, 
+				}},
 				{ "render": function ( data, type, row ){
 					if(row['status'] == "0") { var class_name = "success";var status_name ="Accepted" } else if(row['status'] == "1") { var class_name = "warning";var status_name ="Draft" } else if(row['status'] == "2") { var class_name = "danger";var status_name ="Declined" } else if(row['status'] == "3") { var class_name = "violet";var status_name ="Sent" }
 					return '<span class="badge badge-pill badge-status bg-'+class_name+'" >'+status_name+'</span>';
-				}},       
+				}},
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#offcanvas_edit" href="#"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_estimations"><i class="ti ti-trash text-danger"></i> Delete</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-clipboard-copy text-violet"></i> View Estimation</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-checks text-green"></i> Mark as Accpeted</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-file"></i> Mark as Draft</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-sticker text-blue"></i> Mark as Declined</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-printer text-info"></i> Print</a></div></div>';
 				}},
-				
+
 			]
-				
+
 		});
 	}
 
@@ -2920,7 +2920,7 @@ $(document).ready(function () {
 
 	if($('#proposals-list').length > 0) {
 		$('#proposals-list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -2938,7 +2938,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : "#1493024",
@@ -3097,7 +3097,7 @@ $(document).ready(function () {
 						"piority" : "0",
 						"created_date": "15 Aug 2023",
 						"date" : "14 Aug 2024",
-						"open_till" : "07 Dec 2024 ",	
+						"open_till" : "07 Dec 2024 ",
 						"status" : "1",
 						"status_name" : "Declined",
 						"Action" : ""
@@ -3116,23 +3116,23 @@ $(document).ready(function () {
 				{ "render": function ( data, type, row ){
 					return '<h2 class="d-flex align-items-center"><a href="company-details.html" class="avatar avatar-sm border me-2"><img class="w-auto h-auto" src="'+row['client_img']+'" alt="User Image"></a><a href="company-details.html">'+row['sent_to']+'</a></h2>';
 				}},
-				{ "data": "total_value" },    
-				{ "data": "date" },                 
-				{ "data": "open_till" }, 
+				{ "data": "total_value" },
+				{ "data": "date" },
+				{ "data": "open_till" },
 				{ "render": function ( data, type, row ){
 					return '<h2 class="d-flex align-items-center"><a href="#" class="avatar avatar-sm border me-2"><img class="w-auto h-auto" src="'+row['pro_img']+'" alt="User Image"></a><a href="#">'+row['project']+'</a></h2>';
 				}},
 				{ "data": "created_date" },
 				{ "render": function ( data, type, row ){
-					if(row['status'] == "0") { var class_name = "success";var status_name ="Accepted" } else if(row['status'] == "1") { var class_name = "warning";var status_name ="Declined" } else if(row['status'] == "2") { var class_name = "danger";var status_name ="Deleted" } else if(row['status'] == "3") { var class_name = "green";var status_name ="Sent" } else if(row['status'] == "4") { var class_name = "pending";var status_name ="Draft" } else { var class_name = "purple";var status_name ="Paused"} 
+					if(row['status'] == "0") { var class_name = "success";var status_name ="Accepted" } else if(row['status'] == "1") { var class_name = "warning";var status_name ="Declined" } else if(row['status'] == "2") { var class_name = "danger";var status_name ="Deleted" } else if(row['status'] == "3") { var class_name = "green";var status_name ="Sent" } else if(row['status'] == "4") { var class_name = "pending";var status_name ="Draft" } else { var class_name = "purple";var status_name ="Paused"}
 					return '<span class="badge badge-pill badge-status bg-'+class_name+'" >'+status_name+'</span>';
-				}},      
+				}},
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#offcanvas_edit" href="#"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_proposals"><i class="ti ti-trash text-danger"></i> Delete</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-clipboard-copy text-green"></i> View Proposal</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-checks text-success"></i> Mark as Accpeted</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-file text-tertiary"></i> Mark as Draft</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-sticker text-blue"></i> Mark ad Declined</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-subtask text-pink"></i> Convert to estimate</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-file-invoice text-tertiary"></i> Convert to Invoice</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-printer text-info"></i> Print</a></div></div>';
 				}},
-				
+
 			]
-				
+
 		});
 	}
 
@@ -3140,7 +3140,7 @@ $(document).ready(function () {
 
 	if($('#contracts-list').length > 0) {
 		$('#contracts-list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -3158,7 +3158,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : "#1493024",
@@ -3290,17 +3290,17 @@ $(document).ready(function () {
 				}},
 				{ "render": function ( data, type, row ){
 					return '<h2 class="d-flex align-items-center"><a href="company-details.html" class="avatar avatar-sm border me-2"><img class="w-auto h-auto" src="'+row['client_img']+'" alt="User Image"></a><a href="company-details.html">'+row['customer']+'</a></h2>';
-				}},  
-				{ "data": "contract_value" },                 
-				{ "data": "contract_type" },                 
-				{ "data": "date" },                 
-				{ "data": "end_date" },				
+				}},
+				{ "data": "contract_value" },
+				{ "data": "contract_type" },
+				{ "data": "date" },
+				{ "data": "end_date" },
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#offcanvas_edit" href="#"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_contracts"><i class="ti ti-trash text-danger"></i> Delete</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-copy text-tertiary"></i> Clone</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-clipboard-copy text-violet"></i> View Contract</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-checks text-success"></i> Mark as Signed</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-printer text-info"></i> Print</a></div></div>';
 				}},
-				
+
 			]
-				
+
 		});
 	}
 
@@ -3308,7 +3308,7 @@ $(document).ready(function () {
 
 	if($('#invoices-list').length > 0) {
 		$('#invoices-list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -3326,7 +3326,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : "#1254058",
@@ -3468,7 +3468,7 @@ $(document).ready(function () {
 						"balance_amount" : "$4,18,000",
 						"project" : "Dreamsports",
 						"due_date" : "22 Dec 2023",
-						"open_till" : "07 Dec 2024 ",	
+						"open_till" : "07 Dec 2024 ",
 						"status" : "2",
 						"status_name" : "Unpaid",
 						"Action" : ""
@@ -3484,7 +3484,7 @@ $(document).ready(function () {
 						"paid_amount" : "$5,00,000",
 						"balance_amount" : "$0",
 						"project" : "Truelysell",
-						"due_date" : "28 Dec 2023",	
+						"due_date" : "28 Dec 2023",
 						"status" : "0",
 						"status_name" : "Paid",
 						"Action" : ""
@@ -3494,7 +3494,7 @@ $(document).ready(function () {
 				{ "render": function ( data, type, row ){
 					return '<label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label>';
 				}},
-				
+
 				{ "render": function ( data, type, row ){
 					return '<div class="set-star rating-select"><i class="fa fa-star"></i></div>';
 				}},
@@ -3503,24 +3503,24 @@ $(document).ready(function () {
 				}},
 				{ "render": function ( data, type, row ){
 					return '<h2 class="d-flex align-items-center"><a href="company-details.html" class="avatar avatar-sm border me-2"><img class="w-auto h-auto" src="'+row['client_img']+'" alt="User Image"></a><a href="company-details.html">'+row['sent_to']+'</a></h2>';
-				}},				  
+				}},
 				{ "render": function ( data, type, row ){
 					return '<h2 class="d-flex align-items-center"><a href="#" class="avatar avatar-sm border me-2"><img class="w-auto h-auto" src="'+row['pro_img']+'" alt="User Image"></a><a href="#">'+row['project']+'</a></h2>';
 				}},
-				{ "data": "due_date" },    
-				{ "data": "amount" },    
-				{ "data": "paid_amount" },    
+				{ "data": "due_date" },
+				{ "data": "amount" },
+				{ "data": "paid_amount" },
 				{ "data": "balance_amount" },
 				{ "render": function ( data, type, row ){
-					if(row['status'] == "0") { var class_name = "success";var status_name ="Paid" } else if(row['status'] == "1") { var class_name = "warning";var status_name ="Partially Paid" } else if(row['status'] == "2") { var class_name = "danger";var status_name ="Unpaid" } else if(row['status'] == "3") { var class_name = "violet";var status_name ="Overdue" }  
+					if(row['status'] == "0") { var class_name = "success";var status_name ="Paid" } else if(row['status'] == "1") { var class_name = "warning";var status_name ="Partially Paid" } else if(row['status'] == "2") { var class_name = "danger";var status_name ="Unpaid" } else if(row['status'] == "3") { var class_name = "violet";var status_name ="Overdue" }
 					return '<span class="badge badge-pill badge-status bg-'+class_name+'" >'+status_name+'</span>';
-				}},      
+				}},
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item " data-bs-toggle="offcanvas" data-bs-target="#offcanvas_edit" href="#"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_invoices"><i class="ti ti-trash text-danger"></i> Delete</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-clipboard-copy text-green"></i> View Invoices</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-checks text-success"></i> Mark as Paid</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-file text-tertiary"></i> Mark as Partially Paid</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-sticker text-blue"></i> Mark ad Unpaid</a><a class="dropdown-item" href="javascript:void(0);"><i class="ti ti-printer text-info"></i> Print</a></div></div>';
 				}},
-				
+
 			]
-				
+
 		});
 	}
 
@@ -3528,7 +3528,7 @@ $(document).ready(function () {
 
 	if($('#payments-list').length > 0) {
 		$('#payments-list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -3546,7 +3546,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"invoice_id" : "#1254058",
@@ -3647,26 +3647,26 @@ $(document).ready(function () {
 						"payment_method" : "Cash",
 						"transaction_id" : "TXNID1A2B3C4D5E6",
 						"Action" : ""
-					},			
+					},
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
 					return '<a href="#" class="title-name">'+row['invoice_id']+'</a>';
 				}},
-				
+
 				{ "render": function ( data, type, row ){
 					return '<h2 class="d-flex align-items-center"><a href="company-details.html" class="avatar avatar-sm border me-2"><img class="w-auto h-auto" src="'+row['client_img']+'" alt="User Image"></a><a href="company-details.html">'+row['customer']+'</a></h2>';
-				}},  
-				{ "data": "amount" },                 
-				{ "data": "due_date" },                 
-				{ "data": "payment_method" },                 
-				{ "data": "transaction_id" },				
+				}},
+				{ "data": "amount" },
+				{ "data": "due_date" },
+				{ "data": "payment_method" },
+				{ "data": "transaction_id" },
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvas_edit"><i class="ti ti-eye text-indigo"></i> Preview</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_payments"><i class="ti ti-trash text-danger"></i> Delete</a></div></div>';
 				}},
-				
+
 			]
-				
+
 		});
 	}
 
@@ -3674,7 +3674,7 @@ $(document).ready(function () {
 
 	if($('#analytic-contact').length > 0) {
 		$('#analytic-contact').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 			"bInfo": false,
 			"ordering": false,
 			"paging":false,
@@ -3733,7 +3733,7 @@ $(document).ready(function () {
 					"email" : "sharon@example.com",
 					"date" : "15 Nov 2023, 07:26 pm"
 				}
-		
+
 			],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -3750,7 +3750,7 @@ $(document).ready(function () {
 
 	if($('#analytic-deal').length > 0) {
 		$('#analytic-deal').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 			"bInfo": false,
 			"ordering": false,
 			"paging":false,
@@ -3796,7 +3796,7 @@ $(document).ready(function () {
 					"probability" : "98%",
 					"status" : "2"
 				}
-		
+
 			],
 			"columns": [
 				{ "data": "name" },
@@ -3815,7 +3815,7 @@ $(document).ready(function () {
 
 	if($('#analytic-company').length > 0) {
 		$('#analytic-company').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 			"bInfo": false,
 			"ordering": false,
 			"paging":false,
@@ -3868,7 +3868,7 @@ $(document).ready(function () {
 					"email" : "sharon@example.com",
 					"date" : "15 Nov 2023, 07:26 pm"
 				}
-		
+
 			],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -3885,7 +3885,7 @@ $(document).ready(function () {
 
 	if($('#analytic-lead').length > 0) {
 		$('#analytic-lead').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 			"bInfo": false,
 			"ordering": false,
 			"paging":false,
@@ -3935,7 +3935,7 @@ $(document).ready(function () {
 					"phone" : "+1 124547845",
 					"status" : "0"
 				}
-		
+
 			],
 			"columns": [
 				{ "data": "name" },
@@ -3955,7 +3955,7 @@ $(document).ready(function () {
 
 	if($('#activity-list').length > 0) {
 		$('#activity-list').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -3973,7 +3973,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -4085,7 +4085,7 @@ $(document).ready(function () {
 						"status" : "3",
 						"action": ""
 					}
-			
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -4095,7 +4095,7 @@ $(document).ready(function () {
 				{ "render": function ( data, type, row ){
 					if(row['status'] == "0") { var class_name = "bg-purple";var status_name ="Meeting";var icon_class_name = "user-share" } else if(row['status'] == "1") { var class_name = "bg-warning";var status_name ="Email";var icon_class_name = "mail" } else if(row['status'] == "2") { var class_name = "bg-blue";var status_name ="Task";var icon_class_name = "subtask" } else { var class_name = "bg-green";var status_name ="Calls";var icon_class_name = "phone" }
 					return '<span class="badge activity-badge '+class_name+'" ><i class="ti ti-'+icon_class_name+'"></i>'+status_name+'</span>';
-				}},    
+				}},
 				{ "data": "due_date" },
 				{ "data": "owner" },
 				{ "data": "created_date" },
@@ -4110,7 +4110,7 @@ $(document).ready(function () {
 
 	if($('#activity-calls').length > 0) {
 		$('#activity-calls').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -4128,7 +4128,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 2,
@@ -4170,7 +4170,7 @@ $(document).ready(function () {
 						"status" : "3",
 						"action": ""
 					}
-			
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -4180,7 +4180,7 @@ $(document).ready(function () {
 				{ "render": function ( data, type, row ){
 					if(row['status'] == "0") { var class_name = "bg-purple";var status_name ="Meeting";var icon_class_name = "user-share" } else if(row['status'] == "1") { var class_name = "bg-warning";var status_name ="Email";var icon_class_name = "user-share" } else if(row['status'] == "2") { var class_name = "bg-blue";var status_name ="Task";var icon_class_name = "user-share" } else { var class_name = "bg-green";var status_name ="Calls";var icon_class_name = "user-share" }
 					return '<span class="badge activity-badge '+class_name+'" ><i class="ti ti-'+icon_class_name+'"></i> '+status_name+'</span>';
-				}},    
+				}},
 				{ "data": "due_date" },
 				{ "data": "owner" },
 				{ "data": "created_date" },
@@ -4195,7 +4195,7 @@ $(document).ready(function () {
 
 	if($('#activity-mail').length > 0) {
 		$('#activity-mail').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -4213,7 +4213,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 3,
@@ -4245,7 +4245,7 @@ $(document).ready(function () {
 						"status" : "1",
 						"action": ""
 					}
-			
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -4255,7 +4255,7 @@ $(document).ready(function () {
 				{ "render": function ( data, type, row ){
 					if(row['status'] == "0") { var class_name = "bg-purple";var status_name ="Meeting";var icon_class_name = "user-share" } else if(row['status'] == "1") { var class_name = "bg-warning";var status_name ="Email";var icon_class_name = "user-share" } else if(row['status'] == "2") { var class_name = "bg-blue";var status_name ="Task";var icon_class_name = "user-share" } else { var class_name = "bg-green";var status_name ="Calls";var icon_class_name = "user-share" }
 					return '<span class="badge activity-badge '+class_name+'" ><i class="ti ti-'+icon_class_name+'"></i> '+status_name+'</span>';
-				}},    
+				}},
 				{ "data": "due_date" },
 				{ "data": "owner" },
 				{ "data": "created_date" },
@@ -4270,7 +4270,7 @@ $(document).ready(function () {
 
 	if($('#activity-task').length > 0) {
 		$('#activity-task').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -4288,7 +4288,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 4,
@@ -4310,7 +4310,7 @@ $(document).ready(function () {
 						"status" : "2",
 						"action": ""
 					}
-			
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -4320,7 +4320,7 @@ $(document).ready(function () {
 				{ "render": function ( data, type, row ){
 					if(row['status'] == "0") { var class_name = "bg-purple";var status_name ="Meeting";var icon_class_name = "user-share" } else if(row['status'] == "1") { var class_name = "bg-warning";var status_name ="Email";var icon_class_name = "mail" } else if(row['status'] == "2") { var class_name = "bg-blue";var status_name ="Task";var icon_class_name = "user-share" } else { var class_name = "bg-green";var status_name ="Calls";var icon_class_name = "phone" }
 					return '<span class="badge activity-badge '+class_name+'" ><i class="ti ti-'+icon_class_name+'"></i> '+status_name+'</span>';
-				}},    
+				}},
 				{ "data": "due_date" },
 				{ "data": "owner" },
 				{ "data": "created_date" },
@@ -4335,7 +4335,7 @@ $(document).ready(function () {
 
 	if($('#activity-meeting').length > 0) {
 		$('#activity-meeting').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -4353,7 +4353,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -4375,7 +4375,7 @@ $(document).ready(function () {
 						"status" : "0",
 						"action": ""
 					}
-			
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -4385,7 +4385,7 @@ $(document).ready(function () {
 				{ "render": function ( data, type, row ){
 					if(row['status'] == "0") { var class_name = "bg-purple";var status_name ="Meeting";var icon_class_name = "user-share" } else if(row['status'] == "1") { var class_name = "bg-warning";var status_name ="Email";var icon_class_name = "user-share" } else if(row['status'] == "2") { var class_name = "bg-blue";var status_name ="Task";var icon_class_name = "user-share" } else { var class_name = "bg-green";var status_name ="Calls";var icon_class_name = "user-share" }
 					return '<span class="badge activity-badge '+class_name+'" ><i class="ti ti-'+icon_class_name+'"></i> '+status_name+'</span>';
-				}},    
+				}},
 				{ "data": "due_date" },
 				{ "data": "owner" },
 				{ "data": "created_date" },
@@ -4400,7 +4400,7 @@ $(document).ready(function () {
 
 	if($('#language-list').length > 0) {
 		$('#language-list').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -4418,7 +4418,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -4480,7 +4480,7 @@ $(document).ready(function () {
 						"status" : "0",
 						"action": ""
 					}
-			
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -4498,7 +4498,7 @@ $(document).ready(function () {
 						if(row['rtl'] == "checked") { var attr_name = "checked";var status_name ="Active" } else { var class_name = "bg-danger";var status_name ="Inactive"}
 						return '<div class="status-toggle"><input type="checkbox" id="'+row['language']+'" class="check" '+attr_name+'><label for="'+row['language']+'" class="checktoggle">/label></div>';
 					}
-				},     
+				},
 				{ "data": "total" },
 				{ "data": "done" },
 				{
@@ -4506,11 +4506,11 @@ $(document).ready(function () {
 							if(row['stage'] == "0") { var class_name = "success" } else if(row['stage'] == "1") { var class_name = "warning" } else if(row['stage'] == "2") { var class_name = "info"} else  { var class_name = "danger"}
 					return '<div class="pipeline-progress d-flex align-items-center"><div class="progress"><div class="progress-bar progress-bar-'+class_name+'" role="progressbar"></div></div><span>'+row['progress']+'</span></div>';
 					}
-				},     
+				},
 				{ "render": function ( data, type, row ){
 					if(row['status'] == "0") { var class_name = "bg-success";var status_name ="Active" } else { var class_name = "bg-danger";var status_name ="Inactive"}
 					return '<span class="badge badge-pill badge-status '+class_name+'" >'+status_name+'</span>';
-				}}, 
+				}},
 				{ "render": function ( data, type, row ){
 					return '<div class="d-flex align-items-center"><ul class="lang-type"><li><a href="language-web.html">Web</a></li><li><a href="javascript:void(0);">App</a></li><li><a href="javascript:void(0);">Admin</a></li></ul><div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#edit_translation"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_translation"><i class="ti ti-trash text-danger"></i> Delete</a></div></div></div>';
 				}},
@@ -4522,7 +4522,7 @@ $(document).ready(function () {
 
 	if($('#language-web').length > 0) {
 		$('#language-web').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -4540,7 +4540,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -4574,7 +4574,7 @@ $(document).ready(function () {
 						"file" : "Product",
 						"total" : "2590",
 						"done" : "250",
-						"progress": "5%",	
+						"progress": "5%",
 						"stage" : "3",
 						"action": ""
 					},
@@ -4590,7 +4590,7 @@ $(document).ready(function () {
 						"stage" : "2",
 						"action": ""
 					}
-			
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -4610,7 +4610,7 @@ $(document).ready(function () {
 							if(row['stage'] == "0") { var class_name = "success" } else if(row['stage'] == "1") { var class_name = "warning" } else if(row['stage'] == "2") { var class_name = "info"} else  { var class_name = "danger"}
 					return '<div class="pipeline-progress d-flex align-items-center"><div class="progress"><div class="progress-bar progress-bar-'+class_name+'" role="progressbar"></div></div><span>'+row['progress']+'</span></div>';
 					}
-				}, 
+				},
 				{ "render": function ( data, type, row ){
 					return '<a href="#" data-bs-toggle="modal" data-bs-target="#add_translate"><i class="ti ti-edit text-black"></i></a>';
 				}},
@@ -4622,7 +4622,7 @@ $(document).ready(function () {
 
 	if($('#manage-users-list').length > 0) {
 		$('#manage-users-list').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -4640,13 +4640,13 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
 						"si_no" : "",
 						"select" : "",
-						"customer_name" : "Darlee Robertson",
+						"customer_name" : "Darlee Robertson 55",
 						"customer_image" : "assets/img/profiles/avatar-19.jpg",
 						"customer_no" : "Facility Manager",
 						"phone" : "1234567890",
@@ -4793,7 +4793,7 @@ $(document).ready(function () {
 						"status" : "0",
 						"Action" : ""
 					}
-					
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -4825,7 +4825,7 @@ $(document).ready(function () {
 
 	if($('#delete_request').length > 0) {
 		$('#delete_request').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 			"bInfo": false,
 				"ordering": true,
 				"autoWidth": true,
@@ -4843,7 +4843,7 @@ $(document).ready(function () {
 					initComplete: (settings, json)=>{
 						$('.dataTables_paginate').appendTo('.datatable-paginate');
 						$('.dataTables_length').appendTo('.datatable-length');
-					},  
+					},
 					"data":[
 						{
 							"id" : 1,
@@ -4956,7 +4956,7 @@ $(document).ready(function () {
 							"delete_request": "25 Nov 2023, 06:34 pm",
 							"Action" : ""
 						}
-						
+
 					],
 				"columns": [
 					{ "render": function ( data, type, row ){
@@ -4981,7 +4981,7 @@ $(document).ready(function () {
 
 	if($('#roles_list').length > 0) {
 		$('#roles_list').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -4999,7 +4999,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -5061,7 +5061,7 @@ $(document).ready(function () {
 
 	if($('#permission_list').length > 0) {
 		$('#permission_list').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -5079,7 +5079,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -5221,7 +5221,7 @@ $(document).ready(function () {
 
 	if($('#contact-messages-list').length > 0) {
 		$('#contact-messages-list').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -5239,7 +5239,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -5372,7 +5372,7 @@ $(document).ready(function () {
 						"created" : "25 Nov 2023, 06:34 pm",
 						"Action" : ""
 					}
-					
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -5395,11 +5395,11 @@ $(document).ready(function () {
 		});
 	}
 
-	// Tickets 
+	// Tickets
 
 	if($('#tickets-list').length > 0) {
 		$('#tickets-list').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -5417,7 +5417,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -5572,7 +5572,7 @@ $(document).ready(function () {
 
 	if($('#states_list').length > 0) {
 		$('#states_list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -5611,7 +5611,7 @@ $(document).ready(function () {
 						"country_image":"assets/img/flags/ad.png",
 						"state": "Andorra la Vella",
 						"Action" : ""
-						
+
 					},
 					{
 						"id" : 3,
@@ -5694,8 +5694,8 @@ $(document).ready(function () {
 						"state": "Karabakh",
 						"Action" : ""
 					}
-					
-					
+
+
 				],
 		"columns": [
 			{ "render": function ( data, type, row ){
@@ -5710,8 +5710,8 @@ $(document).ready(function () {
 				'<span class="location-flag-img"><img src="'+ row['country_image']+'" class="img-fluid" alt="img"></span>' +
 				'<span>'+ row['state_name'] +'</span>'+
 				'</a> ';
-			}}, 
-			{"data": "state" },     
+			}},
+			{"data": "state" },
 			{ "render": function ( data, type, row ){
 				return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#edit_state"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_state"><i class="ti ti-trash text-danger"></i> Delete</a></div></div>';
 			}}
@@ -5723,7 +5723,7 @@ $(document).ready(function () {
 
 	if($('#transactions_list').length > 0) {
 		$('#transactions_list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -5741,7 +5741,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -5827,7 +5827,7 @@ $(document).ready(function () {
 
 	if($('#cities_list').length > 0) {
 		$('#cities_list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -5845,7 +5845,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -5866,7 +5866,7 @@ $(document).ready(function () {
 						"country_image":"assets/img/flags/ad.png",
 						"state_name": "Andorra la Vella",
 						"Action" : ""
-						
+
 					},
 					{
 						"id" : 3,
@@ -5949,8 +5949,8 @@ $(document).ready(function () {
 						"state_name": "Karabakh",
 						"Action" : ""
 					}
-					
-					
+
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -5964,9 +5964,9 @@ $(document).ready(function () {
 					'<span class="location-flag-img"><img src="'+ row['country_image']+'" class="img-fluid" alt="img"></span>' +
 					'<span>'+ row['country_name'] +'</span>'+
 					'</a> ';
-				}},  
+				}},
 				{ "data": "state_name" },
-				{ "data": "city_name" },             
+				{ "data": "city_name" },
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#edit_city"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_city"><i class="ti ti-trash text-danger"></i> Delete</a></div></div>';
 				}}
@@ -5978,7 +5978,7 @@ $(document).ready(function () {
 
 	if($('#countrieslist').length > 0) {
 		$('#countrieslist').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -5996,7 +5996,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data": [
 					{
 						"id": 1,
@@ -6113,7 +6113,7 @@ $(document).ready(function () {
 					'<span class="location-flag-img"><img src="'+ row['country_image']+'" class="img-fluid" alt="img"></span>' +
 					'<span>'+ row['country_name'] +'</span>'+
 					'</a> ';
-				}},               
+				}},
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#edit_country"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_country"><i class="ti ti-trash text-danger"></i> Delete</a></div></div>';
 				}}
@@ -6126,7 +6126,7 @@ $(document).ready(function () {
 
 	if($('#contact-reports').length > 0) {
 		$('#contact-reports').DataTable({
-			"bFilter": false, 
+			"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -6144,7 +6144,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},	
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -6378,7 +6378,7 @@ $(document).ready(function () {
 						"status" : "0",
 						"Action" : ""
 					}
-					
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -6407,7 +6407,7 @@ $(document).ready(function () {
 
 	if($('#deal_reports').length > 0) {
 		$('#deal_reports').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -6425,7 +6425,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data": [
 					{
 						"id": 1,
@@ -6589,7 +6589,7 @@ $(document).ready(function () {
 
 	if($('#leads_reports').length > 0) {
 		$('#leads_reports').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -6607,7 +6607,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},	
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -6803,7 +6803,7 @@ $(document).ready(function () {
 
 	if($('#company_reports').length > 0) {
 		$('#company_reports').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -6821,7 +6821,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},	
+				},
 				"data":[
 					{
 						"id" : 1,
@@ -7092,7 +7092,7 @@ $(document).ready(function () {
 
 	if($('#project-reports').length > 0) {
 		$('#project-reports').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -7110,7 +7110,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : "#12145",
@@ -7401,12 +7401,12 @@ $(document).ready(function () {
 				}},
 				{ "render": function ( data, type, row ){
 					return '<h2 class="d-flex align-items-center"><a href="company-details.html" class="avatar avatar-sm border me-2"><img class="w-auto h-auto" src="'+row['client_img']+'" alt="User Image"></a><a href="company-details.html">'+row['client']+'</a></h2>';
-				}},   
+				}},
 				{ "render": function ( data, type, row ){
 					if(row['status'] == "0") { var class_name = "danger";var status_name ="High" } else if(row['status'] == "1") { var class_name = "warning";var status_name ="Medium" }  else { var class_name = "success";var status_name ="Low"}
 					return '<span class="priority badge badge-tag badge-'+class_name+'-light" ><i class="ti ti-square-rounded-filled"></i>'+status_name+'</span>';
-				}},    
-				{ "data": "start_date" },                 
+				}},
+				{ "data": "start_date" },
 				{ "data": "end_date" },
 				{ "data": "type" },
 				{
@@ -7414,11 +7414,11 @@ $(document).ready(function () {
 							if(row['stage'] == "0") { var class_name = "success";var status_name ="Completed" } else if(row['stage'] == "1") { var class_name = "info";var status_name ="Develop" } else if(row['stage'] == "2") { var class_name = "warning";var status_name ="Design"}  else  { var class_name = "violet";var status_name ="Plan"}
 					return '<div class="pipeline-progress d-flex align-items-center"><div class="progress"><div class="progress-bar progress-bar-'+class_name+'" role="progressbar"></div></div><span>'+status_name+'</span></div>';
 					}
-				}, 
+				},
 				{ "data": "budget" },
 				{ "data": "currently_spend" }
 			]
-				
+
 		});
 	}
 
@@ -7426,7 +7426,7 @@ $(document).ready(function () {
 
 	if($('#task-reports').length > 0) {
 		$('#task-reports').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -7444,7 +7444,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : "1",
@@ -7576,30 +7576,30 @@ $(document).ready(function () {
 				}},
 				{ "render": function ( data, type, row ){
 					return '<h2 class="d-flex align-items-center"><a href="javascript:void(0);" class="avatar avatar-sm me-2"><img class="w-auto h-auto" src="'+row['img']+'" alt="User Image"></a><a href="javascript:void(0);">'+row['assignee']+'</a></h2>';
-				}},	  
+				}},
 				{ "render": function ( data, type, row ){
 					if(row['piority'] == "0") { var class_name = "danger";var status_name ="High" } else if(row['piority'] == "1") { var class_name = "warning";var status_name ="Medium" }  else { var class_name = "success";var status_name ="Low"}
 					return '<span class="priority badge badge-tag badge-'+class_name+'-light" ><i class="ti ti-square-rounded-filled"></i>'+status_name+'</span>';
-				}},    
-				{ "data": "start_date" },   	
+				}},
+				{ "data": "start_date" },
 				{ "data": "type" },
 				{
 					"render": function (data, type, row) {
 							if(row['status'] == "0") { var class_name = "bg-success";var status_name ="Completed" } else { var class_name = "bg-warning";var status_name ="Inprogress"}
 				return '<span class="badge badge-pill badge-status '+class_name+'" >'+status_name+'</span>';
 					}
-				}, 
+				},
 				{ "data": "created_date" }
 			]
-				
+
 		});
-	}		
+	}
 
 	// Calls List
 
 	if($('#calls-list').length > 0) {
 		$('#calls-list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -7617,7 +7617,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : "1",
@@ -7651,7 +7651,7 @@ $(document).ready(function () {
 						"status" : "1",
 						"action" : ""
 					}
-			
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -7666,12 +7666,12 @@ $(document).ready(function () {
 							if(row['status'] == "0") { var class_name = "bg-success";var status_name ="Active" } else { var class_name = "bg-danger";var status_name ="Inactive"}
 				return '<span class="badge badge-pill badge-status '+class_name+'" >'+status_name+'</span>';
 					}
-				}, 
+				},
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit_calls"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_calls"><i class="ti ti-trash text-danger"></i> Delete</a></div></div>';
 				}}
 			]
-				
+
 		});
 	}
 
@@ -7679,7 +7679,7 @@ $(document).ready(function () {
 
 	if($('#industry-list').length > 0) {
 		$('#industry-list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -7697,7 +7697,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : "1",
@@ -7755,7 +7755,7 @@ $(document).ready(function () {
 						"status" : "1",
 						"action" : ""
 					}
-			
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -7770,12 +7770,12 @@ $(document).ready(function () {
 							if(row['status'] == "0") { var class_name = "bg-success";var status_name ="Active" } else { var class_name = "bg-danger";var status_name ="Inactive"}
 				return '<span class="badge badge-pill badge-status '+class_name+'" >'+status_name+'</span>';
 					}
-				}, 
+				},
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit_industry"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_industry"><i class="ti ti-trash text-danger"></i> Delete</a></div></div>';
 				}}
 			]
-				
+
 		});
 	}
 
@@ -7783,7 +7783,7 @@ $(document).ready(function () {
 
 	if($('#contact-stage').length > 0) {
 		$('#contact-stage').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -7801,7 +7801,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : "1",
@@ -7835,7 +7835,7 @@ $(document).ready(function () {
 						"status" : "Inactive",
 						"action" : ""
 					}
-			
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -7850,12 +7850,12 @@ $(document).ready(function () {
 							if(row['status'] == "0") { var class_name = "bg-success";var status_name ="Active" } else { var class_name = "bg-danger";var status_name ="Inactive"}
 				return '<span class="badge badge-pill badge-status '+class_name+'" >'+status_name+'</span>';
 					}
-				}, 
+				},
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit_contact_stage"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_contact_stage"><i class="ti ti-trash text-danger"></i> Delete</a></div></div>';
 				}}
 			]
-				
+
 		});
 	}
 
@@ -7863,7 +7863,7 @@ $(document).ready(function () {
 
 	if($('#reason-list').length > 0) {
 		$('#reason-list').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -7881,7 +7881,7 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : "1",
@@ -7939,7 +7939,7 @@ $(document).ready(function () {
 						"status" : "0",
 						"action" : ""
 					}
-			
+
 				],
 			"columns": [
 				{ "render": function ( data, type, row ){
@@ -7954,12 +7954,12 @@ $(document).ready(function () {
 							if(row['status'] == "0") { var class_name = "bg-success";var status_name ="Active" } else { var class_name = "bg-danger";var status_name ="Inactive"}
 				return '<span class="badge badge-pill badge-status '+class_name+'" >'+status_name+'</span>';
 					}
-				}, 
+				},
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit_reason"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_reason"><i class="ti ti-trash text-danger"></i> Delete</a></div></div>';
 				}}
 			]
-				
+
 		});
 	}
 
@@ -7967,7 +7967,7 @@ $(document).ready(function () {
 
 	if($('#pages').length > 0) {
 		$('#pages').DataTable({
-				"bFilter": false, 
+				"bFilter": false,
 				"bInfo": false,
 					"ordering": true,
 				"autoWidth": true,
@@ -7985,56 +7985,56 @@ $(document).ready(function () {
 				initComplete: (settings, json)=>{
 					$('.dataTables_paginate').appendTo('.datatable-paginate');
 					$('.dataTables_length').appendTo('.datatable-length');
-				},  
+				},
 				"data":[
 					{
 						"id" : 1,
 						"pages" :"Home",
 						"page_slug" : "home",
 						"status" : "0"
-						
+
 					},
 					{
 						"id" : 2,
 						"pages" :"About Us",
 						"page_slug" : "about-us",
 						"status" : "1"
-						
+
 					},
 					{
 						"id" : 3,
 						"pages" :"FAQ",
 						"page_slug" : "faq",
 						"status" : "0"
-						
+
 					},
 					{
 						"id" : 4,
 						"pages" :"Categories",
 						"page_slug" : "categories",
 						"status" : "0"
-						
+
 					},
 					{
 						"id" : 5,
 						"pages" :"Terms & Conditions",
 						"page_slug" : "terms-conditions",
 						"status" : "0"
-						
+
 					},
 					{
 						"id" : 6,
 						"pages" :"Privacy Policy",
 						"page_slug" : "privacy policy",
 						"status" : "0"
-						
+
 					},
 					{
 						"id" : 7,
 						"pages" :"Contact US",
 						"page_slug" : "contact-us",
 						"status" : "0"
-						
+
 					}
 				],
 			"columns": [
@@ -8053,12 +8053,12 @@ $(document).ready(function () {
 							if(row['status'] == "0") { var class_name = "bg-success";var status_name ="Active" } else { var class_name = "bg-danger";var status_name ="Inactive"}
 				return '<span class="badge badge-pill badge-status '+class_name+'" >'+status_name+'</span>';
 					}
-				}, 
+				},
 				{ "render": function ( data, type, row ){
 					return '<div class="dropdown table-action"><a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#offcanvas_edit"><i class="ti ti-edit text-blue"></i> Edit</a><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#delete_page"><i class="ti ti-trash text-danger"></i> Delete</a></div></div>';
 				}}
 			]
-				
+
 		});
 	}
 

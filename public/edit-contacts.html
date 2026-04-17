@@ -1,0 +1,2124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="utf-8" />
+   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+   <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <meta name="author" content="Mayank Cattle Food PVT. LTD." />
+   <link rel="shortcut icon" href="assets/images/favicon.png" />
+
+	<!-- Title -->
+	<title>Edit</title>
+
+	<!-- Themescript JS -->
+	<!-- <script src="js/theme-script.js"></script> -->
+
+	<!-- Apple Touch Icon -->
+	<!-- <link rel="apple-touch-icon" sizes="180x180" href="assets/img/apple-touch-icon.png"> -->
+
+
+	<!-- Favicon -->
+	<link rel="icon" href="images/favicon.png" type="image/x-icon">
+	<link rel="shortcut icon" type="image/x-icon" href="assets/images/favicon.png">
+
+	<!-- Bootstrap CSS -->
+	<link rel="stylesheet" href="assets/css/bootstrap.min.css">
+
+	<!-- Tabler Icon CSS -->
+	<link rel="stylesheet" href="assets/plugins/tabler-icons/tabler-icons.css">
+
+	<!-- Fontawesome CSS -->
+	<link rel="stylesheet" href="assets/plugins/fontawesome/css/fontawesome.min.css">
+	<link rel="stylesheet" href="assets/plugins/fontawesome/css/all.min.css">
+
+	<!-- Color Picker CSS -->
+	<link rel="stylesheet" href="assets/plugins/flatpickr/flatpickr.min.css">
+	<link rel="stylesheet" href="assets/plugins/pickr/themes/nano.min.css">
+
+	<!-- Datatable CSS -->
+	<link rel="stylesheet" href="assets/css/dataTables.bootstrap5.min.css">
+
+	<!-- Daterangepicker CSS -->
+	<link rel="stylesheet" href="assets/plugins/daterangepicker/daterangepicker.css">
+
+	<!-- Select2 CSS -->
+	<link rel="stylesheet" href="assets/plugins/select2/css/select2.min.css">
+
+	<!-- Bootstrap Tagsinput CSS -->
+	<link rel="stylesheet" href="assets/plugins/bootstrap-tagsinput/bootstrap-tagsinput.css">
+
+	<!-- Datetimepicker CSS -->
+	<link rel="stylesheet" href="assets/css/bootstrap-datetimepicker.min.css">
+
+	<!-- Summernote CSS -->
+	<link rel="stylesheet" href="assets/plugins/summernote/summernote-lite.min.css">
+
+	<!-- Main CSS -->
+	<link rel="stylesheet" href="assets/css/style.css">
+
+</head>
+
+<body>
+
+	<!-- Main Wrapper -->
+	<div class="main-wrapper">
+
+		<!-- Header -->
+		<div class="header">
+
+			<!-- Logo -->
+			<div class="header-left active">
+				<a href="index.html" class="logo logo-normal">
+                    <img src="assets/images/logo.png" alt="Logo">
+                    <img src="assets/images/white-logo.svg" class="white-logo" alt="Logo">
+                </a>
+				<a href="index.html" class="logo-small">
+					<img src="assets/images/logo-small.svg" alt="Logo">
+				</a>
+				<a id="toggle_btn" href="javascript:void(0);">
+					<i class="ti ti-arrow-bar-to-left"></i>
+				</a>
+			</div>
+			<!-- /Logo -->
+
+			<a id="mobile_btn" class="mobile_btn" href="#sidebar">
+				<span class="bar-icon">
+					<span></span>
+					<span></span>
+					<span></span>
+				</span>
+			</a>
+
+			<div class="header-user">
+				<ul class="nav user-menu">
+					
+					<!-- Search -->
+					<li class="nav-item nav-search-inputs me-auto">
+						<div class="top-nav-search">
+							<a href="javascript:void(0);" class="responsive-search">
+								<i class="fa fa-search"></i>
+							</a>
+							<form action="#" class="dropdown">
+								<div class="searchinputs" id="dropdownMenuClickable">
+									<input type="text" placeholder="Search">
+									<div class="search-addon">
+										<button type="submit"><i class="ti ti-command"></i></button>
+									</div>
+								</div>
+							</form>
+						</div>
+					</li>
+					<!-- /Search -->
+
+					
+					
+					
+				
+
+					<!-- Notifications -->
+				<!-- 	<li class="nav-item dropdown nav-item-box">
+						<a href="javascript:void(0);" class="nav-link" data-bs-toggle="dropdown">
+							<i class="ti ti-bell"></i>
+							<span class="badge rounded-pill">13</span>
+						</a>
+						<div class="dropdown-menu dropdown-menu-end notification-dropdown">
+							<div class="topnav-dropdown-header">
+								<h4 class="notification-title">Notifications</h4>
+							</div>
+							<div class="noti-content">
+								<ul class="notification-list">
+									<li class="notification-message">
+										<a href="activities.html">
+											<div class="media d-flex">
+												<span class="avatar flex-shrink-0">
+													<img src="assets/images/avatar-02.jpg" alt="Profile">
+													<span class="badge badge-info rounded-pill"></span>
+												</span>
+												<div class="media-body flex-grow-1">
+													<p class="noti-details">Ray Arnold left 6 comments on Isla Nublar SOC2 compliance report</p>
+													<p class="noti-time">Last Wednesday at 9:42 am</p>
+												</div>
+											</div>
+										</a>
+									</li>
+									<li class="notification-message">
+										<a href="activities.html">
+											<div class="media d-flex">
+												<span class="avatar flex-shrink-0">
+													<img src="assets/images/avatar-03.jpg" alt="Profile">
+												</span>
+												<div class="media-body flex-grow-1">
+													<p class="noti-details">Denise Nedry replied to Anna Srzand</p>
+													<p class="noti-sub-details">“Oh, I finished de-bugging the phones, but the system's compiling for eighteen minutes, or twenty.  So, some minor systems may go on and off for a while.”</p>
+													<p class="noti-time">Last Wednesday at 9:42 am</p>
+												</div>
+											</div>
+										</a>
+									</li>
+									<li class="notification-message">
+										<a href="activities.html">
+											<div class="media d-flex">
+												<span class="avatar flex-shrink-0">
+													<img alt="" src="assets/images/avatar-06.jpg">
+												</span>
+												<div class="media-body flex-grow-1">
+													<p class="noti-details">John Hammond attached a file to Isla Nublar SOC2 compliance report</p>
+													<div class="noti-pdf">
+														<div class="noti-pdf-icon">
+															<span><i class="ti ti-chart-pie"></i></span>
+														</div>
+														<div class="noti-pdf-text">
+															<p>EY_review.pdf</p>
+															<span>2mb</span>
+														</div>
+													</div>
+													<p class="noti-time">Last Wednesday at 9:42 am</p>
+												</div>
+											</div>
+										</a>
+									</li>
+								</ul>
+							</div>
+							<div class="topnav-dropdown-footer">
+								<a href="activities.html" class="view-link">View all</a>
+								<a href="javascript:void(0);" class="clear-link">Clear all</a>
+							</div>
+						</div>
+					</li> -->
+					<!-- /Notifications -->
+
+					<!-- Profile Dropdown -->
+					<li class="nav-item dropdown has-arrow main-drop">
+						<a href="javascript:void(0);" class="nav-link userset" data-bs-toggle="dropdown">
+							<span class="user-info">
+								<span class="user-letter">
+									<img src="assets/images/avatar-14.png" alt="Profile">
+								</span>
+								<span class="badge badge-success rounded-pill"></span>
+							</span>
+						</a>
+						<div class="dropdown-menu menu-drop-user">
+							<div class="profilename">
+								<a class="dropdown-item" href="index.html">
+									<i class="ti ti-layout-2"></i> Dashboard
+								</a>
+								<a class="dropdown-item" href="profile.html">
+									<i class="ti ti-user-pin"></i> My Profile
+								</a>
+								<a class="dropdown-item" href="login.html">
+									<i class="ti ti-lock"></i> Logout
+								</a>
+							</div>
+						</div>
+					</li>
+					<!-- /Profile Dropdown -->
+
+				</ul>
+			</div>
+
+			<!-- Mobile Menu -->
+			<div class="dropdown mobile-user-menu">
+				<a href="javascript:void(0);" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+				<div class="dropdown-menu">
+					<a class="dropdown-item" href="index.html">
+						<i class="ti ti-layout-2"></i> Dashboard
+					</a>
+					<a class="dropdown-item" href="profile.html">
+						<i class="ti ti-user-pin"></i> My Profile
+					</a>
+					<a class="dropdown-item" href="login.html">
+						<i class="ti ti-lock"></i> Logout
+					</a>
+				</div>
+			</div>
+			<!-- /Mobile Menu -->
+
+		</div>
+		<!-- /Header -->
+
+			   <!-- Sidebar -->
+		<div class="sidebar" id="sidebar">
+			<div class="modern-profile p-3 pb-0">
+				
+				<div class="sidebar-nav mb-3">
+					<ul class="nav nav-tabs nav-tabs-solid nav-tabs-rounded nav-justified bg-transparent"
+						role="tablist">
+						<li class="nav-item"><a class="nav-link active border-0" href="#">Menu</a></li>
+						<li class="nav-item"><a class="nav-link border-0" href="chat.html">Chats</a></li>
+						<li class="nav-item"><a class="nav-link border-0" href="email.html">Inbox</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="sidebar-header p-3 pb-0 pt-2">
+				
+				<div class="d-flex align-items-center justify-content-between menu-item mb-3">
+					<div class="me-3">
+						<a href="calendar.html" class="btn btn-icon border btn-menubar">
+							<i class="ti ti-layout-grid-remove"></i>
+						</a>
+					</div>
+					<div class="me-3">
+						<a href="chat.html" class="btn btn-icon border btn-menubar position-relative">
+							<i class="ti ti-brand-hipchat"></i>
+						</a>
+					</div>
+					<div class="me-3 notification-item">
+						<a href="activities.html" class="btn btn-icon border btn-menubar position-relative me-1">
+							<i class="ti ti-bell"></i>
+							<span class="notification-status-dot"></span>
+						</a>
+					</div>
+					<div class="me-0">
+						<a href="email.html" class="btn btn-icon border btn-menubar">
+							<i class="ti ti-message"></i>
+						</a>
+					</div>
+				</div>
+			</div>
+			<div class="sidebar-inner slimscroll">
+				<div id="sidebar-menu" class="sidebar-menu">
+					<ul>
+						<li class="clinicdropdown">
+							<a href="profile.html">
+								<img src="assets/images/avatar-14.png" class="img-fluid" alt="Profile">
+								<div class="user-names">
+									<h5>Adrian Davies</h5>
+									<h6>Tech Lead</h6>
+								</div>
+							</a>
+						</li>
+					</ul>
+					<ul>
+                    <!--  <li>
+                        <h6 class="submenu-hdr">Sales Management</h6>
+                        <ul>
+                           <li class="submenu">
+                              <a href="javascript:void(0);">
+                              <i class="ti ti-layout-2"></i><span>Sales Management</span><span class="menu-arrow"></span>
+                              </a>
+                              <ul>
+                                 <li><a href="order-management.html" class="active">Order Management</a></li>
+                                 <li><a href="catalogue-management.html">Catalogue Management</a></li>
+                                 <li><a href="sales-persons.html">Sales Persons</a></li>
+                                 <li><a href="targets.html">Targets</a></li>
+                              </ul>
+                           </li>
+                        </ul>
+                     </li> -->
+                     <!-- <li>
+                        <h6 class="submenu-hdr">Customer Type Management</h6>
+                        <ul>
+                           <li class="submenu">
+                              <a href="javascript:void(0);">
+                              <i class="ti ti-layout-2"></i><span>Customer Management</span><span class="menu-arrow"></span>
+                              </a>
+                              <ul>
+                                 <li><a href="roles-permissions.html" class="active">Roles Permissions</a></li>
+                                 <li><a href="manage-users.html">Manage Users</a></li>
+                              </ul>
+                           </li>
+                        </ul>
+                     </li> -->
+                     <li>
+                        <ul>
+                           <li>
+                              <a href="Dashboard.html"><i class="ti ti-layout-2"></i><span>Dashboard</span></a>
+                           </li>
+                           <li>
+                              <a href="distributor-form.html"><i class="ti ti-bell-school"></i><span>Dealer Management</span></a>
+                           </li>
+                           <li>
+                              <a href="payments.html"><i class="ti ti-list-check"></i><span>Soda/order Management</span></a>
+                           </li>
+                           <li>
+                              <a href="analytics.html"><i class="ti ti-report-money"></i><span>Dispatch Management</span></a>
+                           </li>
+                           <li>
+                              <a href="contacts.html"><i class="ti ti-user-up"></i><span>Broker management</span></a>
+                           </li>
+                           <li>
+                              <a href="tasks.html"><i class="ti ti-tir"></i><span>Transporter management</span></a>
+                           </li>
+                           <li>
+                              <a href="tasks.html"><i class="ti ti-drop-circle"></i><span>Oil management</span></a>
+                           </li>
+                           <li>
+                              <a href="tasks.html"><i class="ti ti-building-factory"></i><span>Machine Inventory</span></a>
+                           </li>
+                           <li>
+                              <a href="tasks.html"><i class="ti ti-user-circle"></i><span>Role management</span></a>
+                           </li>
+                           <li>
+                              <a href="user-management.html" class="active"><i class="ti ti-users"></i><span>User Management</span></a>
+                           </li>
+                           <li>
+                              <a href="tasks.html"><i class="ti ti-settings"></i><span>General settings</span></a>
+                           </li>
+                        </ul>
+                     </li>
+                     <!-- <li>
+                        <h6 class="submenu-hdr">Report</h6>
+                        <ul>
+                           <li><a href="sales-person.html"><i class="ti ti-users"></i><span>Sales reports</span></a></li>
+                           <li><a href=""><i class="ti ti-navigation-cog"></i><span>Trend analysis</span></a></li>
+                        </ul>
+                     </li> -->
+                  </ul>
+				</div>
+			</div>
+		</div>
+		<!-- /Sidebar -->
+
+		<!-- Page Wrapper -->
+		<div class="page-wrapper">
+			<div class="content">
+				<div class="row">
+					<div class="col-md-12">
+						<!-- Page Header -->
+						<div class="page-header">
+							<div class="row align-items-center">
+								<div class="col-12">
+									<h4 class="page-title">Edit Contact</h4>
+								</div>
+								
+							</div>
+						</div>
+						<!-- /Page Header -->
+					</div>
+				</div>
+				<div class="card">
+					<!-- <div class="card-header">
+						<div class="row align-items-center">
+							<div class="col-sm-4">
+								<div class="icon-form mb-3 mb-sm-0">
+									<span class="form-icon"><i class="ti ti-search"></i></span>
+									<input type="text" class="form-control" placeholder="Search Contacts">
+								</div>
+							</div>
+							<div class="col-sm-8">
+								<div class="d-flex align-items-center flex-wrap row-gap-2 justify-content-sm-end">
+									<div class="dropdown me-2">
+										<a href="javascript:void(0);" class="dropdown-toggle"
+											data-bs-toggle="dropdown"><i
+												class="ti ti-package-export me-2"></i>Export</a>
+										<div class="dropdown-menu  dropdown-menu-end">
+											<ul>
+												<li>
+													<a href="javascript:void(0);" class="dropdown-item"><i
+															class="ti ti-file-type-pdf text-danger me-1"></i>Export as
+														PDF</a>
+												</li>
+												<li>
+													<a href="javascript:void(0);" class="dropdown-item"><i
+															class="ti ti-file-type-xls text-green me-1"></i>Export as
+														Excel </a>
+												</li>
+											</ul>
+										</div>
+									</div>
+									 <a href="javascript:void(0);" class="btn btn-primary" data-bs-toggle="offcanvas"
+										data-bs-target="#offcanvas_add"><i
+											class="ti ti-square-rounded-plus me-2"></i>Add Contacts</a>
+								</div>
+							</div>
+						</div>
+						
+					</div> --><!-- /Search -->
+					<div class="card-body">
+					
+
+						<!--edit-->
+						<form action="contacts.html">
+					<div class="accordion" id="main_accordion_2">
+						<!-- Basic Info -->
+						<div class="accordion-item rounded mb-3">
+							<div class="accordion-header">
+								<a href="#"
+									class="accordion-button accordion-custom-button bg-white rounded fw-medium text-dark"
+									data-bs-toggle="collapse" data-bs-target="#basic-2">
+									<span class="avatar avatar-md rounded text-dark border me-2"><i
+											class="ti ti-user-plus fs-20"></i></span>
+									Basic Info
+								</a>
+							</div>
+							<div class="accordion-collapse collapse show" id="basic-2"
+								data-bs-parent="#main_accordion_2">
+								<div class="accordion-body border-top">
+									<div class="row">
+										<div class="col-md-12">
+											<div class="mb-3">
+												<div class="profile-upload">
+													<div class="profile-upload-img">
+														<span><i class="ti ti-photo"></i></span>
+														<img src="assets/img/profiles/avatar-20.jpg" alt="img"
+															class="preview1">
+														<button type="button" class="profile-remove">
+															<i class="ti ti-x"></i>
+														</button>
+													</div>
+													<div class="profile-upload-content">
+														<label class="profile-upload-btn">
+															<i class="ti ti-file-broken"></i> Upload File
+															<input type="file" class="input-img">
+														</label>
+														<p>JPG, GIF or PNG. Max size of 800K</p>
+													</div>
+												</div>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">First Name <span
+														class="text-danger">*</span></label>
+												<input type="text" class="form-control" value="Darlee">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Last Name <span
+														class="text-danger">*</span></label>
+												<input type="text" class="form-control" value="Robertson">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Job Title <span
+														class="text-danger">*</span></label>
+												<input type="text" class="form-control" value="Facility Manager">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Company Name</label>
+												<select class="select2">
+													<option>Choose</option>
+													<option selected>NovaWave LLC</option>
+													<option>BlueSky Industries</option>
+													<option>Silver Hawk</option>
+													<option>Summit Peak</option>
+													<option>RiverStone Ventur</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-12">
+											<div class="mb-3">
+												<div class="d-flex justify-content-between align-items-center">
+													<label class="col-form-label">Email <span
+															class="text-danger">*</span></label>
+													<div
+														class="status-toggle small-toggle-btn d-flex align-items-center">
+														<span class="me-2 label-text">Email Opt Out</span>
+														<input type="checkbox" id="user2" class="check" checked=""
+															value="robertson@example.com">
+														<label for="user2" class="checktoggle"></label>
+													</div>
+												</div>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Phone 1 <span
+														class="text-danger">*</span></label>
+												<input type="text" class="form-control" value="6234567890">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Phone 2</label>
+												<input type="text" class="form-control" value="7234567899">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Fax</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<div class="d-flex align-items-center justify-content-between">
+													<label class="col-form-label">Deals</label>
+													<a href="#" class="label-add" data-bs-toggle="offcanvas"
+														data-bs-target="#offcanvas_add_2"><i
+															class="ti ti-square-rounded-plus"></i>Add New</a>
+												</div>
+												<select class="select2">
+													<option>Choose</option>
+													<option selected>Collins</option>
+													<option>Konopelski</option>
+													<option>Adams</option>
+													<option>Schumm</option>
+													<option>Wisozk</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Date of Birth</label>
+												<div class="icon-form-end">
+													<span class="form-icon"><i class="ti ti-calendar-event"></i></span>
+													<input type="text" class="form-control datetimepicker"
+														value="29-02-2020">
+												</div>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Reviews </label>
+												<div class="icon-form-end">
+													<span class="form-icon"><i class="ti ti-star"></i></span>
+													<input type="text" class="form-control" placeholder="4.2"
+														value="4.2">
+												</div>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="fmb-3">
+												<label class="col-form-label">Owner</label>
+												<select class="select-img">
+													<option data-image="assets/images/avatar-14.png" selected>
+														Hendry Milner</option>
+													<option data-image="assets/images/avatar-15.jpg">Guilory Berggren
+													</option>
+													<option data-image="assets/images/avatar-16.jpg">Jami Carlile</option>
+													<option data-image="assets/images/avatar-13.jpg">Theresa Nelson
+													</option>
+													<option data-image="assets/img/profiles/avatar-24.jpg">Smith Cooper
+													</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Tags </label>
+												<input class="input-tags form-control" type="text" data-role="tagsinput"
+													name="Label" value="Collab">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Source <span
+														class="text-danger">*</span></label>
+												<select class="select2">
+													<option>Choose</option>
+													<option selected>Phone Calls</option>
+													<option>Social Media</option>
+													<option>Referral Sites</option>
+													<option>Web Analytics</option>
+													<option>Previous Purchases</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Industry <span
+														class="text-danger">*</span></label>
+												<select class="select">
+													<option>Choose</option>
+													<option>Retail Industry</option>
+													<option selected>Banking</option>
+													<option>Hotels</option>
+													<option>Financial Services</option>
+													<option>Insurance</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Currency <span class="text-danger">*</span></label>
+												<select class="select">
+													<option>Choose</option>
+													<option selected>Dollar</option>
+													<option>Euro</option>
+													<option>Pound</option>
+													<option>Rupee</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Language <span
+														class="text-danger">*</span></label>
+												<select class="select">
+													<option>Choose</option>
+													<option selected>English</option>
+													<option>Arabic</option>
+													<option>French</option>
+													<option>German</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-12">
+											<div class="mb-0">
+												<label class="col-form-label">Description <span
+														class="text-danger">*</span></label>
+												<textarea class="form-control" rows="5"></textarea>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- /Basic Info -->
+
+						<!-- Address Info -->
+						<div class="accordion-item border-top rounded mb-3">
+							<div class="accordion-header">
+								<a href="#"
+									class="accordion-button accordion-custom-button rounded bg-white fw-medium text-dark"
+									data-bs-toggle="collapse" data-bs-target="#address-2">
+									<span class="avatar avatar-md rounded text-dark border me-2"><i
+											class="ti ti-map-pin-cog fs-20"></i></span>
+									Address Info
+								</a>
+							</div>
+							<div class="accordion-collapse collapse" id="address-2" data-bs-parent="#main_accordion_2">
+								<div class="accordion-body border-top">
+									<div class="row">
+										<div class="col-md-12">
+											<div class="mb-3">
+												<label class="col-form-label">Street Address </label>
+												<input type="text" class="form-control" value="87 Griffin Street">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Country</label>
+												<select class="select">
+													<option>Choose</option>
+													<option selected>USA</option>
+													<option>Canada</option>
+													<option>Germany</option>
+													<option>France</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">State / Province </label>
+												<select class="select">
+													<option>Choose</option>
+													<option selected>California</option>
+													<option>New York</option>
+													<option>Texas</option>
+													<option>Florida</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3 mb-md-0">
+												<label class="col-form-label">City </label>
+												<select class="select">
+													<option>Choose</option>
+													<option selected>Los Angeles</option>
+													<option>San Diego</option>
+													<option>Fresno</option>
+													<option>San Francisco</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-0">
+												<label class="col-form-label">Zipcode </label>
+												<input type="text" class="form-control" value="90001">
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- /Address Info -->
+
+						<!-- Social Profile -->
+						<div class="accordion-item border-top rounded mb-3">
+							<div class="accordion-header">
+								<a href="#"
+									class="accordion-button accordion-custom-button rounded bg-white fw-medium text-dark"
+									data-bs-toggle="collapse" data-bs-target="#social-2">
+									<span class="avatar avatar-md rounded text-dark border me-2"><i
+											class="ti ti-social fs-20"></i></span>
+									Social Profile
+								</a>
+							</div>
+							<div class="accordion-collapse collapse" id="social-2" data-bs-parent="#main_accordion_2">
+								<div class="accordion-body border-top">
+									<div class="row">
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Facebook</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Skype </label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Linkedin </label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Twitter</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3 mb-md-0">
+												<label class="col-form-label">Whatsapp</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-0">
+												<label class="col-form-label">Instagram</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- /Social Profile -->
+
+						<!-- Access -->
+						<div class="accordion-item border-top rounded mb-3">
+							<div class="accordion-header">
+								<a href="#"
+									class="accordion-button accordion-custom-button rounded bg-white fw-medium text-dark"
+									data-bs-toggle="collapse" data-bs-target="#access-info-2">
+									<span class="avatar avatar-md rounded text-dark border me-2"><i
+											class="ti ti-accessible fs-20"></i></span>
+									Access
+								</a>
+							</div>
+							<div class="accordion-collapse collapse" id="access-info-2"
+								data-bs-parent="#main_accordion_2">
+								<div class="accordion-body border-top">
+									<div class="row">
+										<div class="col-md-12">
+											<div class="mb-3">
+												<label class="col-form-label">Visibility</label>
+												<div class="d-flex flex-wrap">
+													<div class="me-2">
+														<input type="radio" class="status-radio" id="public2"
+															name="visible">
+														<label for="public2">Public</label>
+													</div>
+													<div class="me-2">
+														<input type="radio" class="status-radio" id="private2"
+															name="visible">
+														<label for="private2">Private</label>
+													</div>
+													<div data-bs-toggle="modal" data-bs-target="#access_view">
+														<input type="radio" class="status-radio" id="people2"
+															name="visible">
+														<label for="people2">Select People</label>
+													</div>
+												</div>
+											</div>
+											<div class="mb-0">
+												<label class="col-form-label">Status</label>
+												<div class="d-flex flex-wrap">
+													<div class="me-2">
+														<input type="radio" class="status-radio" id="active2" name="status" checked="">
+														<label for="active2">Active</label>
+													</div>
+													<div>
+														<input type="radio" class="status-radio" id="inactive2" name="status">
+														<label for="inactive2">Inactive</label>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- /Access -->
+					</div>
+					<div class="d-flex align-items-center justify-content-end">
+						<button type="button" data-bs-dismiss="offcanvas" class="btn btn-light me-2">Cancel</button>
+						<button type="button" class="btn btn-primary">Save Changes</button>
+					</div>
+				</form>
+						<!--end edit-->
+						
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- /Page Wrapper -->
+
+		<!-- Add Contact -->
+		<div class="offcanvas offcanvas-end offcanvas-large" tabindex="-1" id="offcanvas_add">
+			<div class="offcanvas-header border-bottom">
+				<h5 class="fw-semibold">Add New Contact</h5>
+				<button type="button"
+					class="btn-close custom-btn-close border p-1 me-0 d-flex align-items-center justify-content-center rounded-circle"
+					data-bs-dismiss="offcanvas" aria-label="Close">
+					<i class="ti ti-x"></i>
+				</button>
+			</div>
+			<div class="offcanvas-body">
+				<form action="contacts.html">
+					<div class="accordion" id="main_accordion">
+						<!-- Basic Info -->
+						<div class="accordion-item rounded mb-3">
+							<div class="accordion-header">
+								<a href="#"
+									class="accordion-button accordion-custom-button bg-white rounded fw-medium text-dark"
+									data-bs-toggle="collapse" data-bs-target="#basic">
+									<span class="avatar avatar-md rounded text-dark border me-2"><i
+											class="ti ti-user-plus fs-20"></i></span>
+									Basic Info
+								</a>
+							</div>
+							<div class="accordion-collapse collapse show" id="basic" data-bs-parent="#main_accordion">
+								<div class="accordion-body border-top">
+									<div class="row">
+										<div class="col-md-12">
+											<div class="mb-3">
+												<div class="profile-upload">
+													<div class="profile-upload-img">
+														<span><i class="ti ti-photo"></i></span>
+														<img src="assets/images/avatar-20.jpg" alt="img"
+															class="preview1">
+														<button type="button" class="profile-remove">
+															<i class="ti ti-x"></i>
+														</button>
+													</div>
+													<div class="profile-upload-content">
+														<label class="profile-upload-btn">
+															<i class="ti ti-file-broken"></i> Upload File
+															<input type="file" class="input-img">
+														</label>
+														<p>JPG, GIF or PNG. Max size of 800K</p>
+													</div>
+												</div>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">First Name <span
+														class="text-danger">*</span></label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Last Name <span
+														class="text-danger">*</span></label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Job Title <span
+														class="text-danger">*</span></label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Company Name</label>
+												<select class="select2">
+													<option>Choose</option>
+													<option>NovaWave LLC</option>
+													<option>BlueSky Industries</option>
+													<option>Silver Hawk</option>
+													<option>Summit Peak</option>
+													<option>RiverStone Ventur</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-12">
+											<div class="mb-3">
+												<div class="d-flex justify-content-between align-items-center">
+													<label class="col-form-label">Email <span
+															class="text-danger">*</span></label>
+													<div
+														class="status-toggle small-toggle-btn d-flex align-items-center">
+														<span class="me-2 label-text">Email Opt Out</span>
+														<input type="checkbox" id="user" class="check" checked="">
+														<label for="user" class="checktoggle"></label>
+													</div>
+												</div>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Phone 1 <span
+														class="text-danger">*</span></label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Phone 2</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Fax</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<div class="d-flex align-items-center justify-content-between">
+													<label class="col-form-label">Deals</label>
+													<a href="#" class="label-add" data-bs-toggle="offcanvas"
+														data-bs-target="#offcanvas_add_2"><i
+															class="ti ti-square-rounded-plus"></i>Add New</a>
+												</div>
+												<select class="select2">
+													<option>Choose</option>
+													<option>Collins</option>
+													<option>Konopelski</option>
+													<option>Adams</option>
+													<option>Schumm</option>
+													<option>Wisozk</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Date of Birth</label>
+												<div class="icon-form-end">
+													<span class="form-icon"><i class="ti ti-calendar-event"></i></span>
+													<input type="text" class="form-control datetimepicker">
+												</div>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Reviews </label>
+												<div class="icon-form-end">
+													<span class="form-icon"><i class="ti ti-star"></i></span>
+													<input type="text" class="form-control" placeholder="4.2">
+												</div>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="fmb-3">
+												<label class="col-form-label">Owner</label>
+												<select class="select-img">
+													<option data-image="assets/images/avatar-14.png" selected>
+														Hendry Milner</option>
+													<option data-image="assets/images/avatar-15.png">Guilory Berggren
+													</option>
+													<option data-image="assets/images/avatar-16.jpg">Jami Carlile</option>
+													<option data-image="assets/images/avatar-13.jpg">Theresa Nelson
+													</option>
+													<option data-image="assets/images/avatar-24.jpg">Smith Cooper
+													</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Tags </label>
+												<input class="input-tags form-control" type="text" data-role="tagsinput"
+													name="Label" value="Collab">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Source <span
+														class="text-danger">*</span></label>
+												<select class="select2">
+													<option>Choose</option>
+													<option>Phone Calls</option>
+													<option>Social Media</option>
+													<option>Referral Sites</option>
+													<option>Web Analytics</option>
+													<option>Previous Purchases</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Industry <span class="text-danger">*</span></label>
+												<select class="select">
+													<option>Choose</option>
+													<option>Retail Industry</option>
+													<option>Banking</option>
+													<option>Hotels</option>
+													<option>Financial Services</option>
+													<option>Insurance</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Currency <span class="text-danger">*</span></label>
+												<select class="select">
+													<option>Choose</option>
+													<option>Dollar</option>
+													<option>Euro</option>
+													<option>Pound</option>
+													<option>Rupee</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Language <span class="text-danger">*</span></label>
+												<select class="select">
+													<option>Choose</option>
+													<option>English</option>
+													<option>Arabic</option>
+													<option>French</option>
+													<option>German</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-12">
+											<div class="mb-0">
+												<label class="col-form-label">Description <span
+														class="text-danger">*</span></label>
+												<textarea class="form-control" rows="5"></textarea>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- /Basic Info -->
+
+						<!-- Address Info -->
+						<div class="accordion-item border-top rounded mb-3">
+							<div class="accordion-header">
+								<a href="#"
+									class="accordion-button accordion-custom-button rounded bg-white fw-medium text-dark"
+									data-bs-toggle="collapse" data-bs-target="#address">
+									<span class="avatar avatar-md rounded text-dark border me-2"><i
+											class="ti ti-map-pin-cog fs-20"></i></span>
+									Address Info
+								</a>
+							</div>
+							<div class="accordion-collapse collapse" id="address" data-bs-parent="#main_accordion">
+								<div class="accordion-body border-top">
+									<div class="row">
+										<div class="col-md-12">
+											<div class="mb-3">
+												<label class="col-form-label">Street Address </label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Country</label>
+												<select class="select">
+													<option>Choose</option>
+													<option>USA</option>
+													<option>Canada</option>
+													<option>Germany</option>
+													<option>France</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">State / Province </label>
+												<select class="select">
+													<option>Choose</option>
+													<option>California</option>
+													<option>New York</option>
+													<option>Texas</option>
+													<option>Florida</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3 mb-md-0">
+												<label class="col-form-label">City </label>
+												<select class="select">
+													<option>Choose</option>
+													<option>Los Angeles</option>
+													<option>San Diego</option>
+													<option>Fresno</option>
+													<option>San Francisco</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-0">
+												<label class="col-form-label">Zipcode </label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- /Address Info -->
+
+						<!-- Social Profile -->
+						<div class="accordion-item border-top rounded mb-3">
+							<div class="accordion-header">
+								<a href="#"
+									class="accordion-button accordion-custom-button rounded bg-white fw-medium text-dark"
+									data-bs-toggle="collapse" data-bs-target="#social">
+									<span class="avatar avatar-md rounded text-dark border me-2"><i
+											class="ti ti-social fs-20"></i></span>
+									Social Profile
+								</a>
+							</div>
+							<div class="accordion-collapse collapse" id="social" data-bs-parent="#main_accordion">
+								<div class="accordion-body border-top">
+									<div class="row">
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Facebook</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Skype </label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Linkedin </label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Twitter</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3 mb-md-0">
+												<label class="col-form-label">Whatsapp</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-0">
+												<label class="col-form-label">Instagram</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- /Social Profile -->
+
+						<!-- Access -->
+						<div class="accordion-item border-top rounded mb-3">
+							<div class="accordion-header">
+								<a href="#"
+									class="accordion-button accordion-custom-button rounded bg-white fw-medium text-dark"
+									data-bs-toggle="collapse" data-bs-target="#access-info">
+									<span class="avatar avatar-md rounded text-dark border me-2"><i
+											class="ti ti-accessible fs-20"></i></span>
+									Access
+								</a>
+							</div>
+							<div class="accordion-collapse collapse" id="access-info" data-bs-parent="#main_accordion">
+								<div class="accordion-body border-top">
+									<div class="row">
+										<div class="col-md-12">
+											<div class="mb-3">
+												<label class="col-form-label">Visibility</label>
+												<div class="d-flex flex-wrap">
+													<div class="me-2">
+														<input type="radio" class="status-radio" id="public"
+															name="visible">
+														<label for="public">Public</label>
+													</div>
+													<div class="me-2">
+														<input type="radio" class="status-radio" id="private"
+															name="visible">
+														<label for="private">Private</label>
+													</div>
+													<div data-bs-toggle="modal" data-bs-target="#access_view">
+														<input type="radio" class="status-radio" id="people"
+															name="visible">
+														<label for="people">Select People</label>
+													</div>
+												</div>
+											</div>
+											<div class="mb-0">
+												<label class="col-form-label">Status</label>
+												<div class="d-flex flex-wrap">
+													<div class="me-2">
+														<input type="radio" class="status-radio" id="active"
+															name="status" checked="">
+														<label for="active">Active</label>
+													</div>
+													<div>
+														<input type="radio" class="status-radio" id="inactive"
+															name="status">
+														<label for="inactive">Inactive</label>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- /Access -->
+					</div>
+					<div class="d-flex align-items-center justify-content-end">
+						<button type="button" data-bs-dismiss="offcanvas" class="btn btn-light me-2">Cancel</button>
+						<button type="button" class="btn btn-primary" data-bs-toggle="modal"
+							data-bs-target="#create_success">Create</button>
+					</div>
+				</form>
+			</div>
+		</div>
+		<!-- /Add Contact -->
+
+		<!-- Edit Contact -->
+		<div class="offcanvas offcanvas-end offcanvas-large" tabindex="-1" id="offcanvas_edit">
+			<div class="offcanvas-header border-bottom">
+				<h5 class="fw-semibold">Edit Contact</h5>
+				<button type="button"
+					class="btn-close custom-btn-close border p-1 me-0 d-flex align-items-center justify-content-center rounded-circle"
+					data-bs-dismiss="offcanvas" aria-label="Close">
+					<i class="ti ti-x"></i>
+				</button>
+			</div>
+			<div class="offcanvas-body">
+				<form action="contacts.html">
+					<div class="accordion" id="main_accordion_2">
+						<!-- Basic Info -->
+						<div class="accordion-item rounded mb-3">
+							<div class="accordion-header">
+								<a href="#"
+									class="accordion-button accordion-custom-button bg-white rounded fw-medium text-dark"
+									data-bs-toggle="collapse" data-bs-target="#basic-2">
+									<span class="avatar avatar-md rounded text-dark border me-2"><i
+											class="ti ti-user-plus fs-20"></i></span>
+									Basic Info
+								</a>
+							</div>
+							<div class="accordion-collapse collapse show" id="basic-2"
+								data-bs-parent="#main_accordion_2">
+								<div class="accordion-body border-top">
+									<div class="row">
+										<div class="col-md-12">
+											<div class="mb-3">
+												<div class="profile-upload">
+													<div class="profile-upload-img">
+														<span><i class="ti ti-photo"></i></span>
+														<img src="assets/images/avatar-14.png" alt="img"
+															class="preview1">
+														<button type="button" class="profile-remove">
+															<i class="ti ti-x"></i>
+														</button>
+													</div>
+													<div class="profile-upload-content">
+														<label class="profile-upload-btn">
+															<i class="ti ti-file-broken"></i> Upload File
+															<input type="file" class="input-img">
+														</label>
+														<p>JPG, GIF or PNG. Max size of 800K</p>
+													</div>
+												</div>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">First Name <span
+														class="text-danger">*</span></label>
+												<input type="text" class="form-control" value="Darlee">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Last Name <span
+														class="text-danger">*</span></label>
+												<input type="text" class="form-control" value="Robertson">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Job Title <span
+														class="text-danger">*</span></label>
+												<input type="text" class="form-control" value="Facility Manager">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Company Name</label>
+												<select class="select2">
+													<option>Choose</option>
+													<option selected>NovaWave LLC</option>
+													<option>BlueSky Industries</option>
+													<option>Silver Hawk</option>
+													<option>Summit Peak</option>
+													<option>RiverStone Ventur</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-12">
+											<div class="mb-3">
+												<div class="d-flex justify-content-between align-items-center">
+													<label class="col-form-label">Email <span
+															class="text-danger">*</span></label>
+													<div
+														class="status-toggle small-toggle-btn d-flex align-items-center">
+														<span class="me-2 label-text">Email Opt Out</span>
+														<input type="checkbox" id="user2" class="check" checked=""
+															value="robertson@example.com">
+														<label for="user2" class="checktoggle"></label>
+													</div>
+												</div>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Phone 1 <span
+														class="text-danger">*</span></label>
+												<input type="text" class="form-control" value="6234567890">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Phone 2</label>
+												<input type="text" class="form-control" value="7234567899">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Fax</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<div class="d-flex align-items-center justify-content-between">
+													<label class="col-form-label">Deals</label>
+													<a href="#" class="label-add" data-bs-toggle="offcanvas"
+														data-bs-target="#offcanvas_add_2"><i
+															class="ti ti-square-rounded-plus"></i>Add New</a>
+												</div>
+												<select class="select2">
+													<option>Choose</option>
+													<option selected>Collins</option>
+													<option>Konopelski</option>
+													<option>Adams</option>
+													<option>Schumm</option>
+													<option>Wisozk</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Date of Birth</label>
+												<div class="icon-form-end">
+													<span class="form-icon"><i class="ti ti-calendar-event"></i></span>
+													<input type="text" class="form-control datetimepicker"
+														value="29-02-2020">
+												</div>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Reviews </label>
+												<div class="icon-form-end">
+													<span class="form-icon"><i class="ti ti-star"></i></span>
+													<input type="text" class="form-control" placeholder="4.2"
+														value="4.2">
+												</div>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="fmb-3">
+												<label class="col-form-label">Owner</label>
+												<select class="select-img">
+													<option data-image="assets/images/avatar-14.png" selected>
+														Hendry Milner</option>
+													<option data-image="assets/images/avatar-14.png">Guilory Berggren
+													</option>
+													<option data-image="assets/images/avatar-14.png">Jami Carlile</option>
+													<option data-image="assets/images/avatar-14.png">Theresa Nelson
+													</option>
+													<option data-image="assets/images/avatar-14.png">Smith Cooper
+													</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Tags </label>
+												<input class="input-tags form-control" type="text" data-role="tagsinput"
+													name="Label" value="Collab">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Source <span
+														class="text-danger">*</span></label>
+												<select class="select2">
+													<option>Choose</option>
+													<option selected>Phone Calls</option>
+													<option>Social Media</option>
+													<option>Referral Sites</option>
+													<option>Web Analytics</option>
+													<option>Previous Purchases</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Industry <span
+														class="text-danger">*</span></label>
+												<select class="select">
+													<option>Choose</option>
+													<option>Retail Industry</option>
+													<option selected>Banking</option>
+													<option>Hotels</option>
+													<option>Financial Services</option>
+													<option>Insurance</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Currency <span class="text-danger">*</span></label>
+												<select class="select">
+													<option>Choose</option>
+													<option selected>Dollar</option>
+													<option>Euro</option>
+													<option>Pound</option>
+													<option>Rupee</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Language <span
+														class="text-danger">*</span></label>
+												<select class="select">
+													<option>Choose</option>
+													<option selected>English</option>
+													<option>Arabic</option>
+													<option>French</option>
+													<option>German</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-12">
+											<div class="mb-0">
+												<label class="col-form-label">Description <span
+														class="text-danger">*</span></label>
+												<textarea class="form-control" rows="5"></textarea>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- /Basic Info -->
+
+						<!-- Address Info -->
+						<div class="accordion-item border-top rounded mb-3">
+							<div class="accordion-header">
+								<a href="#"
+									class="accordion-button accordion-custom-button rounded bg-white fw-medium text-dark"
+									data-bs-toggle="collapse" data-bs-target="#address-2">
+									<span class="avatar avatar-md rounded text-dark border me-2"><i
+											class="ti ti-map-pin-cog fs-20"></i></span>
+									Address Info
+								</a>
+							</div>
+							<div class="accordion-collapse collapse" id="address-2" data-bs-parent="#main_accordion_2">
+								<div class="accordion-body border-top">
+									<div class="row">
+										<div class="col-md-12">
+											<div class="mb-3">
+												<label class="col-form-label">Street Address </label>
+												<input type="text" class="form-control" value="87 Griffin Street">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Country</label>
+												<select class="select">
+													<option>Choose</option>
+													<option selected>USA</option>
+													<option>Canada</option>
+													<option>Germany</option>
+													<option>France</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">State / Province </label>
+												<select class="select">
+													<option>Choose</option>
+													<option selected>California</option>
+													<option>New York</option>
+													<option>Texas</option>
+													<option>Florida</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3 mb-md-0">
+												<label class="col-form-label">City </label>
+												<select class="select">
+													<option>Choose</option>
+													<option selected>Los Angeles</option>
+													<option>San Diego</option>
+													<option>Fresno</option>
+													<option>San Francisco</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-0">
+												<label class="col-form-label">Zipcode </label>
+												<input type="text" class="form-control" value="90001">
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- /Address Info -->
+
+						<!-- Social Profile -->
+						<div class="accordion-item border-top rounded mb-3">
+							<div class="accordion-header">
+								<a href="#"
+									class="accordion-button accordion-custom-button rounded bg-white fw-medium text-dark"
+									data-bs-toggle="collapse" data-bs-target="#social-2">
+									<span class="avatar avatar-md rounded text-dark border me-2"><i
+											class="ti ti-social fs-20"></i></span>
+									Social Profile
+								</a>
+							</div>
+							<div class="accordion-collapse collapse" id="social-2" data-bs-parent="#main_accordion_2">
+								<div class="accordion-body border-top">
+									<div class="row">
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Facebook</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Skype </label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Linkedin </label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="col-form-label">Twitter</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-3 mb-md-0">
+												<label class="col-form-label">Whatsapp</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+										<div class="col-md-6">
+											<div class="mb-0">
+												<label class="col-form-label">Instagram</label>
+												<input type="text" class="form-control">
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- /Social Profile -->
+
+						<!-- Access -->
+						<div class="accordion-item border-top rounded mb-3">
+							<div class="accordion-header">
+								<a href="#"
+									class="accordion-button accordion-custom-button rounded bg-white fw-medium text-dark"
+									data-bs-toggle="collapse" data-bs-target="#access-info-2">
+									<span class="avatar avatar-md rounded text-dark border me-2"><i
+											class="ti ti-accessible fs-20"></i></span>
+									Access
+								</a>
+							</div>
+							<div class="accordion-collapse collapse" id="access-info-2"
+								data-bs-parent="#main_accordion_2">
+								<div class="accordion-body border-top">
+									<div class="row">
+										<div class="col-md-12">
+											<div class="mb-3">
+												<label class="col-form-label">Visibility</label>
+												<div class="d-flex flex-wrap">
+													<div class="me-2">
+														<input type="radio" class="status-radio" id="public2"
+															name="visible">
+														<label for="public2">Public</label>
+													</div>
+													<div class="me-2">
+														<input type="radio" class="status-radio" id="private2"
+															name="visible">
+														<label for="private2">Private</label>
+													</div>
+													<div data-bs-toggle="modal" data-bs-target="#access_view">
+														<input type="radio" class="status-radio" id="people2"
+															name="visible">
+														<label for="people2">Select People</label>
+													</div>
+												</div>
+											</div>
+											<div class="mb-0">
+												<label class="col-form-label">Status</label>
+												<div class="d-flex flex-wrap">
+													<div class="me-2">
+														<input type="radio" class="status-radio" id="active2" name="status" checked="">
+														<label for="active2">Active</label>
+													</div>
+													<div>
+														<input type="radio" class="status-radio" id="inactive2" name="status">
+														<label for="inactive2">Inactive</label>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- /Access -->
+					</div>
+					<div class="d-flex align-items-center justify-content-end">
+						<button type="button" data-bs-dismiss="offcanvas" class="btn btn-light me-2">Cancel</button>
+						<button type="button" class="btn btn-primary">Save Changes</button>
+					</div>
+				</form>
+			</div>
+		</div>
+		<!-- /Edit Contact -->
+
+		<!-- Add New Deals -->
+		<div class="offcanvas offcanvas-end offcanvas-large" tabindex="-1" id="offcanvas_add_2">
+			<div class="offcanvas-header border-bottom">
+				<h5 class="fw-semibold">Add New Deals</h5>
+				<button type="button"
+					class="btn-close custom-btn-close border p-1 me-0 d-flex align-items-center justify-content-center rounded-circle"
+					data-bs-dismiss="offcanvas" aria-label="Close">
+					<i class="ti ti-x"></i>
+				</button>
+			</div>
+			<div class="offcanvas-body">
+				<form action="contacts.html">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="mb-3">
+								<label class="col-form-label">Deal Name <span class="text-danger">*</span></label>
+								<input type="text" class="form-control">
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<div class="d-flex align-items-center justify-content-between">
+									<label class="col-form-label">Pipeine <span class="text-danger">*</span></label>
+								</div>
+								<select class="select2">
+									<option>Choose</option>
+									<option>Sales</option>
+									<option>Marketing</option>
+									<option>Calls</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Status <span class="text-danger">*</span></label>
+								<select class="select2">
+									<option>Choose</option>
+									<option>Open</option>
+									<option>Lost</option>
+									<option>Won</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Deal Value<span class="text-danger"> *</span></label>
+								<input class="form-control" type="text">
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Currency <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Choose</option>
+									<option>Dollar</option>
+									<option>Euro</option>
+									<option>Pound</option>
+									<option>Rupee</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Period <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Choose</option>
+									<option>Days</option>
+									<option>Month</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Period Value <span class="text-danger">*</span></label>
+								<input class="form-control" type="text">
+							</div>
+						</div>
+						<div class="col-md-12">
+							<div class="mb-3">
+								<label class="col-form-label">Contact <span class="text-danger">*</span></label>
+								<select class="multiple-img" multiple="multiple">
+									<option data-image="images/avatar-19.jpg" selected>Darlee Robertson
+									</option>
+									<option data-image="assets/images/avatar-14.png">Sharon Roy</option>
+									<option data-image="assets/images/avatar-14.png">Vaughan Lewis</option>
+									<option data-image="assets/images/avatar-14.png">Jessica Louise</option>
+									<option data-image="assets/images/avatar-14.png">Carol Thomas</option>
+								</select>
+							</div>
+							<div class="mb-3">
+								<label class="col-form-label">Project <span class="text-danger">*</span></label>
+								<select class="select" multiple="multiple">
+									<option selected>Devops Design</option>
+									<option selected>MargrateDesign</option>
+									<option selected>UI for Chat</option>
+									<option>Web Chat</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Due Date <span class="text-danger">*</span></label>
+								<div class="icon-form">
+									<span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+									<input type="text" class="form-control datetimepicker" placeholder="">
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Expected Closing Date <span
+										class="text-danger">*</span></label>
+								<div class="icon-form">
+									<span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+									<input type="text" class="form-control datetimepicker" placeholder="">
+								</div>
+							</div>
+						</div>
+						<div class="col-md-12">
+							<div class="mb-3">
+								<label class="col-form-label">Assignee <span class="text-danger">*</span></label>
+								<select class="multiple-img" multiple="multiple">
+									<option data-image="assets/img/profiles/avatar-19.jpg">Darlee Robertson</option>
+									<option data-image="assets/img/profiles/avatar-20.jpg" selected>Sharon Roy</option>
+									<option data-image="assets/img/profiles/avatar-21.jpg">Vaughan Lewis</option>
+									<option data-image="assets/img/profiles/avatar-23.jpg">Jessica Louise</option>
+									<option data-image="assets/img/profiles/avatar-16.jpg">Carol Thomas</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Follow Up Date <span class="text-danger">*</span></label>
+								<div class="icon-form">
+									<span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+									<input type="text" class="form-control datetimepicker" placeholder="">
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Source <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Select</option>
+									<option>Google</option>
+									<option>Social Media</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Tags <span class="text-danger">*</span></label>
+								<input class="input-tags form-control" type="text" data-role="tagsinput" name="Label"
+									value="Collab, Rated">
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Priority <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Select</option>
+									<option>High</option>
+									<option>Low</option>
+									<option>Medium</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-12">
+							<div class="mb-3">
+								<label class="col-form-label">Description <span class="text-danger">*</span></label>
+								<div class="summernote"></div>
+							</div>
+						</div>
+					</div>
+					<div class="d-flex align-items-center justify-content-end">
+						<button type="button" data-bs-dismiss="offcanvas" class="btn btn-light me-2">Cancel</button>
+						<button type="button" class="btn btn-primary" data-bs-toggle="modal"
+							data-bs-target="#create_success_2">Create</button>
+					</div>
+				</form>
+			</div>
+
+		</div>
+		<!-- /Add New Deals -->
+
+		<!-- Delete Contact -->
+		<!-- <div class="modal fade" id="delete_contact" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-body">
+						<div class="text-center">
+							<div class="avatar avatar-xl bg-danger-light rounded-circle mb-3">
+								<i class="ti ti-trash-x fs-36 text-danger"></i>
+							</div>
+							<h4 class="mb-2">Remove Contacts?</h4>
+							<p class="mb-0">Are you sure you want to remove <br> contact you selected.</p>
+							<div class="d-flex align-items-center justify-content-center mt-4">
+								<a href="#" class="btn btn-light me-2" data-bs-dismiss="modal">Cancel</a>
+								<a href="contacts.html" class="btn btn-danger">Yes, Delete it</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div> -->
+		<!-- /Delete Contact -->
+
+		<!-- Create Deal -->
+		<!-- <div class="modal custom-modal fade" id="create_success_2" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header border-0 m-0 justify-content-end">
+						<button class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+							<i class="ti ti-x"></i>
+						</button>
+					</div>
+					<div class="modal-body">
+						<div class="success-message text-center">
+							<div class="success-popup-icon bg-light-blue">
+								<i class="ti ti-medal"></i>
+							</div>
+							<h3>Deal Created Successfully!!!</h3>
+							<p>View the details of deal, created</p>
+							<div class="col-lg-12 text-center modal-btn">
+								<a href="#" class="btn btn-light" data-bs-dismiss="modal">Cancel</a>
+								<a href="deals-details.html" class="btn btn-primary">View Details</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div> -->
+		<!-- /Create Deal -->
+
+		<!-- Create Contact -->
+		<div class="modal custom-modal fade" id="create_success" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header border-0 m-0 justify-content-end">
+						<button class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+							<i class="ti ti-x"></i>
+						</button>
+					</div>
+					<div class="modal-body">
+						<div class="success-message text-center">
+							<div class="success-popup-icon bg-light-blue">
+								<i class="ti ti-user-plus"></i>
+							</div>
+							<h3>Contact Created Successfully!!!</h3>
+							<p>View the details of contact, created</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- /Create Contact -->
+
+		<!-- Access -->
+		<div class="modal fade" id="access_view" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Access For</h5>
+						<button class="btn-close custom-btn-close border p-1 me-0 text-dark" data-bs-dismiss="modal"
+							aria-label="Close">
+							<i class="ti ti-x"></i>
+						</button>
+					</div>
+					<form action="contacts.html">
+						<div class="modal-body">
+							<div class="icon-form mb-3">
+								<span class="form-icon"><i class="ti ti-search"></i></span>
+								<input type="text" class="form-control" placeholder="Search">
+							</div>
+							<div class="access-wrap mb-0">
+								<ul>
+									<li class="select-people-checkbox">
+										<label class="checkboxs">
+											<input type="checkbox">
+											<span class="checkmarks"></span>
+											<span class="people-profile">
+												<img src="assets/images/avatar-14.png" alt="">
+												<a href="#">Darlee Robertson</a>
+											</span>
+										</label>
+									</li>
+									<li class="select-people-checkbox">
+										<label class="checkboxs">
+											<input type="checkbox">
+											<span class="checkmarks"></span>
+											<span class="people-profile">
+												<img src="assets/images/avatar-14.png" alt="">
+												<a href="#">Sharon Roy</a>
+											</span>
+										</label>
+									</li>
+									<li class="select-people-checkbox">
+										<label class="checkboxs">
+											<input type="checkbox">
+											<span class="checkmarks"></span>
+											<span class="people-profile">
+												<img src="assets/images/avatar-14.png" alt="">
+												<a href="#">Vaughan Lewis</a>
+											</span>
+										</label>
+									</li>
+									<li class="select-people-checkbox">
+										<label class="checkboxs">
+											<input type="checkbox">
+											<span class="checkmarks"></span>
+											<span class="people-profile">
+												<img src="assets/images/avatar-14.png" alt="">
+												<a href="#">Jessica Louise</a>
+											</span>
+										</label>
+									</li>
+									<li class="select-people-checkbox">
+										<label class="checkboxs">
+											<input type="checkbox">
+											<span class="checkmarks"></span>
+											<span class="people-profile">
+												<img src="assets/images/avatar-14.png" alt="">
+												<a href="#">Carol Thomas</a>
+											</span>
+										</label>
+									</li>
+									<li class="select-people-checkbox">
+										<label class="checkboxs">
+											<input type="checkbox">
+											<span class="checkmarks"></span>
+											<span class="people-profile">
+												<img src="assets/images/avatar-14.png" alt="">
+												<a href="#">Dawn Mercha</a>
+											</span>
+										</label>
+									</li>
+								</ul>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<div class="d-flex align-items-center justify-content-end m-0">
+								<button type="button" class="btn btn-light me-2" data-bs-dismiss="modal">Cancel</button>
+								<button type="submit" class="btn btn-primary">Confirm</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+		<!-- /Access -->
+
+	</div>
+	<!-- /Main Wrapper -->
+
+	<!-- jQuery -->
+	<script src="assets/js/jquery-3.7.1.min.js"></script>
+
+	<!-- Bootstrap Core JS -->
+	<script src="assets/js/bootstrap.bundle.min.js"></script>
+
+	<!-- Feather Icon JS -->
+	<script src="assets/js/feather.min.js"></script>
+
+	<!-- Slimscroll JS -->
+	<script src="assets/js/jquery.slimscroll.min.js"></script>
+
+	<!-- Datatable JS -->
+	<script src="assets/js/jquery.dataTables.min.js"></script>
+	<script src="assets/js/dataTables.bootstrap5.min.js"></script>
+
+	<!-- Daterangepicker JS -->
+	<script src="assets/js/moment.min.js"></script>
+	<script src="assets/plugins/daterangepicker/daterangepicker.js"></script>
+
+	<!-- Datetimepicker JS -->
+	<script src="assets/js/bootstrap-datetimepicker.min.js"></script>
+
+	<!-- Bootstrap Tagsinput JS -->
+	<script src="assets/plugins/bootstrap-tagsinput/bootstrap-tagsinput.js"></script>
+
+	<!-- Select2 JS -->
+	<script src="assets/plugins/select2/js/select2.min.js"></script>
+
+	<!-- Summernote JS -->
+	<script src="assets/plugins/summernote/summernote-lite.min.js"></script>
+
+	<!-- Profile Upload JS -->
+	<script src="assets/js/profile-upload.js"></script>
+
+	<!-- Custom Json Js -->
+	<script src="assets/js/jsonscript.js"></script>
+
+	<!-- Color Picker JS -->
+	<script src="assets/plugins/pickr/pickr.es5.min.js"></script>
+
+	<!--- Custom Js -->
+	<script src="assets/js/theme-colorpicker.js"></script>
+	<script src="assets/js/script.js"></script>
+
+</body>
+
+</html>

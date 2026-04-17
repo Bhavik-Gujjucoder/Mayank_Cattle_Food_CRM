@@ -36,7 +36,8 @@
 
                         <!-- Logo -->
                         <div class="text-center mb-4">
-                            <img src="{{ asset('assets/images/logo.png') }}" class="img-fluid" alt="Logo">
+                            {{-- <img src="{{ asset('assets/images/logo.png') }}" class="img-fluid" alt="Logo"> --}}
+                            <img src="{{ asset('storage/company_logo/' . getSetting('company_logo')) }}" class="img-fluid" alt="Logo">
                         </div>
 
                         <!-- Heading -->
@@ -82,6 +83,7 @@
                                 <div class="invalid-feedback d-block mt-1">{{ $message }}</div>
                             @enderror
                         </div>
+
 
                         <!-- Password -->
                         <div class="mb-3">
@@ -140,7 +142,8 @@
                         <!-- Footer -->
                         <div class="text-center">
                             <p class="fw-medium text-gray mb-0">
-                                © {{ date('Y') }} Mayank Cattle Food Pvt. Ltd.
+                                {{-- © {{ date('Y') }} Mayank Cattle Food Pvt. Ltd. --}}
+                                {{ getSetting('copyright_msg') }}
                             </p>
                         </div>
 
