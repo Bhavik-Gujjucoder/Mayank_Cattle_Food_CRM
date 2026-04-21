@@ -26,7 +26,7 @@
         <!-- Manage Users List -->
         <div class="table-responsive custom-table">
             <table class="table dataTable no-footer" id="users">
-                <button class="btn btn-primary" id="bulk_delete_button" style="display: none;">Delete Selected</button>
+                <button class="btn btn-primary" id="bulk_delete_button" style="display: none;"> <i class="ti ti-trash me-1"></i>Delete Selected</button>
                 <thead class="thead-light">
                     <tr>
                         <th hidden data-label="ID">ID</th>

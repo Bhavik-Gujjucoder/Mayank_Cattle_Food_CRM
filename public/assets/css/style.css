@@ -32181,3 +32181,12 @@ table.table.dataTable > thead > tr th { color: #262A2A;  font-size: 14px;  font-
 .header #toggle_btn .ti-arrow-bar-to-left:before{color:#fff;}
 .sidebar .sidebar-menu > ul > li ul li a{color:#fff;}
 .dataTables_length, #dataTables_length .dataTables_paginate, #dataTables_paginate{margin-bottom: 10px;}
+
+
+
+.text-danger {
+    color: red !important;
+}
+.text-dangers {
+    color: red !important;
+}
