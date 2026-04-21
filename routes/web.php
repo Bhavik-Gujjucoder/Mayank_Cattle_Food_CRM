@@ -18,6 +18,9 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+/* Raw Material Purchases */
+use App\Http\Controllers\RawMaterialPurchaseController;
+
 // Auth::routes();
 
 Route::get('/', function () {
@@ -96,6 +99,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/create', [GeneralSettingController::class, 'create'])->name('.create');
         Route::post('/store', [GeneralSettingController::class, 'store'])->name('.store');
     });
+
+    /* Raw Material Purchases */
+    Route::resource('raw-material-order', RawMaterialPurchaseController::class);
+    
 });
 
 require __DIR__ . '/auth.php';
