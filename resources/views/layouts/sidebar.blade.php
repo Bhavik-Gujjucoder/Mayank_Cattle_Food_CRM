@@ -100,7 +100,7 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ route('raw-material-order.index') }}">
+                                    <a href="{{ route('raw-material-order.index') }}" class="@if (request()->routeIs('raw-material-order.index')) active @endif">
                                         Raw Material Orders
                                     </a>
                                 </li>
