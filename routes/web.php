@@ -10,8 +10,10 @@ use App\Http\Controllers\OilManagementController;
 use App\Http\Controllers\OrderManagementController;
 use App\Http\Controllers\PermissionController;
 // use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RawMaterialController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StateManagementController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -80,6 +82,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* City Management */
     Route::resource('city', CityManagementController::class);
     Route::post('/city/bulk-delete', [CityManagementController::class, 'bulkDelete'])->name('city.bulkDelete');
+
+    /* Raw Material Management */
+    Route::resource('raw-material', RawMaterialController::class);
+    Route::post('/raw-material/bulk-delete', [RawMaterialController::class, 'bulkDelete'])->name('raw-material.bulkDelete');
+
+    /* Supplier Management */
+    Route::resource('supplier', SupplierController::class);
+    Route::post('/supplier/bulk-delete', [SupplierController::class, 'bulkDelete'])->name('supplier.bulkDelete');
 
     /* General Settings */
     Route::prefix('general-setting')->name('generalsetting')->group(function () {

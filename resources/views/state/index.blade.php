@@ -28,7 +28,7 @@
     <div class="card-body">
         <div class="table-responsive custom-table">
             <table class="table dataTable no-footer" id="state_table">
-                <button class="btn btn-primary" id="bulk_delete_button" style="display: none;">Delete Selected</button>
+                <button class="btn btn-primary" id="bulk_delete_button" style="display: none;"> <i class="ti ti-trash me-1"></i>Delete Selected</button>
                 <thead class="thead-light">
                     <tr>
                         <th hidden>ID</th>
