@@ -475,6 +475,7 @@
     <script src="{{ asset('assets/plugins/bootstrap-tagsinput/bootstrap-tagsinput.js') }}"></script>
 
     <!-- Select2 JS -->
+
     <script src="{{ asset('assets/plugins/select2/js/select2.min.js') }}"></script>
 
     <!-- Summernote JS -->
