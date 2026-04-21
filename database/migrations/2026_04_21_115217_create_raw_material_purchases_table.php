@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('raw_material_purchases', function (Blueprint $table) {
             $table->id();
             
-            //$table->unsignedBigInteger('supplier_id');
-            //$table->unsignedBigInteger('raw_material_id');
-            $table->foreign('supplier_id')->references('id')->on('suppliers')->onDelete('cascade');
-            $table->foreign('raw_material_id')->references('id')->on('raw_materials')->onDelete('cascade');
+            $table->unsignedBigInteger('supplier_id');
+            $table->unsignedBigInteger('raw_material_id');
+            //$table->foreign('supplier_id')->references('id')->on('suppliers')->onDelete('cascade');
+            //$table->foreign('raw_material_id')->references('id')->on('raw_materials')->onDelete('cascade');
             
             $table->string('invoice_no')->nullable();
             $table->timestamp('invoice_date')->nullable();
@@ -35,6 +35,8 @@ return new class extends Migration
 
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
+
+            $table->index(['supplier_id', 'raw_material_id', 'invoice_no', 'invoice_date', 'status'],'idx_raw_material_purchase_index');
 
             $table->timestamps();
             $table->softDeletes();
