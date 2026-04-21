@@ -69,11 +69,12 @@
                                 </label>
                             </td>
                             <td data-label="Sr no">1</td>
-                            <td data-label="Raw Material"><a href="#" class="show-btn open-popup-model"
-                                    data-id="99">
-                                    <i class="ti ti-eye #1ecbe2"></i> Maize (Corn)</a>
+                            <td data-label="Raw Material">
+                                <a href="#" class="show-btn open-raw-material-details-model" data-id="1">
+                                    <i class="ti ti-eye #1ecbe2"></i> Maize (Corn)
+                                </a>
                             </td>
-                            <td data-label="Supplier"><a href="#" class="show-btn open-popup-model"
+                            <td data-label="Supplier"><a href="#" class="show-btn open-supplier-details-model"
                                     data-id="99">
                                     <i class="ti ti-eye #1ecbe2"></i> Cargill India</a>
                             </td>
@@ -127,11 +128,11 @@
                                 </label>
                             </td>
                             <td data-label="Sr no">2</td>
-                            <td data-label="Raw Material"><a href="#" class="show-btn open-popup-model"
+                            <td data-label="Raw Material"><a href="#" class="show-btn open-raw-material-details-model"
                                     data-id="99">
                                     <i class="ti ti-eye #1ecbe2"></i> Soybean meal</a>
                             </td>
-                            <td data-label="Order ID"><a href="" class="show-btn open-popup-model">
+                            <td data-label="Order ID"><a href="" class="show-btn open-supplier-details-model">
                                     <i class="ti ti-eye #1ecbe2"></i> Vishal Traders</a>
                             </td>
                             <td data-label="City">CF/RAW/2026/0158</td>
@@ -183,11 +184,11 @@
                                 </label>
                             </td>
                             <td data-label="Sr no">3</td>
-                            <td data-label="Raw Material"><a href="#" class="show-btn open-popup-model"
+                            <td data-label="Raw Material"><a href="#" class="show-btn open-raw-material-details-model"
                                     data-id="99">
                                     <i class="ti ti-eye #1ecbe2"></i> Cottonseed cake</a>
                             </td>
-                            <td data-label="Order ID"><a href="" class="show-btn open-popup-model">
+                            <td data-label="Order ID"><a href="" class="show-btn open-supplier-details-model">
                                     <i class="ti ti-eye #1ecbe2"></i> RK International</a>
                             </td>
                             <td data-label="City">CF/RAW/2026/0159</td>
@@ -266,6 +267,128 @@
             </div>
             <div class="col-md-6">
                 <div class="datatable-paginate"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Raw Material Details Modal -->
+<div class="modal custom-modal fade" id="rawMaterialDetailsModal" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Raw Material Details</h5>
+                <div class="d-flex align-items-center mod-toggle">
+                    {{-- <button class="btn-close custom-btn-close border p-1 me-0 text-dark" data-bs-dismiss="modal"
+                        aria-label="Close">
+                        <i class="ti ti-x"></i>
+                    </button> --}}
+                    <button type="button" class="btn-close close_poup" data-bs-dismiss="modal"><i
+                            class="ti ti-x"></i></button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="col-form-label">Material Details</label>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Raw Material</th>
+                                <th>Unit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Maize (Corn)</td>
+                                <td>kg</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mb-3">
+                    <label class="col-form-label">Stock Details</label>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Total Stock</th>
+                                <th>Available Stock</th>
+                                <th>Used Stock</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>10000 kg</td>
+                                <td>5000 kg</td>
+                                <td>5000 kg</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mb-3">
+                    <label class="col-form-label">Price Details</label>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Last Purchase Price</th>
+                                <th>Average Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>₹ 40.00</td>
+                                <td>₹ 40.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="d-flex align-items-center justify-content-end m-0">
+                    <a href="#" class="btn btn-light me-2" data-bs-dismiss="modal">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Supplier Details Modal -->
+<div class="modal custom-modal fade" id="supplierDetailsModal" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Supplier Details</h5>
+                <div class="d-flex align-items-center mod-toggle">
+                    <button type="button" class="btn-close close_poup" data-bs-dismiss="modal"><i
+                            class="ti ti-x"></i></button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="col-form-label">Supplier Details</label>
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <th>Supplier Name</th>
+                                <td>Cargill India</td>
+                            </tr>
+                            <tr>
+                                <th>Supplier Address</th>
+                                <td>123, Main Street, Anytown, USA</td>
+                            </tr>
+                            <tr>
+                                <th>Supplier Contact Number</th>
+                                <td>1234567890</td>
+                            </tr>
+                            <tr>
+                                <th>Supplier Email</th>
+                                <td>info@cargillindia.com</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="d-flex align-items-center justify-content-end m-0">
+                    <a href="#" class="btn btn-light me-2" data-bs-dismiss="modal">Cancel</a>
+                </div>
             </div>
         </div>
     </div>
@@ -583,6 +706,16 @@
     $(document).on('click', '.payment-modal', function() {
         let purchase_id = $(this).data('id');
         $('#paymentModal').modal('show');
+    });
+
+    $(document).on('click', '.open-raw-material-details-model', function() {
+        let raw_material_id = $(this).data('id');
+        $('#rawMaterialDetailsModal').modal('show');
+    });
+
+    $(document).on('click', '.open-supplier-details-model', function() {
+        let supplier_id = $(this).data('id');
+        $('#supplierDetailsModal').modal('show');
     });
 </script>
 @endsection

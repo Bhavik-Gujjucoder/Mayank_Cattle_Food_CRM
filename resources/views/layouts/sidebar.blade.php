@@ -61,34 +61,34 @@
                         <li>
                             <a href="{{ route('dealer.index') }}"
                                 class="@if (request()->routeIs('dealer*')) active @endif"><i
-                                    class="ti ti-bell-school"></i><span>Dealer Management</span></a>
+                                    class="ti ti-bell-school"></i><span>Dealer</span></a>
                         </li>
                         <li>
                             <a href="{{ route('order.index') }}"
                                 class="@if (request()->routeIs('order*')) active @endif"><i
-                                    class="ti ti-list-check"></i><span>Soda/order Management</span></a>
+                                    class="ti ti-list-check"></i><span>Soda/order</span></a>
                         </li>
                         <li>
                             <a href="{{ route('dispatch.index') }}"
                                 class="@if (request()->routeIs('dispatch*')) active @endif"><i
-                                    class="ti ti-report-money"></i><span>Dispatch Management</span></a>
+                                    class="ti ti-report-money"></i><span>Dispatch</span></a>
                         </li>
                         <li>
                             <a href="{{ route('users.index', 'broker') }}"
                                 class="@if (request()->routeIs('users*') && request()->route('type') == 'broker') active @endif"><i
-                                    class="ti ti-user-up"></i><span>Broker management</span></a>
+                                    class="ti ti-user-up"></i><span>Broker</span></a>
                         </li>
                         <li>
                             <a href="{{ route('users.index', 'transporter') }}"
                                 class="@if (request()->routeIs('users.index') && request()->route('type') == 'transporter') active @endif"><i
-                                    class="ti ti-tir"></i><span>Transporter management</span></a>
+                                    class="ti ti-tir"></i><span>Transporter</span></a>
                         </li>
 
                         <li class="submenu">
                             <a href="javascript:void(0);"
                                 class="@if (request()->routeIs('raw-material*') || request()->routeIs('raw-material-order*')) active subdrop @endif">
                                 <i class="ti ti-package"></i>
-                                <span>Raw Material Management</span>
+                                <span>Raw Material</span>
                                 <span class="menu-arrow"></span>
                             </a>
                             <!-- Sub Menu -->
@@ -114,12 +114,12 @@
                         <li>
                             <a href="{{ route('supplier.index') }}"
                                 class="@if (request()->routeIs('supplier*')) active @endif"><i
-                                    class="ti ti-truck-delivery"></i><span>Supplier Management</span></a>
+                                    class="ti ti-truck-delivery"></i><span>Supplier</span></a>
                         </li>
                         <li>
                             <a href="{{ route('oil.index') }}"
                                 class="@if (request()->routeIs('oil*')) active @endif"><i
-                                    class="ti ti-drop-circle"></i><span>Oil management</span></a>
+                                    class="ti ti-drop-circle"></i><span>Oil</span></a>
                         </li>
                         <li>
                             <a href="{{ route('machine.index') }}"
@@ -129,22 +129,22 @@
                         <li>
                             <a href="{{ route('state.index') }}"
                                 class="@if (request()->routeIs('state*')) active @endif"><i
-                                    class="ti ti-map-pin-pin"></i><span>State Management</span></a>
+                                    class="ti ti-map-pin-pin"></i><span>State</span></a>
                         </li>
                         <li>
                             <a href="{{ route('city.index') }}"
                                 class="@if (request()->routeIs('city*')) active @endif"><i
-                                    class="ti ti-map-pin-pin"></i><span>City Management</span></a>
+                                    class="ti ti-map-pin-pin"></i><span>City</span></a>
                         </li>
                         <li>
                             <a href="{{ route('roles.index') }}"
                                 class="@if (request()->routeIs('roles*')) active @endif"><i
-                                    class="ti ti-user-circle"></i><span>Role management</span></a>
+                                    class="ti ti-user-circle"></i><span>Role</span></a>
                         </li>
                         <li>
                             <a href="{{ route('users.index', 'user') }}"
                                 class="@if (request()->routeIs('users*') && request()->route('type') == 'user') active @endif"><i
-                                    class="ti ti-users"></i><span>User Management</span></a>
+                                    class="ti ti-users"></i><span>User</span></a>
                         </li>
                         <li>
                             <a href="{{ route('generalsetting.create') }}"
