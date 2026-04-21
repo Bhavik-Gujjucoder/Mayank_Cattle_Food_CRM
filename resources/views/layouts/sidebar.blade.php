@@ -88,7 +88,7 @@
                             <a href="javascript:void(0);"
                                 class="@if (request()->routeIs('raw-material*') || request()->routeIs('raw-material-order*')) active subdrop @endif">
                                 <i class="ti ti-package"></i>
-                                <span>Raw Material</span>
+                                <span>Raw Material Management</span>
                                 <span class="menu-arrow"></span>
                             </a>
                             <!-- Sub Menu -->
@@ -96,11 +96,11 @@
                                 <li>
                                     <a href="{{ route('raw-material.index') }}"
                                         class="@if (request()->routeIs('raw-material.index')) active @endif">
-                                        Raw Materials Management
+                                        Raw Materials
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="#">
+                                    <a href="{{ route('raw-material-order.index') }}">
                                         Raw Material Orders
                                     </a>
                                 </li>
