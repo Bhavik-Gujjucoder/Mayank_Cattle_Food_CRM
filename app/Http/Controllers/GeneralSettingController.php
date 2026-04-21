@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Storage;
 
 class GeneralSettingController extends Controller
 {
+    /* ------------------------------------------------------------------ */
+    /*  CREATE                                                            */
+    /* ------------------------------------------------------------------ */
     public function create()
     {
         $data['page_title'] = 'Settings';
@@ -15,7 +18,10 @@ class GeneralSettingController extends Controller
         return view('generalsetting.create', $data);
     }
 
-     public function store(Request $request)
+    /* ------------------------------------------------------------------ */
+    /*  STORE                                                             */
+    /* ------------------------------------------------------------------ */
+    public function store(Request $request)
     {
         if ($request->form_type == 'company-detail') {
             $request->validate([

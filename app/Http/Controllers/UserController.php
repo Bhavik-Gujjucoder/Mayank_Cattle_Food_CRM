@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -12,6 +13,9 @@ use Yajra\DataTables\DataTables;
 
 class UserController extends Controller
 {
+    /* ------------------------------------------------------------------ */
+    /*  INDEX                                                             */
+    /* ------------------------------------------------------------------ */
     public function index(Request $request, $type)
     {
         $data['page_title'] = match ($type) {
@@ -91,7 +95,7 @@ class UserController extends Controller
                     $profilePic = $row->profile_picture
                         ? asset('storage/profile_pictures/' . $row->profile_picture)
                         : asset('images/default-user.png');
-                   $role = $row->roles->pluck('name')->implode(', ');
+                    $role = $row->roles->pluck('name')->implode(', ');
                     return '
                         <div class="d-flex align-items-center">
                             <a href="' . $profilePic . '" target="_blank" class="avatar avatar-sm border rounded p-1 me-2">
@@ -137,9 +141,9 @@ class UserController extends Controller
         return view('users.index', $data);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    /* ------------------------------------------------------------------ */
+    /*  CREATE                                                            */
+    /* ------------------------------------------------------------------ */
     public function create($type = 'user')
     {
         $data['page_title'] = match ($type) {
@@ -152,9 +156,9 @@ class UserController extends Controller
         return view('users.create', $data);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    /* ------------------------------------------------------------------ */
+    /*  STORE                                                             */
+    /* ------------------------------------------------------------------ */
     public function store(Request $request, $type)
     {
         $request->validate([
@@ -215,9 +219,9 @@ class UserController extends Controller
         return redirect()->route('users.index', $type)->with('success', ucfirst($type) . ' created successfully.');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
+    /* ------------------------------------------------------------------ */
+    /*  EDIT                                                              */
+    /* ------------------------------------------------------------------ */
     public function edit($type, $id)
     {
         $user = User::find($id);
@@ -234,10 +238,70 @@ class UserController extends Controller
         return view('users.edit', $data);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $type, $id)
+
+    public function my_profile($id)
+    {
+        $data['page_title'] = 'Profile Update';
+        $user = User::find($id);
+        $data['my_profile'] = 'my_profile';
+        $data['user']  = $user;
+        $data['roles'] = Role::whereIn('name', ['admin', 'staff'])->pluck('name', 'id');
+
+        return view('users.edit', $data);
+    }
+
+    public function my_profile_update(Request $request, $id = null)
+    {
+        $user = User::find($id);
+        if ($user->id != $id) {
+            abort(403);
+        }
+        $request->validate([
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'name'            => 'required|string|max:255|unique:users,name,' . $user->id . ',id,deleted_at,NULL',
+            'email'           => 'required|email|unique:users,email,' . $user->id . ',id,deleted_at,NULL',
+            'phone_no'        => 'required|numeric|digits_between:10,11|unique:users,phone_no,' . $user->id . ',id,deleted_at,NULL',
+            'password'        => ['nullable', 'string', 'min:6', 'confirmed'],
+        ], [
+            'password.confirmed' => 'Password and Confirm Password must match.',
+        ]);
+
+        // Update basic details
+        $user->update([
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'phone_no' => $request->phone_no,
+            'status'   => $request->status,
+        ]);
+
+        // Update password if provided
+        if ($request->filled('password')) {
+            $user->update([
+                'password' => Hash::make($request->password)
+            ]);
+        }
+        // Profile picture upload
+        if ($request->hasFile('profile_picture')) {
+
+            if ($user->profile_picture) {
+                Storage::disk('public')->delete('profile_pictures/' . $user->profile_picture);
+            }
+
+            $file     = $request->file('profile_picture');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('profile_pictures', $filename, 'public');
+            $user->update([
+                'profile_picture' => $filename
+            ]);
+        }
+        return redirect()->back()->with('success', 'Profile updated successfully!');
+        // return redirect()->route('my_profile', $user->id)->with('success', 'Profile updated successfully!');
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  UPDATE                                                            */
+    /* ------------------------------------------------------------------ */
+    public function update(Request $request, $type = null, $id = null)
     {
         $user = User::find($id);
         $request->validate([
@@ -288,24 +352,24 @@ class UserController extends Controller
             $user->syncRoles(['transporter']);
         }
         // **** EMAIL ****
-        // if ($user->email) {
-        //     if ($user->status === "0") {
-        //         $data = [];
-        //         $data['name'] = $user->name;
-        //         Mail::send('email.user_email.deactive_email', ['data' => $data], fn($message) => $message->to($user->email)->subject('Account Deactivated'));
-        //     } else {
-        //         $data = [];
-        //         $data['name'] = $request->name;
-        //         Mail::send('email.user_email.active_email', ['data' => $data], fn($message) => $message->to($user->email)->subject('Account Activated'));
-        //     }
-        // }
+        /* if ($user->email) {
+                if ($user->status === "0") {
+                    $data = [];
+                    $data['name'] = $user->name;
+                    Mail::send('email.user_email.deactive_email', ['data' => $data], fn($message) => $message->to($user->email)->subject('Account Deactivated'));
+                } else {
+                    $data = [];
+                    $data['name'] = $request->name;
+                    Mail::send('email.user_email.active_email', ['data' => $data], fn($message) => $message->to($user->email)->subject('Account Activated'));
+                }
+         }*/
 
         return redirect()->route('users.index', $type)->with('success', ucfirst($type) . ' updated successfully!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    /* ------------------------------------------------------------------ */
+    /*  DESTROY                                                           */
+    /* ------------------------------------------------------------------ */
     public function destroy($type, $id)
     {
         $user = User::findOrFail($id);
@@ -316,6 +380,9 @@ class UserController extends Controller
         return redirect()->route('users.index', $type)->with('success', ucfirst($type) . ' deleted successfully.');
     }
 
+    /* ------------------------------------------------------------------ */
+    /*  BULK DELETE                                                       */
+    /* ------------------------------------------------------------------ */
     public function bulkDelete(Request $request, $type)
     {
         $ids = $request->ids;

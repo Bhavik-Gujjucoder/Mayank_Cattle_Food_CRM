@@ -60,7 +60,7 @@
                         <div class="mb-3">
                             <label class="col-form-label">Role <span class="text-danger">*</span></label>
                             <select class="form-control @error('role') is-invalid @enderror" name="role">
-                                <option value="">Select Role</option>
+                                {{-- <option value="">Select Role</option> --}}
                                 @foreach ($roles as $key => $role)
                                     @if ($role != 'super admin')
                                         <!-- Exclude super admin -->

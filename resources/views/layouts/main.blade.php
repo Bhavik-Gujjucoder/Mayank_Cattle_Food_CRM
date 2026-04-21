@@ -9,7 +9,7 @@
     <link rel="shortcut icon" href="{{ asset('assets/images/favicon.png') }}" />
 
     <!-- Title -->
-    <title>Manage users</title>
+    <title>{{ $page_title ?? config('app.name') }}</title>
 
     <!-- Themescript JS -->
     {{-- <script src="{{ asset('assets/js/theme-script.js') }}"></script> --}}
@@ -50,7 +50,8 @@
     <!-- Main CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
 
-       <link href="{{ asset('css/toastify.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/toastify.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('assets/css/flatpickr.min.css') }}">
 
 </head>
 
@@ -66,15 +67,16 @@
             <div class="header-left active">
                 <a href="{{ route('dashboard') }}" class="logo logo-normal">
                     {{-- <img src="{{ asset('assets/images/logo.png') }}" alt="Logo"> --}}
-                    <img src="{{ asset('storage/company_logo/' . getSetting('company_logo')) }}" class="img-fluid" alt="Logo">
+                    <img src="{{ asset('storage/company_logo/' . getSetting('company_logo')) }}" class="img-fluid"
+                        alt="Logo">
 
                 </a>
                 <!-- <a href="index.html" class="logo-small">
-     <img src="assets/img/logo-small.svg" alt="Logo">
-    </a> -->
-                <a id="toggle_btn" href="javascript:void(0);">
+                    <img src="assets/img/logo-small.svg" alt="Logo">
+                </a> -->
+                {{-- <a id="toggle_btn" href="javascript:void(0);">
                     <i class="ti ti-arrow-bar-to-left"></i>
-                </a>
+                </a> --}}
             </div>
             <!-- /Logo -->
 
@@ -110,7 +112,7 @@
 
 
                     <!-- Nav List -->
-                    {{-- <li class="nav-item nav-list">
+                    <li class="nav-item nav-list">
                         <ul class="nav">
                             <li class="nav-item dropdown">
                                 <a href="javascript:void(0);" class="btn btn-header-list" data-bs-toggle="dropdown">
@@ -260,13 +262,13 @@
                                 </div>
                             </li>
 
-                            <li class="nav-item">
+                            {{-- <li class="nav-item">
                                 <a href="lead-reports.html" class="btn btn-chart-pie">
                                     <i class="ti ti-chart-pie"></i>
                                 </a>
-                            </li>
+                            </li> --}}
                         </ul>
-                    </li> --}}
+                    </li>
                     <!-- /Nav List -->
 
 
@@ -362,10 +364,10 @@
                         </a>
                         <div class="dropdown-menu menu-drop-user">
                             <div class="profilename">
-                                <a class="dropdown-item" href="index.html">
+                                <a class="dropdown-item" href="{{ route('dashboard') }}">
                                     <i class="ti ti-layout-2"></i> Dashboard
                                 </a>
-                                <a class="dropdown-item" href="profile.html">
+                                <a class="dropdown-item" href="{{ route('my_profile', auth()->user()->id) }}">
                                     <i class="ti ti-user-pin"></i> My Profile
                                 </a>
                                 {{-- <a class="dropdown-item" href="{{ route('logout') }}">
@@ -483,6 +485,7 @@
 
     <script src="{{ asset('assets/js/sweetalert2@11.js') }}"></script>
     <script src="{{ asset('assets/js/toastify.js') }}"></script>
+    <script src="{{ asset('assets/js/flatpickr.js') }}"></script>
 
     <!-- Color Picker JS -->
     <!-- <script src="assets/plugins/@simonwep/pickr/pickr.es5.min.js"></script> -->
@@ -490,8 +493,9 @@
     <!--- Custom Js -->
     <!-- <script src="assets/js/theme-colorpicker.js"></script> -->
     <script src="{{ asset('assets/js/script.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
 
-     @if (session('success'))
+    @if (session('success'))
         <script>
             Toastify({
                 text: "{{ session('success') }}",
@@ -518,7 +522,7 @@
     @endif
 
     <script>
-          function show_success(msg) {
+        function show_success(msg) {
             Toastify({
                 text: msg,
                 duration: 3000,

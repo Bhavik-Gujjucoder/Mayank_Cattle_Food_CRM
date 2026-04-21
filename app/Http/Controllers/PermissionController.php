@@ -11,8 +11,9 @@ use Spatie\Permission\Models\Permission;
 class PermissionController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     */
+    /* ------------------------------------------------------------------ */
+    /*  INDEX                                                             */
+    /* ------------------------------------------------------------------ */
     public function index(Request $request)
     {
         // $permissions = Permission::all();
@@ -45,18 +46,18 @@ class PermissionController extends Controller
         return view('permissions.index', $data);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    /* ------------------------------------------------------------------ */
+    /*  CREATE                                                            */
+    /* ------------------------------------------------------------------ */
     public function create()
     {
         $data['page_title'] = "Create Permission";
         return view('permissions.create',$data);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    /* ------------------------------------------------------------------ */
+    /*  STORE                                                             */
+    /* ------------------------------------------------------------------ */
     public function store(Request $request)
     {
         $request->validate(['name' => 'required|unique:permissions,name,NULL,id'],['name.required' => 'The Permission name field is required.']);
@@ -65,33 +66,33 @@ class PermissionController extends Controller
         return redirect()->route('permissions.index')->with('success', 'Permission created successfully.');
     }
 
-    /**
-     * Display the specified resource.
-    */
+    /* ------------------------------------------------------------------ */
+    /*  SHOW                                                              */
+    /* ------------------------------------------------------------------ */
     public function show(string $id)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
+    /* ------------------------------------------------------------------ */
+    /*  EDIT                                                              */
+    /* ------------------------------------------------------------------ */
     public function edit(string $id)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+    /* ------------------------------------------------------------------ */
+    /*  UPDATE                                                            */
+    /* ------------------------------------------------------------------ */
     public function update(Request $request, string $id)
     {
         //
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    /* ------------------------------------------------------------------ */
+    /*  DESTROY                                                           */
+    /* ------------------------------------------------------------------ */
     public function destroy(Permission $permission)
     {
         $permission->delete();

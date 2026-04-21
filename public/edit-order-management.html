@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="utf-8" />
+   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+   <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <meta name="author" content="Mayank Cattle Food PVT. LTD." />
+   <link rel="shortcut icon" href="assets/images/favicon.png" />
+
+	<!-- Title -->
+	<title>Edit Deals</title>
+
+	<!-- Themescript JS -->
+	<!-- <script src="assets/js/theme-script.js"></script> -->
+
+	
+
+	<!-- Favicon -->
+	<link rel="icon" href="assets/images/favicon.png" type="image/x-icon">
+	<link rel="shortcut icon" type="image/x-icon" href="assets/img/favicon.png">
+
+	<!-- Bootstrap CSS -->
+	<link rel="stylesheet" href="assets/css/bootstrap.min.css">
+
+	<!-- Tabler Icon CSS -->
+	<link rel="stylesheet" href="assets/plugins/tabler-icons/tabler-icons.css">
+
+	<!-- Fontawesome CSS -->
+	<link rel="stylesheet" href="assets/plugins/fontawesome/css/fontawesome.min.css">
+	<link rel="stylesheet" href="assets/plugins/fontawesome/css/all.min.css">
+
+	<!-- Color Picker CSS -->
+	<link rel="stylesheet" href="assets/plugins/flatpickr/flatpickr.min.css">
+	<link rel="stylesheet" href="assets/plugins/pickr/themes/nano.min.css">
+
+	<!-- Datatable CSS -->
+	<link rel="stylesheet" href="assets/css/dataTables.bootstrap5.min.css">
+
+	<!-- Daterangepicker CSS -->
+	<link rel="stylesheet" href="assets/plugins/daterangepicker/daterangepicker.css">
+
+	<!-- Select2 CSS -->
+	<link rel="stylesheet" href="assets/plugins/select2/css/select2.min.css">
+
+	<!-- Summernote CSS -->
+	<link rel="stylesheet" href="assets/plugins/summernote/summernote-lite.min.css">
+
+	<!-- Bootstrap Tagsinput CSS -->
+	<link rel="stylesheet" href="assets/plugins/bootstrap-tagsinput/bootstrap-tagsinput.css">
+
+	<!-- Datetimepicker CSS -->
+	<link rel="stylesheet" href="assets/css/bootstrap-datetimepicker.min.css">
+
+	<!-- Main CSS -->
+	<link rel="stylesheet" href="assets/css/style.css">
+
+</head>
+
+<body>
+
+	<!-- Main Wrapper -->
+	<div class="main-wrapper">
+
+		<!-- Header -->
+		<div class="header">
+
+			<!-- Logo -->
+			<div class="header-left active">
+				<a href="index.html" class="logo logo-normal">
+                    <img src="assets/images/logo.png" alt="Logo">
+                    <img src="assets/images/white-logo.svg" class="white-logo" alt="Logo">
+                </a>
+				<a href="index.html" class="logo-small">
+					<img src="assets/images/logo-small.svg" alt="Logo">
+				</a>
+				<a id="toggle_btn" href="javascript:void(0);">
+					<i class="ti ti-arrow-bar-to-left"></i>
+				</a>
+			</div>
+			<!-- /Logo -->
+
+			<a id="mobile_btn" class="mobile_btn" href="#sidebar">
+				<span class="bar-icon">
+					<span></span>
+					<span></span>
+					<span></span>
+				</span>
+			</a>
+
+			<div class="header-user">
+				<ul class="nav user-menu">
+					
+					<!-- Search -->
+					<li class="nav-item nav-search-inputs me-auto">
+						<div class="top-nav-search">
+							<a href="javascript:void(0);" class="responsive-search">
+								<i class="fa fa-search"></i>
+							</a>
+							<form action="#" class="dropdown">
+								<div class="searchinputs" id="dropdownMenuClickable">
+									<input type="text" placeholder="Search">
+									<div class="search-addon">
+										<button type="submit"><i class="ti ti-command"></i></button>
+									</div>
+								</div>
+							</form>
+						</div>
+					</li>
+					<!-- /Search -->
+
+				
+				 
+					<!-- Profile Dropdown -->
+					<li class="nav-item dropdown has-arrow main-drop">
+						<a href="javascript:void(0);" class="nav-link userset" data-bs-toggle="dropdown">
+							<span class="user-info">
+								<span class="user-letter">
+									<img src="assets/images/avatar-14.png" alt="Profile">
+								</span>
+								<span class="badge badge-success rounded-pill"></span>
+							</span>
+						</a>
+						<div class="dropdown-menu menu-drop-user">
+							<div class="profilename">
+								<a class="dropdown-item" href="index.html">
+									<i class="ti ti-layout-2"></i> Dashboard
+								</a>
+								<a class="dropdown-item" href="profile.html">
+									<i class="ti ti-user-pin"></i> My Profile
+								</a>
+								<a class="dropdown-item" href="login.html">
+									<i class="ti ti-lock"></i> Logout
+								</a>
+							</div>
+						</div>
+					</li>
+					<!-- /Profile Dropdown -->
+
+				</ul>
+			</div>
+
+			<!-- Mobile Menu -->
+			<div class="dropdown mobile-user-menu">
+				<a href="javascript:void(0);" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+				<div class="dropdown-menu">
+					<a class="dropdown-item" href="index.html">
+						<i class="ti ti-layout-2"></i> Dashboard
+					</a>
+					<a class="dropdown-item" href="profile.html">
+						<i class="ti ti-user-pin"></i> My Profile
+					</a>
+					<a class="dropdown-item" href="login.html">
+						<i class="ti ti-lock"></i> Logout
+					</a>
+				</div>
+			</div>
+			<!-- /Mobile Menu -->
+
+		</div>
+		<!-- /Header -->
+
+
+			   <!-- Sidebar -->
+		<div class="sidebar" id="sidebar">
+			<div class="modern-profile p-3 pb-0">
+				
+				<div class="sidebar-nav mb-3">
+					<ul class="nav nav-tabs nav-tabs-solid nav-tabs-rounded nav-justified bg-transparent"
+						role="tablist">
+						<li class="nav-item"><a class="nav-link active border-0" href="#">Menu</a></li>
+						<li class="nav-item"><a class="nav-link border-0" href="chat.html">Chats</a></li>
+						<li class="nav-item"><a class="nav-link border-0" href="email.html">Inbox</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="sidebar-header p-3 pb-0 pt-2">
+				
+				<div class="d-flex align-items-center justify-content-between menu-item mb-3">
+					<div class="me-3">
+						<a href="calendar.html" class="btn btn-icon border btn-menubar">
+							<i class="ti ti-layout-grid-remove"></i>
+						</a>
+					</div>
+					<div class="me-3">
+						<a href="chat.html" class="btn btn-icon border btn-menubar position-relative">
+							<i class="ti ti-brand-hipchat"></i>
+						</a>
+					</div>
+					<div class="me-3 notification-item">
+						<a href="activities.html" class="btn btn-icon border btn-menubar position-relative me-1">
+							<i class="ti ti-bell"></i>
+							<span class="notification-status-dot"></span>
+						</a>
+					</div>
+					<div class="me-0">
+						<a href="email.html" class="btn btn-icon border btn-menubar">
+							<i class="ti ti-message"></i>
+						</a>
+					</div>
+				</div>
+			</div>
+			<div class="sidebar-inner slimscroll">
+				<div id="sidebar-menu" class="sidebar-menu">
+					<ul>
+						<li class="clinicdropdown">
+							<a href="profile.html">
+								<img src="assets/images/avatar-14.png" class="img-fluid" alt="Profile">
+								<div class="user-names">
+									<h5>Adrian Davies</h5>
+									<h6>Tech Lead</h6>
+								</div>
+							</a>
+						</li>
+					</ul>
+					<ul>
+                    <!--  <li>
+                        <h6 class="submenu-hdr">Sales Management</h6>
+                        <ul>
+                           <li class="submenu">
+                              <a href="javascript:void(0);">
+                              <i class="ti ti-layout-2"></i><span>Sales Management</span><span class="menu-arrow"></span>
+                              </a>
+                              <ul>
+                                 <li><a href="order-management.html" class="active">Order Management</a></li>
+                                 <li><a href="catalogue-management.html">Catalogue Management</a></li>
+                                 <li><a href="sales-persons.html">Sales Persons</a></li>
+                                 <li><a href="targets.html">Targets</a></li>
+                              </ul>
+                           </li>
+                        </ul>
+                     </li> -->
+                     <!-- <li>
+                        <h6 class="submenu-hdr">Customer Type Management</h6>
+                        <ul>
+                           <li class="submenu">
+                              <a href="javascript:void(0);">
+                              <i class="ti ti-layout-2"></i><span>Customer Management</span><span class="menu-arrow"></span>
+                              </a>
+                              <ul>
+                                 <li><a href="roles-permissions.html" class="active">Roles Permissions</a></li>
+                                 <li><a href="manage-users.html">Manage Users</a></li>
+                              </ul>
+                           </li>
+                        </ul>
+                     </li> -->
+                     <li>
+                         <ul>
+                           <li>
+                              <a href="dashboard.html"><i class="ti ti-layout-2"></i><span>Dashboard</span></a>
+                           </li>
+                           <li>
+                              <a href="#"><i class="ti ti-bell-school"></i><span>Dealer Management</span></a>
+                           </li>
+                           <li>
+                              <a href="#"><i class="ti ti-list-check"></i><span>Soda/order Management</span></a>
+                           </li>
+                           <li>
+                              <a href="#"><i class="ti ti-report-money"></i><span>Dispatch Management</span></a>
+                           </li>
+                           <li>
+                              <a href="#"><i class="ti ti-user-up"></i><span>Broker management</span></a>
+                           </li>
+                           <li>
+                              <a href="#"><i class="ti ti-tir"></i><span>Transporter management</span></a>
+                           </li>
+                           <li>
+                              <a href="#"><i class="ti ti-drop-circle"></i><span>Oil management</span></a>
+                           </li>
+                           <li>
+                              <a href="#"><i class="ti ti-building-factory"></i><span>Machine Inventory</span></a>
+                           </li>
+                           <li>
+                              <a href="#"><i class="ti ti-user-circle"></i><span>Role management</span></a>
+                           </li>
+                           <li>
+                              <a href="user-management.html"><i class="ti ti-users"></i><span>User Management</span></a>
+                           </li>
+                           <li>
+                              <a href="#"><i class="ti ti-settings"></i><span>General settings</span></a>
+                           </li>
+                        </ul>
+                     </li>
+                     <!-- <li>
+                        <h6 class="submenu-hdr">Report</h6>
+                        <ul>
+                           <li><a href="sales-person.html"><i class="ti ti-users"></i><span>Sales reports</span></a></li>
+                           <li><a href=""><i class="ti ti-navigation-cog"></i><span>Trend analysis</span></a></li>
+                        </ul>
+                     </li> -->
+                  </ul>
+				</div>
+			</div>
+		</div>
+		<!-- /Sidebar -->
+	
+
+		<!-- Page Wrapper -->
+		<div class="page-wrapper">
+			<div class="content">
+
+				<div class="row">
+					<div class="col-md-12">
+
+						<!-- Page Header -->
+						<div class="page-header">
+							<div class="row align-items-center">
+								<div class="col-8">
+									<h4 class="page-title">Edit Deals</h4>
+								</div>
+								<div class="col-4 text-end">
+									<div class="head-icons">
+										<a href="deals.html" data-bs-toggle="tooltip" data-bs-placement="top"
+											data-bs-original-title="Refresh">
+											<i class="ti ti-refresh-dot"></i>
+										</a>
+										<a href="javascript:void(0);" data-bs-toggle="tooltip" data-bs-placement="top"
+											data-bs-original-title="Collapse" id="collapse-header">
+											<i class="ti ti-chevrons-up"></i>
+										</a>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- /Page Header -->
+
+						<div class="card">
+							<div class="card-body">
+								<form action="deals.html">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="mb-3">
+								<label class="col-form-label">Deal Name <span class="text-danger">*</span></label>
+								<input type="text" class="form-control">
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<div class="d-flex align-items-center justify-content-between">
+									<label class="col-form-label">Pipeine <span class="text-danger">*</span></label>
+									<a href="" class="label-add " data-bs-toggle="offcanvas"
+										data-bs-target="#offcanvas_pipeline">
+										<i class="ti ti-square-rounded-plus"></i>
+										Add New
+									</a>
+								</div>
+								<select class="select2">
+									<option>Choose</option>
+									<option>Sales</option>
+									<option>Marketing</option>
+									<option>Calls</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Status <span class="text-danger">*</span></label>
+								<select class="select2">
+									<option>Choose</option>
+									<option>Open</option>
+									<option>Lost</option>
+									<option>Won</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Deal Value<span class="text-danger"> *</span></label>
+								<input class="form-control" type="text">
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Currency <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Choose</option>
+									<option>Dollar</option>
+									<option>Euro</option>
+									<option>Pound</option>
+									<option>Rupee</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Period <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Choose</option>
+									<option>Days</option>
+									<option>Month</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Period Value <span class="text-danger">*</span></label>
+								<input class="form-control" type="text">
+							</div>
+						</div>
+						<div class="col-md-12">
+							<div class="mb-3">
+								<label class="col-form-label">Contact <span class="text-danger">*</span></label>
+								<select class="multiple-img" multiple="multiple">
+									<option data-image="assets/images/avatar-14.png" selected>Darlee Robertson
+									</option>
+									<option data-image="assets/images/avatar-14.png">Sharon Roy</option>
+									<option data-image="assets/images/avatar-14.png">Vaughan Lewis</option>
+									<option data-image="assets/images/avatar-14.png">Jessica Louise</option>
+									<option data-image="assets/images/avatar-14.png">Carol Thomas</option>
+								</select>
+							</div>
+							<div class="mb-3">
+								<label class="col-form-label">Project <span class="text-danger">*</span></label>
+								<select class="select" multiple="multiple">
+									<option selected>Devops Design</option>
+									<option selected>MargrateDesign</option>
+									<option selected>UI for Chat</option>
+									<option>Web Chat</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Due Date <span class="text-danger">*</span></label>
+								<div class="icon-form">
+									<span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+									<input type="text" class="form-control datetimepicker" placeholder="">
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Expected Closing Date <span
+										class="text-danger">*</span></label>
+								<div class="icon-form">
+									<span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+									<input type="text" class="form-control datetimepicker" placeholder="">
+								</div>
+							</div>
+						</div>
+						<div class="col-md-12">
+							<div class="mb-3">
+								<label class="col-form-label">Assignee <span class="text-danger">*</span></label>
+								<select class="multiple-img" multiple="multiple">
+									<option data-image="assets/images/avatar-14.png">Darlee Robertson</option>
+									<option data-image="assets/images/avatar-14.png" selected>Sharon Roy</option>
+									<option data-image="assets/images/avatar-14.png">Vaughan Lewis</option>
+									<option data-image="assets/images/avatar-14.png">Jessica Louise</option>
+									<option data-image="assets/images/avatar-14.png">Carol Thomas</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Follow Up Date <span class="text-danger">*</span></label>
+								<div class="icon-form">
+									<span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+									<input type="text" class="form-control datetimepicker" placeholder="">
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Source <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Select</option>
+									<option>Google</option>
+									<option>Social Media</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Tags <span class="text-danger">*</span></label>
+								<input class="input-tags form-control" type="text" data-role="tagsinput" name="Label"
+									value="Collab, Rated">
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Priority <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Select</option>
+									<option>High</option>
+									<option>Low</option>
+									<option>Medium</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-12">
+							<div class="mb-3">
+								<label class="col-form-label">Description <span class="text-danger">*</span></label>
+								<div class="summernote"></div>
+							</div>
+						</div>
+					</div>
+					<div class="d-flex align-items-center justify-content-end">
+						<button type="button" data-bs-dismiss="offcanvas" class="btn btn-light me-2">Cancel</button>
+						<button type="button" class="btn btn-primary" data-bs-toggle="modal"
+							data-bs-target="#create_success">Create</button>
+					</div>
+				</form>
+							</div>
+						</div>
+
+					</div>
+				</div>
+
+			</div>
+		</div>
+		<!-- /Page Wrapper -->
+
+		<!-- Add New Deals -->
+		<div class="offcanvas offcanvas-end offcanvas-large" tabindex="-1" id="offcanvas_add">
+			<div class="offcanvas-header border-bottom">
+				<h5 class="fw-semibold">Add New Deals</h5>
+				<button type="button"
+					class="btn-close custom-btn-close border p-1 me-0 d-flex align-items-center justify-content-center rounded-circle"
+					data-bs-dismiss="offcanvas" aria-label="Close">
+					<i class="ti ti-x"></i>
+				</button>
+			</div>
+			<div class="offcanvas-body">
+				<form action="deals.html">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="mb-3">
+								<label class="col-form-label">Deal Name <span class="text-danger">*</span></label>
+								<input type="text" class="form-control">
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<div class="d-flex align-items-center justify-content-between">
+									<label class="col-form-label">Pipeine <span class="text-danger">*</span></label>
+									<a href="" class="label-add " data-bs-toggle="offcanvas"
+										data-bs-target="#offcanvas_pipeline">
+										<i class="ti ti-square-rounded-plus"></i>
+										Add New
+									</a>
+								</div>
+								<select class="select2">
+									<option>Choose</option>
+									<option>Sales</option>
+									<option>Marketing</option>
+									<option>Calls</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Status <span class="text-danger">*</span></label>
+								<select class="select2">
+									<option>Choose</option>
+									<option>Open</option>
+									<option>Lost</option>
+									<option>Won</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Deal Value<span class="text-danger"> *</span></label>
+								<input class="form-control" type="text">
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Currency <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Choose</option>
+									<option>Dollar</option>
+									<option>Euro</option>
+									<option>Pound</option>
+									<option>Rupee</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Period <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Choose</option>
+									<option>Days</option>
+									<option>Month</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Period Value <span class="text-danger">*</span></label>
+								<input class="form-control" type="text">
+							</div>
+						</div>
+						<div class="col-md-12">
+							<div class="mb-3">
+								<label class="col-form-label">Contact <span class="text-danger">*</span></label>
+								<select class="multiple-img" multiple="multiple">
+									<option data-image="assets/images/avatar-14.png" selected>Darlee Robertson
+									</option>
+									<option data-image="assets/images/avatar-14.png">Sharon Roy</option>
+									<option data-image="assets/images/avatar-14.png">Vaughan Lewis</option>
+									<option data-image="assets/images/avatar-14.png">Jessica Louise</option>
+									<option data-image="assets/images/avatar-14.png">Carol Thomas</option>
+								</select>
+							</div>
+							<div class="mb-3">
+								<label class="col-form-label">Project <span class="text-danger">*</span></label>
+								<select class="select" multiple="multiple">
+									<option selected>Devops Design</option>
+									<option selected>MargrateDesign</option>
+									<option selected>UI for Chat</option>
+									<option>Web Chat</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Due Date <span class="text-danger">*</span></label>
+								<div class="icon-form">
+									<span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+									<input type="text" class="form-control datetimepicker" placeholder="">
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Expected Closing Date <span
+										class="text-danger">*</span></label>
+								<div class="icon-form">
+									<span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+									<input type="text" class="form-control datetimepicker" placeholder="">
+								</div>
+							</div>
+						</div>
+						<div class="col-md-12">
+							<div class="mb-3">
+								<label class="col-form-label">Assignee <span class="text-danger">*</span></label>
+								<select class="multiple-img" multiple="multiple">
+									<option data-image="assets/images/avatar-14.png">Darlee Robertson</option>
+									<option data-image="assets/images/avatar-14.png" selected>Sharon Roy</option>
+									<option data-image="assets/images/avatar-14.png">Vaughan Lewis</option>
+									<option data-image="assets/images/avatar-14.png">Jessica Louise</option>
+									<option data-image="assets/images/avatar-14.png">Carol Thomas</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Follow Up Date <span class="text-danger">*</span></label>
+								<div class="icon-form">
+									<span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+									<input type="text" class="form-control datetimepicker" placeholder="">
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Source <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Select</option>
+									<option>Google</option>
+									<option>Social Media</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Tags <span class="text-danger">*</span></label>
+								<input class="input-tags form-control" type="text" data-role="tagsinput" name="Label"
+									value="Collab, Rated">
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Priority <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Select</option>
+									<option>High</option>
+									<option>Low</option>
+									<option>Medium</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-12">
+							<div class="mb-3">
+								<label class="col-form-label">Description <span class="text-danger">*</span></label>
+								<div class="summernote"></div>
+							</div>
+						</div>
+					</div>
+					<div class="d-flex align-items-center justify-content-end">
+						<button type="button" data-bs-dismiss="offcanvas" class="btn btn-light me-2">Cancel</button>
+						<button type="button" class="btn btn-primary" data-bs-toggle="modal"
+							data-bs-target="#create_success">Create</button>
+					</div>
+				</form>
+			</div>
+
+		</div>
+		<!-- /Add New Deals -->
+
+		<!-- Edit Deals -->
+		<div class="offcanvas offcanvas-end offcanvas-large" tabindex="-1" id="offcanvas_edit">
+			<div class="offcanvas-header border-bottom">
+				<h5 class="fw-semibold">Edit Deals</h5>
+				<button type="button"
+					class="btn-close custom-btn-close border p-1 me-0 d-flex align-items-center justify-content-center rounded-circle"
+					data-bs-dismiss="offcanvas" aria-label="Close">
+					<i class="ti ti-x"></i>
+				</button>
+			</div>
+			<div class="offcanvas-body">
+				<form action="deals.html">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="mb-3">
+								<label class="col-form-label">Deal Name <span class="text-danger">*</span></label>
+								<input type="text" class="form-control" value="Collins">
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<div class="d-flex align-items-center justify-content-between">
+									<label class="col-form-label">Pipeine <span class="text-danger">*</span></label>
+									<a href="" class="label-add " data-bs-toggle="offcanvas"
+										data-bs-target="#offcanvas_pipeline">
+										<i class="ti ti-square-rounded-plus"></i>
+										Add New
+									</a>
+								</div>
+								<select class="select2">
+									<option>Choose</option>
+									<option>Sales</option>
+									<option>Marketing</option>
+									<option>Calls</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Status <span class="text-danger">*</span></label>
+								<select class="select2">
+									<option>Choose</option>
+									<option>Open</option>
+									<option>Lost</option>
+									<option>Won</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Deal Value<span class="text-danger"> *</span></label>
+								<input class="form-control" type="text" value="$04,51,000">
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Currency <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Choose</option>
+									<option selected>Dollar</option>
+									<option>Euro</option>
+									<option>Pound</option>
+									<option>Rupee</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Period <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Choose</option>
+									<option>Days</option>
+									<option>Month</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-3 col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Period Value <span class="text-danger">*</span></label>
+								<input class="form-control" type="text">
+							</div>
+						</div>
+						<div class="col-md-12">
+							<div class="mb-3">
+								<label class="col-form-label">Contact <span class="text-danger">*</span></label>
+								<select class="multiple-img" multiple="multiple">
+									<option data-image="assets/img/profiles/avatar-19.jpg" selected>Darlee Robertson
+									</option>
+									<option data-image="assets/images/avatar-14.png">Sharon Roy</option>
+									<option data-image="assets/images/avatar-14.png">Vaughan Lewis</option>
+									<option data-image="assets/images/avatar-14.png">Jessica Louise</option>
+									<option data-image="assets/images/avatar-14.png">Carol Thomas</option>
+								</select>
+							</div>
+							<div class="mb-3">
+								<label class="col-form-label">Project <span class="text-danger">*</span></label>
+								<select class="select" multiple="multiple">
+									<option selected>Devops Design</option>
+									<option selected>MargrateDesign</option>
+									<option selected>UI for Chat</option>
+									<option>Web Chat</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Due Date <span class="text-danger">*</span></label>
+								<div class="icon-form">
+									<span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+									<input type="text" class="form-control datetimepicker" placeholder="">
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Expected Closing Date <span
+										class="text-danger">*</span></label>
+								<div class="icon-form">
+									<span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+									<input type="text" class="form-control datetimepicker" placeholder="">
+								</div>
+							</div>
+						</div>
+						<div class="col-md-12">
+							<div class="mb-3">
+								<label class="col-form-label">Assignee <span class="text-danger">*</span></label>
+								<select class="multiple-img" multiple="multiple">
+									<option data-image="assets/images/avatar-14.png">Darlee Robertson</option>
+									<option data-image="assets/images/avatar-14.png" selected>Sharon Roy</option>
+									<option data-image="assets/images/avatar-14.png">Vaughan Lewis</option>
+									<option data-image="assets/images/avatar-14.png">Jessica Louise</option>
+									<option data-image="assets/images/avatar-14.png">Carol Thomas</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Follow Up Date <span class="text-danger">*</span></label>
+								<div class="icon-form">
+									<span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+									<input type="text" class="form-control datetimepicker" placeholder="">
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Source <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Select</option>
+									<option>Google</option>
+									<option>Social Media</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Tags <span class="text-danger">*</span></label>
+								<input class="input-tags form-control" type="text" data-role="tagsinput" name="Label"
+									value="Collab, Rated">
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label class="col-form-label">Priority <span class="text-danger">*</span></label>
+								<select class="select">
+									<option>Select</option>
+									<option>High</option>
+									<option>Low</option>
+									<option>Medium</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-lg-12">
+							<div class="mb-3">
+								<label class="col-form-label">Description <span class="text-danger">*</span></label>
+								<div class="summernote"></div>
+							</div>
+						</div>
+					</div>
+					<div class="d-flex align-items-center justify-content-end">
+						<button type="button" data-bs-dismiss="offcanvas" class="btn btn-light me-2">Cancel</button>
+						<button type="button" class="btn btn-primary">Save Changes</button>
+
+					</div>
+				</form>
+			</div>
+
+		</div>
+		<!-- /Edit Deals -->
+
+		<!-- Delete Deal -->
+		<div class="modal fade" id="delete_deal" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-body">
+						<div class="text-center">
+							<div class="avatar avatar-xl bg-danger-light rounded-circle mb-3">
+								<i class="ti ti-trash-x fs-36 text-danger"></i>
+							</div>
+							<h4 class="mb-2">Remove Deal?</h4>
+							<p class="mb-0">Are you sure you want to remove <br> deal you selected.</p>
+							<div class="d-flex align-items-center justify-content-center mt-4">
+								<a href="#" class="btn btn-light me-2" data-bs-dismiss="modal">Cancel</a>
+								<a href="deals.html" class="btn btn-danger">Yes, Delete it</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- /Delete Deal -->
+
+		<!-- Create Deal -->
+		<div class="modal custom-modal fade" id="create_success" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header border-0 m-0 justify-content-end">
+						<button class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+							<i class="ti ti-x"></i>
+						</button>
+					</div>
+					<div class="modal-body">
+						<div class="success-message text-center">
+							<div class="success-popup-icon bg-light-blue">
+								<i class="ti ti-medal"></i>
+							</div>
+							<h3>Deal Created Successfully!!!</h3>
+							<p>View the details of deal, created</p>
+							<div class="col-lg-12 text-center modal-btn">
+								<a href="#" class="btn btn-light" data-bs-dismiss="modal">Cancel</a>
+								<a href="deals-details.html" class="btn btn-primary">View Details</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- /Create Deal -->
+
+		<!-- Add New Pipeline -->
+		<div class="offcanvas offcanvas-end offcanvas-large" tabindex="-1" id="offcanvas_pipeline">
+			<div class="offcanvas-header border-bottom">
+				<h4>Add New Pipeline</h4>
+				<button type="button"
+					class="btn-close custom-btn-close border p-1 me-0 d-flex align-items-center justify-content-center rounded-circle"
+					data-bs-dismiss="offcanvas" aria-label="Close">
+					<i class="ti ti-x"></i>
+				</button>
+			</div>
+			<div class="offcanvas-body">
+				<form action="deals.html">
+					<div>
+						<div class="mb-3">
+							<label class="col-form-label">Pipeline Name <span class="text-danger">*</span></label>
+							<input class="form-control" type="text">
+						</div>
+						<div class="mb-3">
+							<div class="pipe-title d-flex align-items-center justify-content-between">
+								<h5 class="form-title">Pipeline Stages</h5>
+								<a href="#" class="add-stage" data-bs-toggle="modal" data-bs-target="#add_stage"><i
+										class="ti ti-square-rounded-plus"></i>Add New</a>
+							</div>
+							<div class="pipeline-listing">
+								<div class="pipeline-item">
+									<p><i class="ti ti-grip-vertical"></i> Inpipeline</p>
+									<div class="action-pipeline">
+										<a href="#" data-bs-toggle="modal" data-bs-target="#edit_stage"><i
+												class="ti ti-edit text-blue"></i>Edit</a>
+										<a href="#" data-bs-toggle="modal" data-bs-target="#delete_stage"><i
+												class="ti ti-trash text-danger"></i>Delete</a>
+									</div>
+								</div>
+								<div class="pipeline-item">
+									<p><i class="ti ti-grip-vertical"></i> Follow Up</p>
+									<div class="action-pipeline">
+										<a href="#" data-bs-toggle="modal" data-bs-target="#edit_stage"><i
+												class="ti ti-edit text-blue"></i>Edit</a>
+										<a href="#" data-bs-toggle="modal" data-bs-target="#delete_stage"><i
+												class="ti ti-trash text-danger"></i>Delete</a>
+									</div>
+								</div>
+								<div class="pipeline-item">
+									<p><i class="ti ti-grip-vertical"></i> Schedule Service</p>
+									<div class="action-pipeline">
+										<a href="#" data-bs-toggle="modal" data-bs-target="#edit_stage"><i
+												class="ti ti-edit text-blue"></i>Edit</a>
+										<a href="#" data-bs-toggle="modal" data-bs-target="#delete_stage"><i
+												class="ti ti-trash text-danger"></i>Delete</a>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="mb-3">
+							<h5 class="form-title">Access</h5>
+							<div class="d-flex flex-wrap access-item nav">
+								<div class="radio-btn" data-bs-toggle="tab" data-bs-target="#all">
+									<input type="radio" class="status-radio" id="all" name="status" checked="">
+									<label for="all">All</label>
+								</div>
+								<div class="radio-btn" data-bs-toggle="tab" data-bs-target="#select-person">
+									<input type="radio" class="status-radio" id="select" name="status">
+									<label for="select">Select Person</label>
+								</div>
+							</div>
+							<div class="tab-content mb-3">
+								<div class="tab-pane fade" id="select-person">
+									<div class="access-wrapper">
+										<div class="access-view">
+											<div class="access-img">
+												<img src="assets/images/avatar-14.png" alt="Image">Vaughan Lewis
+											</div>
+											<a href="#">Remove</a>
+										</div>
+										<div class="access-view">
+											<div class="access-img">
+												<img src="assets/images/avatar-14.png" alt="Image">Jessica Louise
+											</div>
+											<a href="#">Remove</a>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="d-flex align-items-center justify-content-end">
+						<button type="button" data-bs-dismiss="offcanvas" class="btn btn-light me-2">Cancel</button>
+						<button type="button" class="btn btn-primary">Create</button>
+					</div>
+				</form>
+			</div>
+
+		</div>
+		<!-- /Add New Pipeline -->
+
+		<!-- Delete Stage -->
+		<div class="modal fade" id="delete_stage" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-body">
+						<div class="text-center">
+							<div class="avatar avatar-xl bg-danger-light rounded-circle mb-3">
+								<i class="ti ti-trash-x fs-36 text-danger"></i>
+							</div>
+							<h4 class="mb-2">Remove Stage?</h4>
+							<p class="mb-0">Are you sure you want to remove <br> stage you selected.</p>
+							<div class="d-flex align-items-center justify-content-center mt-4">
+								<a href="#" class="btn btn-light me-2" data-bs-dismiss="modal">Cancel</a>
+								<a href="deals.html" class="btn btn-danger">Yes, Delete it</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- /Delete Stage -->
+
+		<!-- Add New Stage -->
+		<div class="modal custom-modal fade" id="add_stage" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Add New Stage</h5>
+						<button class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+							<i class="ti ti-x"></i>
+						</button>
+					</div>
+					<div class="modal-body">
+						<form action="deals.html">
+							<div class="mb-3">
+								<label class="col-form-label">Stage Name *</label>
+								<input type="text" class="form-control">
+							</div>
+							<div class="modal-btn text-end">
+								<a href="#" class="btn btn-light" data-bs-dismiss="modal">Cancel</a>
+								<button type="submit" class="btn btn-danger">Save Changes</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- /Add New Stage -->
+
+		<!-- Edit Stage -->
+		<div class="modal custom-modal fade" id="edit_stage" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Edit Stage</h5>
+						<button class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+							<i class="ti ti-x"></i>
+						</button>
+					</div>
+					<div class="modal-body">
+						<form action="deals.html">
+							<div class="mb-3">
+								<label class="col-form-label">Stage Name *</label>
+								<input type="text" class="form-control" value="Inpipeline">
+							</div>
+							<div class="modal-btn text-end">
+								<a href="#" class="btn btn-light" data-bs-dismiss="modal">Cancel</a>
+								<button type="submit" class="btn btn-danger">Save Changes</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- /Edit Stage -->
+
+		<!-- Add New View -->
+		<div class="modal custom-modal fade" id="save_view" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Add New View</h5>
+						<button class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+							<i class="ti ti-x"></i>
+						</button>
+					</div>
+					<div class="modal-body">
+						<form action="deals.html">
+							<div class="mb-3">
+								<label class="col-form-label">View Name</label>
+								<input type="text" class="form-control">
+							</div>
+							<div class="modal-btn text-end">
+								<a href="#" class="btn btn-light" data-bs-dismiss="modal">Cancel</a>
+								<button type="submit" class="btn btn-danger">Save</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- /Add New View -->
+
+	</div>
+	<!-- /Main Wrapper -->
+
+	<!-- jQuery -->
+	<script src="assets/js/jquery-3.7.1.min.js"></script>
+
+	<!-- Bootstrap Core JS -->
+	<script src="assets/js/bootstrap.bundle.min.js"></script>
+
+	<!-- Feather Icon JS -->
+	<script src="assets/js/feather.min.js"></script>
+
+	<!-- Slimscroll JS -->
+	<script src="assets/js/jquery.slimscroll.min.js"></script>
+
+	<!-- Datatable JS -->
+	<script src="assets/js/jquery.dataTables.min.js"></script>
+	<script src="assets/js/dataTables.bootstrap5.min.js"></script>
+
+	<!-- Daterangepicker JS -->
+	<script src="assets/js/moment.min.js"></script>
+	<script src="assets/plugins/daterangepicker/daterangepicker.js"></script>
+
+	<!-- Datetimepicker JS -->
+	<script src="assets/js/bootstrap-datetimepicker.min.js"></script>
+
+	<!-- Bootstrap Tagsinput JS -->
+	<script src="assets/plugins/bootstrap-tagsinput/bootstrap-tagsinput.js"></script>
+
+	<!-- Select2 JS -->
+	<script src="assets/plugins/select2/js/select2.min.js"></script>
+
+	<!-- Summernote JS -->
+	<script src="assets/plugins/summernote/summernote-lite.min.js"></script>
+
+	<!-- Custom Json Js -->
+	<script src="assets/js/jsonscript.js"></script>
+
+	<!-- Color Picker JS -->
+	<!-- <script src="assets/plugins/pickr/pickr.es5.min.js"></script> -->
+
+	<!--- Custom Js -->
+	<!-- <script src="assets/js/theme-colorpicker.js"></script> -->
+	<script src="assets/js/script.js"></script>
+
+</body>
+
+</html>

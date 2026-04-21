@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="Mayank Cattle Food PVT. LTD." />
+    <link rel="shortcut icon" href="assets/images/favicon.png" />
+    <!-- Title -->
+    <title>Order Management</title>
+    <!-- Themescript JS -->
+    <!-- <script src="assets/js/theme-script.js"></script> -->
+    <!-- Favicon -->
+    <link rel="icon" href="assets/images/favicon.png" type="image/x-icon">
+    <link rel="shortcut icon" type="image/x-icon" href="assets/images/favicon.png">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <!-- Tabler Icon CSS -->
+    <link rel="stylesheet" href="assets/plugins/tabler-icons/tabler-icons.css">
+    <!-- Fontawesome CSS -->
+    <link rel="stylesheet" href="assets/plugins/fontawesome/css/fontawesome.min.css">
+    <link rel="stylesheet" href="assets/plugins/fontawesome/css/all.min.css">
+    <!-- Color Picker CSS -->
+    <link rel="stylesheet" href="assets/plugins/flatpickr/flatpickr.min.css">
+    <link rel="stylesheet" href="assets/plugins/pickr/themes/nano.min.css">
+    <!-- Datatable CSS -->
+    <link rel="stylesheet" href="assets/css/dataTables.bootstrap5.min.css">
+    <!-- Daterangepicker CSS -->
+    <link rel="stylesheet" href="assets/plugins/daterangepicker/daterangepicker.css">
+    <!-- Select2 CSS -->
+    <link rel="stylesheet" href="assets/plugins/select2/css/select2.min.css">
+    <!-- Summernote CSS -->
+    <link rel="stylesheet" href="assets/plugins/summernote/summernote-lite.min.css">
+    <!-- Bootstrap Tagsinput CSS -->
+    <link rel="stylesheet" href="assets/plugins/bootstrap-tagsinput/bootstrap-tagsinput.css">
+    <!-- Datetimepicker CSS -->
+    <link rel="stylesheet" href="assets/css/bootstrap-datetimepicker.min.css">
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+
+<body>
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+        <!-- Header -->
+        <div class="header">
+            <!-- Logo -->
+            <div class="header-left active">
+                <a href="index.html" class="logo logo-normal">
+                    <img src="assets/images/logo.png" alt="Logo">
+                    <!-- <img src="assets/images/logo.png" class="logo" alt="Logo"> -->
+                </a>
+                <a href="index.html" class="logo-small">
+                    <img src="assets/images/logo.png" alt="Logo">
+                </a>
+                <!--  <a id="toggle_btn" href="javascript:void(0);">
+               <i class="ti ti-arrow-bar-to-left"></i>
+               </a> -->
+            </div>
+            <!-- /Logo -->
+            <a id="mobile_btn" class="mobile_btn" href="#sidebar">
+                <span class="bar-icon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </span>
+            </a>
+            <div class="header-user">
+                <ul class="nav user-menu">
+                    <!-- Nav List -->
+                    <li class="nav-item nav-list">
+                        <ul class="nav">
+                            <li class="nav-item dropdown">
+                                <a href="javascript:void(0);" class="btn btn-header-list" data-bs-toggle="dropdown">
+                                    <i class="ti ti-layout-grid-add"></i>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-end menus-info">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <ul class="menu-list">
+                                                <li>
+                                                    <a href="contacts.html">
+                                                        <div class="menu-details">
+                                                            <span class="menu-list-icon bg-violet">
+                                                                <i class="ti ti-user-up"></i>
+                                                            </span>
+                                                            <div class="menu-details-content">
+                                                                <p>Contacts</p>
+                                                                <span>Add New Contact</span>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="pipeline.html">
+                                                        <div class="menu-details">
+                                                            <span class="menu-list-icon bg-green">
+                                                                <i class="ti ti-timeline-event-exclamation"></i>
+                                                            </span>
+                                                            <div class="menu-details-content">
+                                                                <p>Pipline</p>
+                                                                <span>Add New Pipline</span>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="activities.html">
+                                                        <div class="menu-details">
+                                                            <span class="menu-list-icon bg-pink">
+                                                                <i class="ti ti-bounce-right"></i>
+                                                            </span>
+                                                            <div class="menu-details-content">
+                                                                <p>Activities</p>
+                                                                <span>Add New Activity</span>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="analytics.html">
+                                                        <div class="menu-details">
+                                                            <span class="menu-list-icon bg-info">
+                                                                <i class="ti ti-analyze"></i>
+                                                            </span>
+                                                            <div class="menu-details-content">
+                                                                <p>Analytics</p>
+                                                                <span>Shows All Information</span>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="projects.html">
+                                                        <div class="menu-details">
+                                                            <span class="menu-list-icon bg-danger">
+                                                                <i class="ti ti-atom-2"></i>
+                                                            </span>
+                                                            <div class="menu-details-content">
+                                                                <p>Projects</p>
+                                                                <span>Add New Project</span>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <ul class="menu-list">
+                                                <li>
+                                                    <a href="deals.html">
+                                                        <div class="menu-details">
+                                                            <span class="menu-list-icon bg-info">
+                                                                <i class="ti ti-medal"></i>
+                                                            </span>
+                                                            <div class="menu-details-content">
+                                                                <p>Deals</p>
+                                                                <span>Add New Deals</span>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="leads.html">
+                                                        <div class="menu-details">
+                                                            <span class="menu-list-icon bg-secondary">
+                                                                <i class="ti ti-chart-arcs"></i>
+                                                            </span>
+                                                            <div class="menu-details-content">
+                                                                <p>Leads</p>
+                                                                <span>Add New Leads</span>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="companies.html">
+                                                        <div class="menu-details">
+                                                            <span class="menu-list-icon bg-tertiary">
+                                                                <i class="ti ti-building-community"></i>
+                                                            </span>
+                                                            <div class="menu-details-content">
+                                                                <p>Company</p>
+                                                                <span>Add New Company</span>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="tasks.html">
+                                                        <div class="menu-details">
+                                                            <span class="menu-list-icon bg-success">
+                                                                <i class="ti ti-list-check"></i>
+                                                            </span>
+                                                            <div class="menu-details-content">
+                                                                <p>Tasks</p>
+                                                                <span>Add New Task</span>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="campaign.html">
+                                                        <div class="menu-details">
+                                                            <span class="menu-list-icon bg-purple">
+                                                                <i class="ti ti-brand-campaignmonitor"></i>
+                                                            </span>
+                                                            <div class="menu-details-content">
+                                                                <p>Campaign</p>
+                                                                <span>Add New Campaign</span>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </li>
+                    <!-- /Nav List -->
+                    <!-- Profile Dropdown -->
+                    <li class="nav-item dropdown has-arrow main-drop">
+                        <a href="javascript:void(0);" class="nav-link userset" data-bs-toggle="dropdown">
+                            <span class="user-info">
+                                <span class="user-letter">
+                                    <img src="assets/images/admin.png" alt="Profile">
+                                </span>
+                                <span class="badge badge-success rounded-pill"></span>
+                            </span>
+                        </a>
+                        <div class="dropdown-menu menu-drop-user">
+                            <div class="profilename">
+                                <a class="dropdown-item" href="index.html">
+                                    <i class="ti ti-layout-2"></i> Dashboard
+                                </a>
+                                <a class="dropdown-item" href="profile.html">
+                                    <i class="ti ti-user-pin"></i> My Profile
+                                </a>
+                                <a class="dropdown-item" href="login.html">
+                                    <i class="ti ti-lock"></i> Logout
+                                </a>
+                            </div>
+                        </div>
+                    </li>
+                    <!-- /Profile Dropdown -->
+                </ul>
+            </div>
+            <!-- Mobile Menu -->
+            <div class="dropdown mobile-user-menu">
+                <a href="javascript:void(0);" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                    aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="index.html">
+                        <i class="ti ti-layout-2"></i> Dashboard
+                    </a>
+                    <a class="dropdown-item" href="profile.html">
+                        <i class="ti ti-user-pin"></i> My Profile
+                    </a>
+                    <a class="dropdown-item" href="login.html">
+                        <i class="ti ti-lock"></i> Logout
+                    </a>
+                </div>
+            </div>
+            <!-- /Mobile Menu -->
+        </div>
+        <!-- /Header -->
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="modern-profile p-3 pb-0">
+                <div class="sidebar-nav mb-3">
+                    <ul class="nav nav-tabs nav-tabs-solid nav-tabs-rounded nav-justified bg-transparent"
+                        role="tablist">
+                        <li class="nav-item"><a class="nav-link active border-0" href="#">Menu</a></li>
+                        <li class="nav-item"><a class="nav-link border-0" href="chat.html">Chats</a></li>
+                        <li class="nav-item"><a class="nav-link border-0" href="email.html">Inbox</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="sidebar-header p-3 pb-0 pt-2">
+                <div class="d-flex align-items-center justify-content-between menu-item mb-3">
+                    <div class="me-3">
+                        <a href="calendar.html" class="btn btn-icon border btn-menubar">
+                            <i class="ti ti-layout-grid-remove"></i>
+                        </a>
+                    </div>
+                    <div class="me-3">
+                        <a href="chat.html" class="btn btn-icon border btn-menubar position-relative">
+                            <i class="ti ti-brand-hipchat"></i>
+                        </a>
+                    </div>
+                    <div class="me-3 notification-item">
+                        <a href="activities.html" class="btn btn-icon border btn-menubar position-relative me-1">
+                            <i class="ti ti-bell"></i>
+                            <span class="notification-status-dot"></span>
+                        </a>
+                    </div>
+                    <div class="me-0">
+                        <a href="email.html" class="btn btn-icon border btn-menubar">
+                            <i class="ti ti-message"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-inner slimscroll">
+                <div id="sidebar-menu" class="sidebar-menu">
+                    <ul>
+                        <li class="clinicdropdown">
+                            <a href="profile.html">
+                                <img src="assets/images/admin.png" class="img-fluid" alt="Profile">
+                                <div class="user-names">
+                                    <h5>ANKIT VACHHANI</h5>
+                                    <h6>Admin</h6>
+                                </div>
+                            </a>
+                        </li>
+                    </ul>
+                    </ul>
+                    <ul>
+                        <!--  <li>
+                        <h6 class="submenu-hdr">Sales Management</h6>
+                        <ul>
+                           <li class="submenu">
+                              <a href="javascript:void(0);">
+                              <i class="ti ti-layout-2"></i><span>Sales Management</span><span class="menu-arrow"></span>
+                              </a>
+                              <ul>
+                                 <li><a href="order-management.html" class="active">Order Management</a></li>
+                                 <li><a href="catalogue-management.html">Catalogue Management</a></li>
+                                 <li><a href="sales-persons.html">Sales Persons</a></li>
+                                 <li><a href="targets.html">Targets</a></li>
+                              </ul>
+                           </li>
+                        </ul>
+                        </li> -->
+                        <!-- <li>
+                        <h6 class="submenu-hdr">Customer Type Management</h6>
+                        <ul>
+                           <li class="submenu">
+                              <a href="javascript:void(0);">
+                              <i class="ti ti-layout-2"></i><span>Customer Management</span><span class="menu-arrow"></span>
+                              </a>
+                              <ul>
+                                 <li><a href="roles-permissions.html" class="active">Roles Permissions</a></li>
+                                 <li><a href="manage-users.html">Manage Users</a></li>
+                              </ul>
+                           </li>
+                        </ul>
+                        </li> -->
+                        <li>
+                            <ul>
+                                <li>
+                                    <a href="dashboard.html"><i class="ti ti-layout-2"></i><span>Dashboard</span></a>
+                                </li>
+                                <li>
+                                    <a href="dealer-management.html"><i class="ti ti-bell-school"></i><span>Dealer
+                                            Management</span></a>
+                                </li>
+                                <li>
+                                    <a href="order-management.html" class="active"><i
+                                            class="ti ti-list-check"></i><span>Soda/order Management</span></a>
+                                </li>
+                                <li>
+                                    <a href="dispatch-management.html"><i class="ti ti-report-money"></i><span>Dispatch
+                                            Management</span></a>
+                                </li>
+                                <li>
+                                    <a href="broker-management.html"><i class="ti ti-user-up"></i><span>Broker
+                                            management</span></a>
+                                </li>
+                                <li>
+                                    <a href="transporter-management.html"><i class="ti ti-tir"></i><span>Transporter
+                                            management</span></a>
+                                </li>
+                                <li>
+                                    <a href="oil-management.html"><i class="ti ti-drop-circle"></i><span>Oil
+                                            management</span></a>
+                                </li>
+                                <li>
+                                    <a href="machine-inventory.html"><i class="ti ti-building-factory"></i><span>Machine
+                                            Inventory</span></a>
+                                </li>
+                                <li>
+                                    <a href="role-management.html"><i class="ti ti-user-circle"></i><span>Role
+                                            management</span></a>
+                                </li>
+                                <li>
+                                    <a href="user-management.html"><i class="ti ti-users"></i><span>User
+                                            Management</span></a>
+                                </li>
+                                <li>
+                                    <a href="general-settings.html"><i class="ti ti-settings"></i><span>General
+                                            settings</span></a>
+                                </li>
+                            </ul>
+                        </li>
+                        <!-- <li>
+                        <h6 class="submenu-hdr">Report</h6>
+                        <ul>
+                           <li><a href="sales-person.html"><i class="ti ti-users"></i><span>Sales reports</span></a></li>
+                           <li><a href=""><i class="ti ti-navigation-cog"></i><span>Trend analysis</span></a></li>
+                        </ul>
+                        </li> -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!-- /Sidebar -->
+        <!-- Page Wrapper -->
+        <div class="page-wrapper">
+            <div class="content">
+                <div class="row">
+                    <div class="col-md-12">
+                        <!-- Page Header -->
+                        <div class="page-header">
+                            <div class="row align-items-center">
+                                <div class="col-12">
+                                    <h4 class="page-title">Soda/Order Management</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- /Page Header -->
+                        <div class="card">
+                            <div class="card-header">
+                                <!-- Search -->
+                                <div class="row align-items-center">
+                                    <div class="col-sm-4">
+                                        <div class="icon-form mb-3 mb-sm-0">
+                                            <span class="form-icon"><i class="ti ti-search"></i></span>
+                                            <input type="text" class="form-control" placeholder="Search Soda/Order">
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        <div
+                                            class="d-flex align-items-center flex-wrap row-gap-2 justify-content-sm-end">
+                                            <div class="dropdown me-2">
+                                                <div class="dropdown-menu  dropdown-menu-end">
+                                                    <ul>
+                                                        <li>
+                                                            <a href="javascript:void(0);" class="dropdown-item"><i
+                                                                    class="ti ti-file-type-pdf text-danger me-1"></i>Export
+                                                                as PDF</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0);" class="dropdown-item"><i
+                                                                    class="ti ti-file-type-xls text-green me-1"></i>Export
+                                                                as Excel </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <a href="edit-deals.html" class="btn btn-primary"><i
+                                                    class="ti ti-square-rounded-plus me-2"></i>Add Soda/Order</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- /Search -->
+                            </div>
+                            <div class="card-body">
+                                <!-- order management List -->
+                                <div class="table-responsive custom-table">
+
+                                    <div id="order_management_wrapper" class="dataTables_wrapper table-responsive">
+                                        <div class="dataTables_length" id="order_management_length">
+                                            <label>
+                                                Show
+                                                <select name="order_management_length"
+                                                    class="form-select form-select-sm">
+                                                    <option value="10">10</option>
+                                                    <option value="25">25</option>
+                                                    <option value="50">50</option>
+                                                    <option value="100">100</option>
+                                                </select>
+                                                entries
+                                            </label>
+                                        </div>
+
+                                        <table class="table dataTable">
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th class="no-sort sorting_disabled">
+                                                        <label class="checkboxs">
+                                                            <input type="checkbox" id="select-all"
+                                                                class="order_checkbox"><span
+                                                                class="checkmarks"></span></label>
+                                                    </th>
+                                                    <th class="no-sort" class="sorting">SR.No</th>
+                                                    <th scope="col" class="sorting">Order ID</th>
+                                                    <th scope="col" class="sorting">Firm Name</th>
+                                                    <th scope="col" class="sorting">City</th>
+                                                    <th scope="col" class="sorting">Order Date</th>
+                                                    <th scope="col" class="sorting">Contact Number</th>
+                                                    <th scope="col" class="sorting">Broker</th>
+                                                    <th scope="col" class="sorting">Total</th>
+                                                    <th scope="col" class="sorting">Discount</th>
+                                                    <th scope="col" class="sorting">Order Status</th>
+                                                    <th class="sorting_disabled" aria-label="Action">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr class="odd">
+                                                    <td data-label="Select"><label class="checkboxs">
+                                                            <input type="checkbox" class="checkbox-item order_checkbox"
+                                                                data-id="99">
+                                                            <span class="checkmarks"></span>
+                                                        </label>
+                                                    </td>
+                                                    <td data-label="Sr no">1</td>
+                                                    <td data-label="Order ID"><a href="#"
+                                                            class="show-btn open-popup-model" data-id="99">
+                                                            <i class="ti ti-eye #1ecbe2"></i> ORD000099</a>
+                                                    </td>
+                                                    <td data-label="Party Name">Balaji Agro (Dealer)</td>
+                                                    <td data-label="City">Ahemedabad</td>
+                                                    <td data-label="Order Date">26 Jan 2026</td>
+                                                    <td data-label="Contact Number">7894567890</td>
+                                                    <td data-label="Salesman">Raviraj .BG</td>
+                                                    <td data-label="Total">₹4,070</td>
+                                                    <td data-label="Order Status">50₹</td>
+                                                    <td data-label="Action">
+                                                        <div class="dropdown table-action order_drpdown">
+                                                            <span
+                                                                class="badge badge-pill badge-status bg-secondary">Pending</span>
+                                                            <a href="#" class="action-icon" data-bs-toggle="dropdown"
+                                                                aria-expanded="false"><i class="fa fa-pencil"></i></a>
+                                                            <div class="dropdown-menu dropdown-menu-right"><a
+                                                                    href="javascript:void(0)"
+                                                                    class="dropdown-item change-status" data-id="99"
+                                                                    data-status="2">
+                                                                    <span class="badge bg-success">Complete</span>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="dropdown table-action">
+                                                            <a href="#" class="action-icon " data-bs-toggle="dropdown"
+                                                                aria-expanded="false"><i
+                                                                    class="fa fa-ellipsis-v"></i></a>
+                                                            <div class="dropdown-menu dropdown-menu-right">
+                                                                <a href="#" class="dropdown-item"><i
+                                                                        class="ti ti-edit text-warning"></i> Edit</a><a
+                                                                    href="javascript:void(0)"
+                                                                    class="dropdown-item deleteOrder" data-id="99"> <i
+                                                                        class="ti ti-trash text-danger"></i> Delete</a>
+                                                                <form action="#" method="post" class="delete-form">
+                                                                    <input type="hidden"><input type="hidden"
+                                                                        name="_method" value="DELETE"></form>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr class="even">
+                                                    <td data-label="Select"><label class="checkboxs">
+                                                            <input type="checkbox" class="checkbox-item order_checkbox">
+                                                            <span class="checkmarks"></span>
+                                                        </label>
+                                                    </td>
+                                                    <td data-label="Sr no">2</td>
+                                                    <td data-label="Order ID"><a href=""
+                                                            class="show-btn open-popup-model">
+                                                            <i class="ti ti-eye #1ecbe2"></i> ORD000098</a>
+                                                    </td>
+                                                    <td data-label="Party Name">Balaji Agro (Dealer)</td>
+                                                    <td data-label="City">Ahemedabad</td>
+                                                    <td data-label="Order Date">26 Jan 2026</td>
+                                                    <td data-label="Contact Number">7894567890</td>
+                                                    <td data-label="Salesman">Raviraj .BG</td>
+                                                    <td data-label="Total">₹4,120</td>
+                                                    <td data-label="Order Status">50₹</td>
+                                                    <td data-label="Action">
+                                                        <div class="dropdown table-action order_drpdown">
+                                                            <span
+                                                                class="badge badge-pill badge-status bg-secondary">Pending</span>
+                                                            <a href="#" class="action-icon" data-bs-toggle="dropdown"
+                                                                aria-expanded="false"><i class="fa fa-pencil"></i></a>
+                                                            <div class="dropdown-menu dropdown-menu-right"><a
+                                                                    href="javascript:void(0)"
+                                                                    class="dropdown-item change-status">
+                                                                    <span class="badge bg-success">Complete</span>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="dropdown table-action">
+                                                            <a href="#" class="action-icon " data-bs-toggle="dropdown"
+                                                                aria-expanded="false"><i
+                                                                    class="fa fa-ellipsis-v"></i></a>
+                                                            <div class="dropdown-menu dropdown-menu-right">
+                                                                <a href="" class="dropdown-item"><i
+                                                                        class="ti ti-edit text-warning"></i> Edit</a><a
+                                                                    href="javascript:void(0)"
+                                                                    class="dropdown-item deleteOrder" data-id="98"> <i
+                                                                        class="ti ti-trash text-danger"></i> Delete</a>
+                                                                <form action="" method="post" class="delete-form"><input
+                                                                        type="hidden" name="_token"><input type="hidden"
+                                                                        value="DELETE"></form>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr class="odd">
+                                                    <td data-label="Select"><label class="checkboxs">
+                                                            <input type="checkbox" class="checkbox-item order_checkbox">
+                                                            <span class="checkmarks"></span>
+                                                        </label>
+                                                    </td>
+                                                    <td data-label="Sr no">3</td>
+                                                    <td data-label="Order ID"><a href=""
+                                                            class="show-btn open-popup-model">
+                                                            <i class="ti ti-eye #1ecbe2"></i> ORD000097</a>
+                                                    </td>
+                                                    <td data-label="Party Name">Balaji Agro (Dealer)</td>
+                                                    <td data-label="City">Ahemedabad</td>
+                                                    <td data-label="Order Date">24 Jan 2026</td>
+                                                    <td data-label="Contact Number">7894567890</td>
+                                                    <td data-label="Salesman">Raviraj .BG</td>
+                                                    <td data-label="Total">₹2,392</td>
+                                                    <td data-label="Order Status">50₹</td>
+                                                    <td data-label="Action">
+                                                        <div class="dropdown table-action order_drpdown">
+                                                            <span
+                                                                class="badge badge-pill badge-status bg-secondary">Pending</span>
+                                                            <a href="#" class="action-icon" data-bs-toggle="dropdown"
+                                                                aria-expanded="false"><i class="fa fa-pencil"></i></a>
+                                                            <div class="dropdown-menu dropdown-menu-right"><a
+                                                                    href="javascript:void(0)"
+                                                                    class="dropdown-item change-status" data-id="97"
+                                                                    data-status="2">
+                                                                    <span class="badge bg-success">Complete</span>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="dropdown table-action">
+                                                            <a href="#" class="action-icon " data-bs-toggle="dropdown"
+                                                                aria-expanded="false"><i
+                                                                    class="fa fa-ellipsis-v"></i></a>
+                                                            <div class="dropdown-menu dropdown-menu-right">
+                                                                <a href="" class="dropdown-item"><i
+                                                                        class="ti ti-edit text-warning"></i> Edit</a><a
+                                                                    href="javascript:void(0)"
+                                                                    class="dropdown-item deleteOrder"> <i
+                                                                        class="ti ti-trash text-danger"></i> Delete</a>
+                                                                <form class="delete-form"><input type="hidden"><input
+                                                                        type="hidden" name="_method" value="DELETE">
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+
+
+                                            </tbody>
+                                        </table>
+                                        <div class="dataTables_info" id="order_management_info" role="status"
+                                            aria-live="polite">Showing 1 to 10 of 72 entries</div>
+                                        <div class="dataTables_paginate paging_simple_numbers"
+                                            id="order_management_paginate">
+                                            <ul class="pagination">
+                                                <li class="paginate_button page-item previous disabled"
+                                                    id="order_management_previous"><a aria-controls="order_management"
+                                                        aria-disabled="true" role="link" data-dt-idx="previous"
+                                                        tabindex="-1" class="page-link">Previous</a></li>
+                                                <li class="paginate_button page-item active"><a href="#"
+                                                        class="page-link">1</a></li>
+                                                <li class="paginate_button page-item "><a href="#"
+                                                        class="page-link">2</a></li>
+                                                <li class="paginate_button page-item "><a href="#"
+                                                        class="page-link">3</a></li>
+                                                <li class="paginate_button page-item "><a href="#"
+                                                        class="page-link">4</a></li>
+                                                <li class="paginate_button page-item "><a href="#"
+                                                        class="page-link">5</a></li>
+                                                <li class="paginate_button page-item disabled"><a
+                                                        aria-controls="order_management" aria-disabled="true"
+                                                        role="link" data-dt-idx="ellipsis" tabindex="-1"
+                                                        class="page-link">…</a></li>
+                                                <li class="paginate_button page-item "><a href="#"
+                                                        aria-controls="order_management" role="link" data-dt-idx="7"
+                                                        tabindex="0" class="page-link">8</a></li>
+                                                <li class="paginate_button page-item next" id="order_management_next"><a
+                                                        href="#" aria-controls="order_management" role="link"
+                                                        data-dt-idx="next" tabindex="0" class="page-link">Next</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="datatable-length"></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="datatable-paginate"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="delete_deal" role="dialog">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <div class="text-center">
+                            <div class="avatar avatar-xl bg-danger-light rounded-circle mb-3">
+                                <i class="ti ti-trash-x fs-36 text-danger"></i>
+                            </div>
+                            <h4 class="mb-2">Remove Deal?</h4>
+                            <p class="mb-0">Are you sure you want to remove <br> deal you selected.</p>
+                            <div class="d-flex align-items-center justify-content-center mt-4">
+                                <a href="#" class="btn btn-light me-2" data-bs-dismiss="modal">Cancel</a>
+                                <a href="deals.html" class="btn btn-danger">Yes, Delete it</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /Delete Deal -->
+        <!-- Create Deal -->
+        <div class="modal custom-modal fade" id="create_success" role="dialog">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0 m-0 justify-content-end">
+                        <button class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                            <i class="ti ti-x"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="success-message text-center">
+                            <div class="success-popup-icon bg-light-blue">
+                                <i class="ti ti-medal"></i>
+                            </div>
+                            <h3>Deal Created Successfully!!!</h3>
+                            <p>View the details of deal, created</p>
+                            <div class="col-lg-12 text-center modal-btn">
+                                <a href="#" class="btn btn-light" data-bs-dismiss="modal">Cancel</a>
+                                <a href="deals-details.html" class="btn btn-primary">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- /Main Wrapper -->
+    <!-- jQuery -->
+    <script src="assets/js/jquery-3.7.1.min.js"></script>
+    <!-- Bootstrap Core JS -->
+    <script src="assets/js/bootstrap.bundle.min.js"></script>
+    <!-- Feather Icon JS -->
+    <script src="assets/js/feather.min.js"></script>
+    <!-- Slimscroll JS -->
+    <script src="assets/js/jquery.slimscroll.min.js"></script>
+    <!-- Datatable JS -->
+    <script src="assets/js/jquery.dataTables.min.js"></script>
+    <script src="assets/js/dataTables.bootstrap5.min.js"></script>
+    <!-- Daterangepicker JS -->
+    <script src="assets/js/moment.min.js"></script>
+    <script src="assets/plugins/daterangepicker/daterangepicker.js"></script>
+    <!-- Datetimepicker JS -->
+    <script src="assets/js/bootstrap-datetimepicker.min.js"></script>
+    <!-- Bootstrap Tagsinput JS -->
+    <script src="assets/plugins/bootstrap-tagsinput/bootstrap-tagsinput.js"></script>
+    <!-- Select2 JS -->
+    <script src="assets/plugins/select2/js/select2.min.js"></script>
+    <!-- Summernote JS -->
+    <script src="assets/plugins/summernote/summernote-lite.min.js"></script>
+    <!-- Custom Json Js -->
+    <script src="assets/js/jsonscript.js"></script>
+
+    <script src="assets/js/script.js"></script>
+</body>
+
+</html>

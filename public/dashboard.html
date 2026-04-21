@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8" />
+      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <meta name="author" content="Mayank Cattle Food PVT. LTD. " />
+      <link rel="shortcut icon" href="assets/images/favicon.png" />
+      <!-- Title -->
+      <title>Dashboard</title>
+      <!-- Themescript JS -->
+      <!-- <script src="assets/js/theme-script.js"></script> -->
+      <!-- Favicon -->
+      <link rel="icon" href="assets/images/favicon.png" type="image/x-icon">
+      <!-- <link rel="shortcut icon" type="image/x-icon" href="assets/img/favicon.png"> -->
+      <!-- Bootstrap CSS -->
+      <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+      <!-- Tabler Icon CSS -->
+      <link rel="stylesheet" href="assets/plugins/tabler-icons/tabler-icons.css">
+      <!-- Fontawesome CSS -->
+      <link rel="stylesheet" href="assets/plugins/fontawesome/css/fontawesome.min.css">
+      <link rel="stylesheet" href="assets/plugins/fontawesome/css/all.min.css">
+      <!-- Datatable CSS -->
+      <link rel="stylesheet" href="assets/css/dataTables.bootstrap5.min.css">
+      <!-- Daterangepicker CSS -->
+      <link rel="stylesheet" href="assets/plugins/daterangepicker/daterangepicker.css">
+      <!-- Select2 CSS -->
+      <link rel="stylesheet" href="assets/plugins/select2/css/select2.min.css">
+      <!-- Bootstrap Tagsinput CSS -->
+      <link rel="stylesheet" href="assets/plugins/bootstrap-tagsinput/bootstrap-tagsinput.css">
+      <!-- Datetimepicker CSS -->
+      <link rel="stylesheet" href="assets/css/bootstrap-datetimepicker.min.css">
+      <!-- Summernote CSS -->
+      <link rel="stylesheet" href="assets/plugins/summernote/summernote-lite.min.css">
+      <!-- Main CSS -->
+      <link rel="stylesheet" href="assets/css/style.css">
+   </head>
+   <body>
+      <!-- Main Wrapper -->
+      <div class="main-wrapper">
+         <!-- Header -->
+         <div class="header">
+            <!-- Logo -->
+            <div class="header-left active">
+               <a href="index.html" class="logo logo-normal">
+                  <img src="assets/images/logo.png" alt="Logo">
+                  <!-- <img src="assets/img/white-logo.svg" class="white-logo" alt="Logo"> -->
+               </a>
+               <!-- <a href="index.html" class="logo-small">
+                  <img src="assets/img/logo-small.svg" alt="Logo">
+                  </a> -->
+              <!--  <a id="toggle_btn" href="javascript:void(0);">
+               <i class="ti ti-arrow-bar-to-left"></i>
+               </a> -->
+            </div>
+            <!-- /Logo -->
+            <a id="mobile_btn" class="mobile_btn" href="#sidebar">
+            <span class="bar-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+            </span>
+            </a>
+            <div class="header-user">
+               <ul class="nav user-menu">
+                  <!-- Nav List -->
+                  <li class="nav-item nav-list">
+                     <ul class="nav">
+                        <li class="nav-item dropdown">
+                           <a href="javascript:void(0);" class="btn btn-header-list" data-bs-toggle="dropdown">
+                           <i class="ti ti-layout-grid-add"></i>
+                           </a>
+                           <div class="dropdown-menu dropdown-menu-end menus-info">
+                              <div class="row">
+                                 <div class="col-md-6">
+                                    <ul class="menu-list">
+                                       <li>
+                                          <a href="contacts.html">
+                                             <div class="menu-details">
+                                                <span class="menu-list-icon bg-violet">
+                                                <i class="ti ti-user-up"></i>
+                                                </span>
+                                                <div class="menu-details-content">
+                                                   <p>Contacts</p>
+                                                   <span>Add New Contact</span>
+                                                </div>
+                                             </div>
+                                          </a>
+                                       </li>
+                                       <li>
+                                          <a href="pipeline.html">
+                                             <div class="menu-details">
+                                                <span class="menu-list-icon bg-green">
+                                                <i class="ti ti-timeline-event-exclamation"></i>
+                                                </span>
+                                                <div class="menu-details-content">
+                                                   <p>Pipline</p>
+                                                   <span>Add New Pipline</span>
+                                                </div>
+                                             </div>
+                                          </a>
+                                       </li>
+                                       <li>
+                                          <a href="activities.html">
+                                             <div class="menu-details">
+                                                <span class="menu-list-icon bg-pink">
+                                                <i class="ti ti-bounce-right"></i>
+                                                </span>
+                                                <div class="menu-details-content">
+                                                   <p>Activities</p>
+                                                   <span>Add New Activity</span>
+                                                </div>
+                                             </div>
+                                          </a>
+                                       </li>
+                                       <li>
+                                          <a href="analytics.html">
+                                             <div class="menu-details">
+                                                <span class="menu-list-icon bg-info">
+                                                <i class="ti ti-analyze"></i>
+                                                </span>
+                                                <div class="menu-details-content">
+                                                   <p>Analytics</p>
+                                                   <span>Shows All Information</span>
+                                                </div>
+                                             </div>
+                                          </a>
+                                       </li>
+                                       <li>
+                                          <a href="projects.html">
+                                             <div class="menu-details">
+                                                <span class="menu-list-icon bg-danger">
+                                                <i class="ti ti-atom-2"></i>
+                                                </span>
+                                                <div class="menu-details-content">
+                                                   <p>Projects</p>
+                                                   <span>Add New Project</span>
+                                                </div>
+                                             </div>
+                                          </a>
+                                       </li>
+                                    </ul>
+                                 </div>
+                                 <div class="col-md-6">
+                                    <ul class="menu-list">
+                                       <li>
+                                          <a href="deals.html">
+                                             <div class="menu-details">
+                                                <span class="menu-list-icon bg-info">
+                                                <i class="ti ti-medal"></i>
+                                                </span>
+                                                <div class="menu-details-content">
+                                                   <p>Deals</p>
+                                                   <span>Add New Deals</span>
+                                                </div>
+                                             </div>
+                                          </a>
+                                       </li>
+                                       <li>
+                                          <a href="leads.html">
+                                             <div class="menu-details">
+                                                <span class="menu-list-icon bg-secondary">
+                                                <i class="ti ti-chart-arcs"></i>
+                                                </span>
+                                                <div class="menu-details-content">
+                                                   <p>Leads</p>
+                                                   <span>Add New Leads</span>
+                                                </div>
+                                             </div>
+                                          </a>
+                                       </li>
+                                       <li>
+                                          <a href="companies.html">
+                                             <div class="menu-details">
+                                                <span class="menu-list-icon bg-tertiary">
+                                                <i class="ti ti-building-community"></i>
+                                                </span>
+                                                <div class="menu-details-content">
+                                                   <p>Company</p>
+                                                   <span>Add New Company</span>
+                                                </div>
+                                             </div>
+                                          </a>
+                                       </li>
+                                       <li>
+                                          <a href="tasks.html">
+                                             <div class="menu-details">
+                                                <span class="menu-list-icon bg-success">
+                                                <i class="ti ti-list-check"></i>
+                                                </span>
+                                                <div class="menu-details-content">
+                                                   <p>Tasks</p>
+                                                   <span>Add New Task</span>
+                                                </div>
+                                             </div>
+                                          </a>
+                                       </li>
+                                       <li>
+                                          <a href="campaign.html">
+                                             <div class="menu-details">
+                                                <span class="menu-list-icon bg-purple">
+                                                <i class="ti ti-brand-campaignmonitor"></i>
+                                                </span>
+                                                <div class="menu-details-content">
+                                                   <p>Campaign</p>
+                                                   <span>Add New Campaign</span>
+                                                </div>
+                                             </div>
+                                          </a>
+                                       </li>
+                                    </ul>
+                                 </div>
+                              </div>
+                           </div>
+                        </li>
+                     </ul>
+                  </li>
+                  <!-- /Nav List -->
+                  <!-- Profile Dropdown -->
+                  <li class="nav-item dropdown has-arrow main-drop">
+                     <a href="javascript:void(0);" class="nav-link userset" data-bs-toggle="dropdown">
+                     <span class="user-info">
+                     <span class="user-letter">
+                     <img src="assets/images/admin.png" alt="Profile">
+                     </span>
+                     <span class="badge badge-success rounded-pill"></span>
+                     </span>
+                     </a>
+                     <div class="dropdown-menu menu-drop-user">
+                        <div class="profilename">
+                           <a class="dropdown-item" href="index.html">
+                           <i class="ti ti-layout-2"></i> Dashboard
+                           </a>
+                           <a class="dropdown-item" href="profile.html">
+                           <i class="ti ti-user-pin"></i> My Profile
+                           </a>
+                           <a class="dropdown-item" href="login.html">
+                           <i class="ti ti-lock"></i> Logout
+                           </a>
+                        </div>
+                     </div>
+                  </li>
+                  <!-- /Profile Dropdown -->
+               </ul>
+            </div>
+            <!-- Mobile Menu -->
+            <div class="dropdown mobile-user-menu">
+               <a href="javascript:void(0);" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+               <div class="dropdown-menu">
+                  <a class="dropdown-item" href="index.html">
+                  <i class="ti ti-layout-2"></i> Dashboard
+                  </a>
+                  <a class="dropdown-item" href="profile.html">
+                  <i class="ti ti-user-pin"></i> My Profile
+                  </a>
+                  <a class="dropdown-item" href="login.html">
+                  <i class="ti ti-lock"></i> Logout
+                  </a>
+               </div>
+            </div>
+            <!-- /Mobile Menu -->
+         </div>
+         <!-- /Header -->
+         <!-- Sidebar -->
+         <div class="sidebar" id="sidebar">
+            <div class="modern-profile p-3 pb-0">
+               <div class="sidebar-nav mb-3">
+                  <ul class="nav nav-tabs nav-tabs-solid nav-tabs-rounded nav-justified bg-transparent"
+                     role="tablist">
+                     <li class="nav-item"><a class="nav-link active border-0" href="#">Menu</a></li>
+                     <li class="nav-item"><a class="nav-link border-0" href="chat.html">Chats</a></li>
+                     <li class="nav-item"><a class="nav-link border-0" href="email.html">Inbox</a></li>
+                  </ul>
+               </div>
+            </div>
+            <div class="sidebar-header p-3 pb-0 pt-2">
+               <div class="d-flex align-items-center justify-content-between menu-item mb-3">
+                  <div class="me-3">
+                     <a href="calendar.html" class="btn btn-icon border btn-menubar">
+                     <i class="ti ti-layout-grid-remove"></i>
+                     </a>
+                  </div>
+                  <div class="me-3">
+                     <a href="chat.html" class="btn btn-icon border btn-menubar position-relative">
+                     <i class="ti ti-brand-hipchat"></i>
+                     </a>
+                  </div>
+                  <div class="me-3 notification-item">
+                     <a href="activities.html" class="btn btn-icon border btn-menubar position-relative me-1">
+                     <i class="ti ti-bell"></i>
+                     <span class="notification-status-dot"></span>
+                     </a>
+                  </div>
+                  <div class="me-0">
+                     <a href="email.html" class="btn btn-icon border btn-menubar">
+                     <i class="ti ti-message"></i>
+                     </a>
+                  </div>
+               </div>
+            </div>
+            <div class="sidebar-inner slimscroll">
+               <div id="sidebar-menu" class="sidebar-menu">
+                  <ul>
+                     <li class="clinicdropdown">
+                        <a href="profile.html">
+                           <img src="assets/images/admin.png" class="img-fluid" alt="Profile">
+                           <div class="user-names">
+                              <h5>ANKIT VACHHANI</h5>
+                              <h6>Admin</h6>
+                           </div>
+                        </a>
+                     </li>
+                  </ul>
+                  <ul>
+                     <!--  <li>
+                        <h6 class="submenu-hdr">Sales Management</h6>
+                        <ul>
+                           <li class="submenu">
+                              <a href="javascript:void(0);">
+                              <i class="ti ti-layout-2"></i><span>Sales Management</span><span class="menu-arrow"></span>
+                              </a>
+                              <ul>
+                                 <li><a href="order-management.html" class="active">Order Management</a></li>
+                                 <li><a href="catalogue-management.html">Catalogue Management</a></li>
+                                 <li><a href="sales-persons.html">Sales Persons</a></li>
+                                 <li><a href="targets.html">Targets</a></li>
+                              </ul>
+                           </li>
+                        </ul>
+                        </li> -->
+                     <!-- <li>
+                        <h6 class="submenu-hdr">Customer Type Management</h6>
+                        <ul>
+                           <li class="submenu">
+                              <a href="javascript:void(0);">
+                              <i class="ti ti-layout-2"></i><span>Customer Management</span><span class="menu-arrow"></span>
+                              </a>
+                              <ul>
+                                 <li><a href="roles-permissions.html" class="active">Roles Permissions</a></li>
+                                 <li><a href="manage-users.html">Manage Users</a></li>
+                              </ul>
+                           </li>
+                        </ul>
+                        </li> -->
+                     <li>
+                        <ul>
+                           <li>
+                              <a href="dashboard.html"  class="active"><i class="ti ti-layout-2"></i><span>Dashboard</span></a>
+                           </li>
+                           <li>
+                              <a href="dealer-management.html"><i class="ti ti-bell-school"></i><span>Dealer Management</span></a>
+                           </li>
+                           <li>
+                              <a href="order-management.html"><i class="ti ti-list-check"></i><span>Soda/order Management</span></a>
+                           </li>
+                           <li>
+                              <a href="dispatch-management.html"><i class="ti ti-report-money"></i><span>Dispatch Management</span></a>
+                           </li>
+                           <li>
+                              <a href="broker-management.html"><i class="ti ti-user-up"></i><span>Broker management</span></a>
+                           </li>
+                           <li>
+                              <a href="transporter-management.html"><i class="ti ti-tir"></i><span>Transporter management</span></a>
+                           </li>
+                           <li>
+                              <a href="oil-management.html"><i class="ti ti-drop-circle"></i><span>Oil management</span></a>
+                           </li>
+                           <li>
+                              <a href="machine-Inventory"><i class="ti ti-building-factory"></i><span>Machine Inventory</span></a>
+                           </li>
+                           <li>
+                              <a href="role-management.html"><i class="ti ti-user-circle"></i><span>Role management</span></a>
+                           </li>
+                           <li>
+                              <a href="user-management.html"><i class="ti ti-users"></i><span>User Management</span></a>
+                           </li>
+                           <li>
+                              <a href="general-settings.html"><i class="ti ti-settings"></i><span>General settings</span></a>
+                           </li>
+                        </ul>
+                     </li>
+                     <!-- <li>
+                        <h6 class="submenu-hdr">Report</h6>
+                        <ul>
+                           <li><a href="sales-person.html"><i class="ti ti-users"></i><span>Sales reports</span></a></li>
+                           <li><a href=""><i class="ti ti-navigation-cog"></i><span>Trend analysis</span></a></li>
+                        </ul>
+                        </li> -->
+                  </ul>
+               </div>
+            </div>
+         </div>
+         <!-- /Sidebar -->
+         <!-- Page Wrapper -->
+         <div class="page-wrapper" style="min-height: 945px;">
+            <div class="content">
+               <div class="row">
+                  <div class="col-md-12">
+                     <div class="page-header">
+                        <div class="row align-items-center ">
+                           <div class="col-md-4">
+                              <h3 class="page-title">
+                                 Super Admin Dashboard
+                              </h3>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <!-- Welcome Wrap -->
+               <div class="welcome-wrap mb-4">
+                  <div class=" d-flex align-items-center justify-content-between flex-wrap">
+                     <div class="mb-3">
+                        <h2 class="mb-1 text-white">Welcome Back, ANKIT VACHHANI</h2>
+                        <p class="text-light"></p>
+                     </div>
+                  </div>
+               </div>
+               <div class="row detials-gc-user">
+                  <div class="col-xl-3 col-sm-6 d-flex">
+                     <div class="card flex-fill">
+                        <div class="card-body">
+                           <div class="d-flex align-items-center justify-content-between">
+                              <span class="avatar avatar-md rounded bg-dark mb-3">
+                              <i class="ti ti-medal fs-16"></i>
+                              </span>
+                           </div>
+                           <div class="d-flex align-items-center justify-content-between">
+                              <div>
+                                 <h2 class="mb-1">15</h2>
+                                 <p class="fs-13">Total Dealers</p>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="col-xl-3 col-sm-6 d-flex">
+                     <div class="card flex-fill">
+                        <div class="card-body">
+                           <div class="d-flex align-items-center justify-content-between">
+                              <span class="avatar avatar-md rounded bg-dark mb-3">
+                              <i class="ti ti-user-up fs-16"></i>
+                              </span>
+                           </div>
+                           <div class="d-flex align-items-center justify-content-between">
+                              <div>
+                                 <h2 class="mb-1">10</h2>
+                                 <p class="fs-13">Total Broker</p>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="col-xl-3 col-sm-6 d-flex">
+                     <div class="card flex-fill">
+                        <div class="card-body">
+                           <div class="d-flex align-items-center justify-content-between">
+                              <span class="avatar avatar-md rounded bg-dark mb-3">
+                              <i class="ti ti-user-star fs-16"></i>
+                              </span>
+                           </div>
+                           <div class="d-flex align-items-center justify-content-between">
+                              <div>
+                                 <h2 class="mb-1">4</h2>
+                                 <p class="fs-13">Total Soda/Order</p>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="col-xl-3 col-sm-6 d-flex">
+                     <div class="card flex-fill">
+                        <div class="card-body">
+                           <div class="d-flex align-items-center justify-content-between">
+                              <span class="avatar avatar-md rounded bg-dark mb-3">
+                              <i class="ti ti-businessplan fs-16"></i>
+                              </span>
+                           </div>
+                           <div class="d-flex align-items-center justify-content-between">
+                              <div>
+                                 <h2 class="mb-1">50</h2>
+                                 <p class="fs-13">Total Dispatch request</p>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <div class="row">
+                  <div class="col-lg-6 d-flex">
+                     <!--col-xxl-3 -->
+                     <div class="card flex-fill">
+                        <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
+                           <h5 class="mb-2">Total Orders</h5>
+                        </div>
+                        <div class="card-body pb-0">
+                           <div id="company-chart">
+                           </div>
+                           <div class="d-flex align-items-center justify-content-between flex-wrap">
+                              <div class="mb-1">
+                                 <h2 class="mb-1">1000</h2>
+                              </div>
+                              <p class="fs-13 text-gray-9 d-flex align-items-center mb-1"><i class="ti ti-circle-filled me-1 fs-6 text-primary"></i>Orders</p>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="col-lg-6 d-flex">
+                     <div class="card flex-fill">
+                        <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
+                           <h5 class="mb-2">Revenue</h5>
+                        </div>
+                        <div class="card-body pb-0">
+                           <div class="d-flex align-items-center justify-content-between flex-wrap">
+                              <div class="mb-1">
+                                 <h2 class="mb-1">₹50,85,000</h2>
+                              </div>
+                              <p class="fs-13 text-gray-9 d-flex align-items-center mb-1"><i class="ti ti-circle-filled me-1 fs-6 text-primary"></i>Revenue</p>
+                           </div>
+                           <div id="revenue-income"></div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <div class="row">
+                  <div class="col-xxl-4 col-xl-12 d-flex">
+                     <div class="card flex-fill">
+                        <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
+                           <h5 class="mb-2">Recent Orders</h5>
+                           <a href="#" class="btn btn-light btn-md mb-2">View All</a>
+                        </div>
+                        <div class="card-body pb-2">
+                           <div class="d-flex justify-content-between flex-wrap mb-3">
+                              <div class="d-flex align-items-center mb-2">
+                                 <a href="#" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                 <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                 </a>
+                                 <div class="ms-2 flex-fill">
+                                    <h6 class="fs-medium text-truncate mb-1">
+                                       <a href="assets/images/avatar-14.png">
+                                       Balaji Agro
+                                       </a>
+                                    </h6>
+                                    <p class="fs-13 d-inline-flex align-items-center">
+                                       <a href="#">
+                                          <spa class="text-info">ORD000099</spa>
+                                       </a>
+                                       <i class="ti ti-circle-filled fs-4 text-primary mx-1">
+                                       </i>26 Jan 2026
+                                    </p>
+                                 </div>
+                              </div>
+                              <div class="text-sm-end mb-2">
+                                 <h6 class="mb-1">₹4,070</h6>
+                              </div>
+                           </div>
+                           <div class="d-flex justify-content-between flex-wrap mb-3">
+                              <div class="d-flex align-items-center mb-2">
+                                 <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                 <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                 </a>
+                                 <div class="ms-2 flex-fill">
+                                    <h6 class="fs-medium text-truncate mb-1">
+                                       <a href="#">
+                                       Balaji Agro
+                                       </a>
+                                    </h6>
+                                    <p class="fs-13 d-inline-flex align-items-center">
+                                       <a href="#">
+                                          <spa class="text-info">ORD000098</spa>
+                                       </a>
+                                       <i class="ti ti-circle-filled fs-4 text-primary mx-1">
+                                       </i>26 Jan 2026
+                                    </p>
+                                 </div>
+                              </div>
+                              <div class="text-sm-end mb-2">
+                                 <h6 class="mb-1">₹4,120</h6>
+                              </div>
+                           </div>
+                           <div class="d-flex justify-content-between flex-wrap mb-3">
+                              <div class="d-flex align-items-center mb-2">
+                                 <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                 <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                 </a>
+                                 <div class="ms-2 flex-fill">
+                                    <h6 class="fs-medium text-truncate mb-1">
+                                       <a href="#">
+                                       Balaji Agro
+                                       </a>
+                                    </h6>
+                                    <p class="fs-13 d-inline-flex align-items-center">
+                                       <a href="#">
+                                          <spa class="text-info">ORD000097</spa>
+                                       </a>
+                                       <i class="ti ti-circle-filled fs-4 text-primary mx-1">
+                                       </i>24 Jan 2026
+                                    </p>
+                                 </div>
+                              </div>
+                              <div class="text-sm-end mb-2">
+                                 <h6 class="mb-1">₹2,392</h6>
+                              </div>
+                           </div>
+                           <div class="d-flex justify-content-between flex-wrap mb-3">
+                              <div class="d-flex align-items-center mb-2">
+                                 <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                 <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                 </a>
+                                 <div class="ms-2 flex-fill">
+                                    <h6 class="fs-medium text-truncate mb-1">
+                                       <a href="#">
+                                       PrimaCARE
+                                       </a>
+                                    </h6>
+                                    <p class="fs-13 d-inline-flex align-items-center">
+                                       <a href="#">
+                                          <spa class="text-info">ORD000096</spa>
+                                       </a>
+                                       <i class="ti ti-circle-filled fs-4 text-primary mx-1">
+                                       </i>31 Dec 2025
+                                    </p>
+                                 </div>
+                              </div>
+                              <div class="text-sm-end mb-2">
+                                 <h6 class="mb-1">₹2,600</h6>
+                              </div>
+                           </div>
+                           <div class="d-flex justify-content-between flex-wrap mb-3">
+                              <div class="d-flex align-items-center mb-2">
+                                 <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                 <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                 </a>
+                                 <div class="ms-2 flex-fill">
+                                    <h6 class="fs-medium text-truncate mb-1">
+                                       <a href="#">
+                                       PrimaCARE
+                                       </a>
+                                    </h6>
+                                    <p class="fs-13 d-inline-flex align-items-center">
+                                       <a href="#">
+                                          <spa class="text-info">ORD000095</spa>
+                                       </a>
+                                       <i class="ti ti-circle-filled fs-4 text-primary mx-1">
+                                       </i>30 Dec 2025
+                                    </p>
+                                 </div>
+                              </div>
+                              <div class="text-sm-end mb-2">
+                                 <h6 class="mb-1">₹470</h6>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="col-xxl-4 col-xl-6 d-flex">
+                     <div class="card flex-fill">
+                        <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
+                           <h5 class="mb-2"> Recent Dealers </h5>
+                           <a href="#" class="btn btn-light btn-md mb-2">View All</a>
+                        </div>
+                        <div class="card-body pb-2">
+                           <div class="d-flex justify-content-between flex-wrap mb-3">
+                              <div class="d-flex align-items-center mb-2">
+                                 <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                 <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                 </a>
+                                 <div class="ms-2 flex-fill">
+                                    <h6 class="fs-medium text-truncate mb-1">
+                                       <a href="#">
+                                       Elmo Kinney
+                                       </a>
+                                    </h6>
+                                    <p class="fs-13">Rajkot</p>
+                                 </div>
+                              </div>
+                           </div>
+                           <div class="d-flex justify-content-between flex-wrap mb-3">
+                              <div class="d-flex align-items-center mb-2">
+                                 <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                 <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                 </a>
+                                 <div class="ms-2 flex-fill">
+                                    <h6 class="fs-medium text-truncate mb-1">
+                                       <a href="#">
+                                       Elton Reeves
+                                       </a>
+                                    </h6>
+                                    <p class="fs-13">Rajkot</p>
+                                 </div>
+                              </div>
+                           </div>
+                           <div class="d-flex justify-content-between flex-wrap mb-3">
+                              <div class="d-flex align-items-center mb-2">
+                                 <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                 <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                 </a>
+                                 <div class="ms-2 flex-fill">
+                                    <h6 class="fs-medium text-truncate mb-1">
+                                       <a href="#">
+                                       Kibo Cannon
+                                       </a>
+                                    </h6>
+                                    <p class="fs-13">Rajkot</p>
+                                 </div>
+                              </div>
+                           </div>
+                           <div class="d-flex justify-content-between flex-wrap mb-3">
+                              <div class="d-flex align-items-center mb-2">
+                                 <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                 <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                 </a>
+                                 <div class="ms-2 flex-fill">
+                                    <h6 class="fs-medium text-truncate mb-1">
+                                       <a href="#">
+                                       Boris Mcintosh
+                                       </a>
+                                    </h6>
+                                    <p class="fs-13">Rajkot</p>
+                                 </div>
+                              </div>
+                           </div>
+                           <div class="d-flex justify-content-between flex-wrap mb-3">
+                              <div class="d-flex align-items-center mb-2">
+                                 <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                 <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                 </a>
+                                 <div class="ms-2 flex-fill">
+                                    <h6 class="fs-medium text-truncate mb-1">
+                                       <a href="#">
+                                       Lev Garrison
+                                       </a>
+                                    </h6>
+                                    <p class="fs-13">Rajkot</p>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="col-xxl-4 col-xl-6 d-flex">
+                     <div class="card flex-fill">
+                        <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
+                           <h5 class="mb-2">Recent Dispatch Request</h5>
+                           <a href="#" class="btn btn-light btn-md mb-2">View All</a>
+                        </div>
+                        <div class="card-body pb-2">
+                           <div>
+                              <div>
+                                 <div class="d-flex justify-content-between flex-wrap mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                       <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                       <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                       </a>
+                                       <div class="ms-2 flex-fill">
+                                          <h6 class="fs-medium text-truncate mb-1"><a href="#">
+                                             Branden Burris</a>
+                                          </h6>
+                                          <p class="fs-13">Rajkot</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div class="d-flex justify-content-between flex-wrap mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                       <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                       <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                       </a>
+                                       <div class="ms-2 flex-fill">
+                                          <h6 class="fs-medium text-truncate mb-1"><a href="#">
+                                             Ifeoma Anthony</a>
+                                          </h6>
+                                          <p class="fs-13">Rajkot</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div class="d-flex justify-content-between flex-wrap mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                       <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                       <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                       </a>
+                                       <div class="ms-2 flex-fill">
+                                          <h6 class="fs-medium text-truncate mb-1"><a href="#">
+                                             Tyrone Lowe</a>
+                                          </h6>
+                                          <p class="fs-13">Rajkot</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div class="d-flex justify-content-between flex-wrap mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                       <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                       <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                       </a>
+                                       <div class="ms-2 flex-fill">
+                                          <h6 class="fs-medium text-truncate mb-1"><a href="#">
+                                             John Enterprise</a>
+                                          </h6>
+                                          <p class="fs-13">Jamnagar</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div class="d-flex justify-content-between flex-wrap mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                       <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                       <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                       </a>
+                                       <div class="ms-2 flex-fill">
+                                          <h6 class="fs-medium text-truncate mb-1"><a href="#">
+                                             Chamunda Agro. center</a>
+                                          </h6>
+                                          <p class="fs-13">Rajkot</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+
+                   <div class="col-xxl-4 col-xl-6 d-flex">
+                     <div class="card flex-fill">
+                        <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
+                           <h5 class="mb-2">Recent Broker</h5>
+                           <a href="#" class="btn btn-light btn-md mb-2">View All</a>
+                        </div>
+                        <div class="card-body pb-2">
+                           <div>
+                              <div>
+                                 <div class="d-flex justify-content-between flex-wrap mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                       <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                       <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                       </a>
+                                       <div class="ms-2 flex-fill">
+                                          <h6 class="fs-medium text-truncate mb-1"><a href="#">
+                                             Branden Burris</a>
+                                          </h6>
+                                          <p class="fs-13">Rajkot</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div class="d-flex justify-content-between flex-wrap mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                       <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                       <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                       </a>
+                                       <div class="ms-2 flex-fill">
+                                          <h6 class="fs-medium text-truncate mb-1"><a href="#">
+                                             Ifeoma Anthony</a>
+                                          </h6>
+                                          <p class="fs-13">Rajkot</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div class="d-flex justify-content-between flex-wrap mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                       <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                       <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                       </a>
+                                       <div class="ms-2 flex-fill">
+                                          <h6 class="fs-medium text-truncate mb-1"><a href="#">
+                                             Tyrone Lowe</a>
+                                          </h6>
+                                          <p class="fs-13">Rajkot</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div class="d-flex justify-content-between flex-wrap mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                       <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                       <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                       </a>
+                                       <div class="ms-2 flex-fill">
+                                          <h6 class="fs-medium text-truncate mb-1"><a href="#">
+                                             John Enterprise</a>
+                                          </h6>
+                                          <p class="fs-13">Jamnagar</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div class="d-flex justify-content-between flex-wrap mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                       <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                       <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                       </a>
+                                       <div class="ms-2 flex-fill">
+                                          <h6 class="fs-medium text-truncate mb-1"><a href="#">
+                                             Chamunda Agro. center</a>
+                                          </h6>
+                                          <p class="fs-13">Rajkot</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+
+                   <div class="col-xxl-4 col-xl-6 d-flex">
+                     <div class="card flex-fill">
+                        <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
+                           <h5 class="mb-2">Recent Transporter </h5>
+                           <a href="#" class="btn btn-light btn-md mb-2">View All</a>
+                        </div>
+                        <div class="card-body pb-2">
+                           <div>
+                              <div>
+                                 <div class="d-flex justify-content-between flex-wrap mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                       <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                       <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                       </a>
+                                       <div class="ms-2 flex-fill">
+                                          <h6 class="fs-medium text-truncate mb-1"><a href="#">
+                                             Branden Burris</a>
+                                          </h6>
+                                          <p class="fs-13">Rajkot</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div class="d-flex justify-content-between flex-wrap mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                       <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                       <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                       </a>
+                                       <div class="ms-2 flex-fill">
+                                          <h6 class="fs-medium text-truncate mb-1"><a href="#">
+                                             Ifeoma Anthony</a>
+                                          </h6>
+                                          <p class="fs-13">Rajkot</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div class="d-flex justify-content-between flex-wrap mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                       <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                       <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                       </a>
+                                       <div class="ms-2 flex-fill">
+                                          <h6 class="fs-medium text-truncate mb-1"><a href="#">
+                                             Tyrone Lowe</a>
+                                          </h6>
+                                          <p class="fs-13">Rajkot</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div class="d-flex justify-content-between flex-wrap mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                       <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                       <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                       </a>
+                                       <div class="ms-2 flex-fill">
+                                          <h6 class="fs-medium text-truncate mb-1"><a href="#">
+                                             John Enterprise</a>
+                                          </h6>
+                                          <p class="fs-13">Jamnagar</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div class="d-flex justify-content-between flex-wrap mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                       <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                       <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image" class="img-thumbnail mb-2">
+                                       </a>
+                                       <div class="ms-2 flex-fill">
+                                          <h6 class="fs-medium text-truncate mb-1"><a href="#">
+                                             Chamunda Agro. center</a>
+                                          </h6>
+                                          <p class="fs-13">Rajkot</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+         <!-- /Page Wrapper -->
+      </div>
+      <!-- /Main Wrapper -->
+      <!-- jQuery -->
+      <script src="assets/js/jquery-3.7.1.min.js"></script>
+      <!-- Bootstrap Core JS -->
+      <script src="assets/js/bootstrap.bundle.min.js"></script>
+      <!-- Feather Icon JS -->
+      <script src="assets/js/feather.min.js"></script>
+      <!-- Slimscroll JS -->
+      <script src="assets/js/jquery.slimscroll.min.js"></script>
+      <!-- Datatable JS -->
+      <script src="assets/js/jquery.dataTables.min.js"></script>
+      <script src="assets/js/dataTables.bootstrap5.min.js"></script>
+      <!-- Daterangepicker JS -->
+      <script src="assets/js/moment.min.js"></script>
+      <script src="assets/plugins/daterangepicker/daterangepicker.js"></script>
+      <!-- Datetimepicker JS -->
+      <script src="assets/js/bootstrap-datetimepicker.min.js"></script>
+      <!-- Bootstrap Tagsinput JS -->
+      <script src="assets/plugins/bootstrap-tagsinput/bootstrap-tagsinput.js"></script>
+      <!-- Select2 JS -->
+      <script src="assets/plugins/select2/js/select2.min.js"></script>
+      <!-- Summernote JS -->
+      <script src="assets/plugins/summernote/summernote-lite.min.js"></script>
+      <!-- Custom Json Js -->
+      <script src="assets/js/jsonscript.js"></script>
+      <!-- Color Picker JS -->
+      <!-- <script src="assets/plugins/@simonwep/pickr/pickr.es5.min.js"></script> -->
+      <!--- Custom Js -->
+      <!-- <script src="assets/js/theme-colorpicker.js"></script> -->
+      <script src="assets/js/script.js"></script>
+   </body>
+</html>

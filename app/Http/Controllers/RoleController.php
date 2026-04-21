@@ -59,9 +59,9 @@ class RoleController extends Controller
         return view('roles.index', $data);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    /* ------------------------------------------------------------------ */
+    /*  CREATE                                                            */
+    /* ------------------------------------------------------------------ */
     public function create()
     {
         $data['page_title']  = 'Add Role & Permission';
@@ -72,9 +72,9 @@ class RoleController extends Controller
         return view('roles.create', $data);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    /* ------------------------------------------------------------------ */
+    /*  STORE                                                             */
+    /* ------------------------------------------------------------------ */
     public function store(Request $request)
     {
         $request->validate(['name' => 'required|unique:roles,name,NULL,id'], [
@@ -90,9 +90,9 @@ class RoleController extends Controller
         return redirect()->route('roles.index')->with('success', 'Role created successfully.');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
+    /* ------------------------------------------------------------------ */
+    /*  EDIT                                                              */
+    /* ------------------------------------------------------------------ */
     public function edit(Role $role)
     {
         // auth()->user()->assignRole('super admin');
@@ -105,9 +105,9 @@ class RoleController extends Controller
         return view('roles.edit', $data);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+    /* ------------------------------------------------------------------ */
+    /*  UPDATE                                                            */
+    /* ------------------------------------------------------------------ */
     public function update(Request $request, Role $role)
     {
         $rules = [
@@ -135,9 +135,9 @@ class RoleController extends Controller
         return redirect()->route('roles.index')->with('success', 'Role updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    /* ------------------------------------------------------------------ */
+    /*  DESTROY                                                           */
+    /* ------------------------------------------------------------------ */
     public function destroy(Role $role)
     {
         $role->delete();
