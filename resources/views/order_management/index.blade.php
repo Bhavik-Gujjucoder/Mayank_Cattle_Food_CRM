@@ -31,7 +31,7 @@
                             </ul>
                         </div>
                     </div>
-                    <a href="edit-deals.html" class="btn btn-primary"><i class="ti ti-square-rounded-plus me-2"></i>Add
+                    <a href="{{ route('order.create') }}" class="btn btn-primary"><i class="ti ti-square-rounded-plus me-2"></i>Add
                         Soda/Order</a>
                 </div>
             </div>

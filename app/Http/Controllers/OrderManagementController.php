@@ -21,7 +21,8 @@ class OrderManagementController extends Controller
     /* ------------------------------------------------------------------ */
     public function create()
     {
-        //
+        $data['page_title'] = 'Add - Soda/Order';
+        return view('order_management.create', $data);
     }
 
     /* ------------------------------------------------------------------ */

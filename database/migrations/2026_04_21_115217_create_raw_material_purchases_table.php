@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('raw_material_purchases', function (Blueprint $table) {
             $table->id();
+
+            $table->string('purchase_unique_id')->unique()->comment('unique id for the purchase');
             
             $table->unsignedBigInteger('supplier_id');
             $table->unsignedBigInteger('raw_material_id');
