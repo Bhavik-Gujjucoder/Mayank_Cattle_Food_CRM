@@ -84,6 +84,12 @@
                                     class="ti ti-tir"></i><span>Transporter</span></a>
                         </li>
 
+                         <li>
+                            <a href="{{ route('supplier.index') }}"
+                                class="@if (request()->routeIs('supplier*')) active @endif"><i
+                                    class="ti ti-truck-delivery"></i><span>Supplier</span></a>
+                        </li>
+
                         <li class="submenu">
                             <a href="javascript:void(0);"
                                 class="@if (request()->routeIs('raw-material*') || request()->routeIs('raw-material-order*')) active subdrop @endif">
@@ -111,11 +117,11 @@
                                 class="@if (request()->routeIs('raw-material*')) active @endif"><i
                                     class="ti ti-package"></i><span>Raw Material</span></a>
                         </li> --}}
+
                         <li>
-                            <a href="{{ route('supplier.index') }}"
-                                class="@if (request()->routeIs('supplier*')) active @endif"><i
-                                    class="ti ti-truck-delivery"></i><span>Supplier</span></a>
-                        </li>
+                              <a href="{{ route('product.index') }}" class="@if(request()->routeIs('product*')) active @endif"><i class="ti ti-package"></i><span>Product</span></a>
+                           </li>
+
                         <li>
                             <a href="{{ route('oil.index') }}"
                                 class="@if (request()->routeIs('oil*')) active @endif"><i
