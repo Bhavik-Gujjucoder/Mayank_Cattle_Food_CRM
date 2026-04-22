@@ -9,17 +9,15 @@ use App\Http\Controllers\MachineInventoryController;
 use App\Http\Controllers\OilManagementController;
 use App\Http\Controllers\OrderManagementController;
 use App\Http\Controllers\PermissionController;
-// use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RawMaterialController;
+use App\Http\Controllers\RawMaterialPurchaseController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StateManagementController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-
-/* Raw Material Purchases */
-use App\Http\Controllers\RawMaterialPurchaseController;
 
 // Auth::routes();
 
@@ -94,6 +92,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('supplier', SupplierController::class);
     Route::post('/supplier/bulk-delete', [SupplierController::class, 'bulkDelete'])->name('supplier.bulkDelete');
 
+    /* Product Management */
+    Route::resource('product', ProductController::class);
+    Route::post('/product/bulk-delete', [ProductController::class, 'bulkDelete'])->name('product.bulkDelete');
+
     /* General Settings */
     Route::prefix('general-setting')->name('generalsetting')->group(function () {
         Route::get('/create', [GeneralSettingController::class, 'create'])->name('.create');
@@ -102,7 +104,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     /* Raw Material Purchases */
     Route::resource('raw-material-order', RawMaterialPurchaseController::class);
-    
+
 });
 
 require __DIR__ . '/auth.php';

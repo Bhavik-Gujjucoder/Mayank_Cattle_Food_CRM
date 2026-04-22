@@ -10,8 +10,7 @@ use App\Models\RawMaterial;
 use App\Models\Supplier;
 class RawMaterialPurchaseController extends Controller
 {
-
-    /* ------------------------------------------------------------------ *//* ------------------------------------------------------------------ */
+    /* ------------------------------------------------------------------ */
     /*  Shared validation rules                                           */
     /* ------------------------------------------------------------------ */
     private function rules(int $ignoreId = 0): array

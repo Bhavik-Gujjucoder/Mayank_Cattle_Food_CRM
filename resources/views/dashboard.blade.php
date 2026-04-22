@@ -1,16 +1,13 @@
 @extends('layouts.main')
 @section('content')
 @section('title')
-    {{ $page_title }}
+    <h3>{{ $page_title }}</h3>
 @endsection
-
-
-
 <!-- Welcome Wrap -->
 <div class="welcome-wrap mb-4">
     <div class=" d-flex align-items-center justify-content-between flex-wrap">
         <div class="mb-3">
-            <h2 class="mb-1 text-white">Welcome Back, {{ Auth::user()->name }}</h2>
+            <h2 class="mb-1 text-white">Welcome Back, {{ $user_name }}</h2>
             <p class="text-light"></p>
         </div>
     </div>
