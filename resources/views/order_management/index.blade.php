@@ -66,13 +66,13 @@
                             </th>
                             <th class="no-sort" class="sorting">SR.No</th>
                             <th scope="col" class="sorting">Order ID</th>
-                            <th scope="col" class="sorting">Firm Name</th>
-                            <th scope="col" class="sorting">City</th>
-                            <th scope="col" class="sorting">Order Date</th>
-                            <th scope="col" class="sorting">Contact Number</th>
                             <th scope="col" class="sorting">Broker</th>
+                            <th scope="col" class="sorting">Dealer</th>
+                            <th scope="col" class="sorting">Order Date</th>
+                            <th scope="col" class="sorting">Delivery Date</th>
                             <th scope="col" class="sorting">Total</th>
                             <th scope="col" class="sorting">Discount</th>
+                            <th scope="col" class="sorting">Priority</th>
                             <th scope="col" class="sorting">Order Status</th>
                             <th class="sorting_disabled" aria-label="Action">Action</th>
                         </tr>
@@ -89,21 +89,37 @@
                                     data-id="99">
                                     <i class="ti ti-eye #1ecbe2"></i> ORD000099</a>
                             </td>
-                            <td data-label="Party Name">Balaji Agro (Dealer)</td>
-                            <td data-label="City">Ahemedabad</td>
+                            <td data-label="Broker">Balaji Agro (Dealer)</td>
+                            <td data-label="Dealer">Radhe Dealers</td>
                             <td data-label="Order Date">26 Jan 2026</td>
-                            <td data-label="Contact Number">7894567890</td>
-                            <td data-label="Salesman">Raviraj .BG</td>
+                            <td data-label="Delivery Date">24 Feb 2026</td>
                             <td data-label="Total">₹4,070</td>
                             <td data-label="Order Status">50₹</td>
+                            <td data-label="Priority">
+                                <div class="dropdown table-action order_drpdown">
+                                    <span class="badge badge-pill badge-status bg-secondary">Low</span>
+                                </div>
+                            </td>
                             <td data-label="Action">
                                 <div class="dropdown table-action order_drpdown">
                                     <span class="badge badge-pill badge-status bg-secondary">Pending</span>
                                     <a href="#" class="action-icon" data-bs-toggle="dropdown"
                                         aria-expanded="false"><i class="fa fa-pencil"></i></a>
-                                    <div class="dropdown-menu dropdown-menu-right"><a href="javascript:void(0)"
-                                            class="dropdown-item change-status" data-id="99" data-status="2">
-                                            <span class="badge bg-success">Complete</span>
+                                    <div class="dropdown-menu dropdown-menu-right">
+                                        <a href="javascript:void(0)" class="dropdown-item change-status" data-id="99" data-status="2">
+                                            <span class="badge bg-primary">Approved</span>
+                                        </a>
+                                        <a href="javascript:void(0)" class="dropdown-item change-status" data-id="99" data-status="2">
+                                            <span class="badge bg-info">Dispatched</span>
+                                        </a>
+                                        <a href="javascript:void(0)" class="dropdown-item change-status" data-id="99" data-status="2">
+                                            <span class="badge bg-success">Completed</span>
+                                        </a>
+                                        <a href="javascript:void(0)" class="dropdown-item change-status" data-id="99" data-status="2">
+                                            <span class="badge bg-danger">Cancelled</span>
+                                        </a>
+                                        <a href="javascript:void(0)" class="dropdown-item change-status" data-id="99" data-status="2">
+                                            <span class="badge bg-danger">Partial Cancelled</span>
                                         </a>
                                     </div>
                                 </div>
@@ -135,13 +151,17 @@
                             <td data-label="Order ID"><a href="" class="show-btn open-popup-model">
                                     <i class="ti ti-eye #1ecbe2"></i> ORD000098</a>
                             </td>
-                            <td data-label="Party Name">Balaji Agro (Dealer)</td>
-                            <td data-label="City">Ahemedabad</td>
+                            <td data-label="Broker">Balaji Agro (Dealer)</td>
+                            <td data-label="Dealer">Radhe Dealers</td>
                             <td data-label="Order Date">26 Jan 2026</td>
-                            <td data-label="Contact Number">7894567890</td>
-                            <td data-label="Salesman">Raviraj .BG</td>
+                            <td data-label="Delivery Date">24 Feb 2026</td>
                             <td data-label="Total">₹4,120</td>
                             <td data-label="Order Status">50₹</td>
+                            <td data-label="Priority">
+                                <div class="dropdown table-action order_drpdown">
+                                    <span class="badge badge-pill badge-status bg-secondary">Low</span>
+                                </div>
+                            </td>
                             <td data-label="Action">
                                 <div class="dropdown table-action order_drpdown">
                                     <span class="badge badge-pill badge-status bg-secondary">Pending</span>
@@ -180,13 +200,17 @@
                             <td data-label="Order ID"><a href="" class="show-btn open-popup-model">
                                     <i class="ti ti-eye #1ecbe2"></i> ORD000097</a>
                             </td>
-                            <td data-label="Party Name">Balaji Agro (Dealer)</td>
-                            <td data-label="City">Ahemedabad</td>
+                            <td data-label="Broker">Balaji Agro (Dealer)</td>
+                            <td data-label="Dealer">Radhe Dealers</td>
                             <td data-label="Order Date">24 Jan 2026</td>
-                            <td data-label="Contact Number">7894567890</td>
-                            <td data-label="Salesman">Raviraj .BG</td>
+                            <td data-label="Delivery Date">24 Feb 2026</td>
                             <td data-label="Total">₹2,392</td>
                             <td data-label="Order Status">50₹</td>
+                            <td data-label="Priority">
+                                <div class="dropdown table-action order_drpdown">
+                                    <span class="badge badge-pill badge-status bg-secondary">Low</span>
+                                </div>
+                            </td>
                             <td data-label="Action">
                                 <div class="dropdown table-action order_drpdown">
                                     <span class="badge badge-pill badge-status bg-secondary">Pending</span>

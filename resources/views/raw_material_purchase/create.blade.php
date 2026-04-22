@@ -11,19 +11,13 @@
                     {{-- {{ dump($errors->first()) }} --}}
                 @endif
                 <div class="row">
-                    {{-- ── Raw Material ──────────────────────────────────────── --}}
+                    {{-- ── Raw Material Order ID ──────────────────────────────── --}}
                     <div class="col-md-4 mb-3">
-                        <label class="col-form-label">Raw Material <span class="text-danger">*</span></label>
-                        <select name="raw_material_id" id="raw_material_id"
-                            class="form-select search-select @error('raw_material_id') is-invalid @enderror">
-                            <option value="">-- Select Raw Material --</option>
-                            @foreach ($raw_materials as $material)
-                                <option value="{{ $material->id }}" {{ old('raw_material_id') == $material->id ? 'selected' : '' }}>
-                                    {{ $material->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('raw_material_id')
+                        <label class="col-form-label">Order ID <span class="text-danger">*</span></label>
+                        <input type="text" name="invoice_no" id="invoice_no" value="RAW-ORDER-0001"
+                            class="form-control @error('invoice_no') is-invalid @enderror"
+                            placeholder="Enter Invoice No" maxlength="255">
+                        @error('invoice_no')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
                     </div>
@@ -44,7 +38,40 @@
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
                     </div>
-
+                    {{-- ── Transporter ─────────────────────────────────────── --}}
+                    <div class="col-md-4 mb-3">
+                        <label class="col-form-label">Transporter <span class="text-danger">*</span></label>
+                        <select name="dealer_id" id="dealer_id" class="form-control form-select search-dropdown">
+                            <option value="">Select</option>
+                            <option value="1">Tirupati Transport</option>
+                            <option value="1">Radhe Transport</option>
+                            <option value="1">Maruti Transport</option>
+                        </select>
+                    </div>
+                    {{-- ── Order Date ──────────────────────────────── --}}
+                    <div class="col-md-4 mb-3">
+                        <label class="col-form-label">Order Date <span class="text-danger">*</span></label>
+                        <div class="icon-form">
+                            <span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+                            <input type="text" name="order_date" value="" id="datePicker"
+                                class="form-control" placeholder="Order Date">
+                        </div>
+                    </div>
+                    {{-- ── Expected Delivery Date ──────────────────────────────── --}}
+                    <div class="col-md-4 mb-3">
+                        <label class="col-form-label">Expected Delivery Date <span class="text-danger">*</span></label>
+                        <div class="icon-form">
+                            <span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+                            <input type="text" name="order_date" value="" id="datePicker"
+                                class="form-control" placeholder="Order Date">
+                        </div>
+                    </div>
+                    {{-- ── Delivery Location ──────────────────────────────── --}}
+                    <div class="col-md-4 mb-3">
+                        <label class="col-form-label">Delivery Location <span class="text-danger">*</span></label>
+                        <input type="text" name="transport" value="" class="form-control"
+                            placeholder="Purchase Location">
+                    </div>
                     {{-- ── Invoice No ──────────────────────────────── --}}
                     <div class="col-md-4 mb-3">
                         <label class="col-form-label">Invoice No <span class="text-danger">*</span></label>
@@ -139,6 +166,16 @@
                         @enderror
                     </div>-->
 
+                    <div class="col-md-4 mb-3">
+                        <label class="col-form-label">Priority <span class="text-danger">*</span></label>
+                        <select name="dealer_id" id="dealer_id" class="form-control form-select search-dropdown">
+                            <option value="">Select</option>
+                            <option value="1">Normal</option>
+                            <option value="1">Medium</option>
+                            <option value="1">High</option>
+                        </select>
+                    </div>
+
                     {{-- ── Remarks ─────────────────────────── --}}
                     <div class="col-md-4 mb-3">
                         <label class="col-form-label">Remarks</label>
@@ -149,6 +186,61 @@
 
 
                 </div>{{-- /.row --}}
+                {{-- ── Product Table ──────────────────────────────── --}}
+                <div class="table-responsive gc-order-management-table">
+                    <table class="table table-view addnewfield">
+                        <thead>
+                            <tr>
+                                <th scope="col">S.No </th>
+                                <th scope="col">Raw Material <span class="text-danger">*</span></th>
+                                <th scope="col">GST(%)</th>
+                                <th scope="col">QTY <span class="text-danger">*</span></th>
+                                <th scope="col">Unit Price <span class="text-danger">*</span></th>
+                                <th scope="col">Total Price <span class="text-danger">*</span></th>
+                                <th scope="col">Action </th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <tr class="field-group">
+                                <td data-label="S.No.">1</td>
+                                <td data-label="Product Name">
+                                    <select name="raw_material_id" id="raw_material_id"
+                                        class="form-select search-select @error('raw_material_id') is-invalid @enderror">
+                                        <option value="">Select</option>
+                                        @foreach ($raw_materials as $material)
+                                            <option value="{{ $material->id }}" {{ old('raw_material_id') == $material->id ? 'selected' : '' }}>
+                                                {{ $material->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td data-label="GST">
+                                    <input type="number" name="gst[]" value="" class="form-control gst-field"
+                                        readonly placeholder="GST">
+                                </td>
+                                <td data-label="QTY">
+                                    <input type="number" name="qty[]" value="{{ old('qty') }}"
+                                        class="form-control product-field qty-field" placeholder="QTY">
+                                </td>
+                                <td data-label="Price">
+                                    <input type="number" name="price[]" value="{{ old('price') }}" readonly
+                                        class="form-control product-field price-field" placeholder="Price">
+                                </td>
+                                <td data-label="Total">
+                                    <input type="number" name="total[]" class="form-control total-field" readonly
+                                        placeholder="Total">
+                                </td>
+                                <td data-label="Action">
+                                    <button type="button" onclick="addpropRow()" class="btn btn-primary">Add
+                                        New</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div id="productError" class="text-danger mb-3" style="display:none;">
+                        Please fill all fields in each product row.
+                    </div>
+                </div>
 
                 <div class="d-flex justify-content-end mt-2">
                     <a href="{{ route('raw-material-order.index') }}" class="btn btn-light me-2">Cancel</a>
