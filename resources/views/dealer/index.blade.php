@@ -4,7 +4,7 @@
 @endsection
 @section('content')
 
-  
+
     <div class="card">
         <div class="card-header">
             <div class="row align-items-center sale-sec">
@@ -58,10 +58,12 @@
                 {{-- Action Buttons --}}
                 <div class="col-sm-12 col-lg-4 col-md-12">
                     <div class="d-flex align-items-center flex-wrap row-gap-2 column-gap-1 justify-content-sm-end btn-cls">
-                        <button type="button" class="btn btn-primary" id="exportDealer">
-                            <i class="ti ti-file-export me-2"></i>Export Dealer
-                        </button>
-                        @if (!auth()->user()->hasRole('sales'))
+                        @if (auth()->user()->can('export-dealer'))
+                            <button type="button" class="btn btn-primary" id="exportDealer">
+                                <i class="ti ti-file-export me-2"></i>Export Dealer
+                            </button>
+                        @endif
+                        @if (auth()->user()->can('add-dealer'))
                             <a href="{{ route('dealer.create') }}" class="btn btn-primary">
                                 <i class="ti ti-square-rounded-plus me-2"></i>Add Dealer
                             </a>

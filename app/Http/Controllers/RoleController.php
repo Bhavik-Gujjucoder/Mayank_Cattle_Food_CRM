@@ -23,7 +23,7 @@ class RoleController extends Controller
                 // Add permission_name column
                 ->addColumn('permission_name', function ($row) {
                     return $row->permissions->map(function ($permission) {
-                        return '<span class="badge bg-info">' . e($permission->name) . '</span>';
+                        return '<span class="badge bg-info">' . e(ucwords(str_replace('-', ' ', $permission->name))) . '</span>';
                     })->implode(' ');
                 })
                 ->addColumn('action', function ($row) {
@@ -65,8 +65,7 @@ class RoleController extends Controller
     public function create()
     {
         $data['page_title']  = 'Add Role & Permission';
-        /*$data['permissions'] = Permission::where('deleted_at', null)->where('is_dashboard', 0)->get()->all();*/
-        $data['permissions'] = Permission::where('deleted_at', null)->get();
+        $data['permissions'] = Permission::whereNull('deleted_at')->get()->groupBy('type');
         $data['dashboard_permissions']  = Permission::where('deleted_at', null)->where('is_dashboard', 1)->get()->all();
 
         return view('roles.create', $data);
@@ -97,8 +96,7 @@ class RoleController extends Controller
     {
         // auth()->user()->assignRole('super admin');
         $data['page_title']   = 'Edit Role & Permission';
-        /*$data['permissions']  = Permission::where('deleted_at', null)->where('is_dashboard', 0)->get()->all();*/
-        $data['permissions'] = Permission::where('deleted_at', null)->get();
+        $data['permissions'] = Permission::whereNull('deleted_at')->get()->groupBy('type');
         $data['dashboard_permissions']  = Permission::where('deleted_at', null)->where('is_dashboard', 1)->get()->all();
 
         $data['role']  = $role;
@@ -111,11 +109,11 @@ class RoleController extends Controller
     public function update(Request $request, Role $role)
     {
         $rules = [
-            'name' => 'unique:roles,name,' . ($role->id ?? 'NULL'),
+            'name' => 'nullable|unique:roles,name,' . ($role->id ?? 'NULL'),
         ];
         if (
             $role !== null &&
-            !in_array($role->name, ['admin', 'sales', 'staff', 'reporting manager'])
+            !in_array($role->name, ['admin', 'staff', 'broker', 'transporter', 'dealer'])
         ) {
             $rules['name'] = 'required|' . $rules['name'];
         }
@@ -125,11 +123,13 @@ class RoleController extends Controller
             'name.unique'   => 'The role name has already been taken.',
         ]);
 
-        if (!in_array($role->name, ['admin', 'sales', 'staff', 'reporting manager'])) {
+        if (!in_array($role->name, ['admin', 'staff', 'broker', 'transporter', 'dealer'])) {
             $role->update(['name' => $request->name]);
         }
         if ($request->permissions) {
-            $role->syncPermissions($request->permissions);
+            $permissions = Permission::whereIn('id', $request->permissions)->get();
+
+            $role->syncPermissions($permissions);
         }
 
         return redirect()->route('roles.index')->with('success', 'Role updated successfully.');

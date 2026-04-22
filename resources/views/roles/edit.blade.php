@@ -24,10 +24,11 @@
                     @if (
                         $role !== null &&
                             $role->name !== 'admin' &&
-                            $role->name !== 'sales' &&
                             $role->name !== 'staff' &&
-                            $role->name !== 'reporting manager')
-                        <input type="text" name="name" class="form-control" value="{{ old('name', $role->name) }}">
+                            $role->name !== 'broker' &&
+                            $role->name !== 'transporter' &&
+                            $role->name !== 'dealer')
+                        {{-- <input type="text" name="name" class="form-control" value="{{ old('name', $role->name) }}"> --}}
                     @else
                         <strong> {{ $role->name }}</strong>
                     @endif
@@ -36,8 +37,11 @@
                     @enderror
                 </div>
                 <div class="mb-3">
-                    <label>Permissions</label><br>
-                    @foreach ($permissions as $permission)
+                    <label for="select_all_permissions" style="cursor: pointer;">
+                        <input type="checkbox" id="select_all_permissions" class="form-check-input">
+                        <strong>All Permissions</strong>
+                    </label>
+                    {{-- @foreach ($permissions as $permission)
                         <div class="col-lg-2 col-md-4">
                             <div class="form-check form-check-md d-flex align-items-center">
                                 <input class="form-check-input" type="checkbox" name="permissions[]"
@@ -48,12 +52,33 @@
                                 </label>
                             </div>
                         </div>
+                    @endforeach --}}
+
+                    @foreach ($permissions as $type => $items)
+                        <div class="mb-3 mt-4">
+                            <strong>{{ ucwords(str_replace('-', ' ', $type)) }}</strong>
+
+                            <div class="row mt-1">
+                                @foreach ($items as $permission)
+                                    <div class="col-md-3">
+                                        <label>
+                                            <input type="checkbox" name="permissions[]"
+                                                class="form-check-input all-checkbox" value="{{ $permission->id }}"
+                                                {{ $role->hasPermissionTo($permission->name) ? 'checked' : '' }}>
+
+                                            {{ ucwords(str_replace('-', ' ', $permission->name)) }}
+                                        </label>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
                     @endforeach
-                    @if ($role !== null && $role->name !== 'sales')
+
+                    {{-- @if ($role !== null && $role->name !== 'sales')
                         <div class="mb-2 mt-5">
                             <h4> Dashboard Permissions</h4>
                         </div>
-                        {{-- @foreach ($dashboard_permissions as $dpermission)
+                        @foreach ($dashboard_permissions as $dpermission)
                             <div class="col-lg-4 col-md-4">
                                 <div class="form-check form-check-md d-flex align-items-center">
                                     <input class="form-check-input" id="{{ $dpermission->id }}" type="checkbox"
@@ -65,8 +90,8 @@
                                     </label>
                                 </div>
                             </div>
-                        @endforeach --}}
-                    @endif
+                        @endforeach
+                    @endif --}}
                 </div>
                 <div class="mt-5">
                     <button type="submit" class="btn btn-success">Update</button>
@@ -79,6 +104,10 @@
 @endsection
 @section('script')
 <script>
+    $(document).on('change', '#select_all_permissions', function() {
+        $('.all-checkbox').prop('checked', $(this).prop('checked'));
+    });
+
     $(document).ready(function() {
         $('#roleForm').validate({
             rules: {

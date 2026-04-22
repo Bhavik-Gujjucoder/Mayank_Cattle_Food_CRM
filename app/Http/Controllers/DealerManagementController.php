@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\Can;
 use Yajra\DataTables\DataTables;
 
 class DealerManagementController extends Controller
@@ -112,28 +113,21 @@ class DealerManagementController extends Controller
             $query = DealerManagement::with('user', 'broker', 'city')
                 ->when($request->broker_id && $request->broker_id != 'all',  fn($q) => $q->where('broker_id', $request->broker_id))
                 ->when($request->start_date, fn($q) => $q->whereDate('created_at', '>=', Carbon::parse($request->start_date)->format('Y-m-d')))
-                ->when($request->end_date,   fn($q) => $q->whereDate('created_at', '<=', Carbon::parse($request->end_date)->format('Y-m-d')))
-                ;
+                ->when($request->end_date,   fn($q) => $q->whereDate('created_at', '<=', Carbon::parse($request->end_date)->format('Y-m-d')));
             return DataTables::of($query)
-                 ->addIndexColumn()
+                ->addIndexColumn()
                 ->addColumn('action', function ($row) {
-                    return '
-                        <div class="dropdown table-action">
-                            <a href="#" class="action-icon" data-bs-toggle="dropdown">
-                                <i class="fa fa-ellipsis-v"></i>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-right">
-                                <a href="' . route('dealer.edit', $row->id) . '" class="dropdown-item">
-                                    <i class="ti ti-edit text-warning"></i> Edit
-                                </a>
-                                <a href="javascript:void(0)" class="dropdown-item delete-btn delete_d_d" data-id="' . $row->id . '">
-                                    <i class="ti ti-trash text-danger"></i> Delete
-                                </a>
-                                <form id="delete-form-' . $row->id . '" action="' . route('dealer.destroy', $row->id) . '" method="POST">
-                                    ' . csrf_field() . method_field('DELETE') . '
-                                </form>
-                            </div>
-                        </div>';
+
+                    $edit_btn = '<a href="' . route('dealer.edit', $row->id) . '"class="dropdown-item"><i class="ti ti-edit text-warning"></i> Edit</a>';
+                    $delete_btn = '<a href="javascript:void(0)"class="dropdown-item delete-dealer-btn"data-id="' . $row->id . '"><i class="ti ti-trash text-danger"></i> Delete</a><form action="' . route('dealer.destroy', $row->id) . '" method="POST" class="delete-form" id="delete-dealer-form-' . $row->id . '" style="display:none;">' . csrf_field() . '' . method_field('DELETE') . '</form>';
+
+                    $action_btn = '<div class="dropdown table-action"><a href="#" class="action-icon" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right">';
+
+                    $action_btn .= auth()->user()->can('edit-dealer') ? $edit_btn : '';
+                    $action_btn .= auth()->user()->can('delete-dealer') ? $delete_btn : '';
+
+                    $action_btn .= '</div></div>';
+                    return $action_btn;
                 })
                 ->addColumn('applicant_name', function ($row) {
                     $user = $row->user;
@@ -141,7 +135,7 @@ class DealerManagementController extends Controller
                         ? asset('storage/profile_pictures/' . $user->profile_picture)
                         : asset('images/default-user.png');
                     $name = $user->name ?? '-';
-                   $role = $user?->roles?->first()?->name ?? '';
+                    $role = $user?->roles?->first()?->name ?? '';
                     return '
                         <div class="d-flex align-items-center">
                             <a href="' . $profilePic . '" target="_blank" class="avatar avatar-sm border rounded p-1 me-2">
@@ -154,12 +148,9 @@ class DealerManagementController extends Controller
                         </div>
                     ';
                 })
-
                 ->addColumn('mobile_no', function ($row) {
                     return $row->user?->phone_no ?? '-';
                 })
-
-             
                 ->editColumn('firm_shop_name', function ($row) {
                     return '<a href="' . route('dealer.show', $row->id) . '" class="open-popup-model" data-id="' . $row->id . '">
                                 <i class="ti ti-eye"></i> ' . e($row->firm_shop_name) . '
@@ -168,7 +159,6 @@ class DealerManagementController extends Controller
                 ->addColumn('firm_shop_name_export', function ($row) {
                     return $row->firm_shop_name;
                 })
-
                 ->addColumn('applicant_name_export', function ($row) {
                     return $row->user?->name ?? '-';
                 })

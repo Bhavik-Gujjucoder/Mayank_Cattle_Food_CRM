@@ -13,7 +13,7 @@ class RawMaterialController extends Controller
     /* ------------------------------------------------------------------ */
     public function index(Request $request)
     {
-        $data['page_title'] = 'Raw Material Management';
+        $data['page_title'] =  'Inventory'; //'Raw Material Management';
 
         if ($request->ajax()) {
             $query = RawMaterial::query();
@@ -74,8 +74,8 @@ class RawMaterialController extends Controller
             'last_purchase_price' => 'nullable|numeric|min:0',
             'status'              => 'required|in:0,1',
         ], [
-            'name.required'  => 'Raw material name is required.',
-            'name.unique'    => 'This raw material name already exists.',
+            'name.required'  => 'Inventory name is required.',
+            'name.unique'    => 'This Inventory name already exists.',
             'unit.required'  => 'Unit is required.',
             'status.required'=> 'Status is required.',
         ]);
@@ -109,8 +109,8 @@ class RawMaterialController extends Controller
             'last_purchase_price' => 'nullable|numeric|min:0',
             'status'              => 'required|in:0,1',
         ], [
-            'name.required'  => 'Raw material name is required.',
-            'name.unique'    => 'This raw material name already exists.',
+            'name.required'  => 'Inventory name is required.',
+            'name.unique'    => 'This Inventory name already exists.',
             'unit.required'  => 'Unit is required.',
             'status.required'=> 'Status is required.',
         ]);
@@ -122,7 +122,7 @@ class RawMaterialController extends Controller
             'status'              => $request->status,
         ]);
 
-        return response()->json(['success' => true, 'message' => 'Raw material updated successfully.']);
+        return response()->json(['success' => true, 'message' => 'Inventory updated successfully.']);
     }
 
     /* ------------------------------------------------------------------ */
@@ -132,7 +132,7 @@ class RawMaterialController extends Controller
     {
         $raw_material->delete();
 
-        return redirect()->route('raw-material.index')->with('success', 'Raw material deleted successfully.');
+        return redirect()->route('raw-material.index')->with('success', 'Inventory deleted successfully.');
     }
 
     /* ------------------------------------------------------------------ */
@@ -144,7 +144,7 @@ class RawMaterialController extends Controller
 
         if (!empty($ids)) {
             RawMaterial::whereIn('id', $ids)->delete();
-            return response()->json(['message' => 'Selected raw materials deleted successfully.']);
+            return response()->json(['message' => 'Selected Inventory deleted successfully.']);
         }
 
         return response()->json(['message' => 'No records selected.'], 400);

@@ -15,7 +15,7 @@
                 <div class="d-flex align-items-center flex-wrap row-gap-2 justify-content-sm-end">
 
                     <a href="javascript:void(0);" class="btn btn-primary" id="openRawMaterialModal">
-                        <i class="ti ti-square-rounded-plus me-2"></i>Add Raw Material
+                        <i class="ti ti-square-rounded-plus me-2"></i>Add Inventory
                     </a>
                 </div>
             </div>
@@ -58,7 +58,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="rawMaterialModalTitle">Add Raw Material</h5>
+                <h5 class="modal-title" id="rawMaterialModalTitle">Add Inventory</h5>
                 <div class="d-flex align-items-center mod-toggle">
                     <button type="button" class="btn-close close_poup" data-bs-dismiss="modal">
                         <i class="ti ti-x"></i>
@@ -75,7 +75,7 @@
                     {{-- Name --}}
                     <div class="mb-3">
                         <label class="col-form-label">Name <span class="text-dangers">*</span></label>
-                        <input type="text" name="name" class="form-control" placeholder="Raw material name" maxlength="255">
+                        <input type="text" name="name" class="form-control" placeholder="Inventory name" maxlength="255">
                         <span class="name_error text-danger small"></span>
                     </div>
 
@@ -175,7 +175,7 @@
     $('#openRawMaterialModal').on('click', function () {
         $('#rawMaterialForm')[0].reset();
         $('input[name="raw_material_id"]').val('');
-        $('#rawMaterialModalTitle').text('Add Raw Material');
+        $('#rawMaterialModalTitle').text('Add Inventory');
         $('#rawMaterialSubmitBtn').text('Save');
         clearRawMaterialErrors();
         $('input[name="status"][value="1"]').prop('checked', true);
@@ -188,7 +188,7 @@
         clearRawMaterialErrors();
 
         $.get('{{ route('raw-material.edit', ':id') }}'.replace(':id', id), function (data) {
-            $('#rawMaterialModalTitle').text('Edit Raw Material');
+            $('#rawMaterialModalTitle').text('Edit Inventory');
             $('#rawMaterialSubmitBtn').text('Update');
             $('input[name="raw_material_id"]').val(data.id);
             $('input[name="name"]').val(data.name);
@@ -233,7 +233,7 @@
 
         Swal.fire({
             title: 'Are you sure?',
-            text: 'This raw material will be deleted permanently.',
+            text: 'This Inventory will be deleted permanently.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Yes, delete it!',
@@ -266,8 +266,8 @@
 
         Swal.fire({
             title: 'Are you sure?',
-            text: 'You want to remove this material',
-            // text: ids.length + ' raw material(s) will be deleted.',
+            text: 'You want to remove this Inventory',
+            // text: ids.length + ' Inventory(s) will be deleted.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Yes, delete!',
