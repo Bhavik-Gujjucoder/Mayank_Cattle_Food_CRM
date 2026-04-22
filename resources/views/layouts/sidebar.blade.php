@@ -52,111 +52,191 @@
                 </li>
             </ul>
             <ul>
-
                 <li>
                     <ul>
+
+                        {{-- Dashboard — always visible --}}
                         <li>
-                            <a href="{{ route('dashboard') }}"><i class="ti ti-layout-2"></i><span>Dashboard</span></a>
+                            <a href="{{ route('dashboard') }}">
+                                <i class="ti ti-layout-2"></i><span>Dashboard</span>
+                            </a>
                         </li>
+
+                        {{-- Dealer (type: dealer) --}}
+                        {{-- auth()->user()->hasAnyRole(['super admin', 'admin']) || --}}
+                        @if(auth()->user()->canAny(['add-dealer', 'edit-dealer', 'delete-dealer']))
                         <li>
                             <a href="{{ route('dealer.index') }}"
-                                class="@if (request()->routeIs('dealer*')) active @endif"><i
-                                    class="ti ti-bell-school"></i><span>Dealer</span></a>
+                                class="@if(request()->routeIs('dealer*')) active @endif">
+                                <i class="ti ti-bell-school"></i><span>Dealer</span>
+                            </a>
                         </li>
+                        @endif
+
+                        {{-- Soda / Order (type: soda-order) --}}
+                        @if(auth()->user()->canAny(['add-order', 'edit-order', 'delete-order']))
                         <li>
                             <a href="{{ route('order.index') }}"
-                                class="@if (request()->routeIs('order*')) active @endif"><i
-                                    class="ti ti-list-check"></i><span>Soda/order</span></a>
+                                class="@if(request()->routeIs('order*')) active @endif">
+                                <i class="ti ti-list-check"></i><span>Soda/order</span>
+                            </a>
                         </li>
+                        @endif
+
+                        {{-- Dispatch (type: dispatch) --}}
+                        @if(auth()->user()->canAny(['add-dispatch', 'edit-dispatch', 'delete-dispatch']))
                         <li>
                             <a href="{{ route('dispatch.index') }}"
-                                class="@if (request()->routeIs('dispatch*')) active @endif"><i
-                                    class="ti ti-report-money"></i><span>Dispatch</span></a>
+                                class="@if(request()->routeIs('dispatch*')) active @endif">
+                                <i class="ti ti-report-money"></i><span>Dispatch</span>
+                            </a>
                         </li>
+                        @endif
+
+                        {{-- Broker (type: broker → UserController) --}}
+                        @if(auth()->user()->canAny(['add-broker', 'edit-broker', 'delete-broker']))
                         <li>
                             <a href="{{ route('users.index', 'broker') }}"
-                                class="@if (request()->routeIs('users*') && request()->route('type') == 'broker') active @endif"><i
-                                    class="ti ti-user-up"></i><span>Broker</span></a>
+                                class="@if(request()->routeIs('users*') && request()->route('type') == 'broker') active @endif">
+                                <i class="ti ti-user-up"></i><span>Broker</span>
+                            </a>
                         </li>
+                        @endif
+
+                        {{-- Transporter (type: transporter → UserController) --}}
+                        @if(auth()->user()->canAny(['add-transporter', 'edit-transporter', 'delete-transporter']))
                         <li>
                             <a href="{{ route('users.index', 'transporter') }}"
-                                class="@if (request()->routeIs('users.index') && request()->route('type') == 'transporter') active @endif"><i
-                                    class="ti ti-tir"></i><span>Transporter</span></a>
+                                class="@if(request()->routeIs('users.index') && request()->route('type') == 'transporter') active @endif">
+                                <i class="ti ti-tir"></i><span>Transporter</span>
+                            </a>
                         </li>
+                        @endif
 
-                         <li>
+                        {{-- Supplier (type: supplier) --}}
+                        @if(auth()->user()->canAny(['add-supplier', 'edit-supplier', 'delete-supplier']))
+                        <li>
                             <a href="{{ route('supplier.index') }}"
-                                class="@if (request()->routeIs('supplier*')) active @endif"><i
-                                    class="ti ti-truck-delivery"></i><span>Supplier</span></a>
+                                class="@if(request()->routeIs('supplier*')) active @endif">
+                                <i class="ti ti-truck-delivery"></i><span>Supplier</span>
+                            </a>
                         </li>
+                        @endif
 
+                        {{-- Raw Material submenu (inventory + purchase order) --}}
+                        @if(auth()->user()->canAny([
+                            'add-raw-material-inventory', 'edit-raw-material-inventory', 'delete-raw-material-inventory',
+                            'add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'
+                        ]))
                         <li class="submenu">
                             <a href="javascript:void(0);"
-                                class="@if (request()->routeIs('raw-material*') || request()->routeIs('raw-material-order*')) active subdrop @endif">
+                                class="@if(request()->routeIs('raw-material*') || request()->routeIs('raw-material-order*')) active subdrop @endif">
                                 <i class="ti ti-package"></i>
                                 <span>Raw Material</span>
                                 <span class="menu-arrow"></span>
                             </a>
-                            <!-- Sub Menu -->
-                            <ul style="display: @if (request()->routeIs('raw-material*') || request()->routeIs('raw-material-order*')) block @else none @endif;">
+                            <ul style="display: @if(request()->routeIs('raw-material*') || request()->routeIs('raw-material-order*')) block @else none @endif;">
+
+                                {{-- Raw Material Inventory --}}
+                                @if(auth()->user()->canAny(['add-raw-material-inventory', 'edit-raw-material-inventory', 'delete-raw-material-inventory']))
                                 <li>
                                     <a href="{{ route('raw-material.index') }}"
-                                        class="@if (request()->routeIs('raw-material.index')) active @endif">
-                                        Raw Materials
+                                        class="@if(request()->routeIs('raw-material.index') || request()->routeIs('raw-material.create') || request()->routeIs('raw-material.edit')) active @endif">
+                                        Inventory
                                     </a>
                                 </li>
+                                @endif
+
+                                {{-- Raw Material Purchase Order --}}
+                                @if(auth()->user()->canAny(['add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order']))
                                 <li>
-                                    <a href="{{ route('raw-material-order.index') }}" class="@if (request()->routeIs('raw-material-order.index') || request()->routeIs('raw-material-order.create') || request()->routeIs('raw-material-order.edit')) active @endif">
-                                        Raw Material Orders
+                                    <a href="{{ route('raw-material-order.index') }}"
+                                        class="@if(request()->routeIs('raw-material-order.index') || request()->routeIs('raw-material-order.create') || request()->routeIs('raw-material-order.edit')) active @endif">
+                                        Purchase Order
                                     </a>
                                 </li>
+                                @endif
+
                             </ul>
                         </li>
-                        {{-- <li>
-                            <a href="{{ route('raw-material.index') }}"
-                                class="@if (request()->routeIs('raw-material*')) active @endif"><i
-                                    class="ti ti-package"></i><span>Raw Material</span></a>
-                        </li> --}}
+                        @endif
 
+                        {{-- Product (type: product) --}}
+                        @if(auth()->user()->canAny(['add-product', 'edit-product', 'delete-product']))
                         <li>
-                              <a href="{{ route('product.index') }}" class="@if(request()->routeIs('product*')) active @endif"><i class="ti ti-package"></i><span>Product</span></a>
-                           </li>
+                            <a href="{{ route('product.index') }}"
+                                class="@if(request()->routeIs('product*')) active @endif">
+                                <i class="ti ti-package"></i><span>Product</span>
+                            </a>
+                        </li>
+                        @endif
 
+                        {{-- Oil Management — no permissions in SQL, visible to all --}}
                         <li>
                             <a href="{{ route('oil.index') }}"
-                                class="@if (request()->routeIs('oil*')) active @endif"><i
-                                    class="ti ti-drop-circle"></i><span>Oil</span></a>
+                                class="@if(request()->routeIs('oil*')) active @endif">
+                                <i class="ti ti-drop-circle"></i><span>Oil</span>
+                            </a>
                         </li>
+
+                        {{-- Machine Inventory — no permissions in SQL, visible to all --}}
                         <li>
                             <a href="{{ route('machine.index') }}"
-                                class="@if (request()->routeIs('machine*')) active @endif"><i
-                                    class="ti ti-building-factory"></i><span>Machine Inventory</span></a>
+                                class="@if(request()->routeIs('machine*')) active @endif">
+                                <i class="ti ti-building-factory"></i><span>Machine Inventory</span>
+                            </a>
                         </li>
+
+                        {{-- State (type: state) --}}
+                        @if(auth()->user()->canAny(['add-state', 'edit-state', 'delete-state']))
                         <li>
                             <a href="{{ route('state.index') }}"
-                                class="@if (request()->routeIs('state*')) active @endif"><i
-                                    class="ti ti-map-pin-pin"></i><span>State</span></a>
+                                class="@if(request()->routeIs('state*')) active @endif">
+                                <i class="ti ti-map-pin-pin"></i><span>State</span>
+                            </a>
                         </li>
+                        @endif
+
+                        {{-- City (type: city) --}}
+                        @if(auth()->user()->canAny(['add-city', 'edit-city', 'delete-city']))
                         <li>
                             <a href="{{ route('city.index') }}"
-                                class="@if (request()->routeIs('city*')) active @endif"><i
-                                    class="ti ti-map-pin-pin"></i><span>City</span></a>
+                                class="@if(request()->routeIs('city*')) active @endif">
+                                <i class="ti ti-map-pin-pin"></i><span>City</span>
+                            </a>
                         </li>
+                        @endif
+
+                        {{-- Roles — admin only --}}
+                        @hasanyrole('super admin|admin')
                         <li>
                             <a href="{{ route('roles.index') }}"
-                                class="@if (request()->routeIs('roles*')) active @endif"><i
-                                    class="ti ti-user-circle"></i><span>Role</span></a>
+                                class="@if(request()->routeIs('roles*')) active @endif">
+                                <i class="ti ti-user-circle"></i><span>Role & Permissions</span>
+                            </a>
                         </li>
+                        @endhasanyrole
+
+                        {{-- User Management (type: user → UserController) --}}
+                        @if(auth()->user()->canAny(['add-user', 'edit-user', 'delete-user']))
                         <li>
                             <a href="{{ route('users.index', 'user') }}"
-                                class="@if (request()->routeIs('users*') && request()->route('type') == 'user') active @endif"><i
-                                    class="ti ti-users"></i><span>User</span></a>
+                                class="@if(request()->routeIs('users*') && request()->route('type') == 'user') active @endif">
+                                <i class="ti ti-users"></i><span>User</span>
+                            </a>
                         </li>
+                        @endif
+
+                        {{-- General Settings — admin only --}}
+                        @hasanyrole('super admin|admin')
                         <li>
                             <a href="{{ route('generalsetting.create') }}"
-                                class="@if (request()->routeIs('generalsetting*')) active @endif"><i
-                                    class="ti ti-settings"></i><span>General settings</span></a>
+                                class="@if(request()->routeIs('generalsetting*')) active @endif">
+                                <i class="ti ti-settings"></i><span>General settings</span>
+                            </a>
                         </li>
+                        @endhasanyrole
+
                     </ul>
                 </li>
             </ul>

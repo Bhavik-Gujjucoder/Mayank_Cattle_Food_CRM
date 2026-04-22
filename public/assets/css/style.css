@@ -32190,3 +32190,8 @@ table.table.dataTable > thead > tr th { color: #262A2A;  font-size: 14px;  font-
 .text-dangers {
     color: red !important;
 }
+
+
+table.gc-manage-table tbody td {
+    white-space: normal !important;
+}

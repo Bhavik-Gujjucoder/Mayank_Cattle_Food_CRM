@@ -55,7 +55,7 @@ class RawMaterialPurchaseController extends Controller
     /* ------------------------------------------------------------------ */
     public function index(Request $request)
     {
-        $data['page_title'] = 'Raw Material Purchase';
+        $data['page_title'] = 'Purchase Order';
         if($request->ajax()){
             $data = RawMaterialPurchase::with(['raw_material','supplier'])->query();
             return DataTables::of($data)
