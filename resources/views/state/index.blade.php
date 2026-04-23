@@ -15,11 +15,12 @@
             </div>
             <div class="col-sm-8">
                 <div class="d-flex align-items-center flex-wrap row-gap-2 justify-content-sm-end">
-
+                    @can('add-state')
                     <a href="javascript:void(0);" class="btn btn-primary" id="openModal" data-bs-toggle="modal"
                         data-bs-target="#edit_statemanagement">
                         <i class="ti ti-square-rounded-plus me-2"></i>Add State
                     </a>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -43,7 +44,9 @@
                         <th scope="col">Number of City</th>
                         <th scope="col">Status</th>
                         {{-- <th scope="col">Number of City</th> --}}
+                        @canany(['edit-state', 'delete-state'])
                         <th class="" scope="col">Action</th>
+                        @endcanany
                     </tr>
                 </thead>
 
@@ -111,6 +114,8 @@
 @endsection
 @section('script')
 <script>
+    const isShowAction = {{ auth()->user()->canAny(['edit-state', 'delete-state'])? 'true': 'false' }};
+    const isShowCheckbox = {{ auth()->user()->can('delete-state')? 'true': 'false' }};
     var state_table = $('#state_table').DataTable({
         "pageLength": 10,
         deferRender: true, // Prevents unnecessary DOM rendering
@@ -132,7 +137,8 @@
                 data: 'checkbox',
                 name: 'checkbox',
                 orderable: false,
-                searchable: false
+                searchable: false,
+                visible: isShowCheckbox
             },
             {
                 data: 'DT_RowIndex',
@@ -157,54 +163,10 @@
                 data: 'action',
                 name: 'action',
                 orderable: false,
-                searchable: false
+                searchable: false,
+                visible: isShowAction
             },
         ],
-
-        columnDefs: [{
-                targets: 0, // ID (hidden)
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'ID');
-                }
-            },
-            {
-                targets: 1, // Checkbox
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Select');
-                }
-            },
-            {
-                targets: 2, // Sr no
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Sr. No.');
-                }
-            },
-            {
-                targets: 3, // State Name
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'State Name');
-                }
-            },
-            {
-                targets: 4, // Number of City
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Number of City');
-                }
-            },
-            {
-                targets: 5, // Status
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Status');
-                }
-            },
-            {
-                targets: 6, // Action
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Action');
-                }
-            }
-        ]
-
 
     });
 

@@ -39,10 +39,9 @@ class CityManagementController extends Controller
                     $action_btn = '<div class="dropdown table-action">
                                              <a href="#" class="action-icon" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                              <div class="dropdown-menu dropdown-menu-right">';
-                    // Auth::user()->can('manage users') ? $action_btn .= $edit_btn : '';
-                    // Auth::user()->can('manage users') ? $action_btn .= $delete_btn : '';
-                    $action_btn .= $edit_btn;
-                    $action_btn .= $delete_btn;
+
+                    $action_btn .= auth()->user()->can('edit-city') ? $edit_btn : '';
+                    $action_btn .= auth()->user()->can('delete-city') ? $delete_btn : '';
 
                     return $action_btn . ' </div></div>';
                 })

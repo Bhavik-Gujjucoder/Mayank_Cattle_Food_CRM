@@ -53,21 +53,25 @@
                             </div>
                         </div>
                     </div>
+                    @else
+                    <div class="col-sm-12 col-lg-2 col-md-12"></div>
+                    <div class="col-sm-12 col-lg-2 col-md-12"></div>
+                    <div class="col-sm-12 col-lg-2 col-md-12"></div>
                 @endif
 
                 {{-- Action Buttons --}}
                 <div class="col-sm-12 col-lg-4 col-md-12">
                     <div class="d-flex align-items-center flex-wrap row-gap-2 column-gap-1 justify-content-sm-end btn-cls">
-                        @if (auth()->user()->can('export-dealer'))
+                        @can('export-dealer')
                             <button type="button" class="btn btn-primary" id="exportDealer">
                                 <i class="ti ti-file-export me-2"></i>Export Dealer
                             </button>
-                        @endif
-                        @if (auth()->user()->can('add-dealer'))
+                        @endcan
+                        @can('add-dealer')
                             <a href="{{ route('dealer.create') }}" class="btn btn-primary">
                                 <i class="ti ti-square-rounded-plus me-2"></i>Add Dealer
                             </a>
-                        @endif
+                        @endcan
                     </div>
                 </div>
 
@@ -88,9 +92,9 @@
                             <th>City</th>
                             <th>Code No</th>
                             <th>Date</th>
-                            @if (!auth()->user()->hasRole('sales'))
+                            @canany(['edit-dealer', 'delete-dealer'])
                                 <th>Action</th>
-                            @endif
+                            @endcanany
                         </tr>
                     </thead>
                 </table>
@@ -111,7 +115,7 @@
             });
         });
 
-        const isSales = @json(auth()->user()->hasRole('sales'));
+        const isShowAction = {{ auth()->user()->canAny(['edit-dealer', 'delete-dealer'])? 'true': 'false' }};
 
         var dealerTable = $('#dealerTable').DataTable({
             pageLength: 10,
@@ -183,8 +187,8 @@
                     name: 'action',
                     orderable: false,
                     searchable: false,
-                    visible: !isSales
-                },
+                    visible: isShowAction
+                }
             ],
         });
 
