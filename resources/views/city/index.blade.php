@@ -16,8 +16,10 @@
             </div>
             <div class="col-sm-8">
                 <div class="d-flex align-items-center flex-wrap row-gap-2 justify-content-sm-end">
+                    @can('add-city')
                     <a href="javascript:void(0);" id="openModal" class="btn btn-primary" data-bs-toggle="modal"
                         data-bs-target="#edit_citymanagement"><i class="ti ti-square-rounded-plus me-2"></i>Add City</a>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -42,7 +44,9 @@
                         <th scope="col">State Name</th>
                         <th scope="col">City Name</th>
                         <th scope="col">Status</th>
+                        @canany(['edit-city', 'delete-city'])
                         <th class="" scope="col">Action</th>
+                        @endcanany
                     </tr>
                 </thead>
             </table>
@@ -114,6 +118,8 @@
 @endsection
 @section('script')
 <script>
+    const isShowAction = {{ auth()->user()->canAny(['edit-city', 'delete-city'])? 'true': 'false' }};
+    const isShowCheckbox = {{ auth()->user()->can('delete-city')? 'true': 'false' }};
     var city_table = $('#city_table').DataTable({
         "pageLength": 10,
         deferRender: true, // Prevents unnecessary DOM rendering
@@ -135,7 +141,8 @@
                 data: 'checkbox',
                 name: 'checkbox',
                 orderable: false,
-                searchable: false
+                searchable: false,
+                visible: isShowCheckbox
             },
             {
                 data: 'DT_RowIndex',
@@ -160,7 +167,8 @@
                 data: 'action',
                 name: 'action',
                 orderable: false,
-                searchable: false
+                searchable: false,
+                visible: isShowAction
             },
         ],
         columnDefs: [{

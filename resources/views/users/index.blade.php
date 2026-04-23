@@ -15,8 +15,12 @@
             </div>
             <div class="col-sm-8">
                 <div class="d-flex align-items-center flex-wrap row-gap-2 justify-content-sm-end">
-                    <a href="{{ route('users.create',$type) }}" class="btn btn-primary"><i
-                            class="ti ti-square-rounded-plus me-2"></i> @if($type == 'broker') Add Broker @elseif($type == 'transporter') Add Transporter @else  Add User @endif</a>
+                    @can('add-' . $type)
+                        <a href="{{ route('users.create', $type) }}" class="btn btn-primary">
+                            <i class="ti ti-square-rounded-plus me-2"></i>
+                            Add {{ ucfirst($type) }}
+                        </a>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -26,7 +30,8 @@
         <!-- Manage Users List -->
         <div class="table-responsive custom-table">
             <table class="table dataTable no-footer" id="users">
-                <button class="btn btn-primary" id="bulk_delete_button" style="display: none;"> <i class="ti ti-trash me-1"></i>Delete Selected</button>
+                <button class="btn btn-primary" id="bulk_delete_button" style="display: none;"> <i
+                        class="ti ti-trash me-1"></i>Delete Selected</button>
                 <thead class="thead-light">
                     <tr>
                         <th hidden data-label="ID">ID</th>
@@ -40,12 +45,14 @@
                         <th scope="col" data-label="Name">Name</th>
                         <th scope="col" data-label="Phone">Phone</th>
                         <th scope="col" data-label="Email">Email</th>
-                        {{-- @if($type == 'user') --}}
+                        {{-- @if ($type == 'user') --}}
                         <th scope="col" data-label="Role" hidden>Role</th>
                         {{-- @endif --}}
                         <th scope="col" data-label="Created">Created</th>
                         <th scope="col" data-label="Status">Status</th>
-                        <th class="" scope="col" data-label="Action">Action</th>
+                        @canany(['edit-' . $type, 'delete-' . $type])
+                            <th class="" scope="col" data-label="Action">Action</th>
+                        @endcanany
                     </tr>
                 </thead>
             </table>
@@ -106,15 +113,17 @@
                             data-bs-dismiss="modal">Cancel</button>
                     </div>
                     {{-- <button type="submit" class="btn btn-primary" id="submitBtn">Create</button> --}}
-                </form>
-            </div>
-        </div>
-    </div>
+</form>
+</div>
+</div>
+</div>
 </div> --}}
 
 @endsection
 @section('script')
 <script>
+    const isShowAction = {{ auth()->user()->canAny(['edit-'.$type, 'delete-'.$type])? 'true': 'false' }};
+    const isShowCheckbox = {{ auth()->user()->can('delete-'.$type)? 'true': 'false' }};
     var users_table = $('#users').DataTable({
         "pageLength": 10,
         deferRender: true,
@@ -136,7 +145,8 @@
                 data: 'checkbox',
                 name: 'checkbox',
                 orderable: false,
-                searchable: false
+                searchable: false,
+                visible: isShowCheckbox
             },
             {
                 data: 'DT_RowIndex',
@@ -184,7 +194,8 @@
                 data: 'action',
                 name: 'action',
                 orderable: false,
-                searchable: false
+                searchable: false,
+                visible: isShowAction
             },
         ],
 
@@ -213,7 +224,7 @@
 
     });
 
-     let userType = "{{ $type }}"; // 'user' or 'broker'
+    let userType = "{{ $type }}"; // 'user' or 'broker'
 
     // Custom Search Box
     $('#customSearch').on('keyup', function() {
@@ -232,26 +243,28 @@
     //  Open Modal for Editing an Admin
     $(document).on('click', '.edit-btn', function() {
         let user_id = $(this).data('id');
-        $.get( '{{ route("users.edit", ["type" => ":type", "id" => ":id"]) }}'
-        .replace(':type', userType)
-        .replace(':id', user_id), function(user) {
-            $('#modalTitle').text('Edit Admin');
-            $('#submitBtn').text('Update');
-            $('input[name="user_id"]').val(user.id);
-            $('input[name="first_name"]').val(user.first_name);
-            $('input[name="last_name"]').val(user.last_name);
-            $('input[name="email"]').val(user.email);
-            $('input[name="phone"]').val(user.phone);
-            $('#adminModal').modal('show');
-        });
+        $.get('{{ route('users.edit', ['type' => ':type', 'id' => ':id']) }}'
+            .replace(':type', userType)
+            .replace(':id', user_id),
+            function(user) {
+                $('#modalTitle').text('Edit Admin');
+                $('#submitBtn').text('Update');
+                $('input[name="user_id"]').val(user.id);
+                $('input[name="first_name"]').val(user.first_name);
+                $('input[name="last_name"]').val(user.last_name);
+                $('input[name="email"]').val(user.email);
+                $('input[name="phone"]').val(user.phone);
+                $('#adminModal').modal('show');
+            });
     });
 
     //  Handle Add & Edit Form Submission
     $('#adminForm').submit(function(e) {
         e.preventDefault();
         let user_id = $('input[name="user_id"]').val();
-        let url = user_id ? '{{ route('users.update', ["type" => ":type", "id" => ":id"]) }}'.replace(':type', userType).replace(':id', user_id) :
-            "{{ route('users.store', ["type" => ":type"]) }}".replace(':type', userType);
+        let url = user_id ? '{{ route('users.update', ['type' => ':type', 'id' => ':id']) }}'.replace(':type',
+                userType).replace(':id', user_id) :
+            "{{ route('users.store', ['type' => ':type']) }}".replace(':type', userType);
         let method = user_id ? "PUT" : "POST";
 
         $.ajax({

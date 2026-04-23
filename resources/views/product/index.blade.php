@@ -16,9 +16,11 @@
             </div>
             <div class="col-sm-8">
                 <div class="d-flex align-items-center flex-wrap row-gap-2 justify-content-sm-end">
-                    <a href="javascript:void(0);" class="btn btn-primary" id="openModal">
-                        <i class="ti ti-square-rounded-plus me-2"></i>Add Product
-                    </a>
+                    @can('add-product')
+                        <a href="javascript:void(0);" class="btn btn-primary" id="openModal">
+                            <i class="ti ti-square-rounded-plus me-2"></i>Add Product
+                        </a>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -40,7 +42,9 @@
                         <th class="no-sort" scope="col">Sr no</th>
                         <th scope="col">Product Name</th>
                         <th scope="col">Status</th>
-                        <th class="" scope="col">Action</th>
+                        @canany(['edit-product', 'delete-product'])
+                            <th class="" scope="col">Action</th>
+                        @endcanany
                     </tr>
                 </thead>
             </table>
@@ -97,6 +101,8 @@
 @endsection
 @section('script')
 <script>
+    const isShowAction ={{ auth()->user()->canAny(['edit-product', 'delete-product'])? 'true': 'false' }};
+    const isShowCheckbox ={{ auth()->user()->can('delete-product')? 'true': 'false' }};
     var product_table = $('#product_table').DataTable({
         pageLength: 10,
         deferRender: true,
@@ -108,11 +114,11 @@
         ajax: "{{ route('product.index') }}",
         columns: [
             { data: 'id', name: 'id', visible: false, searchable: false },
-            { data: 'checkbox', name: 'checkbox', orderable: false, searchable: false },
+            { data: 'checkbox', name: 'checkbox', orderable: false, searchable: false, visible: isShowCheckbox },
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
             { data: 'name', name: 'name', searchable: true },
             { data: 'status', name: 'status', searchable: true },
-            { data: 'action', name: 'action', orderable: false, searchable: false },
+            { data: 'action', name: 'action', orderable: false, searchable: false, visible: isShowAction },
         ]
     });
 

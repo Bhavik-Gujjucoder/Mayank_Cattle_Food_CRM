@@ -14,10 +14,8 @@ class SupplierController extends Controller
     public function index(Request $request)
     {
         $data['page_title'] = 'Supplier Management';
-
         if ($request->ajax()) {
             $query = Supplier::query();
-
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('checkbox', function ($row) {
@@ -26,15 +24,6 @@ class SupplierController extends Controller
                                 <span class="checkmarks"></span>
                             </label>';
                 })
-                ->editColumn('mobile', fn($row) => $row->mobile ?? '-')
-                ->editColumn('email', fn($row) => $row->email ?? '-')
-                ->editColumn('address', function ($row) {
-                    return $row->address
-                        ? '<span title="' . e($row->address) . '">' . e(\Str::limit($row->address, 40)) . '</span>'
-                        : '-';
-                })
-                ->editColumn('opening_balance', fn($row) => '₹ ' . number_format($row->opening_balance, 2))
-                ->editColumn('status', fn($row) => $row->statusBadge())
                 ->addColumn('action', function ($row) {
                     $edit_btn = '<a href="javascript:void(0)" class="dropdown-item edit-supplier-btn" data-id="' . $row->id . '">
                                     <i class="ti ti-edit text-warning"></i> Edit
@@ -48,19 +37,30 @@ class SupplierController extends Controller
                                     ' . csrf_field() . method_field('DELETE') . '
                                 </form>';
 
+                    $action_btn = auth()->user()->can('edit-supplier') ? $edit_btn : '';
+                    $action_btn .= auth()->user()->can('delete-supplier') ? $delete_btn : '';
+
                     return '<div class="dropdown table-action">
                                 <a href="#" class="action-icon" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fa fa-ellipsis-v"></i>
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-right">'
-                                    . $edit_btn . $delete_btn .
+                                    . $action_btn .
                                 '</div>
                             </div>';
                 })
+                ->editColumn('mobile', fn($row) => $row->mobile ?? '-')
+                ->editColumn('email', fn($row) => $row->email ?? '-')
+                ->editColumn('address', function ($row) {
+                    return $row->address
+                        ? '<span title="' . e($row->address) . '">' . e(\Str::limit($row->address, 40)) . '</span>'
+                        : '-';
+                })
+                ->editColumn('opening_balance', fn($row) => '₹ ' . number_format($row->opening_balance, 2))
+                ->editColumn('status', fn($row) => $row->statusBadge())
                 ->rawColumns(['checkbox', 'address', 'opening_balance', 'status', 'action'])
                 ->make(true);
         }
-
         return view('supplier.index', $data);
     }
 
