@@ -601,12 +601,12 @@
                 data: 'paid_amount',
                 name: 'paid_amount',
                 searchable: true
-            }, 
+            },
             {
                 data: 'due_amount',
                 name: 'due_amount',
                 searchable: true
-            }, 
+            },
             {
                 data: 'action',
                 name: 'action',
@@ -614,93 +614,6 @@
                 searchable: false
             },
         ],
-        columnDefs: [{
-                targets: 0, // ID (hidden)
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'ID');
-                }
-            },
-            {
-                targets: 1, // Checkbox
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Select');
-                }
-            },
-            {
-                targets: 2, // Sr no
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Sr. No.');
-                }
-            },
-            {
-                targets: 3, // Raw Material
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Raw Material');
-                }
-            },
-            {
-                targets: 4, // Supplier
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Supplier');
-                }
-            },
-            {
-                targets: 5, // Invoice No
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Invoice No');
-                }
-            },
-            {
-                targets: 6, // Invoice Date
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Invoice Date');
-                }
-            },
-            {
-                targets: 7, // Quantity
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Quantity');
-                }
-            },
-            {
-                targets: 8, // Unit Price
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Unit Price');
-                }
-            },
-            {
-                targets: 9, // Total Price
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Total Price');
-                }
-            },
-            {
-                targets: 10, // Status
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Status');
-                }
-            },
-            {
-                targets: 11, // Paid Amount
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Paid Amount');
-                }
-            },
-            {
-                targets: 12, // Due Amount
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Due Amount');
-                }
-            },
-            {
-                targets: 13, // Action
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Action');
-                }
-            },
-        ]
-
-
     });
 
     $(document).on('click', '.payment-modal', function() {

@@ -150,20 +150,6 @@
             { data: 'status',           name: 'status' },
             { data: 'action',           name: 'action', orderable: false, searchable: false },
         ],
-        columnDefs: [
-            { targets: 0,  createdCell: td => $(td).attr('data-label', 'ID') },
-            { targets: 1,  createdCell: td => $(td).attr('data-label', 'Select') },
-            { targets: 2,  createdCell: td => $(td).attr('data-label', 'Sr. No.') },
-            { targets: 3,  createdCell: td => $(td).attr('data-label', 'Name') },
-            { targets: 4,  createdCell: td => $(td).attr('data-label', 'Unit') },
-            { targets: 5,  createdCell: td => $(td).attr('data-label', 'Total Stock') },
-            { targets: 6,  createdCell: td => $(td).attr('data-label', 'Available Stock') },
-            { targets: 7,  createdCell: td => $(td).attr('data-label', 'Used Stock') },
-            { targets: 8,  createdCell: td => $(td).attr('data-label', 'Last Purchase Price') },
-            { targets: 9,  createdCell: td => $(td).attr('data-label', 'Average Price') },
-            { targets: 10, createdCell: td => $(td).attr('data-label', 'Status') },
-            { targets: 11, createdCell: td => $(td).attr('data-label', 'Action') },
-        ]
     });
 
     /* Custom search */
