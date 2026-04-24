@@ -21,7 +21,7 @@ class UserController extends Controller
         $data['page_title'] = match ($type) {
             'broker' => 'Broker Management',
             'transporter' => 'Transporter Management',
-            default => 'Users Management',
+            default => 'Admin & Staff Management',
         };
         $data['type'] = $type;
         $data['users'] = User::when($type, function ($query) use ($type) {

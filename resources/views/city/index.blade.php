@@ -171,51 +171,6 @@
                 visible: isShowAction
             },
         ],
-        columnDefs: [{
-                targets: 0, // ID (hidden)
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'ID');
-                }
-            },
-            {
-                targets: 1, // Checkbox
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Select');
-                }
-            },
-            {
-                targets: 2, // Sr no
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Sr. No.');
-                }
-            },
-            {
-                targets: 3, // State Name
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'State Name');
-                }
-            },
-            {
-                targets: 4, // City Name
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'City Name');
-                }
-            },
-            {
-                targets: 5, // Status
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Status');
-                }
-            },
-            {
-                targets: 6, // Action
-                createdCell: function(td) {
-                    $(td).attr('data-label', 'Action');
-                }
-            }
-        ]
-
-
     });
 
     // Custom Search Box

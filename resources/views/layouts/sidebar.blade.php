@@ -54,7 +54,7 @@
             <ul>
                 <li>
                     <ul>
-                        {{-------------------------------------------------------------------- */
+                        {{-- ------------------------------------------------------------------ */
                         /*  Dashboard
                         /* ------------------------------------------------------------------ --}}
                         <li>
@@ -63,218 +63,254 @@
                             </a>
                         </li>
 
-                        {{-------------------------------------------------------------------- */
-                        /*  Dealer (type: dealer)
-                        /* ------------------------------------------------------------------ --}}
-                        @canany(['add-dealer', 'edit-dealer', 'delete-dealer'])
-                        <li>
-                            <a href="{{ route('dealer.index') }}"
-                                class="@if(request()->routeIs('dealer*')) active @endif">
-                                <i class="ti ti-bell-school"></i><span>Dealer</span>
-                            </a>
-                        </li>
-                        @endcanany
-
-                        {{-------------------------------------------------------------------- */
-                        /*  Soda / Order (type: soda-order)
-                        /* ------------------------------------------------------------------ --}}
-                        @canany(['add-order', 'edit-order', 'delete-order'])
-                        <li>
-                            <a href="{{ route('order.index') }}"
-                                class="@if(request()->routeIs('order*')) active @endif">
-                                <i class="ti ti-list-check"></i><span>Soda/order</span>
-                            </a>
-                        </li>
-                        @endcanany
-
-                        {{-------------------------------------------------------------------- */
-                        /*  Dispatch (type: dispatch)
-                        /* ------------------------------------------------------------------ --}}
-                        @canany(['add-dispatch', 'edit-dispatch', 'delete-dispatch'])
-                        <li>
-                            <a href="{{ route('dispatch.index') }}"
-                                class="@if(request()->routeIs('dispatch*')) active @endif">
-                                <i class="ti ti-report-money"></i><span>Dispatch</span>
-                            </a>
-                        </li>
-                        @endcanany
-
-                        {{-------------------------------------------------------------------- */
-                        /*  Broker (type: broker → UserController)
-                        /* ------------------------------------------------------------------ --}}
-                        @canany(['add-broker', 'edit-broker', 'delete-broker'])
-                        <li>
-                            <a href="{{ route('users.index', 'broker') }}"
-                                class="@if(request()->routeIs('users*') && request()->route('type') == 'broker') active @endif">
-                                <i class="ti ti-user-up"></i><span>Broker</span>
-                            </a>
-                        </li>
-                        @endcanany
-
-                        {{-------------------------------------------------------------------- */
-                        /*  Transporter (type: transporter → UserController)
-                        /* ------------------------------------------------------------------ --}}
-                        @canany(['add-transporter', 'edit-transporter', 'delete-transporter'])
-                        <li>
-                            <a href="{{ route('users.index', 'transporter') }}"
-                                class="@if(request()->routeIs('users.index') && request()->route('type') == 'transporter') active @endif">
-                                <i class="ti ti-tir"></i><span>Transporter</span>
-                            </a>
-                        </li>
-                        @endcanany
-
-                        {{-------------------------------------------------------------------- */
-                        /*  Supplier (type: supplier)
-                        /* ------------------------------------------------------------------ --}}
-                        @canany(['add-supplier', 'edit-supplier', 'delete-supplier'])
-                        <li>
-                            <a href="{{ route('supplier.index') }}"
-                                class="@if(request()->routeIs('supplier*')) active @endif">
-                                <i class="ti ti-truck-delivery"></i><span>Supplier</span>
-                            </a>
-                        </li>
-                        @endcanany
-
-                        {{-------------------------------------------------------------------- */
+                        {{-- ------------------------------------------------------------------ */
                         /*  Raw Material submenu (inventory + purchase order)
                         /* ------------------------------------------------------------------ --}}
-                        @canany([
-                            'add-raw-material-inventory', 'edit-raw-material-inventory', 'delete-raw-material-inventory',
-                            'add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'
-                        ])
-                        <li class="submenu">
-                            <a href="javascript:void(0);"
-                                class="@if(request()->routeIs('raw-material*') || request()->routeIs('raw-material-order*')) active subdrop @endif">
-                                <i class="ti ti-package"></i>
-                                <span>Raw Material</span>
-                                <span class="menu-arrow"></span>
-                            </a>
-                            <ul style="display: @if(request()->routeIs('raw-material*') || request()->routeIs('raw-material-order*')) block @else none @endif;">
+                        @canany(['add-raw-material-inventory', 'edit-raw-material-inventory',
+                            'delete-raw-material-inventory', 'add-raw-material-purchas-order',
+                            'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'])
+                            <li class="submenu">
+                                <a href="javascript:void(0);"
+                                    class="@if (request()->routeIs('raw-material*') || request()->routeIs('raw-material-order*')) active subdrop @endif">
+                                    <i class="ti ti-package"></i>
+                                    <span>Raw Material</span>
+                                    <span class="menu-arrow"></span>
+                                </a>
+                                <ul style="display: @if (request()->routeIs('raw-material*') || request()->routeIs('raw-material-order*')) block @else none @endif;">
 
-                                {{-------------------------------------------------------------------- */
-                                /*  Raw Material Inventory
-                                /* ------------------------------------------------------------------ --}}
-                                @canany(['add-raw-material-inventory', 'edit-raw-material-inventory', 'delete-raw-material-inventory'])
-                                <li>
-                                    <a href="{{ route('raw-material.index') }}"
-                                        class="@if(request()->routeIs('raw-material.index') || request()->routeIs('raw-material.create') || request()->routeIs('raw-material.edit')) active @endif">
-                                        Inventory
-                                    </a>
-                                </li>
-                                @endcanany
+                                    {{-- ------------------------------------------------------------------ */
+                                    /*  Raw Material Inventory
+                                    /* ------------------------------------------------------------------ --}}
+                                    @canany(['add-raw-material-inventory', 'edit-raw-material-inventory',
+                                        'delete-raw-material-inventory'])
+                                        <li>
+                                            <a href="{{ route('raw-material.index') }}"
+                                                class="@if (request()->routeIs('raw-material*')) active @endif">
+                                                <span>Inventory</span>
+                                            </a>
+                                        </li>
+                                    @endcanany
 
-                                {{-------------------------------------------------------------------- */
-                                /*  Raw Material Purchase Order
-                                /* ------------------------------------------------------------------ --}}
-                                @canany(['add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'])
-                                <li>
-                                    <a href="{{ route('raw-material-order.index') }}"
-                                        class="@if(request()->routeIs('raw-material-order.index') || request()->routeIs('raw-material-order.create') || request()->routeIs('raw-material-order.edit')) active @endif">
-                                        Purchase Order
-                                    </a>
-                                </li>
-                                @endcanany
-
-                            </ul>
-                        </li>
+                                    {{-- ------------------------------------------------------------------ */
+                                    /*  Raw Material Purchase Order
+                                    /* ------------------------------------------------------------------ --}}
+                                    @canany(['add-raw-material-purchas-order', 'edit-raw-material-purchas-order',
+                                        'delete-raw-material-purchas-order'])
+                                        <li>
+                                            <a href="{{ route('raw-material-order.index') }}"
+                                                class="@if (request()->routeIs('raw-material-order*')) active @endif">
+                                                <span>Purchase Order</span>
+                                            </a>
+                                        </li>
+                                    @endcanany
+                                </ul>
+                            </li>
                         @endcanany
 
-                        {{-------------------------------------------------------------------- */
+                        {{-- ------------------------------------------------------------------ */
                         /*  Product (type: product)
                         /* ------------------------------------------------------------------ --}}
                         @canany(['add-product', 'edit-product', 'delete-product'])
-                        <li>
-                            <a href="{{ route('product.index') }}"
-                                class="@if(request()->routeIs('product*')) active @endif">
-                                <i class="ti ti-package"></i><span>Product</span>
-                            </a>
-                        </li>
+                            <li class="submenu">
+                                <a href="javascript:void(0);"
+                                    class="@if (request()->routeIs('product*')) active subdrop @endif">
+                                    <i class="ti ti-package"></i>
+                                    <span>Production</span>
+                                    <span class="menu-arrow"></span>
+                                </a>
+                                <ul style="display: @if (request()->routeIs('product*')) block @else none @endif;">
+                                    <li>
+                                        <a href="{{ route('product.index') }}"
+                                            class="@if (request()->routeIs('product*')) active @endif">
+                                            {{-- <i class="ti ti-package"></i> --}}
+                                            <span>Products</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
                         @endcanany
 
-                        {{-------------------------------------------------------------------- */
+                        {{-- ------------------------------------------------------------------ */
+                        /*  Sales submenu (Soda / Order + Dispatch)
+                        /* ------------------------------------------------------------------ --}}
+                        @canany(['add-order', 'edit-order', 'delete-order', 'add-dispatch', 'edit-dispatch',
+                            'delete-dispatch'])
+                            <li class="submenu">
+                                <a href="javascript:void(0);"
+                                    class="@if (request()->routeIs('order*') || request()->routeIs('dispatch*')) active subdrop @endif">
+                                    <i class="ti ti-list-check"></i>
+                                    <span>Sales</span>
+                                    <span class="menu-arrow"></span>
+                                </a>
+
+                                <ul style="display: @if (request()->routeIs('order*') || request()->routeIs('dispatch*')) block @else none @endif;">
+
+                                    {{-- ------------------------------------------------------------------ */
+                                    /*  Soda / Order (type: soda-order)
+                                    /* ------------------------------------------------------------------ --}}
+                                    @canany(['add-order', 'edit-order', 'delete-order'])
+                                        <li>
+                                            <a href="{{ route('order.index') }}"
+                                                class="@if (request()->routeIs('order*')) active @endif">
+                                                <span>Soda / Order</span>
+                                            </a>
+                                        </li>
+                                    @endcanany
+
+                                    {{-- ------------------------------------------------------------------ */
+                                    /*  Dispatch (type: dispatch)
+                                    /* ------------------------------------------------------------------ --}}
+                                    @canany(['add-dispatch', 'edit-dispatch', 'delete-dispatch'])
+                                        <li>
+                                            <a href="{{ route('dispatch.index') }}"
+                                                class="@if (request()->routeIs('dispatch*')) active @endif">
+                                                <span>Dispatch</span>
+                                            </a>
+                                        </li>
+                                    @endcanany
+                                </ul>
+                            </li>
+                        @endcanany
+
+                        {{-- ------------------------------------------------------------------ */
                         /*  Oil Management — no permissions
                         /* ------------------------------------------------------------------ --}}
                         @canany(['add-oil', 'edit-oil', 'delete-oil'])
-                        <li>
-                            <a href="{{ route('oil.index') }}"
-                                class="@if(request()->routeIs('oil*')) active @endif">
-                                <i class="ti ti-drop-circle"></i><span>Oil</span>
-                            </a>
-                        </li>
+                            <li class="submenu">
+                                <a href="javascript:void(0);"
+                                    class="@if (request()->routeIs('oil*')) active subdrop @endif">
+                                    <i class="ti ti-drop-circle"></i>
+                                    <span>Oil</span>
+                                    <span class="menu-arrow"></span>
+                                </a>
+                                <ul style="display: @if (request()->routeIs('oil*')) block @else none @endif;">
+                                    <li>
+                                        <a href="{{ route('oil.index') }}"
+                                            class="@if (request()->routeIs('oil*')) active @endif">
+                                            <span>Oil Management</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
                         @endcanany
 
-                        {{-------------------------------------------------------------------- */
+                        {{-- ------------------------------------------------------------------ */
                         /*  Machine Inventory — no permissions
                         /* ------------------------------------------------------------------ --}}
                         @canany(['add-machine', 'edit-machine', 'delete-machine'])
-                        <li>
-                            <a href="{{ route('machine.index') }}"
-                                class="@if(request()->routeIs('machine*')) active @endif">
-                                <i class="ti ti-building-factory"></i><span>Machine Inventory</span>
-                            </a>
-                        </li>
+                            <li class="submenu">
+                                <a href="javascript:void(0);"
+                                    class="@if (request()->routeIs('machine*')) active subdrop @endif">
+                                    <i class="ti ti-building-factory"></i>
+                                    <span>Machinery</span>
+                                    <span class="menu-arrow"></span>
+                                </a>
+                                <ul style="display: @if (request()->routeIs('machine*')) block @else none @endif;">
+                                    <li>
+                                        <a href="{{ route('machine.index') }}"
+                                            class="@if (request()->routeIs('machine*')) active @endif">
+                                            <span>Inventory</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
                         @endcanany
 
-                        {{-------------------------------------------------------------------- */
-                        /*  State (type: state)
+                        {{-- ------------------------------------------------------------------ */
+                        /*  Users & Permissions submenu
                         /* ------------------------------------------------------------------ --}}
-                        @canany(['add-state', 'edit-state', 'delete-state'])
-                        <li>
-                            <a href="{{ route('state.index') }}"
-                                class="@if(request()->routeIs('state*')) active @endif">
-                                <i class="ti ti-map-pin-pin"></i><span>State</span>
+                        <li class="submenu">
+                            <a href="javascript:void(0);" class="@if (request()->routeIs('users*') ||
+                                        request()->routeIs('supplier*') ||
+                                        request()->routeIs('dealer*') ||
+                                        request()->routeIs('roles*')) active subdrop @endif">
+                                <i class="ti ti-users"></i>
+                                <span>Users & Permissions</span>
+                                <span class="menu-arrow"></span>
                             </a>
-                        </li>
-                        @endcanany
+                            <ul style="display: @if (request()->routeIs('users*') ||
+                                    request()->routeIs('supplier*') ||
+                                    request()->routeIs('dealer*') ||
+                                    request()->routeIs('roles*')) block @else none @endif;">
 
-                        {{-------------------------------------------------------------------- */
-                        /*  City (type: city)
+                                {{-- ------------------------------------------------------------------ */
+                                /*  Supplier (type: supplier)
+                                /* ------------------------------------------------------------------ --}}
+                                @canany(['add-supplier', 'edit-supplier', 'delete-supplier'])
+                                    <li><a href="{{ route('supplier.index') }}">Supplier</a></li>
+                                @endcanany
+
+                                {{-- ------------------------------------------------------------------ */
+                                /*  Broker (type: broker → UserController)
+                                /* ------------------------------------------------------------------ --}}
+                                @canany(['add-broker', 'edit-broker', 'delete-broker'])
+                                    <li><a href="{{ route('users.index', 'broker') }}">Broker</a></li>
+                                @endcanany
+
+                                {{-- ------------------------------------------------------------------ */
+                                /*  Dealer (type: dealer)
+                                /* ------------------------------------------------------------------ --}}
+                                @canany(['add-dealer', 'edit-dealer', 'delete-dealer'])
+                                    <li><a href="{{ route('dealer.index') }}">Dealer</a></li>
+                                @endcanany
+
+                                {{-- ------------------------------------------------------------------ */
+                                /*  Transporter (type: transporter → UserController)
+                                /* ------------------------------------------------------------------ --}}
+                                @canany(['add-transporter', 'edit-transporter', 'delete-transporter'])
+                                    <li><a href="{{ route('users.index', 'transporter') }}">Transporter</a></li>
+                                @endcanany
+
+                                {{-- ------------------------------------------------------------------ */
+                                /*  User Management (type: user → UserController)
+                                /* ------------------------------------------------------------------ --}}
+                                @canany(['add-user', 'edit-user', 'delete-user'])
+                                    <li><a href="{{ route('users.index', 'user') }}">Admin & Staff</a></li>
+                                @endcanany
+
+                                {{-- ------------------------------------------------------------------ */
+                                /*  Roles — super admin only
+                                /* ------------------------------------------------------------------ --}}
+                                @hasanyrole('super admin')
+                                    <li><a href="{{ route('roles.index') }}">Roles & Permissions</a></li>
+                                @endhasanyrole
+                            </ul>
+                        </li>
+
+                        {{-- ------------------------------------------------------------------ */
+                        /*  General Settings submenu
                         /* ------------------------------------------------------------------ --}}
-                        @canany(['add-city', 'edit-city', 'delete-city'])
-                        <li>
-                            <a href="{{ route('city.index') }}"
-                                class="@if(request()->routeIs('city*')) active @endif">
-                                <i class="ti ti-map-pin-pin"></i><span>City</span>
+                        <li class="submenu">
+                            <a href="javascript:void(0);"
+                                class="@if (request()->routeIs('state*') || request()->routeIs('city*') || request()->routeIs('generalsetting*')) active subdrop @endif">
+                                <i class="ti ti-settings"></i>
+                                <span>General</span>
+                                <span class="menu-arrow"></span>
                             </a>
-                        </li>
-                        @endcanany
+                            <ul style="display: @if (request()->routeIs('state*') || request()->routeIs('city*') || request()->routeIs('generalsetting*')) block @else none @endif;">
 
-                        {{-------------------------------------------------------------------- */
-                        /*  Roles — super admin admin only
-                        /* ------------------------------------------------------------------ --}}
-                        @hasanyrole('super admin')
-                        <li>
-                            <a href="{{ route('roles.index') }}"
-                                class="@if(request()->routeIs('roles*')) active @endif">
-                                <i class="ti ti-user-circle"></i><span>Role & Permissions</span>
-                            </a>
-                        </li>
-                        @endhasanyrole
+                                {{-------------------------------------------------------------------- */
+                                /*  State (type: state)
+                                /* ------------------------------------------------------------------ --}}
+                                @canany(['add-state', 'edit-state', 'delete-state'])
+                                    <li><a href="{{ route('state.index') }}">State</a></li>
+                                @endcanany
 
-                        {{-------------------------------------------------------------------- */
-                        /*  User Management (type: user → UserController)
-                        /* ------------------------------------------------------------------ --}}
-                        @canany(['add-user', 'edit-user', 'delete-user'])
-                        <li>
-                            <a href="{{ route('users.index', 'user') }}"
-                                class="@if(request()->routeIs('users*') && request()->route('type') == 'user') active @endif">
-                                <i class="ti ti-users"></i><span>User</span>
-                            </a>
-                        </li>
-                        @endcanany
+                                {{-------------------------------------------------------------------- */
+                                /*  City (type: city)
+                                /* ------------------------------------------------------------------ --}}
+                                @canany(['add-city', 'edit-city', 'delete-city'])
+                                    <li><a href="{{ route('city.index') }}">City</a></li>
+                                @endcanany
 
-                        {{-------------------------------------------------------------------- */
-                        /*  General Settings — admin only
-                        /* ------------------------------------------------------------------ --}}
-                        @hasanyrole('super admin|admin')
-                        <li>
-                            <a href="{{ route('generalsetting.create') }}"
-                                class="@if(request()->routeIs('generalsetting*')) active @endif">
-                                <i class="ti ti-settings"></i><span>General settings</span>
-                            </a>
+                                {{-------------------------------------------------------------------- */
+                                /* General Settings — super admin| admin only
+                                /* ------------------------------------------------------------------ --}}
+                                @hasanyrole('super admin|admin')
+                                    <li><a href="{{ route('generalsetting.create') }}">Settings</a></li>
+                                @endhasanyrole
+                            </ul>
                         </li>
-                        @endhasanyrole
-
                     </ul>
                 </li>
             </ul>
