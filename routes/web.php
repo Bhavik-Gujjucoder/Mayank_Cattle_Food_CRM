@@ -16,6 +16,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StateManagementController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -184,6 +185,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('general-setting')->name('generalsetting')->group(function () {
         Route::get('/create', [GeneralSettingController::class, 'create'])->name('.create');
         Route::post('/store', [GeneralSettingController::class, 'store'])->name('.store');
+    });
+
+
+    /* ------------------------------------------------------------------ */
+    /*  Cache Clear                                                       */
+    /* ------------------------------------------------------------------ */
+    Route::get('/clear', function () {
+        Artisan::call('cache:clear');
+        Artisan::call('config:clear');
+        Artisan::call('config:cache');
+        Artisan::call('view:clear');
+        Artisan::call('storage:link');
+        return "All cache cleared successfully!";
     });
 });
 
