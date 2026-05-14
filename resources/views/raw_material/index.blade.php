@@ -13,10 +13,14 @@
             </div>
             <div class="col-sm-8">
                 <div class="d-flex align-items-center flex-wrap row-gap-2 justify-content-sm-end">
-
-                    <a href="javascript:void(0);" class="btn btn-primary" id="openRawMaterialModal">
-                        <i class="ti ti-square-rounded-plus me-2"></i>Add Inventory
-                    </a>
+                    <button class="btn btn-danger me-2" id="bulk_delete_button" style="display:none;">
+                        <i class="ti ti-trash me-1"></i>Delete Selected
+                    </button>
+                    @can('add-raw-material-inventory')
+                        <a href="javascript:void(0);" class="btn btn-primary" id="openRawMaterialModal">
+                            <i class="ti ti-square-rounded-plus me-2"></i>Add Inventory
+                        </a>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -25,9 +29,6 @@
     <div class="card-body">
         <div class="table-responsive custom-table">
             <table class="table dataTable no-footer" id="raw_material_table">
-                <button class="btn btn-danger me-2" id="bulk_delete_button" style="display:none;">
-                        <i class="ti ti-trash me-1"></i>Delete Selected
-                    </button>
                 <thead class="thead-light">
                     <tr>
                         <th hidden>ID</th>
@@ -45,7 +46,9 @@
                         <th>Last Purchase Price</th>
                         <th>Average Price</th>
                         <th>Status</th>
-                        <th class="no-sort">Action</th>
+                        @canany(['edit-raw-material-inventory', 'delete-raw-material-inventory'])
+                            <th class="no-sort">Action</th>
+                        @endcanany
                     </tr>
                 </thead>
             </table>
@@ -66,7 +69,7 @@
                 </div>
             </div>
 
-            <form id="rawMaterialForm" >
+            <form id="rawMaterialForm">
                 @csrf
                 <input type="hidden" name="raw_material_id">
 
@@ -74,14 +77,14 @@
 
                     {{-- Name --}}
                     <div class="mb-3">
-                        <label class="col-form-label">Name <span class="text-dangers">*</span></label>
+                        <label class="col-form-label">Name <span class="text-danger">*</span></label>
                         <input type="text" name="name" class="form-control" placeholder="Inventory name" maxlength="255">
                         <span class="name_error text-danger small"></span>
                     </div>
 
                     {{-- Unit --}}
                     <div class="mb-3">
-                        <label class="col-form-label">Unit <span class="text-dangers">*</span></label>
+                        <label class="col-form-label">Unit <span class="text-danger">*</span></label>
                         <input type="text" name="unit" class="form-control" placeholder="e.g. KG, L, Piece" maxlength="50">
                         <span class="unit_error text-danger small"></span>
                     </div>
@@ -137,19 +140,35 @@
         order: [[0, 'desc']],
         ajax: "{{ route('raw-material.index') }}",
         columns: [
-            { data: 'id',               name: 'id',               visible: false, searchable: false },
-            { data: 'checkbox',         name: 'checkbox',         orderable: false, searchable: false },
-            { data: 'DT_RowIndex',      name: 'DT_RowIndex',      orderable: false, searchable: false },
-            { data: 'name',             name: 'name' },
-            { data: 'unit',             name: 'unit' },
-            { data: 'total_stock',      name: 'total_stock' },
-            { data: 'available_stock',  name: 'available_stock' },
-            { data: 'used_stock',       name: 'used_stock' },
+            { data: 'id',                  name: 'id',                  visible: false, searchable: false },
+            { data: 'checkbox',            name: 'checkbox',            orderable: false, searchable: false },
+            { data: 'DT_RowIndex',         name: 'DT_RowIndex',         orderable: false, searchable: false },
+            { data: 'name',                name: 'name' },
+            { data: 'unit',                name: 'unit' },
+            { data: 'total_stock',         name: 'total_stock' },
+            { data: 'available_stock',     name: 'available_stock' },
+            { data: 'used_stock',          name: 'used_stock' },
             { data: 'last_purchase_price', name: 'last_purchase_price' },
-            { data: 'average_price',    name: 'average_price' },
-            { data: 'status',           name: 'status' },
-            { data: 'action',           name: 'action', orderable: false, searchable: false },
+            { data: 'average_price',       name: 'average_price' },
+            { data: 'status',              name: 'status' },
+            @canany(['edit-raw-material-inventory', 'delete-raw-material-inventory'])
+            { data: 'action', name: 'action', orderable: false, searchable: false },
+            @endcanany
         ],
+        columnDefs: [
+            { targets: 0,  createdCell: td => $(td).attr('data-label', 'ID') },
+            { targets: 1,  createdCell: td => $(td).attr('data-label', 'Select') },
+            { targets: 2,  createdCell: td => $(td).attr('data-label', 'Sr. No.') },
+            { targets: 3,  createdCell: td => $(td).attr('data-label', 'Name') },
+            { targets: 4,  createdCell: td => $(td).attr('data-label', 'Unit') },
+            { targets: 5,  createdCell: td => $(td).attr('data-label', 'Total Stock') },
+            { targets: 6,  createdCell: td => $(td).attr('data-label', 'Available Stock') },
+            { targets: 7,  createdCell: td => $(td).attr('data-label', 'Used Stock') },
+            { targets: 8,  createdCell: td => $(td).attr('data-label', 'Last Purchase Price') },
+            { targets: 9,  createdCell: td => $(td).attr('data-label', 'Average Price') },
+            { targets: 10, createdCell: td => $(td).attr('data-label', 'Status') },
+            { targets: 11, createdCell: td => $(td).attr('data-label', 'Action') },
+        ]
     });
 
     /* Custom search */
@@ -219,15 +238,12 @@
 
         Swal.fire({
             title: 'Are you sure?',
-            text: 'This Inventory will be deleted permanently.',
+            text: 'This inventory item will be deleted permanently.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Yes, delete it!',
             cancelButtonText: 'Cancel',
-            customClass: {
-                confirmButton: 'btn btn-primary',
-                cancelButton: 'btn btn-secondary',
-            }
+            customClass: { confirmButton: 'btn btn-primary', cancelButton: 'btn btn-secondary' }
         }).then(result => { if (result.isConfirmed) form.submit(); });
     });
 
@@ -243,8 +259,9 @@
     });
 
     function toggleBulkDeleteBtn() {
-        let count = $('.raw_material_checkbox:checked').length;
-        count > 0 ? $('#bulk_delete_button').show() : $('#bulk_delete_button').hide();
+        $('.raw_material_checkbox:checked').length > 0
+            ? $('#bulk_delete_button').show()
+            : $('#bulk_delete_button').hide();
     }
 
     $('#bulk_delete_button').on('click', function () {
@@ -252,8 +269,7 @@
 
         Swal.fire({
             title: 'Are you sure?',
-            text: 'You want to remove this Inventory',
-            // text: ids.length + ' Inventory(s) will be deleted.',
+            text: ids.length + ' item(s) will be deleted.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Yes, delete!',

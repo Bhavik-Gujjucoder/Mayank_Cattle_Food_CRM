@@ -219,98 +219,105 @@
                         {{-- ------------------------------------------------------------------ */
                         /*  Users & Permissions submenu
                         /* ------------------------------------------------------------------ --}}
-                        <li class="submenu">
-                            <a href="javascript:void(0);" class="@if (request()->routeIs('users*') ||
+                        @canany(['add-supplier', 'edit-supplier', 'delete-supplier', 'add-broker', 'edit-broker',
+                            'delete-broker', 'add-dealer', 'edit-dealer', 'delete-dealer', 'add-transporter',
+                            'edit-transporter', 'delete-transporter', 'add-user', 'edit-user', 'delete-user'])
+                            <li class="submenu">
+                                <a href="javascript:void(0);"
+                                    class="@if (request()->routeIs('users*') ||
+                                            request()->routeIs('supplier*') ||
+                                            request()->routeIs('dealer*') ||
+                                            request()->routeIs('roles*')) active subdrop @endif">
+                                    <i class="ti ti-users"></i>
+                                    <span>Users & Permissions</span>
+                                    <span class="menu-arrow"></span>
+                                </a>
+                                <ul style="display: @if (request()->routeIs('users*') ||
                                         request()->routeIs('supplier*') ||
                                         request()->routeIs('dealer*') ||
-                                        request()->routeIs('roles*')) active subdrop @endif">
-                                <i class="ti ti-users"></i>
-                                <span>Users & Permissions</span>
-                                <span class="menu-arrow"></span>
-                            </a>
-                            <ul style="display: @if (request()->routeIs('users*') ||
-                                    request()->routeIs('supplier*') ||
-                                    request()->routeIs('dealer*') ||
-                                    request()->routeIs('roles*')) block @else none @endif;">
+                                        request()->routeIs('roles*')) block @else none @endif;">
 
-                                {{-- ------------------------------------------------------------------ */
+                                    {{-- ------------------------------------------------------------------ */
                                 /*  Supplier (type: supplier)
                                 /* ------------------------------------------------------------------ --}}
-                                @canany(['add-supplier', 'edit-supplier', 'delete-supplier'])
-                                    <li><a href="{{ route('supplier.index') }}">Supplier</a></li>
-                                @endcanany
+                                    @canany(['add-supplier', 'edit-supplier', 'delete-supplier'])
+                                        <li><a href="{{ route('supplier.index') }}">Supplier</a></li>
+                                    @endcanany
 
-                                {{-- ------------------------------------------------------------------ */
+                                    {{-- ------------------------------------------------------------------ */
                                 /*  Broker (type: broker → UserController)
                                 /* ------------------------------------------------------------------ --}}
-                                @canany(['add-broker', 'edit-broker', 'delete-broker'])
-                                    <li><a href="{{ route('users.index', 'broker') }}">Broker</a></li>
-                                @endcanany
+                                    @canany(['add-broker', 'edit-broker', 'delete-broker'])
+                                        <li><a href="{{ route('users.index', 'broker') }}">Broker</a></li>
+                                    @endcanany
 
-                                {{-- ------------------------------------------------------------------ */
+                                    {{-- ------------------------------------------------------------------ */
                                 /*  Dealer (type: dealer)
                                 /* ------------------------------------------------------------------ --}}
-                                @canany(['add-dealer', 'edit-dealer', 'delete-dealer'])
-                                    <li><a href="{{ route('dealer.index') }}">Dealer</a></li>
-                                @endcanany
+                                    @canany(['add-dealer', 'edit-dealer', 'delete-dealer'])
+                                        <li><a href="{{ route('dealer.index') }}">Dealer</a></li>
+                                    @endcanany
 
-                                {{-- ------------------------------------------------------------------ */
+                                    {{-- ------------------------------------------------------------------ */
                                 /*  Transporter (type: transporter → UserController)
                                 /* ------------------------------------------------------------------ --}}
-                                @canany(['add-transporter', 'edit-transporter', 'delete-transporter'])
-                                    <li><a href="{{ route('users.index', 'transporter') }}">Transporter</a></li>
-                                @endcanany
+                                    @canany(['add-transporter', 'edit-transporter', 'delete-transporter'])
+                                        <li><a href="{{ route('users.index', 'transporter') }}">Transporter</a></li>
+                                    @endcanany
 
-                                {{-- ------------------------------------------------------------------ */
+                                    {{-- ------------------------------------------------------------------ */
                                 /*  User Management (type: user → UserController)
                                 /* ------------------------------------------------------------------ --}}
-                                @canany(['add-user', 'edit-user', 'delete-user'])
-                                    <li><a href="{{ route('users.index', 'user') }}">Admin & Staff</a></li>
-                                @endcanany
+                                    @canany(['add-user', 'edit-user', 'delete-user'])
+                                        <li><a href="{{ route('users.index', 'user') }}">Admin & Staff</a></li>
+                                    @endcanany
 
-                                {{-- ------------------------------------------------------------------ */
+                                    {{-- ------------------------------------------------------------------ */
                                 /*  Roles — super admin only
                                 /* ------------------------------------------------------------------ --}}
-                                @hasanyrole('super admin')
-                                    <li><a href="{{ route('roles.index') }}">Roles & Permissions</a></li>
-                                @endhasanyrole
-                            </ul>
-                        </li>
+                                    @hasanyrole('super admin')
+                                        <li><a href="{{ route('roles.index') }}">Roles & Permissions</a></li>
+                                    @endhasanyrole
+                                </ul>
+                            </li>
+                        @endcanany
 
                         {{-- ------------------------------------------------------------------ */
                         /*  General Settings submenu
                         /* ------------------------------------------------------------------ --}}
-                        <li class="submenu">
-                            <a href="javascript:void(0);"
-                                class="@if (request()->routeIs('state*') || request()->routeIs('city*') || request()->routeIs('generalsetting*')) active subdrop @endif">
-                                <i class="ti ti-settings"></i>
-                                <span>General</span>
-                                <span class="menu-arrow"></span>
-                            </a>
-                            <ul style="display: @if (request()->routeIs('state*') || request()->routeIs('city*') || request()->routeIs('generalsetting*')) block @else none @endif;">
+                        @canany(['add-state', 'edit-state', 'delete-state', 'add-city', 'edit-city', 'delete-city'])
+                            <li class="submenu">
+                                <a href="javascript:void(0);"
+                                    class="@if (request()->routeIs('state*') || request()->routeIs('city*') || request()->routeIs('generalsetting*')) active subdrop @endif">
+                                    <i class="ti ti-settings"></i>
+                                    <span>General</span>
+                                    <span class="menu-arrow"></span>
+                                </a>
+                                <ul style="display: @if (request()->routeIs('state*') || request()->routeIs('city*') || request()->routeIs('generalsetting*')) block @else none @endif;">
 
-                                {{-------------------------------------------------------------------- */
+                                    {{-- ------------------------------------------------------------------ */
                                 /*  State (type: state)
                                 /* ------------------------------------------------------------------ --}}
-                                @canany(['add-state', 'edit-state', 'delete-state'])
-                                    <li><a href="{{ route('state.index') }}">State</a></li>
-                                @endcanany
+                                    @canany(['add-state', 'edit-state', 'delete-state'])
+                                        <li><a href="{{ route('state.index') }}">State</a></li>
+                                    @endcanany
 
-                                {{-------------------------------------------------------------------- */
+                                    {{-- ------------------------------------------------------------------ */
                                 /*  City (type: city)
                                 /* ------------------------------------------------------------------ --}}
-                                @canany(['add-city', 'edit-city', 'delete-city'])
-                                    <li><a href="{{ route('city.index') }}">City</a></li>
-                                @endcanany
+                                    @canany(['add-city', 'edit-city', 'delete-city'])
+                                        <li><a href="{{ route('city.index') }}">City</a></li>
+                                    @endcanany
 
-                                {{-------------------------------------------------------------------- */
+                                    {{-- ------------------------------------------------------------------ */
                                 /* General Settings — super admin| admin only
                                 /* ------------------------------------------------------------------ --}}
-                                @hasanyrole('super admin|admin')
-                                    <li><a href="{{ route('generalsetting.create') }}">Settings</a></li>
-                                @endhasanyrole
-                            </ul>
-                        </li>
+                                    @hasanyrole('super admin|admin')
+                                        <li><a href="{{ route('generalsetting.create') }}">Settings</a></li>
+                                    @endhasanyrole
+                                </ul>
+                            </li>
+                        @endcanany
                     </ul>
                 </li>
             </ul>

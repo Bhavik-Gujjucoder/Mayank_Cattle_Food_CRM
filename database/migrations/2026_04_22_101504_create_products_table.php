@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-
             $table->string('name')->comment('Cottonseed Cake, Soybean Meal, Wheat Straw (Bhusa), etc.');
+            $table->unsignedBigInteger('brand_id');
+            $table->string('unit')->comment('Bag, Ton');
+            $table->decimal('price', 20, 2)->comment('Price per unit');
             $table->tinyInteger('status')->default(1)->comment('1-active, 0-inactive');
-
             $table->timestamps();
             $table->softDeletes();
         });

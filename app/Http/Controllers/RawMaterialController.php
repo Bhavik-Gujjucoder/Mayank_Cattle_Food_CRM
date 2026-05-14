@@ -46,12 +46,15 @@ class RawMaterialController extends Controller
                                     ' . csrf_field() . method_field('DELETE') . '
                                 </form>';
 
+                    $action_btn  = auth()->user()->can('edit-raw-material-inventory') ? $edit_btn : '';
+                    $action_btn .= auth()->user()->can('delete-raw-material-inventory') ? $delete_btn : '';
+
                     return '<div class="dropdown table-action">
                                 <a href="#" class="action-icon" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fa fa-ellipsis-v"></i>
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-right">'
-                                    . $edit_btn . $delete_btn .
+                                    . $action_btn .
                                 '</div>
                             </div>';
                 })

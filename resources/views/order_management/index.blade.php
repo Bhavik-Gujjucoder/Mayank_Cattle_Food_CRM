@@ -3,6 +3,7 @@
 @section('title')
     {{ $page_title }}
 @endsection
+
 <div class="card">
     <div class="card-header">
         <!-- Search -->
@@ -10,275 +11,260 @@
             <div class="col-sm-4">
                 <div class="icon-form mb-3 mb-sm-0">
                     <span class="form-icon"><i class="ti ti-search"></i></span>
-                    <input type="text" class="form-control" placeholder="Search Soda/Order">
+                    <input type="text" class="form-control" id="customSearch" placeholder="Search Orders">
                 </div>
             </div>
-            <div class="col-sm-8">
-                <div class="d-flex align-items-center flex-wrap row-gap-2 justify-content-sm-end">
-                    <div class="dropdown me-2">
-                        <div class="dropdown-menu  dropdown-menu-end">
-                            <ul>
-                                <li>
-                                    <a href="javascript:void(0);" class="dropdown-item"><i
-                                            class="ti ti-file-type-pdf text-danger me-1"></i>Export
-                                        as PDF</a>
-                                </li>
-                                <li>
-                                    <a href="javascript:void(0);" class="dropdown-item"><i
-                                            class="ti ti-file-type-xls text-green me-1"></i>Export
-                                        as Excel </a>
-                                </li>
-                            </ul>
-                        </div>
+            {{-- Brand filter --}}
+            <div class="col-sm-4 col-lg-2 col-md-12">
+                <div class="mb-3">
+                    <label class="col-form-label">Brand </label>
+                    <select class="form-select select search-dropdown" name="brand_id" id="BrandId">
+                        <option value="all">All Brand</option>
+                        @foreach ($brands as $brand)
+                            <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            @if (!auth()->user()->hasRole('broker'))
+                {{-- Broker filter --}}
+                <div class="col-sm-4 col-lg-2 col-md-12">
+                    <div class="mb-3">
+                        <label class="col-form-label">Broker Person</label>
+                        <select class="form-select select search-dropdown" name="broker_id" id="broker_id">
+                            <option value="all">All Brokers</option>
+                            @foreach ($brokers as $broker)
+                                <option value="{{ $broker->id }}">{{ $broker->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
-                    <a href="{{ route('order.create') }}" class="btn btn-primary"><i class="ti ti-square-rounded-plus me-2"></i>Add
-                        Soda/Order</a>
+                </div>
+            @endif
+            <div class="col-sm-4">
+                <div class="d-flex align-items-center flex-wrap row-gap-2 justify-content-sm-end">
+
+                    @can('add-order')
+                        <a href="{{ route('order.create') }}" class="btn btn-primary">
+                            <i class="ti ti-square-rounded-plus me-2"></i>Add Soda/Order
+                        </a>
+                    @endcan
                 </div>
             </div>
         </div>
         <!-- /Search -->
     </div>
     <div class="card-body">
-        <!-- order management List -->
         <div class="table-responsive custom-table">
-
-            <div id="order_management_wrapper" class="dataTables_wrapper table-responsive">
-                <div class="dataTables_length" id="order_management_length">
-                    <label>
-                        Show
-                        <select name="order_management_length" class="form-select form-select-sm">
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                        entries
-                    </label>
-                </div>
-
-                <table class="table dataTable">
-                    <thead class="thead-light">
-                        <tr>
-                            <th class="no-sort sorting_disabled">
-                                <label class="checkboxs">
-                                    <input type="checkbox" id="select-all" class="order_checkbox"><span
-                                        class="checkmarks"></span></label>
-                            </th>
-                            <th class="no-sort" class="sorting">SR.No</th>
-                            <th scope="col" class="sorting">Order ID</th>
-                            <th scope="col" class="sorting">Broker</th>
-                            <th scope="col" class="sorting">Dealer</th>
-                            <th scope="col" class="sorting">Order Date</th>
-                            <th scope="col" class="sorting">Delivery Date</th>
-                            <th scope="col" class="sorting">Total</th>
-                            <th scope="col" class="sorting">Discount</th>
-                            <th scope="col" class="sorting">Priority</th>
-                            <th scope="col" class="sorting">Order Status</th>
-                            <th class="sorting_disabled" aria-label="Action">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="odd">
-                            <td data-label="Select"><label class="checkboxs">
-                                    <input type="checkbox" class="checkbox-item order_checkbox" data-id="99">
-                                    <span class="checkmarks"></span>
-                                </label>
-                            </td>
-                            <td data-label="Sr no">1</td>
-                            <td data-label="Order ID"><a href="#" class="show-btn open-popup-model"
-                                    data-id="99">
-                                    <i class="ti ti-eye #1ecbe2"></i> ORD000099</a>
-                            </td>
-                            <td data-label="Broker">Balaji Agro (Dealer)</td>
-                            <td data-label="Dealer">Radhe Dealers</td>
-                            <td data-label="Order Date">26 Jan 2026</td>
-                            <td data-label="Delivery Date">24 Feb 2026</td>
-                            <td data-label="Total">₹4,070</td>
-                            <td data-label="Order Status">50₹</td>
-                            <td data-label="Priority">
-                                <div class="dropdown table-action order_drpdown">
-                                    <span class="badge badge-pill badge-status bg-secondary">Low</span>
-                                </div>
-                            </td>
-                            <td data-label="Action">
-                                <div class="dropdown table-action order_drpdown">
-                                    <span class="badge badge-pill badge-status bg-secondary">Pending</span>
-                                    <a href="#" class="action-icon" data-bs-toggle="dropdown"
-                                        aria-expanded="false"><i class="fa fa-pencil"></i></a>
-                                    <div class="dropdown-menu dropdown-menu-right">
-                                        <a href="javascript:void(0)" class="dropdown-item change-status" data-id="99" data-status="2">
-                                            <span class="badge bg-primary">Approved</span>
-                                        </a>
-                                        <a href="javascript:void(0)" class="dropdown-item change-status" data-id="99" data-status="2">
-                                            <span class="badge bg-info">Dispatched</span>
-                                        </a>
-                                        <a href="javascript:void(0)" class="dropdown-item change-status" data-id="99" data-status="2">
-                                            <span class="badge bg-success">Completed</span>
-                                        </a>
-                                        <a href="javascript:void(0)" class="dropdown-item change-status" data-id="99" data-status="2">
-                                            <span class="badge bg-danger">Cancelled</span>
-                                        </a>
-                                        <a href="javascript:void(0)" class="dropdown-item change-status" data-id="99" data-status="2">
-                                            <span class="badge bg-danger">Partial Cancelled</span>
-                                        </a>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="dropdown table-action">
-                                    <a href="#" class="action-icon " data-bs-toggle="dropdown"
-                                        aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
-                                    <div class="dropdown-menu dropdown-menu-right">
-                                        <a href="#" class="dropdown-item"><i
-                                                class="ti ti-edit text-warning"></i> Edit</a><a
-                                            href="javascript:void(0)" class="dropdown-item deleteOrder"
-                                            data-id="99"> <i class="ti ti-trash text-danger"></i> Delete</a>
-                                        <form action="#" method="post" class="delete-form">
-                                            <input type="hidden"><input type="hidden" name="_method"
-                                                value="DELETE">
-                                        </form>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr class="even">
-                            <td data-label="Select"><label class="checkboxs">
-                                    <input type="checkbox" class="checkbox-item order_checkbox">
-                                    <span class="checkmarks"></span>
-                                </label>
-                            </td>
-                            <td data-label="Sr no">2</td>
-                            <td data-label="Order ID"><a href="" class="show-btn open-popup-model">
-                                    <i class="ti ti-eye #1ecbe2"></i> ORD000098</a>
-                            </td>
-                            <td data-label="Broker">Balaji Agro (Dealer)</td>
-                            <td data-label="Dealer">Radhe Dealers</td>
-                            <td data-label="Order Date">26 Jan 2026</td>
-                            <td data-label="Delivery Date">24 Feb 2026</td>
-                            <td data-label="Total">₹4,120</td>
-                            <td data-label="Order Status">50₹</td>
-                            <td data-label="Priority">
-                                <div class="dropdown table-action order_drpdown">
-                                    <span class="badge badge-pill badge-status bg-secondary">Low</span>
-                                </div>
-                            </td>
-                            <td data-label="Action">
-                                <div class="dropdown table-action order_drpdown">
-                                    <span class="badge badge-pill badge-status bg-secondary">Pending</span>
-                                    <a href="#" class="action-icon" data-bs-toggle="dropdown"
-                                        aria-expanded="false"><i class="fa fa-pencil"></i></a>
-                                    <div class="dropdown-menu dropdown-menu-right"><a href="javascript:void(0)"
-                                            class="dropdown-item change-status">
-                                            <span class="badge bg-success">Complete</span>
-                                        </a>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="dropdown table-action">
-                                    <a href="#" class="action-icon " data-bs-toggle="dropdown"
-                                        aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
-                                    <div class="dropdown-menu dropdown-menu-right">
-                                        <a href="" class="dropdown-item"><i
-                                                class="ti ti-edit text-warning"></i> Edit</a><a
-                                            href="javascript:void(0)" class="dropdown-item deleteOrder"
-                                            data-id="98"> <i class="ti ti-trash text-danger"></i> Delete</a>
-                                        <form action="" method="post" class="delete-form"><input
-                                                type="hidden" name="_token"><input type="hidden" value="DELETE">
-                                        </form>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr class="odd">
-                            <td data-label="Select"><label class="checkboxs">
-                                    <input type="checkbox" class="checkbox-item order_checkbox">
-                                    <span class="checkmarks"></span>
-                                </label>
-                            </td>
-                            <td data-label="Sr no">3</td>
-                            <td data-label="Order ID"><a href="" class="show-btn open-popup-model">
-                                    <i class="ti ti-eye #1ecbe2"></i> ORD000097</a>
-                            </td>
-                            <td data-label="Broker">Balaji Agro (Dealer)</td>
-                            <td data-label="Dealer">Radhe Dealers</td>
-                            <td data-label="Order Date">24 Jan 2026</td>
-                            <td data-label="Delivery Date">24 Feb 2026</td>
-                            <td data-label="Total">₹2,392</td>
-                            <td data-label="Order Status">50₹</td>
-                            <td data-label="Priority">
-                                <div class="dropdown table-action order_drpdown">
-                                    <span class="badge badge-pill badge-status bg-secondary">Low</span>
-                                </div>
-                            </td>
-                            <td data-label="Action">
-                                <div class="dropdown table-action order_drpdown">
-                                    <span class="badge badge-pill badge-status bg-secondary">Pending</span>
-                                    <a href="#" class="action-icon" data-bs-toggle="dropdown"
-                                        aria-expanded="false"><i class="fa fa-pencil"></i></a>
-                                    <div class="dropdown-menu dropdown-menu-right"><a href="javascript:void(0)"
-                                            class="dropdown-item change-status" data-id="97" data-status="2">
-                                            <span class="badge bg-success">Complete</span>
-                                        </a>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="dropdown table-action">
-                                    <a href="#" class="action-icon " data-bs-toggle="dropdown"
-                                        aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
-                                    <div class="dropdown-menu dropdown-menu-right">
-                                        <a href="" class="dropdown-item"><i
-                                                class="ti ti-edit text-warning"></i> Edit</a><a
-                                            href="javascript:void(0)" class="dropdown-item deleteOrder"> <i
-                                                class="ti ti-trash text-danger"></i> Delete</a>
-                                        <form class="delete-form"><input type="hidden"><input type="hidden"
-                                                name="_method" value="DELETE">
-                                        </form>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-
-
-                    </tbody>
-                </table>
-                <div class="dataTables_info" id="order_management_info" role="status" aria-live="polite">Showing 1
-                    to 10 of 72 entries</div>
-                <div class="dataTables_paginate paging_simple_numbers" id="order_management_paginate">
-                    <ul class="pagination">
-                        <li class="paginate_button page-item previous disabled" id="order_management_previous"><a
-                                aria-controls="order_management" aria-disabled="true" role="link"
-                                data-dt-idx="previous" tabindex="-1" class="page-link">Previous</a></li>
-                        <li class="paginate_button page-item active"><a href="#" class="page-link">1</a></li>
-                        <li class="paginate_button page-item "><a href="#" class="page-link">2</a></li>
-                        <li class="paginate_button page-item "><a href="#" class="page-link">3</a></li>
-                        <li class="paginate_button page-item "><a href="#" class="page-link">4</a></li>
-                        <li class="paginate_button page-item "><a href="#" class="page-link">5</a></li>
-                        <li class="paginate_button page-item disabled"><a aria-controls="order_management"
-                                aria-disabled="true" role="link" data-dt-idx="ellipsis" tabindex="-1"
-                                class="page-link">…</a></li>
-                        <li class="paginate_button page-item "><a href="#" aria-controls="order_management"
-                                role="link" data-dt-idx="7" tabindex="0" class="page-link">8</a></li>
-                        <li class="paginate_button page-item next" id="order_management_next"><a href="#"
-                                aria-controls="order_management" role="link" data-dt-idx="next" tabindex="0"
-                                class="page-link">Next</a></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <div class="row align-items-center">
-            <div class="col-md-6">
-                <div class="datatable-length"></div>
-            </div>
-            <div class="col-md-6">
-                <div class="datatable-paginate"></div>
-            </div>
+            <table class="table dataTable no-footer" id="order_table">
+                <button class="btn btn-danger me-2" id="bulk_delete_button" style="display:none;">
+                    <i class="ti ti-trash me-2"></i>Delete Selected
+                </button>
+                <thead class="thead-light">
+                    <tr>
+                        <th hidden>ID</th>
+                        <th class="no-sort" scope="col">
+                            <label class="checkboxs">
+                                <input type="checkbox" id="select-all" class="order_checkbox">
+                                <span class="checkmarks"></span>
+                            </label>
+                        </th>
+                        <th class="no-sort" scope="col">Sr No</th>
+                        <th scope="col">Order ID</th>
+                        <th scope="col">Broker</th>
+                        <th scope="col">Brand</th>
+                        <th scope="col">Dealer</th>
+                        <th scope="col">Order Date</th>
+                        <th scope="col">Grand Total</th>
+                        <th scope="col">Payment Status</th>
+                        {{-- <th scope="col">Order Status</th> --}}
+                        @canany(['edit-order', 'delete-order'])
+                            <th scope="col">Action</th>
+                        @endcanany
+                    </tr>
+                </thead>
+            </table>
         </div>
     </div>
 </div>
 
 @endsection
 @section('script')
-<script></script>
+<script>
+    $(document).ready(function() {
+        $('.search-dropdown').select2({
+            placeholder: 'Select'
+        });
+    });
+
+    const isShowAction = {{ auth()->user()->canAny(['edit-order', 'delete-order'])? 'true': 'false' }};
+    const isShowCheckbox = {{ auth()->user()->can('delete-order') ? 'true' : 'false' }};
+
+    var order_table = $('#order_table').DataTable({
+        pageLength: 10,
+        deferRender: true,
+        processing: true,
+        serverSide: true,
+        responsive: true,
+        dom: 'lrtip',
+        order: [
+            [0, 'desc']
+        ],
+        ajax: {
+            url: "{{ route('order.index') }}",
+            data: function(d) {
+                d.broker_id = $('#broker_id').val();
+                d.brand_id = $('#BrandId').val();
+            }
+        },
+        columns: [{
+                data: 'id',
+                name: 'id',
+                visible: false,
+                searchable: false
+            },
+            {
+                data: 'checkbox',
+                name: 'checkbox',
+                orderable: false,
+                searchable: false,
+                visible: isShowCheckbox
+            },
+            {
+                data: 'DT_RowIndex',
+                name: 'DT_RowIndex',
+                orderable: false,
+                searchable: false
+            },
+            {
+                data: 'unique_order_id',
+                name: 'unique_order_id',
+                searchable: true
+            },
+            {
+                data: 'broker_name',
+                name: 'broker_name',
+                orderable: true,
+                searchable: false
+            },
+            {
+                data: 'brand_name',
+                name: 'brand_name',
+                orderable: true,
+                searchable: false
+            },
+            {
+                data: 'dealer_name',
+                name: 'dealer_name',
+                orderable: true,
+                searchable: false
+            },
+            {
+                data: 'order_date',
+                name: 'order_date',
+                searchable: false
+            },
+            {
+                data: 'grand_total',
+                name: 'grand_total',
+                searchable: false
+            },
+            {
+                data: 'payment_status',
+                name: 'payment_status',
+                orderable: false,
+                searchable: true
+            },
+            // { data: 'order_status',   name: 'order_status',   orderable: false, searchable: false },
+            {
+                data: 'action',
+                name: 'action',
+                orderable: false,
+                searchable: false,
+                visible: isShowAction
+            },
+        ]
+    });
+
+    /* Broker /Brand */
+    $('#broker_id, #BrandId').on('change', function() {
+        order_table.draw();
+    });
+
+    /* Custom search */
+    $('#customSearch').on('keyup', function() {
+        order_table.search(this.value).draw();
+    });
+
+    /* Delete single */
+    $(document).on('click', '.deleteOrder', function(e) {
+        e.preventDefault();
+        let orderId = $(this).data('id');
+        confirmDeletion(function() {
+            $('#order-delete-form-' + orderId).submit();
+        });
+    });
+
+    /* Bulk delete — select all */
+    $('#select-all').on('change', function() {
+        $('.order_checkbox').prop('checked', this.checked);
+        toggleBulkBtn();
+    });
+
+    $(document).on('change', '.order_checkbox', function() {
+        toggleBulkBtn();
+    });
+
+    function toggleBulkBtn() {
+        let count = $('.order_checkbox:checked').not('#select-all').length;
+        count > 0 ? $('#bulk_delete_button').show() : $('#bulk_delete_button').hide();
+    }
+
+    $('#bulk_delete_button').on('click', function() {
+        confirmDeletion(function() {
+            var selectedIds = $('.order_checkbox:checked').not('#select-all').map(function() {
+                return $(this).data('id');
+            }).get();
+
+            if (selectedIds.length > 0) {
+                $.ajax({
+                    url: "{{ route('order.bulkDelete') }}",
+                    method: 'POST',
+                    data: {
+                        ids: selectedIds,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        show_success(response.message);
+                        order_table.ajax.reload();
+                        $('#bulk_delete_button').hide();
+                        $('#select-all').prop('checked', false);
+                    },
+                    error: function() {
+                        show_error('An error occurred while deleting.');
+                    }
+                });
+            }
+        });
+    });
+
+    function confirmDeletion(callback) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: 'You want to remove this Order? Once deleted, it cannot be recovered.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel',
+            customClass: {
+                popup: 'my-custom-popup',
+                title: 'my-custom-title',
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-secondary',
+                icon: 'my-custom-icon swal2-warning'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) callback();
+        });
+    }
+</script>
 @endsection

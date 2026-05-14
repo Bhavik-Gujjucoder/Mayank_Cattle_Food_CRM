@@ -27,7 +27,9 @@ class User extends Authenticatable
         'status',
         'password',
         'real_password',
-        'deleted_at'
+        'deleted_at',
+        'otp_code',
+        'otp_expires_at',
     ];
 
     /**
@@ -55,7 +57,8 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'otp_expires_at'    => 'datetime',
+            'password'          => 'hashed',
         ];
     }
 }

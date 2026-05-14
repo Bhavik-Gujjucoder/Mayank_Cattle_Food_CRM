@@ -21,6 +21,8 @@ return new class extends Migration
             $table->text('profile_picture')->nullable();
             $table->rememberToken();
             $table->integer('status')->default(1)->comment('1=active, 0=inactive');
+            $table->string('otp_code')->nullable();
+            $table->timestamp('otp_expires_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

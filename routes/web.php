@@ -8,6 +8,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MachineInventoryController;
 use App\Http\Controllers\OilManagementController;
 use App\Http\Controllers\OrderManagementController;
+use App\Http\Controllers\OtpController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RawMaterialController;
@@ -22,6 +23,13 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('auth.login');
 });
+
+
+/* Verify OTP */
+Route::get('/verify-otp', fn() => view('auth.verify_otp'))->name('verify.otp.form');
+Route::post('/verify-otp', [OtpController::class, 'verify'])->name('verify.otp');
+Route::post('/resend-otp', [OtpController::class, 'resendOtp'])->name('resend.otp');
+
 
 /* Permissions & Roles — super admin / admin only */
 Route::middleware(['auth', 'role:super admin|admin'])->group(function () {
@@ -60,11 +68,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dealer/export', [DealerManagementController::class, 'export'])
         ->name('dealer.export')->middleware('permission:export-dealer');
     Route::post('/get-cities', [DealerManagementController::class, 'getCitiesByState'])->name('get.cities');
+    Route::get('/get-dealers', [DealerManagementController::class, 'getDealersByBrokerBrand'])->name('get.dealers');
 
 
     /* ------------------------------------------------------------------ */
     /*  Order / Soda-Order Management  (type: soda-order)                  */
     /* ------------------------------------------------------------------ */
+    Route::get('order-last-price', [OrderManagementController::class, 'lastItemPrice'])->name('order.lastItemPrice');
     Route::resource('order', OrderManagementController::class)->except(['store', 'update', 'destroy']);
     Route::post('order', [OrderManagementController::class, 'store'])
         ->name('order.store')->middleware('permission:add-order');
@@ -72,6 +82,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('order.update')->middleware('permission:edit-order');
     Route::delete('order/{order}', [OrderManagementController::class, 'destroy'])
         ->name('order.destroy')->middleware('permission:delete-order');
+    Route::post('order-bulk-delete', [OrderManagementController::class, 'bulkDelete'])
+        ->name('order.bulkDelete')->middleware('permission:delete-order');
 
 
     /* ------------------------------------------------------------------ */

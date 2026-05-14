@@ -16,6 +16,18 @@
                     </div>
                 </div>
 
+                {{-- Brand filter --}}
+                    <div class="col-sm-12 col-lg-2 col-md-12">
+                        <div class="mb-3">
+                            <label class="col-form-label">Brand </label>
+                            <select class="form-select select search-dropdown" name="brand_id" id="BrandId">
+                                <option value="all">All Brand</option>
+                                @foreach ($brands as $brand)
+                                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                 @if (!auth()->user()->hasRole('broker'))
                     {{-- Broker filter --}}
                     <div class="col-sm-12 col-lg-2 col-md-12">
@@ -88,6 +100,7 @@
                             <th>Firm / Shop Name</th>
                             <th>Dealer Name</th>
                             <th>Broker</th>
+                            <th>Brand</th>
                             <th>Mobile</th>
                             <th>City</th>
                             <th>Code No</th>
@@ -133,6 +146,7 @@
                     d.broker_id = $('#broker_id').val();
                     d.start_date = $('#startDate').val();
                     d.end_date = $('#endDate').val();
+                    d.brand_id = $('#BrandId').val();
                 }
             },
             columns: [{
@@ -161,6 +175,12 @@
                     data: 'broker_id',
                     name: 'broker_id',
                     searchable: true
+                },
+                {
+                    data: 'brand_id',
+                    name: 'brand_id',
+                    searchable: false,
+                    orderable: false
                 },
                 {
                     data: 'mobile_no',
@@ -198,7 +218,7 @@
         });
 
         /* Broker / date filters */
-        $('#broker_id, #startDate, #endDate').on('change', function() {
+        $('#broker_id, #startDate, #endDate, #BrandId').on('change', function() {
             dealerTable.draw();
         });
 
@@ -314,6 +334,9 @@
                         }, {
                             data: 'broker_id',
                             title: 'Broker',
+                        }, {
+                            data: 'brand_id',
+                            title: 'Brand',
                         },  {
                             data: 'mobile_no',
                             title: 'Mobile',

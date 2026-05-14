@@ -62,7 +62,7 @@
                     </div>
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
-                            <h2 class="mb-1">0</h2>
+                            <h2 class="mb-1">{{ $total_soda_order }}</h2>
                             <p class="fs-13">Total Soda/Order</p>
                         </div>
                     </div>
