@@ -14,12 +14,12 @@
                     <input type="text" class="form-control" id="customSearch" placeholder="Search">
                 </div>
             </div>
-            <div class="col-sm-8">
+            {{-- <div class="col-sm-8">
                 <div class="d-flex align-items-center flex-wrap row-gap-2 justify-content-sm-end">
                     <a href="{{ route('roles.create') }}" class="btn btn-primary"><i
                             class="ti ti-square-rounded-plus me-2"></i>Add Role</a>
                 </div>
-            </div>
+            </div> --}}
         </div>
         <!-- /Search -->
     </div>
