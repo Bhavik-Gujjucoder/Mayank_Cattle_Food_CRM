@@ -37,6 +37,18 @@
                         </div>
                     </div>
 
+                    {{-- ── Code No ─────────────────────────────────────── --}}
+                    <div class="col-md-4 mb-3">
+                        <label class="col-form-label">Code No <span class="text-danger">*</span></label>
+                        <input type="text" name="code_no" id="code_no" value="{{ old('code_no', $code_no) }}"
+                            class="form-control" readonly>
+                        <span class="text-danger small" id="code_no_error">
+                            @error('code_no')
+                                {{ $message }}
+                            @enderror
+                        </span>
+                    </div>
+
                     {{-- ── Broker ──────────────────────────────────────── --}}
                     <div class="col-md-4 mb-3">
                         <label class="col-form-label">Broker Person <span class="text-danger">*</span></label>
@@ -52,23 +64,23 @@
                         @error('broker_id')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
-                        {{-- <span class="text-danger small" id="broker_id_error">
-                            @error('broker_id')
-                                {{ $message }}
-                            @enderror
-                        </span> --}}
                     </div>
 
-                    {{-- ── Code No ─────────────────────────────────────── --}}
+                    {{-- ── Brand ───────────────────────────────────────── --}}
                     <div class="col-md-4 mb-3">
-                        <label class="col-form-label">Code No <span class="text-danger">*</span></label>
-                        <input type="text" name="code_no" id="code_no" value="{{ old('code_no', $code_no) }}"
-                            class="form-control" readonly>
-                        <span class="text-danger small" id="code_no_error">
-                            @error('code_no')
-                                {{ $message }}
-                            @enderror
-                        </span>
+                        <label class="col-form-label">Brand <span class="text-danger">*</span></label>
+                        <select name="brand_id" id="brand_id"
+                            class="form-select search-select @error('brand_id') is-invalid @enderror">
+                            <option value="">-- Select Brand --</option>
+                            @foreach ($brands as $brand)
+                                <option value="{{ $brand->id }}" {{ old('brand_id') == $brand->id ? 'selected' : '' }}>
+                                    {{ $brand->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('brand_id')
+                            <span class="invalid-feedback">{{ $message }}</span>
+                        @enderror
                     </div>
 
                     {{-- ── Applicant Name ──────────────────────────────── --}}
@@ -299,9 +311,6 @@
 @endsection
 @section('script')
     <script>
-
-
-
         /**** State wise city dropdown ****/
         $(document).ready(function() {
             let oldCity = "{{ old('city_id') }}";
@@ -372,6 +381,11 @@
             /* ── Select2 ─────────────────────────────────────────────── */
             $('#broker_id').select2({
                 placeholder: '-- Select Broker --',
+                width: '100%'
+            });
+
+            $('#brand_id').select2({
+                placeholder: '-- Select Brand --',
                 width: '100%'
             });
 

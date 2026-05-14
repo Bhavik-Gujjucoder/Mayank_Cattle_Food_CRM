@@ -19,8 +19,8 @@
                             @enderror --}}
                         </div>
                         <div class="mb-3 ">
-                            <label>Permissions</label><br>
-                            @foreach ($permissions as $permission)
+                            <label>All Permissions</label><br>
+                            {{-- @foreach ($permissions as $permission)
                                 <div class="col-lg-2 col-md-4">
                                     <div class="form-check form-check-md d-flex align-items-center">
                                         <input class="form-check-input" id="{{ $permission->id }}" type="checkbox"
@@ -31,8 +31,34 @@
                                             for="{{ $permission->id }}">{{ $permission->name }} </label>
                                     </div>
                                 </div>
+                            @endforeach --}}
+                            @foreach ($permissions as $type => $items)
+                                <div class="mb-3 mt-3">
+                                    <label class="fw-bold">{{ ucwords(str_replace('-', ' ', $type)) }}</label>
+
+                                    <div class="row mt-1">
+                                        @foreach ($items as $permission)
+                                            <div class="col-md-3">
+                                                <label>
+                                                    <input type="checkbox" name="permissions[]" class="form-check-input"
+                                                        value="{{ $permission->id }}">
+
+                                                    {{ ucwords(str_replace('-', ' ', $permission->name)) }}
+                                                </label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
                             @endforeach
-                             <div class="mb-2 mt-5"><h4> Dashboard Permissions</h4></div>
+
+
+
+
+
+
+                            {{-- <div class="mb-2 mt-5">
+                                <h4> Dashboard Permissions</h4>
+                            </div> --}}
                             {{-- @foreach ($dashboard_permissions as $dpermission)
                                 <div class="col-lg-4 col-md-4">
                                     <div class="form-check form-check-md d-flex align-items-center">
@@ -77,7 +103,7 @@
                         required: "Please select at least one permission"
                     }
                 },
-                 errorElement: 'span',
+                errorElement: 'span',
                 errorClass: 'text-danger', // Add Bootstrap class
                 errorPlacement: function(error, element) {
                     if (element.attr("name") == "permissions[]") {

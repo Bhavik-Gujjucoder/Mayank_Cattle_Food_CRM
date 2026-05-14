@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BrandManagement;
 use App\Models\CityManagement;
 use App\Models\DealerManagement;
 use App\Models\StateManagement;
@@ -10,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\Can;
 use Yajra\DataTables\DataTables;
 
 class DealerManagementController extends Controller
@@ -22,6 +24,7 @@ class DealerManagementController extends Controller
         return [
             'profile_picture'   => 'nullable|mimes:jpg,jpeg,png,gif|max:2048',
             'broker_id'         => 'required|exists:users,id',
+            'brand_id'          => 'required|exists:brand_management,id',
             'code_no'           => 'required|string|max:20|unique:dealer_management,code_no,' . $ignoreId,
             'applicant_name'    => 'required|string|max:255',
             'firm_shop_name'    => 'required|string|max:255',
@@ -47,6 +50,7 @@ class DealerManagementController extends Controller
         return [
             'profile_picture'   => 'nullable|mimes:jpg,jpeg,png,gif|max:2048',
             'broker_id'         => 'required|exists:users,id',
+            'brand_id'          => 'required|exists:brand_management,id',
             'code_no'           => 'required|string|max:20|unique:dealer_management,code_no,' . $dealerId,
             'applicant_name'    => 'required|string|max:255',
             'firm_shop_name'    => 'required|string|max:255',
@@ -72,6 +76,8 @@ class DealerManagementController extends Controller
         return [
             'broker_id.required'        => 'Please select a broker.',
             'broker_id.exists'          => 'Selected broker is invalid.',
+            'brand_id.required'         => 'Please select a brand.',
+            'brand_id.exists'           => 'Selected brand is invalid.',
             'code_no.required'          => 'Code no is required.',
             'applicant_name.required'   => 'Dealer name is required.',
             'firm_shop_name.required'   => 'Firm / shop name is required.',
@@ -107,33 +113,27 @@ class DealerManagementController extends Controller
     {
         $data['page_title'] = 'Dealers';
         $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
-
+        $data['brands']     = BrandManagement::where('status', 1)->orderBy('name')->get();
         if ($request->ajax()) {
-            $query = DealerManagement::with('user', 'broker', 'city')
+            $query = DealerManagement::with('user', 'broker', 'brand', 'city')
                 ->when($request->broker_id && $request->broker_id != 'all',  fn($q) => $q->where('broker_id', $request->broker_id))
+                ->when($request->brand_id && $request->brand_id != 'all',  fn($q) => $q->where('brand_id', $request->brand_id))
                 ->when($request->start_date, fn($q) => $q->whereDate('created_at', '>=', Carbon::parse($request->start_date)->format('Y-m-d')))
-                ->when($request->end_date,   fn($q) => $q->whereDate('created_at', '<=', Carbon::parse($request->end_date)->format('Y-m-d')))
-                ;
+                ->when($request->end_date,   fn($q) => $q->whereDate('created_at', '<=', Carbon::parse($request->end_date)->format('Y-m-d')));
             return DataTables::of($query)
-                 ->addIndexColumn()
+                ->addIndexColumn()
                 ->addColumn('action', function ($row) {
-                    return '
-                        <div class="dropdown table-action">
-                            <a href="#" class="action-icon" data-bs-toggle="dropdown">
-                                <i class="fa fa-ellipsis-v"></i>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-right">
-                                <a href="' . route('dealer.edit', $row->id) . '" class="dropdown-item">
-                                    <i class="ti ti-edit text-warning"></i> Edit
-                                </a>
-                                <a href="javascript:void(0)" class="dropdown-item delete-btn delete_d_d" data-id="' . $row->id . '">
-                                    <i class="ti ti-trash text-danger"></i> Delete
-                                </a>
-                                <form id="delete-form-' . $row->id . '" action="' . route('dealer.destroy', $row->id) . '" method="POST">
-                                    ' . csrf_field() . method_field('DELETE') . '
-                                </form>
-                            </div>
-                        </div>';
+
+                    $edit_btn = '<a href="' . route('dealer.edit', $row->id) . '"class="dropdown-item"><i class="ti ti-edit text-warning"></i> Edit</a>';
+                    $delete_btn = '<a href="javascript:void(0)"class="dropdown-item delete-dealer-btn"data-id="' . $row->id . '"><i class="ti ti-trash text-danger"></i> Delete</a><form action="' . route('dealer.destroy', $row->id) . '" method="POST" class="delete-form" id="delete-dealer-form-' . $row->id . '" style="display:none;">' . csrf_field() . '' . method_field('DELETE') . '</form>';
+
+                    $action_btn = '<div class="dropdown table-action"><a href="#" class="action-icon" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right">';
+
+                    $action_btn .= auth()->user()->can('edit-dealer') ? $edit_btn : '';
+                    $action_btn .= auth()->user()->can('delete-dealer') ? $delete_btn : '';
+
+                    $action_btn .= '</div></div>';
+                    return $action_btn;
                 })
                 ->addColumn('applicant_name', function ($row) {
                     $user = $row->user;
@@ -141,7 +141,7 @@ class DealerManagementController extends Controller
                         ? asset('storage/profile_pictures/' . $user->profile_picture)
                         : asset('images/default-user.png');
                     $name = $user->name ?? '-';
-                   $role = $user?->roles?->first()?->name ?? '';
+                    $role = $user?->roles?->first()?->name ?? '';
                     return '
                         <div class="d-flex align-items-center">
                             <a href="' . $profilePic . '" target="_blank" class="avatar avatar-sm border rounded p-1 me-2">
@@ -154,25 +154,22 @@ class DealerManagementController extends Controller
                         </div>
                     ';
                 })
-
                 ->addColumn('mobile_no', function ($row) {
                     return $row->user?->phone_no ?? '-';
                 })
-
-             
+                ->addColumn('firm_shop_name_export', function ($row) {
+                    return $row->firm_shop_name;
+                })
+                ->addColumn('applicant_name_export', function ($row) {
+                    return $row->user?->name ?? '-';
+                })
                 ->editColumn('firm_shop_name', function ($row) {
                     return '<a href="' . route('dealer.show', $row->id) . '" class="open-popup-model" data-id="' . $row->id . '">
                                 <i class="ti ti-eye"></i> ' . e($row->firm_shop_name) . '
                             </a>';
                 })
-                ->addColumn('firm_shop_name_export', function ($row) {
-                    return $row->firm_shop_name;
-                })
-
-                ->addColumn('applicant_name_export', function ($row) {
-                    return $row->user?->name ?? '-';
-                })
                 ->editColumn('broker_id', fn($row) => $row->broker?->name ?? '-')
+                ->editColumn('brand_id',  fn($row) => $row->brand?->name  ?? '—')
                 ->editColumn('city_id', fn($row) => $row->city?->city_name ?? '-')
                 ->editColumn('created_at', fn($row) => $row->created_at?->format('d M Y') ?? '-')
                 ->filterColumn('applicant_name', function ($query, $keyword) {
@@ -196,14 +193,16 @@ class DealerManagementController extends Controller
         return view('dealer.index', $data);
     }
 
+
     /* ------------------------------------------------------------------ */
-    /*  CREATE                                                              */
+    /*  CREATE                                                            */
     /* ------------------------------------------------------------------ */
     public function create()
     {
         $data['page_title'] = 'Add Dealer';
         $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
-        $data['states']    = StateManagement::where('status', 1)->get()->all();
+        $data['brands']     = BrandManagement::where('status', 1)->orderBy('name')->get();
+        $data['states']     = StateManagement::where('status', 1)->get()->all();
         $nextId             = (DealerManagement::max('id') ?? 0) + 1;
         $data['code_no']    = 'MCF' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
 
@@ -237,6 +236,7 @@ class DealerManagementController extends Controller
         DealerManagement::create([
             'user_id'           => $user->id,
             'broker_id'         => $request->broker_id,
+            'brand_id'          => $request->brand_id,
             'code_no'           => $request->code_no,
             'firm_shop_name'    => $request->firm_shop_name,
             'firm_shop_address' => $request->firm_shop_address,
@@ -273,6 +273,7 @@ class DealerManagementController extends Controller
         $data['page_title'] = 'Edit Dealer';
         $data['dealer']     = $dealer->load('user');
         $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
+        $data['brands']     = BrandManagement::where('status', 1)->orderBy('name')->get();
         $data['states']     = StateManagement::where('status', 1)->get()->all();
         $data['cities']     = CityManagement::where('state_id', $dealer->state_id)->where('status', 1)->get();
 
@@ -311,6 +312,7 @@ class DealerManagementController extends Controller
 
         $dealer->update([
             'broker_id'         => $request->broker_id,
+            'brand_id'          => $request->brand_id,
             'code_no'           => $request->code_no,
             'firm_shop_name'    => $request->firm_shop_name,
             'firm_shop_address' => $request->firm_shop_address,
@@ -345,5 +347,24 @@ class DealerManagementController extends Controller
     {
         $cities = CityManagement::where('state_id', $request->state_id)->where('status', 1)->get();
         return response()->json($cities);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  GET DEALERS BY BROKER + BRAND  (used by Order create form)         */
+    /* ------------------------------------------------------------------ */
+    public function getDealersByBrokerBrand(Request $request)
+    {
+        $dealers = DealerManagement::with('user')
+            ->when($request->broker_id, fn($q) => $q->where('broker_id', $request->broker_id))
+            ->when($request->brand_id,  fn($q) => $q->where('brand_id',  $request->brand_id))
+            ->get()
+            ->map(fn($d) => [
+                'id'                => $d->id,
+                'name'              => $d->user?->name ?? $d->firm_shop_name,
+                'firm_shop_name'    => $d->firm_shop_name,
+                'firm_shop_address' => $d->firm_shop_address,
+            ]);
+
+        return response()->json($dealers);
     }
 }

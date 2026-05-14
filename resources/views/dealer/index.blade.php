@@ -4,7 +4,7 @@
 @endsection
 @section('content')
 
-  
+
     <div class="card">
         <div class="card-header">
             <div class="row align-items-center sale-sec">
@@ -16,6 +16,18 @@
                     </div>
                 </div>
 
+                {{-- Brand filter --}}
+                    <div class="col-sm-12 col-lg-2 col-md-12">
+                        <div class="mb-3">
+                            <label class="col-form-label">Brand </label>
+                            <select class="form-select select search-dropdown" name="brand_id" id="BrandId">
+                                <option value="all">All Brand</option>
+                                @foreach ($brands as $brand)
+                                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                 @if (!auth()->user()->hasRole('broker'))
                     {{-- Broker filter --}}
                     <div class="col-sm-12 col-lg-2 col-md-12">
@@ -53,19 +65,25 @@
                             </div>
                         </div>
                     </div>
+                    @else
+                    <div class="col-sm-12 col-lg-2 col-md-12"></div>
+                    <div class="col-sm-12 col-lg-2 col-md-12"></div>
+                    <div class="col-sm-12 col-lg-2 col-md-12"></div>
                 @endif
 
                 {{-- Action Buttons --}}
                 <div class="col-sm-12 col-lg-4 col-md-12">
                     <div class="d-flex align-items-center flex-wrap row-gap-2 column-gap-1 justify-content-sm-end btn-cls">
-                        <button type="button" class="btn btn-primary" id="exportDealer">
-                            <i class="ti ti-file-export me-2"></i>Export Dealer
-                        </button>
-                        @if (!auth()->user()->hasRole('sales'))
+                        @can('export-dealer')
+                            <button type="button" class="btn btn-primary" id="exportDealer">
+                                <i class="ti ti-file-export me-2"></i>Export Dealer
+                            </button>
+                        @endcan
+                        @can('add-dealer')
                             <a href="{{ route('dealer.create') }}" class="btn btn-primary">
                                 <i class="ti ti-square-rounded-plus me-2"></i>Add Dealer
                             </a>
-                        @endif
+                        @endcan
                     </div>
                 </div>
 
@@ -82,13 +100,14 @@
                             <th>Firm / Shop Name</th>
                             <th>Dealer Name</th>
                             <th>Broker</th>
+                            <th>Brand</th>
                             <th>Mobile</th>
                             <th>City</th>
                             <th>Code No</th>
                             <th>Date</th>
-                            @if (!auth()->user()->hasRole('sales'))
+                            @canany(['edit-dealer', 'delete-dealer'])
                                 <th>Action</th>
-                            @endif
+                            @endcanany
                         </tr>
                     </thead>
                 </table>
@@ -109,7 +128,7 @@
             });
         });
 
-        const isSales = @json(auth()->user()->hasRole('sales'));
+        const isShowAction = {{ auth()->user()->canAny(['edit-dealer', 'delete-dealer'])? 'true': 'false' }};
 
         var dealerTable = $('#dealerTable').DataTable({
             pageLength: 10,
@@ -127,6 +146,7 @@
                     d.broker_id = $('#broker_id').val();
                     d.start_date = $('#startDate').val();
                     d.end_date = $('#endDate').val();
+                    d.brand_id = $('#BrandId').val();
                 }
             },
             columns: [{
@@ -157,6 +177,12 @@
                     searchable: true
                 },
                 {
+                    data: 'brand_id',
+                    name: 'brand_id',
+                    searchable: false,
+                    orderable: false
+                },
+                {
                     data: 'mobile_no',
                     name: 'mobile_no',
                     searchable: true
@@ -181,8 +207,8 @@
                     name: 'action',
                     orderable: false,
                     searchable: false,
-                    visible: !isSales
-                },
+                    visible: isShowAction
+                }
             ],
         });
 
@@ -192,7 +218,7 @@
         });
 
         /* Broker / date filters */
-        $('#broker_id, #startDate, #endDate').on('change', function() {
+        $('#broker_id, #startDate, #endDate, #BrandId').on('change', function() {
             dealerTable.draw();
         });
 
@@ -308,6 +334,9 @@
                         }, {
                             data: 'broker_id',
                             title: 'Broker',
+                        }, {
+                            data: 'brand_id',
+                            title: 'Brand',
                         },  {
                             data: 'mobile_no',
                             title: 'Mobile',

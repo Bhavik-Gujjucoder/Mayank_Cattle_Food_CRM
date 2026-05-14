@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\BrandManagement;
 use App\Models\CityManagement;
 use App\Models\StateManagement;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,11 @@ class DealerManagement extends Model
     public function broker()
     {
         return $this->belongsTo(User::class, 'broker_id');
+    }
+
+    public function brand()
+    {
+        return $this->belongsTo(BrandManagement::class, 'brand_id');
     }
 
     public function user()

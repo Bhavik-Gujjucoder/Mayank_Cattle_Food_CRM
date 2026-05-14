@@ -114,7 +114,7 @@
                     <!-- Nav List -->
                     <li class="nav-item nav-list">
                         <ul class="nav">
-                            <li class="nav-item dropdown">
+                            {{-- <li class="nav-item dropdown">
                                 <a href="javascript:void(0);" class="btn btn-header-list" data-bs-toggle="dropdown">
                                     <i class="ti ti-layout-grid-add"></i>
                                 </a>
@@ -260,7 +260,7 @@
                                         </div>
                                     </div>
                                 </div>
-                            </li>
+                            </li> --}}
 
                             {{-- <li class="nav-item">
                                 <a href="lead-reports.html" class="btn btn-chart-pie">
