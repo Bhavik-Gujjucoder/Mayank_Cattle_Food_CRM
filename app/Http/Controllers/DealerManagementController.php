@@ -332,10 +332,15 @@ class DealerManagementController extends Controller
     /* ------------------------------------------------------------------ */
     public function destroy(DealerManagement $dealer)
     {
-        if ($dealer->user->profile_picture) {
-            Storage::disk('public')->delete('profile_pictures/' . $dealer->user->profile_picture);
+        $dealer->load('user');
+
+        if ($dealer->user) {
+            if ($dealer->user->profile_picture) {
+                Storage::disk('public')->delete('profile_pictures/' . $dealer->user->profile_picture);
+            }
+            $dealer->user->delete();
         }
-        $dealer->user->delete();
+
         $dealer->delete();
         return redirect()->route('dealer.index')->with('success', 'Dealer deleted successfully.');
     }
