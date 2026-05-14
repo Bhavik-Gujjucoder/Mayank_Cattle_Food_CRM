@@ -466,7 +466,7 @@
                                                                                                             data-block-id="1"><img
                                                                                                                 width="120"
                                                                                                                 height="auto"
-                                                                                                                style="border:0;width:120px;height:auto;max-width:100%;max-height:100%;display:block"
+                                                                                                                style="border:0;width:274px;height:auto;max-width:100%;max-height:100%;display:block"
                                                                                                                 alt="Website Link"
                                                                                                                 src="{{ asset('storage/company_logo/' . getSetting('company_logo')) }}"
                                                                                                                 class=""></a>
