@@ -397,10 +397,10 @@
             return $('<div>').html(html).text();
         }
         /* Delete confirmation */
-        $(document).on('click', '.delete_d_d', function(e) {
+        $(document).on('click', '.delete-dealer-btn', function(e) {
             e.preventDefault();
             let id = $(this).data('id');
-            let form = $('#delete-form-' + id);
+            let form = $('#delete-dealer-form-' + id);
 
             Swal.fire({
                 title: 'Are you sure?',
