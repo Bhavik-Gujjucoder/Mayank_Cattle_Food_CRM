@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('profile_image')->nullable();
             $table->unsignedBigInteger('broker_id');
+            $table->unsignedBigInteger('brand_id');
             $table->foreign('broker_id')->references('id')->on('users')->onDelete('set null');
             $table->string('code_no')->unique();
             $table->string('applicant_name');

@@ -5,7 +5,8 @@
 @section('content')
     <div class="card">
         <div class="card-body">
-            <form id="purchaseForm" action="{{ route('raw-material-order.store') }}" method="POST">
+            <form id="purchaseForm" action="{{ route('raw-material-order.update', $raw_material_purchase->id) }}" method="POST">
+                @method('PUT')
                 @csrf
                 @if ($errors->any())
                     {{-- {{ dump($errors->first()) }} --}}
@@ -95,7 +96,7 @@
                         <label class="col-form-label">Total Price <span class="text-danger">*</span></label>
                         <input type="number" name="total_price" id="total_price" value="{{ old('total_price', $raw_material_purchase->total_price) }}"
                             class="form-control @error('total_price') is-invalid @enderror"
-                            placeholder="Enter Total Price" maxlength="255" disabled>
+                            placeholder="Auto-calculated" readonly>
                         @error('total_price')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
@@ -163,26 +164,21 @@
 @section('script')
     <script>
         
-        $(document).ready(function() {
-            /* Invoice Date Field */
-            flatpickr("#invoice_date", {
-                enableTime: true,
-                dateFormat: "Y-m-d H:i",
-                time_24hr: true
+        $(document).ready(function () {
+
+            /* Invoice Date picker */
+            flatpickr('#invoice_date', {
+                dateFormat: 'Y-m-d',
             });
 
-            /* Quantity and Unit Price change */
-            $('#quantity, #unit_price').on('keyup', function() {
-                var quantity = $('#quantity').val();
-                var unit_price = $('#unit_price').val();
-                var total_price = quantity * unit_price;
-                $('#total_price').val(total_price);
-            });
+            /* Auto-calculate total price */
+            function recalcTotal() {
+                var qty   = parseFloat($('#quantity').val())   || 0;
+                var price = parseFloat($('#unit_price').val()) || 0;
+                $('#total_price').val((qty * price).toFixed(2));
+            }
 
-            
-            $('#purchaseForm').on('submit', function () {
-                $('#total_price').prop('disabled', false);
-            });
+            $('#quantity, #unit_price').on('input', recalcTotal);
         });
     </script>
 @endsection

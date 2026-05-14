@@ -1,9 +1,12 @@
 @extends('layouts.main')
-@section('title') {{ $page_title }} @endsection
+@section('title')
+    {{ $page_title }}
+@endsection
 @section('content')
     <div class="card">
         <div class="card-body">
-            <form id="dealerForm" action="{{ route('dealer.update', $dealer->id) }}" method="POST" enctype="multipart/form-data">
+            <form id="dealerForm" action="{{ route('dealer.update', $dealer->id) }}" method="POST"
+                enctype="multipart/form-data">
                 @csrf
                 @method('PATCH')
 
@@ -34,6 +37,18 @@
                         </div>
                     </div>
 
+                    {{-- ── Code No ─────────────────────────────────────── --}}
+                    <div class="col-md-4 mb-3">
+                        <label class="col-form-label">Code No <span class="text-danger">*</span></label>
+                        <input type="text" name="code_no" id="code_no" value="{{ old('code_no', $dealer->code_no) }}"
+                            class="form-control" readonly>
+                        <span class="text-danger small" id="code_no_error">
+                            @error('code_no')
+                                {{ $message }}
+                            @enderror
+                        </span>
+                    </div>
+
                     {{-- ── Broker ──────────────────────────────────────── --}}
                     <div class="col-md-4 mb-3">
                         <label class="col-form-label">Broker Person <span class="text-danger">*</span></label>
@@ -52,15 +67,22 @@
                         @enderror
                     </div>
 
-                    {{-- ── Code No ─────────────────────────────────────── --}}
+                    {{-- ── Brand ───────────────────────────────────────── --}}
                     <div class="col-md-4 mb-3">
-                        <label class="col-form-label">Code No <span class="text-danger">*</span></label>
-                        <input type="text" name="code_no" id="code_no"
-                            value="{{ old('code_no', $dealer->code_no) }}"
-                            class="form-control" readonly>
-                        <span class="text-danger small" id="code_no_error">
-                            @error('code_no') {{ $message }} @enderror
-                        </span>
+                        <label class="col-form-label">Brand <span class="text-danger">*</span></label>
+                        <select name="brand_id" id="brand_id"
+                            class="form-select search-select @error('brand_id') is-invalid @enderror">
+                            <option value="">-- Select Brand --</option>
+                            @foreach ($brands as $brand)
+                                <option value="{{ $brand->id }}"
+                                    {{ old('brand_id', $dealer->brand_id) == $brand->id ? 'selected' : '' }}>
+                                    {{ $brand->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('brand_id')
+                            <span class="invalid-feedback">{{ $message }}</span>
+                        @enderror
                     </div>
 
                     {{-- ── Applicant Name ──────────────────────────────── --}}
@@ -91,8 +113,7 @@
                     <div class="col-md-4 mb-3">
                         <label class="col-form-label">Firm / Shop Address <span class="text-danger">*</span></label>
                         <textarea name="firm_shop_address" id="firm_shop_address"
-                            class="form-control @error('firm_shop_address') is-invalid @enderror"
-                            placeholder="Enter address" rows="2"
+                            class="form-control @error('firm_shop_address') is-invalid @enderror" placeholder="Enter address" rows="2"
                             maxlength="500">{{ old('firm_shop_address', $dealer->firm_shop_address) }}</textarea>
                         @error('firm_shop_address')
                             <span class="invalid-feedback">{{ $message }}</span>
@@ -102,11 +123,9 @@
                     {{-- ── PAN Card ────────────────────────────────────── --}}
                     <div class="col-md-4 mb-3">
                         <label class="col-form-label">PAN Card No <span class="text-danger">*</span></label>
-                        <input type="text" name="pancard" id="pancard"
-                            value="{{ old('pancard', $dealer->pancard) }}"
-                            class="form-control @error('pancard') is-invalid @enderror"
-                            placeholder="e.g. ABCDE1234F" maxlength="10"
-                            oninput="this.value = this.value.toUpperCase()">
+                        <input type="text" name="pancard" id="pancard" value="{{ old('pancard', $dealer->pancard) }}"
+                            class="form-control @error('pancard') is-invalid @enderror" placeholder="e.g. ABCDE1234F"
+                            maxlength="10" oninput="this.value = this.value.toUpperCase()">
                         @error('pancard')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
@@ -115,12 +134,13 @@
                     {{-- ── GSTIN ───────────────────────────────────────── --}}
                     <div class="col-md-4 mb-3">
                         <label class="col-form-label">GSTIN</label>
-                        <input type="text" name="gstin" id="gstin"
-                            value="{{ old('gstin', $dealer->gstin) }}"
+                        <input type="text" name="gstin" id="gstin" value="{{ old('gstin', $dealer->gstin) }}"
                             class="form-control" placeholder="15-character GST number" maxlength="15"
                             oninput="this.value = this.value.toUpperCase()">
                         <span class="text-danger small" id="gstin_error">
-                            @error('gstin') {{ $message }} @enderror
+                            @error('gstin')
+                                {{ $message }}
+                            @enderror
                         </span>
                     </div>
 
@@ -128,11 +148,13 @@
                     <div class="col-md-4 mb-3">
                         <label class="col-form-label">Aadhar Card No</label>
                         <input type="text" name="aadhar_card" id="aadhar_card"
-                            value="{{ old('aadhar_card', $dealer->aadhar_card) }}"
-                            class="form-control" placeholder="12-digit Aadhar number" maxlength="12"
+                            value="{{ old('aadhar_card', $dealer->aadhar_card) }}" class="form-control"
+                            placeholder="12-digit Aadhar number" maxlength="12"
                             oninput="this.value = this.value.replace(/\D/g,'').slice(0,12)">
                         <span class="text-danger small" id="aadhar_card_error">
-                            @error('aadhar_card') {{ $message }} @enderror
+                            @error('aadhar_card')
+                                {{ $message }}
+                            @enderror
                         </span>
                     </div>
 
@@ -154,8 +176,7 @@
                         <label class="col-form-label">Email <span class="text-danger">*</span></label>
                         <input type="email" name="email" id="email"
                             value="{{ old('email', $dealer->user->email) }}"
-                            class="form-control @error('email') is-invalid @enderror"
-                            placeholder="Email address">
+                            class="form-control @error('email') is-invalid @enderror" placeholder="Email address">
                         @error('email')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
@@ -228,10 +249,9 @@
                     {{-- ── Postal Code ─────────────────────────────────── --}}
                     <div class="col-md-4 mb-3">
                         <label class="col-form-label">Postal Code</label>
-                        <input type="text" name="postal_code"
-                            value="{{ old('postal_code', $dealer->postal_code) }}"
-                            class="form-control @error('postal_code') is-invalid @enderror"
-                            placeholder="Postal/Zip code" maxlength="6">
+                        <input type="text" name="postal_code" value="{{ old('postal_code', $dealer->postal_code) }}"
+                            class="form-control @error('postal_code') is-invalid @enderror" placeholder="Postal/Zip code"
+                            maxlength="6">
                         @error('postal_code')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
@@ -249,73 +269,90 @@
     </div>
 @endsection
 @section('script')
-<script>
-    /**** State-wise city dropdown ****/
-    $(document).ready(function () {
-        let currentCity = "{{ old('city_id', $dealer->city_id) }}";
+    <script>
+        /**** State-wise city dropdown ****/
+        $(document).ready(function() {
+            let currentCity = "{{ old('city_id', $dealer->city_id) }}";
 
-        $('#stateDropdown').on('change', function () {
-            var stateID = $(this).val();
-            $('#cityDropdown').html('<option value="">Loading...</option>');
-            if (stateID) {
-                $.ajax({
-                    url: "{{ route('get.cities') }}",
-                    type: "POST",
-                    data: { state_id: stateID, _token: "{{ csrf_token() }}" },
-                    success: function (data) {
-                        $('#cityDropdown').empty().append('<option value="">Select City</option>');
-                        $.each(data, function (key, city) {
-                            let selected = (currentCity == city.id) ? 'selected' : '';
-                            $('#cityDropdown').append(
-                                '<option value="' + city.id + '" ' + selected + '>' + city.city_name + '</option>'
-                            );
-                        });
-                    }
-                });
-            } else {
-                $('#cityDropdown').html('<option value="">-- Select City --</option>');
-            }
+            $('#stateDropdown').on('change', function() {
+                var stateID = $(this).val();
+                $('#cityDropdown').html('<option value="">Loading...</option>');
+                if (stateID) {
+                    $.ajax({
+                        url: "{{ route('get.cities') }}",
+                        type: "POST",
+                        data: {
+                            state_id: stateID,
+                            _token: "{{ csrf_token() }}"
+                        },
+                        success: function(data) {
+                            $('#cityDropdown').empty().append(
+                                '<option value="">Select City</option>');
+                            $.each(data, function(key, city) {
+                                let selected = (currentCity == city.id) ? 'selected' :
+                                    '';
+                                $('#cityDropdown').append(
+                                    '<option value="' + city.id + '" ' + selected +
+                                    '>' + city.city_name + '</option>'
+                                );
+                            });
+                        }
+                    });
+                } else {
+                    $('#cityDropdown').html('<option value="">-- Select City --</option>');
+                }
+            });
+
+            /* Trigger on load only when the city list wasn't pre-rendered (e.g. after a validation error) */
+            @if (old('state_id') && !old('city_id'))
+                $('#stateDropdown').trigger('change');
+            @endif
+        });
+        /*** END ***/
+
+        /* Password toggle */
+        $(document).ready(function() {
+            $(document).on('click', '.form-icon', function() {
+                let input = $(this).siblings('input');
+                let icon = $(this).find('i');
+                if (input.attr('type') === 'password') {
+                    input.attr('type', 'text');
+                    icon.removeClass('ti-eye-off').addClass('ti-eye');
+                } else {
+                    input.attr('type', 'password');
+                    icon.removeClass('ti-eye').addClass('ti-eye-off');
+                }
+            });
         });
 
-        /* Trigger on load only when the city list wasn't pre-rendered (e.g. after a validation error) */
-        @if(old('state_id') && !old('city_id'))
-            $('#stateDropdown').trigger('change');
-        @endif
-    });
-    /*** END ***/
-
-    /* Password toggle */
-    $(document).ready(function () {
-        $(document).on('click', '.form-icon', function () {
-            let input = $(this).siblings('input');
-            let icon  = $(this).find('i');
-            if (input.attr('type') === 'password') {
-                input.attr('type', 'text');
-                icon.removeClass('ti-eye-off').addClass('ti-eye');
-            } else {
-                input.attr('type', 'password');
-                icon.removeClass('ti-eye').addClass('ti-eye-off');
+        /* Profile picture preview */
+        function previewProfilePicture(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profilePreview').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
             }
-        });
-    });
-
-    /* Profile picture preview */
-    function previewProfilePicture(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                document.getElementById('profilePreview').src = e.target.result;
-            };
-            reader.readAsDataURL(file);
         }
-    }
 
-    $(document).ready(function () {
-        /* Select2 for broker dropdown */
-        $('#broker_id').select2({ placeholder: '-- Select Broker --', width: '100%' });
+        $(document).ready(function() {
+            /* Select2 for broker dropdown */
+            $('#broker_id').select2({
+                placeholder: '-- Select Broker --',
+                width: '100%'
+            });
 
-        $('#broker_id').on('change', function () { $(this).valid(); });
-    });
-</script>
+            /* Select2 for brand dropdown */
+            $('#brand_id').select2({
+                placeholder: '-- Select Brand --',
+                width: '100%'
+            });
+
+            $('#broker_id').on('change', function() {
+                $(this).valid();
+            });
+        });
+    </script>
 @endsection
