@@ -72,13 +72,13 @@
                 @endif
 
                 {{-- Action Buttons --}}
-                <div class="col-sm-12 col-lg-4 col-md-12">
+                <div class="col-sm-12 col-lg-2 col-md-12">
                     <div class="d-flex align-items-center flex-wrap row-gap-2 column-gap-1 justify-content-sm-end btn-cls">
-                        @can('export-dealer')
+                        {{-- @can('export-dealer')
                             <button type="button" class="btn btn-primary" id="exportDealer">
                                 <i class="ti ti-file-export me-2"></i>Export Dealer
                             </button>
-                        @endcan
+                        @endcan --}}
                         @can('add-dealer')
                             <a href="{{ route('dealer.create') }}" class="btn btn-primary">
                                 <i class="ti ti-square-rounded-plus me-2"></i>Add Dealer
