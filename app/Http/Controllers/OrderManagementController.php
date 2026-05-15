@@ -54,6 +54,9 @@ class OrderManagementController extends Controller
                 ->addColumn('payment_status', fn($row) => $row->paymentBadge())
                 // ->addColumn('order_status', fn($row) => '<span class="badge badge-pill badge-status bg-secondary">Pending</span>')
                 ->addColumn('action', function ($row) {
+                    // $dispatch_btn = '<a href="' . route('dispatch.orderHistory', $row->id) . '" class="dropdown-item">
+                    //                     <i class="ti ti-truck me-1 text-info"></i> Dispatch
+                    //                 </a>';
                     $edit_btn = '<a href="' . route('order.edit', $row->id) . '" class="dropdown-item">
                                     <i class="ti ti-edit text-warning"></i> Edit
                                 </a>';
@@ -69,6 +72,7 @@ class OrderManagementController extends Controller
                                      <i class="fa fa-ellipsis-v"></i>
                                  </a>
                                  <div class="dropdown-menu dropdown-menu-right">';
+                    // $btn .= $dispatch_btn;
                     $btn .= auth()->user()->can('edit-order')   ? $edit_btn   : '';
                     $btn .= auth()->user()->can('delete-order') ? $delete_btn : '';
                     $btn .= '</div></div>';

@@ -40,11 +40,16 @@ Route::middleware(['auth', 'role:super admin|admin'])->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', [HomeController::class, 'dashboard'])->name('dashboard');
 
-    /* My Profile */
+    /* ------------------------------------------------------------------ */
+    /*  My Profile                                                        */
+    /* ------------------------------------------------------------------ */
     Route::get('my-profile/{id}', [UserController::class, 'my_profile'])->name('my_profile');
     Route::put('my-profile/{id}', [UserController::class, 'my_profile_update'])->name('my_profile.update');
 
 
+    /* ------------------------------------------------------------------ */
+    /*  User Management  (type: broker, transporter, admin & staff)       */
+    /* ------------------------------------------------------------------ */
     Route::get('users/{type}', [UserController::class, 'index'])->name('users.index');
     Route::get('users/{type}/create', [UserController::class, 'create'])->name('users.create');
     Route::get('users/{type}/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
@@ -89,6 +94,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ------------------------------------------------------------------ */
     /*  Dispatch Management  (type: dispatch)                               */
     /* ------------------------------------------------------------------ */
+    /* Dispatch history for a specific order — must be BEFORE resource route */
+    Route::get('dispatch/order/{order}', [DispatchManagementController::class, 'orderHistory'])
+        ->name('dispatch.orderHistory');
+
     Route::resource('dispatch', DispatchManagementController::class)->except(['store', 'update', 'destroy']);
     Route::post('dispatch', [DispatchManagementController::class, 'store'])
         ->name('dispatch.store')->middleware('permission:add-dispatch');
@@ -97,14 +106,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('dispatch/{dispatch}', [DispatchManagementController::class, 'destroy'])
         ->name('dispatch.destroy')->middleware('permission:delete-dispatch');
 
+
     /* ------------------------------------------------------------------ */
-    /*  Oil Management                                                   */
+    /*  Oil Management                                                    */
     /* ------------------------------------------------------------------ */
     Route::resource('oil', OilManagementController::class);
 
 
     /* ------------------------------------------------------------------ */
-    /*  Machine Inventory                                                */
+    /*  Machine Inventory                                                 */
     /* ------------------------------------------------------------------ */
     Route::resource('machine', MachineInventoryController::class);
 
@@ -124,7 +134,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     /* ------------------------------------------------------------------ */
-    /*  City Management  (type: city)                                       */
+    /*  City Management  (type: city)                                     */
     /* ------------------------------------------------------------------ */
     Route::resource('city', CityManagementController::class)->except(['store', 'update', 'destroy']);
     Route::post('city', [CityManagementController::class, 'store'])

@@ -77,7 +77,7 @@
                         <th scope="col">Grand Total</th>
                         <th scope="col">Payment Status</th>
                         {{-- <th scope="col">Order Status</th> --}}
-                        @canany(['edit-order', 'delete-order'])
+                        @canany(['edit-order', 'delete-order', 'add-dispatch'])
                             <th scope="col">Action</th>
                         @endcanany
                     </tr>
@@ -96,7 +96,7 @@
         });
     });
 
-    const isShowAction = {{ auth()->user()->canAny(['edit-order', 'delete-order'])? 'true': 'false' }};
+    const isShowAction = {{ auth()->user()->canAny(['edit-order', 'delete-order', 'add-dispatch'])? 'true': 'false' }};
     const isShowCheckbox = {{ auth()->user()->can('delete-order') ? 'true' : 'false' }};
 
     var order_table = $('#order_table').DataTable({

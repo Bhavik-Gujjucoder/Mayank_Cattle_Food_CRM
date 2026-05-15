@@ -42,6 +42,11 @@ class OrderManagement extends Model
         return $this->hasMany(OrderItem::class, 'order_id');
     }
 
+    public function dispatches()
+    {
+        return $this->hasMany(DispatchManagement::class, 'order_id');
+    }
+
     /* ── Helpers ─────────────────────────────────────────────────── */
 
     public function statusBadge(): string
