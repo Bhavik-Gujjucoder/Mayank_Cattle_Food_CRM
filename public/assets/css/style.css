@@ -32347,3 +32347,234 @@ table.gc-manage-table tbody td {
     transition: background .2s;
 }
 .btn-remove-row:hover { background: #fca5a5; }
+
+
+/* ================================================================
+   Dispatch Management — History Page
+   ================================================================ */
+
+/* ── Page header ─────────────────────────────────────────────── */
+.dh-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 22px 28px;
+    background: linear-gradient(120deg, #eef2ff 0%, #e6edff 55%, #dde6ff 100%);
+    border-bottom: 2px solid #c8d3f5;
+}
+
+/* Left cluster: icon box + stacked text */
+.dh-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Coloured icon square */
+.dh-icon-box {
+    width: 54px;
+    height: 54px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #4a6be8 0%, #2248c9 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.55rem;
+    box-shadow: 0 4px 14px rgba(50, 72, 201, 0.32);
+}
+
+/* Text column */
+.dh-header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+/* Small uppercase eyebrow label */
+.dh-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #7a8db3;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    line-height: 1;
+}
+
+/* Large order ID */
+.dh-order-id {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #1a35a8;
+    letter-spacing: 0.02em;
+    line-height: 1.15;
+}
+
+/* Add Dispatch button */
+.dh-add-btn {
+    background: linear-gradient(135deg, #4a6be8 0%, #2248c9 100%);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    padding: 10px 22px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    box-shadow: 0 3px 12px rgba(50, 72, 201, 0.30);
+    transition: transform 0.18s, box-shadow 0.18s, background 0.18s;
+}
+.dh-add-btn:hover {
+    background: linear-gradient(135deg, #2248c9 0%, #1a35a8 100%);
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(50, 72, 201, 0.40);
+    transform: translateY(-2px);
+}
+.dh-add-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(50, 72, 201, 0.25);
+}
+.dh-add-btn .ti {
+    font-size: 1rem;
+    vertical-align: middle;
+}
+
+/* ── Pending Dispatch summary cards ──────────────────────────── */
+.pd-summary-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.pd-item-card {
+    flex: 1 1 220px;
+    background: #fff;
+    border: 1px solid #e3e8f4;
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(50, 70, 140, 0.07);
+    transition: box-shadow 0.2s;
+}
+.pd-item-card:hover {
+    box-shadow: 0 4px 16px rgba(50, 70, 140, 0.13);
+}
+
+/* Product name heading */
+.pd-item-product {
+    font-size: 0.97rem;
+    font-weight: 700;
+    color: #2d3748;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    border-bottom: 1px dashed #dde3f0;
+}
+.pd-item-product .ti {
+    color: #3d5dd4;
+    font-size: 1rem;
+}
+
+/* Three stats row */
+.pd-item-stats {
+    display: flex;
+    align-items: center;
+    margin-bottom: 14px;
+}
+.pd-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.pd-stat-value {
+    font-size: 1.55rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+.pd-val-pending    { color: #e07c24; }   /* orange — still pending */
+.pd-val-done       { color: #28a745; }   /* green  — fully dispatched */
+.pd-val-dispatched { color: #3d5dd4; }   /* blue */
+.pd-val-total      { color: #343a40; }   /* dark grey */
+
+.pd-stat-label {
+    font-size: 0.70rem;
+    font-weight: 600;
+    color: #9aa5b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.pd-stat-divider {
+    width: 1px;
+    height: 40px;
+    background: #e3e8f4;
+    flex-shrink: 0;
+    margin: 0 8px;
+}
+
+/* Progress bar row */
+.pd-item-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.pd-progress-bar {
+    flex: 1;
+    height: 6px;
+    border-radius: 6px;
+    background: #eef1f8;
+    overflow: hidden;
+}
+.pd-progress-bar .progress-bar {
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+.pd-progress-label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #9aa5b8;
+    white-space: nowrap;
+    min-width: 80px;
+    text-align: right;
+}
+
+/* ── Dispatch history table column widths ────────────────────── */
+.dh-col-sr     { width: 60px; }
+.dh-col-bags   { width: 140px; }
+.dh-col-date   { width: 130px; }
+.dh-col-action { width: 110px; }
+
+/* Action cell — edit + delete side by side ──────────────────── */
+.dh-action-btns {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+/* ── Edit modal — read-only product display chip ─────────────── */
+.edit-product-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8f9ff;
+    border: 1px solid #e3e8f4;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+.edit-product-display .ti {
+    color: #3d5dd4;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+/* ── Modal form — pre-allocated error spans ──────────────────── */
+.field-error {
+    display: block;
+    min-height: 1rem;  /* keeps layout stable whether error shows or not */
+}

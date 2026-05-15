@@ -29,4 +29,21 @@ class OrderItem extends Model
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
+
+    public function dispatches()
+    {
+        return $this->hasMany(DispatchManagement::class, 'order_item_id');
+    }
+
+    /* ── Helpers ─────────────────────────────────────────────────── */
+
+    public function dispatchedQty(): int
+    {
+        return (int) $this->dispatches()->sum('no_of_bags');
+    }
+
+    public function pendingQty(): int
+    {
+        return max(0, (int) $this->qty - $this->dispatchedQty());
+    }
 }
