@@ -5,8 +5,30 @@
 @endsection
 <div class="card">
     <div class="card-header">
+
+        <div class="cls-cardhed-part">
+            <div class="cls-form-left">
+                <div class="common-hed-form cls-form-serc">
+                    <div class="icon-form">
+                        <span class="form-icon"><i class="ti ti-search"></i></span>
+                        <input type="text" class="form-control" id="customSearch" placeholder="Search">
+                    </div>
+                </div>
+            </div>
+            <div class="cls-form-right">
+                <div class="comm-header-right-btn">
+                    @can('add-' . $type)
+                        <a href="{{ route('users.create', $type) }}" class="btn btn-primary">
+                            <i class="ti ti-square-rounded-plus me-2"></i>
+                            Add {{ ucfirst($type) }}
+                        </a>
+                    @endcan
+                </div>
+            </div>
+        </div>
+
         <!-- Search -->
-        <div class="row align-items-center">
+        {{-- <div class="row align-items-center">
             <div class="col-sm-4">
                 <div class="icon-form mb-3 mb-sm-0">
                     <span class="form-icon"><i class="ti ti-search"></i></span>
@@ -23,7 +45,7 @@
                     @endcan
                 </div>
             </div>
-        </div>
+        </div> --}}
         <!-- /Search -->
     </div>
     <div class="card-body">
@@ -122,8 +144,8 @@
 @endsection
 @section('script')
 <script>
-    const isShowAction = {{ auth()->user()->canAny(['edit-'.$type, 'delete-'.$type])? 'true': 'false' }};
-    const isShowCheckbox = {{ auth()->user()->can('delete-'.$type)? 'true': 'false' }};
+    const isShowAction = {{ auth()->user()->canAny(['edit-' . $type, 'delete-' . $type])? 'true': 'false' }};
+    const isShowCheckbox = {{ auth()->user()->can('delete-' . $type)? 'true': 'false' }};
     var users_table = $('#users').DataTable({
         "pageLength": 10,
         deferRender: true,

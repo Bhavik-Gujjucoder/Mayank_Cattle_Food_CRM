@@ -11,14 +11,42 @@
     ══════════════════════════════════════════════════════════════ --}}
     <div class="card-header dh-header">
 
-        {{-- Left: icon box + two-line label --}}
+        {{-- Left: icon + two parallel info columns --}}
         <div class="dh-header-left">
+
+            {{-- Truck icon box --}}
             <div class="dh-icon-box">
                 <i class="ti ti-truck"></i>
             </div>
-            <div class="dh-header-text">
-                <span class="dh-label">Dispatch History For</span>
-                <span class="dh-order-id">{{ $order->unique_order_id }}</span>
+
+            {{-- Two info columns with a vertical rule between them --}}
+            <div class="dh-meta">
+
+                {{-- Column 1 : Order ID --}}
+                <div class="dh-meta-col">
+                    <span class="dh-meta-label">
+                        <i class="ti ti-file-invoice"></i> Dispatch History For
+                    </span>
+                    <span class="dh-order-id">{{ $order->unique_order_id }}</span>
+                </div>
+
+                <div class="dh-meta-divider"></div>
+
+                {{-- Column 2 : Dealer --}}
+                <div class="dh-meta-col">
+                    <span class="dh-meta-label">
+                        <i class="ti ti-building-store"></i> Dealer
+                    </span>
+                    <div class="dh-dealer-row">
+                        <div class="dh-dealer-avatar">
+                            <i class="ti ti-user"></i>
+                        </div>
+                        <span class="dh-dealer-name">
+                            {{ $order->dealer?->user?->name ?? '—' }}
+                        </span>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -36,7 +64,8 @@
          PENDING DISPATCH SUMMARY
     ══════════════════════════════════════════════════════════════ --}}
     <div class="card-body py-3 border-bottom">
-        <div class="pd-summary-grid">
+        @php $pdCols = min($order->items->count(), 3); @endphp
+        <div class="pd-summary-grid pd-cols-{{ $pdCols }}">
             @foreach ($order->items as $item)
                 @php
                     $totalQty      = (int) $item->qty;
@@ -92,6 +121,32 @@
     </div>
 
     {{-- ══════════════════════════════════════════════════════════════
+         COMPLETION BANNER — shown only when every item is 100% done
+    ══════════════════════════════════════════════════════════════ --}}
+    @php
+        $allFullyDispatched = $order->items->isNotEmpty()
+            && $order->items->every(fn($item) => $item->pendingQty() === 0);
+    @endphp
+    @if ($allFullyDispatched)
+    <div class="px-4 pt-3">
+        <div class="dh-complete-banner">
+            <div class="dh-complete-icon">
+                <i class="ti ti-circle-check"></i>
+            </div>
+            <div class="dh-complete-text">
+                <div class="dh-complete-title">Order Fully Dispatched!</div>
+                <div class="dh-complete-sub">Every item in this order has been completely dispatched.</div>
+            </div>
+            <div class="ms-auto">
+                <span class="dh-complete-badge">
+                    <i class="ti ti-check"></i> 100% Complete
+                </span>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- ══════════════════════════════════════════════════════════════
          FLASH MESSAGES
     ══════════════════════════════════════════════════════════════ --}}
     {{-- @if (session('success'))
@@ -141,7 +196,7 @@
                                 <td class="text-center">{{ $itemIndex + 1 }}</td>
                                 <td>{{ $item->product?->name ?? '—' }}</td>
                                 <td>{{ $dispatch->no_of_bags }}</td>
-                                <td>{{ $dispatch->dispatch_date?->format('d-m-Y') ?? '—' }}</td>
+                                <td>{{ $dispatch->dispatch_date?->format('d M Y') ?? '—' }}</td>
                                 <td>{{ $dispatch->transporter?->name ?? '—' }}</td>
                                 <td>{{ $dispatch->truck_number }}</td>
                                 <td>{{ $dispatch->driver_contact }}</td>
@@ -165,7 +220,7 @@
                                         </button>
                                         @endcan
 
-                                        @can('delete-dispatch')
+                                        {{-- @can('delete-dispatch')
                                         <form action="{{ route('dispatch.destroy', $dispatch->id) }}"
                                               method="POST"
                                               class="delete-dispatch-form d-inline">
@@ -177,7 +232,7 @@
                                                 <i class="ti ti-trash"></i>
                                             </button>
                                         </form>
-                                        @endcan
+                                        @endcan --}}
 
                                     </div>
                                 </td>
@@ -687,6 +742,44 @@ $(document).ready(function () {
             $('#editTruckNumber').val({{ json_encode(old('truck_number', $reopenDispatch->truck_number)) }});
             $('#editDriverContact').val({{ json_encode(old('driver_contact', $reopenDispatch->driver_contact)) }});
             editDatePicker.setDate({{ json_encode(old('dispatch_date', $reopenDispatch->dispatch_date?->format('Y-m-d'))) }}, false);
+            $('#editPendingHint').text('Maximum allowed: ' + editEffectivePending + ' bags/ton');
+            (new bootstrap.Modal(document.getElementById('editDispatchModal'))).show();
+        })();
+        @endif
+    @endif
+
+    /* ── Auto-open edit modal when arriving from the index listing ─ */
+    @if (!session('edit_dispatch_id') && request()->query('edit'))
+        @php
+            $autoEditId = (int) request()->query('edit');
+            $autoDispatch = null;
+            $autoItem     = null;
+            foreach ($order->items as $_item) {
+                foreach ($_item->dispatches as $_d) {
+                    if ($_d->id === $autoEditId) {
+                        $autoDispatch = $_d;
+                        $autoItem     = $_item;
+                        break 2;
+                    }
+                }
+            }
+            if ($autoDispatch && $autoItem) {
+                $autoOtherBags        = (int) $autoItem->dispatches
+                                                ->where('id', '!=', $autoDispatch->id)
+                                                ->sum('no_of_bags');
+                $autoEffectivePending = max(0, (int) $autoItem->qty - $autoOtherBags);
+            }
+        @endphp
+        @if ($autoDispatch && $autoItem)
+        (function () {
+            editEffectivePending = {{ $autoEffectivePending }};
+            $('#editDispatchForm').attr('action', '{{ route('dispatch.update', $autoDispatch->id) }}');
+            $('#editProductName').text({{ json_encode($autoItem->product?->name ?? '—') }});
+            $('#editNoBags').val({{ $autoDispatch->no_of_bags }});
+            $('#editTransport').val({{ $autoDispatch->transport_id }});
+            $('#editTruckNumber').val({{ json_encode($autoDispatch->truck_number) }});
+            $('#editDriverContact').val({{ json_encode($autoDispatch->driver_contact) }});
+            editDatePicker.setDate({{ json_encode($autoDispatch->dispatch_date?->format('Y-m-d')) }}, false);
             $('#editPendingHint').text('Maximum allowed: ' + editEffectivePending + ' bags/ton');
             (new bootstrap.Modal(document.getElementById('editDispatchModal'))).show();
         })();

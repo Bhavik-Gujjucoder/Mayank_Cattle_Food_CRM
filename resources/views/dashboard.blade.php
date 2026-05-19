@@ -15,7 +15,7 @@
 <div class="row detials-gc-user">
     @can('total-dealers')
         <div class="col-xl-3 col-sm-6 d-flex">
-            <div class="card flex-fill">
+            <div class="card flex-fill total-dealers">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
                         <span class="avatar avatar-md rounded bg-dark mb-3">
@@ -34,7 +34,7 @@
     @endcan
     @can('total-brokers')
         <div class="col-xl-3 col-sm-6 d-flex">
-            <div class="card flex-fill">
+            <div class="card flex-fill total-broker">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
                         <span class="avatar avatar-md rounded bg-dark mb-3">
@@ -53,7 +53,7 @@
     @endcan
     @can('total-soda-order')
         <div class="col-xl-3 col-sm-6 d-flex">
-            <div class="card flex-fill">
+            <div class="card flex-fill total-soda-order">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
                         <span class="avatar avatar-md rounded bg-dark mb-3">
@@ -72,7 +72,7 @@
     @endcan
     @can('total-dispatch-request')
         <div class="col-xl-3 col-sm-6 d-flex">
-            <div class="card flex-fill">
+            <div class="card flex-fill total-dispatch-request">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
                         <span class="avatar avatar-md rounded bg-dark mb-3">
@@ -81,7 +81,7 @@
                     </div>
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
-                            <h2 class="mb-1">0</h2>
+                            <h2 class="mb-1">{{ $total_dispatch_order }}</h2>
                             <p class="fs-13">Total Dispatch request</p>
                         </div>
                     </div>
@@ -93,8 +93,8 @@
 <div class="row">
     <div class="col-lg-6 d-flex">
         <!--col-xxl-3 -->
-        @can('total-orders')
-            <div class="card flex-fill">
+        {{-- @can('total-orders')
+            <div class="card flex-fill total-orders">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
                     <h5 class="mb-2">Total Orders</h5>
                 </div>
@@ -103,18 +103,18 @@
                     </div>
                     <div class="d-flex align-items-center justify-content-between flex-wrap">
                         <div class="mb-1">
-                            <h2 class="mb-1">0</h2>
+                            <h2 class="mb-1">{{ $total_soda_order }}</h2>
                         </div>
                         <p class="fs-13 text-gray-9 d-flex align-items-center mb-1"><i
                                 class="ti ti-circle-filled me-1 fs-6 text-primary"></i>Orders</p>
                     </div>
                 </div>
             </div>
-        @endcan
+        @endcan --}}
     </div>
-    <div class="col-lg-6 d-flex">
+    {{-- <div class="col-lg-6 d-flex">
         @can('revenue')
-            <div class="card flex-fill">
+            <div class="card flex-fill revenue">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
                     <h5 class="mb-2">Revenue</h5>
                 </div>
@@ -130,162 +130,22 @@
                 </div>
             </div>
         @endcan
-    </div>
+    </div> --}}
 </div>
 <div class="row">
-    @can('recent-orders')
-        <div class="col-xxl-4 col-xl-12 d-flex">
-            <div class="card flex-fill">
-                <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
-                    <h5 class="mb-2">Recent Orders</h5>
-                    <a href="#" class="btn btn-light btn-md mb-2">View All</a>
-                </div>
-                <div class="card-body pb-2">
-                    <div class="d-flex justify-content-between flex-wrap mb-3">
-                        <div class="d-flex align-items-center mb-2">
-                            <a href="#" class="avatar avatar-sm border flex-shrink-0" target="_blank">
-                                <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
-                                    class="img-thumbnail mb-2">
-                            </a>
-                            <div class="ms-2 flex-fill">
-                                <h6 class="fs-medium text-truncate mb-1">
-                                    <a href="assets/images/avatar-14.png">
-                                        Balaji Agro
-                                    </a>
-                                </h6>
-                                <p class="fs-13 d-inline-flex align-items-center">
-                                    <a href="#">
-                                        <spa class="text-info">ORD000099</spa>
-                                    </a>
-                                    <i class="ti ti-circle-filled fs-4 text-primary mx-1">
-                                    </i>26 Jan 2026
-                                </p>
-                            </div>
-                        </div>
-                        <div class="text-sm-end mb-2">
-                            <h6 class="mb-1">₹4,070</h6>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between flex-wrap mb-3">
-                        <div class="d-flex align-items-center mb-2">
-                            <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0"
-                                target="_blank">
-                                <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
-                                    class="img-thumbnail mb-2">
-                            </a>
-                            <div class="ms-2 flex-fill">
-                                <h6 class="fs-medium text-truncate mb-1">
-                                    <a href="#">
-                                        Balaji Agro
-                                    </a>
-                                </h6>
-                                <p class="fs-13 d-inline-flex align-items-center">
-                                    <a href="#">
-                                        <spa class="text-info">ORD000098</spa>
-                                    </a>
-                                    <i class="ti ti-circle-filled fs-4 text-primary mx-1">
-                                    </i>26 Jan 2026
-                                </p>
-                            </div>
-                        </div>
-                        <div class="text-sm-end mb-2">
-                            <h6 class="mb-1">₹4,120</h6>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between flex-wrap mb-3">
-                        <div class="d-flex align-items-center mb-2">
-                            <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0"
-                                target="_blank">
-                                <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
-                                    class="img-thumbnail mb-2">
-                            </a>
-                            <div class="ms-2 flex-fill">
-                                <h6 class="fs-medium text-truncate mb-1">
-                                    <a href="#">
-                                        Balaji Agro
-                                    </a>
-                                </h6>
-                                <p class="fs-13 d-inline-flex align-items-center">
-                                    <a href="#">
-                                        <spa class="text-info">ORD000097</spa>
-                                    </a>
-                                    <i class="ti ti-circle-filled fs-4 text-primary mx-1">
-                                    </i>24 Jan 2026
-                                </p>
-                            </div>
-                        </div>
-                        <div class="text-sm-end mb-2">
-                            <h6 class="mb-1">₹2,392</h6>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between flex-wrap mb-3">
-                        <div class="d-flex align-items-center mb-2">
-                            <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0"
-                                target="_blank">
-                                <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
-                                    class="img-thumbnail mb-2">
-                            </a>
-                            <div class="ms-2 flex-fill">
-                                <h6 class="fs-medium text-truncate mb-1">
-                                    <a href="#">
-                                        PrimaCARE
-                                    </a>
-                                </h6>
-                                <p class="fs-13 d-inline-flex align-items-center">
-                                    <a href="#">
-                                        <spa class="text-info">ORD000096</spa>
-                                    </a>
-                                    <i class="ti ti-circle-filled fs-4 text-primary mx-1">
-                                    </i>31 Dec 2025
-                                </p>
-                            </div>
-                        </div>
-                        <div class="text-sm-end mb-2">
-                            <h6 class="mb-1">₹2,600</h6>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between flex-wrap mb-3">
-                        <div class="d-flex align-items-center mb-2">
-                            <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0"
-                                target="_blank">
-                                <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
-                                    class="img-thumbnail mb-2">
-                            </a>
-                            <div class="ms-2 flex-fill">
-                                <h6 class="fs-medium text-truncate mb-1">
-                                    <a href="#">
-                                        PrimaCARE
-                                    </a>
-                                </h6>
-                                <p class="fs-13 d-inline-flex align-items-center">
-                                    <a href="#">
-                                        <spa class="text-info">ORD000095</spa>
-                                    </a>
-                                    <i class="ti ti-circle-filled fs-4 text-primary mx-1">
-                                    </i>30 Dec 2025
-                                </p>
-                            </div>
-                        </div>
-                        <div class="text-sm-end mb-2">
-                            <h6 class="mb-1">₹470</h6>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endcan
+
 
     <!------------ Recent Dealers ------------>
     @can('recent-dealers')
         <div class="col-xxl-4 col-xl-6 d-flex">
-            <div class="card flex-fill">
+            <div class="card flex-fill recent-cards">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
                     <h5 class="mb-2"> Recent Dealers </h5>
                     <a href="{{ route('dealer.index') }}" class="btn btn-light btn-md mb-2">View All</a>
                 </div>
                 <div class="card-body pb-2">
                     @foreach ($dealers->take(5) as $d)
-                        <div class="d-flex justify-content-between flex-wrap mb-3">
+                        <div class="d-flex justify-content-between flex-wrap dashboard-card">
                             <div class="d-flex align-items-center mb-2">
                                 <a href="{{ !empty($d->user) && !empty($d->user->profile_picture)
                                     ? asset('storage/profile_pictures/' . $d->user->profile_picture)
@@ -314,92 +174,93 @@
         </div>
     @endcan
 
+    @can('recent-orders')
+        <div class="col-xxl-4 col-xl-12 d-flex">
+            <div class="card flex-fill recent-cards">
+                <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
+                    <h5 class="mb-2">Recent soda/Orders</h5>
+                    <a href="{{ route('order.index') }}" class="btn btn-light btn-md mb-2">View All</a>
+                </div>
+                <div class="card-body pb-2">
+
+                    @foreach ($soda_order->sortByDesc('created_at')->take(5) as $order)
+                        <div class="d-flex justify-content-between flex-wrap dashboard-card">
+                            <div class="d-flex align-items-center mb-2">
+                                {{-- <a href="#" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                    <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
+                                        class="img-thumbnail mb-2">
+                                </a> --}}
+                                <div class="ms-2 flex-fill">
+                                    <h6 class="fs-medium text-truncate mb-1">
+                                        <a href="{{ route('order.edit', $order->id) }}">
+                                            {{ $order->dealer->user->name ?? '—' }}
+                                        </a>
+                                    </h6>
+                                    <p class="fs-13 d-inline-flex align-items-center">
+                                        <a href="{{ route('order.edit', $order->id) }}">
+                                            <spa class="text-info">{{ $order->unique_order_id ?? '—' }}</spa>
+                                        </a>
+                                        <i class="ti ti-circle-filled fs-4 text-primary mx-1"></i>
+                                        {{ $order->order_date->format('d M Y') }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="text-sm-end mb-2">
+                                <h6 class="mb-1">{{-- $order->totalAmount() --}}</h6>
+                            </div>
+                        </div>
+                    @endforeach
+
+                </div>
+            </div>
+        </div>
+    @endcan
+
+
+
     <!---------------- Recent Dispatch Request ---------------->
     @can('recent-dispatch-request')
         <div class="col-xxl-4 col-xl-6 d-flex">
-            <div class="card flex-fill">
+            <div class="card flex-fill recent-cards">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
                     <h5 class="mb-2">Recent Dispatch Request</h5>
-                    <a href="#" class="btn btn-light btn-md mb-2">View All</a>
+                    <a href="{{ route('dispatch.index') }}" class="btn btn-light btn-md mb-2">View All</a>
                 </div>
                 <div class="card-body pb-2">
                     <div>
                         <div>
-                            <div class="d-flex justify-content-between flex-wrap mb-3">
-                                <div class="d-flex align-items-center mb-2">
-                                    <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0"
-                                        target="_blank">
-                                        <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
+                            @foreach ($dispatch_order->sortByDesc('created_at')->take(5) as $dispatch_order)
+                                <div class="d-flex justify-content-between flex-wrap dashboard-card">
+                                    <div class="d-flex align-items-center mb-2">
+                                        {{-- <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0"
+                                            target="_blank">
+                                            <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
                                             class="img-thumbnail mb-2">
-                                    </a>
-                                    <div class="ms-2 flex-fill">
-                                        <h6 class="fs-medium text-truncate mb-1"><a href="#">
-                                                Branden Burris</a>
-                                        </h6>
-                                        <p class="fs-13">Rajkot</p>
+                                    </a> --}}
+                                        <div class="ms-2 flex-fill">
+                                            <h6 class="fs-medium text-truncate mb-1">
+                                                <a href="{{ route('dispatch.orderHistory', $dispatch_order->order_id) }}">
+                                                    {{ $dispatch_order->product->name }}
+                                                    <span class="text-info">
+                                                        <small>(bag/ton {{ $dispatch_order->no_of_bags }})</small>
+                                                    </span>
+                                                </a>
+                                            </h6>
+                                            <p class="fs-13">
+                                                <a href="{{ route('dispatch.orderHistory', $dispatch_order->order_id) }}">
+                                                    <span class="text-info">
+                                                        {{ $dispatch_order->order->unique_order_id }}
+                                                    </span>
+                                                </a>
+                                                <i class="ti ti-circle-filled fs-4 text-primary mx-1"></i>
+                                                {{ $dispatch_order->dispatch_date->format('d M Y') }}
+
+
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="d-flex justify-content-between flex-wrap mb-3">
-                                <div class="d-flex align-items-center mb-2">
-                                    <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0"
-                                        target="_blank">
-                                        <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
-                                            class="img-thumbnail mb-2">
-                                    </a>
-                                    <div class="ms-2 flex-fill">
-                                        <h6 class="fs-medium text-truncate mb-1"><a href="#">
-                                                Ifeoma Anthony</a>
-                                        </h6>
-                                        <p class="fs-13">Rajkot</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between flex-wrap mb-3">
-                                <div class="d-flex align-items-center mb-2">
-                                    <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0"
-                                        target="_blank">
-                                        <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
-                                            class="img-thumbnail mb-2">
-                                    </a>
-                                    <div class="ms-2 flex-fill">
-                                        <h6 class="fs-medium text-truncate mb-1"><a href="#">
-                                                Tyrone Lowe</a>
-                                        </h6>
-                                        <p class="fs-13">Rajkot</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between flex-wrap mb-3">
-                                <div class="d-flex align-items-center mb-2">
-                                    <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0"
-                                        target="_blank">
-                                        <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
-                                            class="img-thumbnail mb-2">
-                                    </a>
-                                    <div class="ms-2 flex-fill">
-                                        <h6 class="fs-medium text-truncate mb-1"><a href="#">
-                                                John Enterprise</a>
-                                        </h6>
-                                        <p class="fs-13">Jamnagar</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between flex-wrap mb-3">
-                                <div class="d-flex align-items-center mb-2">
-                                    <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0"
-                                        target="_blank">
-                                        <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
-                                            class="img-thumbnail mb-2">
-                                    </a>
-                                    <div class="ms-2 flex-fill">
-                                        <h6 class="fs-medium text-truncate mb-1"><a href="#">
-                                                Chamunda Agro. center</a>
-                                        </h6>
-                                        <p class="fs-13">Rajkot</p>
-                                    </div>
-                                </div>
-                            </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -410,7 +271,7 @@
     <!---------------- Recent Broker ---------------->
     @can('recent-broker')
         <div class="col-xxl-4 col-xl-6 d-flex">
-            <div class="card flex-fill">
+            <div class="card flex-fill recent-cards">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
                     <h5 class="mb-2">Recent Broker</h5>
                     <a href="{{ route('users.index', ['type' => 'broker']) }}" class="btn btn-light btn-md mb-2">View
@@ -420,7 +281,7 @@
                     <div>
                         <div>
                             @foreach ($brokers->take(5) as $b)
-                                <div class="d-flex justify-content-between flex-wrap mb-3">
+                                <div class="d-flex justify-content-between flex-wrap dashboard-card">
                                     <div class="d-flex align-items-center mb-2">
                                         <a href="{{ !empty($b->profile_picture)
                                             ? asset('storage/profile_pictures/' . $b->profile_picture)
@@ -452,7 +313,7 @@
     <!---------------- Recent Transporter ---------------->
     @can('recent-transporter')
         <div class="col-xxl-4 col-xl-6 d-flex">
-            <div class="card flex-fill">
+            <div class="card flex-fill recent-cards">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
                     <h5 class="mb-2">Recent Transporter </h5>
                     <a href="{{ route('users.index', ['type' => 'transporter']) }}"
@@ -462,7 +323,7 @@
                     <div>
                         <div>
                             @foreach ($transporters->take(5) as $t)
-                                <div class="d-flex justify-content-between flex-wrap mb-3">
+                                <div class="d-flex justify-content-between flex-wrap dashboard-card">
                                     <div class="d-flex align-items-center mb-2">
                                         <a href="{{ !empty($t->profile_picture)
                                             ? asset('storage/profile_pictures/' . $t->profile_picture)
@@ -491,7 +352,6 @@
         </div>
     @endcan
 </div>
-
 @endsection
 @section('script')
 @endsection
