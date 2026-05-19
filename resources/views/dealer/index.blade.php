@@ -3,12 +3,78 @@
     {{ $page_title }}
 @endsection
 @section('content')
-
-
     <div class="card">
         <div class="card-header">
-            <div class="row align-items-center sale-sec">
-                {{-- Search --}}
+
+            <div class="cls-cardhed-part">
+                <div class="cls-form-left">
+                    <div class="common-hed-form cls-form-serc">
+                        <div class="icon-form">
+                            <span class="form-icon"><i class="ti ti-search"></i></span>
+                            <input type="text" class="form-control" id="customSearch" placeholder="Search">
+                        </div>
+                    </div>
+                    <div class="common-hed-form cls-form-select-input">
+                        <label class="col-form-label">Brand </label>
+                        <select class="form-select select search-dropdown" name="brand_id" id="BrandId">
+                            <option value="all">All Brand</option>
+                            @foreach ($brands as $brand)
+                                <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @if (!auth()->user()->hasRole('broker'))
+                        <div class="common-hed-form cls-form-select-input">
+                            <label class="col-form-label">Broker Person</label>
+                            <select class="form-select select search-dropdown" name="broker_id" id="broker_id">
+                                <option value="all">All Brokers</option>
+                                @foreach ($brokers as $broker)
+                                    <option value="{{ $broker->id }}">{{ $broker->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="common-hed-form cls-form-select-input">
+                            <label class="col-form-label">Start Date</label>
+                            <div class="icon-form">
+                                <span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+                                <input type="text" name="start_date" value="{{ old('start_date') }}" id="startDate"
+                                    class="form-control" placeholder="DD/MM/YY" onchange="applyFilter()">
+                            </div>
+                        </div>
+
+                        <div class="common-hed-form cls-form-select-input">
+                            <label class="col-form-label">End Date</label>
+                            <div class="icon-form">
+                                <span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+                                <input type="text" name="end_date" value="{{ old('end_date') }}" id="endDate"
+                                    class="form-control" placeholder="DD/MM/YY" onchange="applyFilter()">
+                            </div>
+                        </div>
+                    @else
+                        <div class="col-sm-12 col-lg-2 col-md-12"></div>
+                        <div class="col-sm-12 col-lg-2 col-md-12"></div>
+                        <div class="col-sm-12 col-lg-2 col-md-12"></div>
+                    @endif
+
+                </div>
+                <div class="cls-form-right">
+                    <div class="comm-header-right-btn">
+                        @can('export-dealer')
+                            <button type="button" class="btn btn-primary" id="exportDealer">
+                                <i class="ti ti-file-export me-2"></i>Export Dealer
+                            </button>
+                        @endcan
+                        @can('add-dealer')
+                            <a href="{{ route('dealer.create') }}" class="btn btn-primary">
+                                <i class="ti ti-square-rounded-plus me-2"></i>Add Dealer
+                            </a>
+                        @endcan
+                    </div>
+                </div>
+            </div>
+
+            {{-- <div class="row align-items-center sale-sec">
                 <div class="col-sm-12 col-lg-2 col-md-12 mb-3">
                     <div class="icon-form mb-4 mb-sm-0 mt-4">
                         <span class="form-icon"><i class="ti ti-search"></i></span>
@@ -16,20 +82,18 @@
                     </div>
                 </div>
 
-                {{-- Brand filter --}}
-                    <div class="col-sm-12 col-lg-2 col-md-12">
-                        <div class="mb-3">
-                            <label class="col-form-label">Brand </label>
-                            <select class="form-select select search-dropdown" name="brand_id" id="BrandId">
-                                <option value="all">All Brand</option>
-                                @foreach ($brands as $brand)
-                                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                <div class="col-sm-12 col-lg-2 col-md-12">
+                    <div class="mb-3">
+                        <label class="col-form-label">Brand </label>
+                        <select class="form-select select search-dropdown" name="brand_id" id="BrandId">
+                            <option value="all">All Brand</option>
+                            @foreach ($brands as $brand)
+                                <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
+                </div>
                 @if (!auth()->user()->hasRole('broker'))
-                    {{-- Broker filter --}}
                     <div class="col-sm-12 col-lg-2 col-md-12">
                         <div class="mb-3">
                             <label class="col-form-label">Broker Person</label>
@@ -42,7 +106,6 @@
                         </div>
                     </div>
 
-                    {{-- Start Date --}}
                     <div class="col-sm-12 col-lg-2 col-md-12">
                         <div class="mb-3">
                             <label class="col-form-label">Start Date</label>
@@ -54,7 +117,6 @@
                         </div>
                     </div>
 
-                    {{-- End Date --}}
                     <div class="col-sm-12 col-lg-2 col-md-12">
                         <div class="mb-3">
                             <label class="col-form-label">End Date</label>
@@ -65,20 +127,19 @@
                             </div>
                         </div>
                     </div>
-                    @else
+                @else
                     <div class="col-sm-12 col-lg-2 col-md-12"></div>
                     <div class="col-sm-12 col-lg-2 col-md-12"></div>
                     <div class="col-sm-12 col-lg-2 col-md-12"></div>
                 @endif
 
-                {{-- Action Buttons --}}
                 <div class="col-sm-12 col-lg-2 col-md-12">
                     <div class="d-flex align-items-center flex-wrap row-gap-2 column-gap-1 justify-content-sm-end btn-cls">
-                        {{-- @can('export-dealer')
+                        @can('export-dealer')
                             <button type="button" class="btn btn-primary" id="exportDealer">
                                 <i class="ti ti-file-export me-2"></i>Export Dealer
                             </button>
-                        @endcan --}}
+                        @endcan
                         @can('add-dealer')
                             <a href="{{ route('dealer.create') }}" class="btn btn-primary">
                                 <i class="ti ti-square-rounded-plus me-2"></i>Add Dealer
@@ -87,7 +148,8 @@
                     </div>
                 </div>
 
-            </div>
+            </div> --}}
+
         </div>
 
         <div class="card-body">
@@ -114,7 +176,6 @@
             </div>
         </div>
     </div>
-
 @endsection
 @section('script')
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
@@ -324,8 +385,7 @@
                         .appendTo('body');
                     const tempDT = $tempTable.DataTable({
                         data: res.data,
-                        columns: [
-                        {
+                        columns: [{
                             data: 'firm_shop_name_export',
                             title: 'Firm / Shop Name',
                         }, {
@@ -337,7 +397,7 @@
                         }, {
                             data: 'brand_id',
                             title: 'Brand',
-                        },  {
+                        }, {
                             data: 'mobile_no',
                             title: 'Mobile',
                         }, {
@@ -361,7 +421,7 @@
                                     body: function(data) {
                                         if (typeof data === 'string') {
                                             return data.replace(/<[^>]*>/g,
-                                            ''); // strip HTML
+                                                ''); // strip HTML
                                         }
                                         return data;
                                     }

@@ -1,423 +1,153 @@
 @extends('layouts.main')
-@section('content')
 @section('title')
-    {{ $page_title }}
+    {{-- {{ $page_title }} --}}
 @endsection
+@section('content')
 
 <div class="card">
 
+    {{-- ══════════════════════════════════════════════════════════════
+         HEADER — title + Order filter
+    ══════════════════════════════════════════════════════════════ --}}
     <div class="card-header">
-        <!-- Search -->
-        <div class="row align-items-center">
-            <div class="col-sm-4">
-                <div class="icon-form mb-3 mb-sm-0">
-                    <span class="form-icon"><i class="ti ti-search"></i></span>
-                    <input type="text" class="form-control" placeholder="Search User">
-                </div>
-            </div>
-            <div class="col-sm-8">
-                <div class="d-flex align-items-center flex-wrap row-gap-2 justify-content-sm-end">
+        <div class="row align-items-center g-3">
 
-                    <a href="javascript:void(0);" class="btn btn-primary" data-bs-toggle="offcanvas"
-                        data-bs-target="#offcanvas_add"><i class="ti ti-square-rounded-plus me-2"></i>Add New Dispatch
-                        User</a>
-                </div>
-            </div>
-        </div>
-        <!-- /Search -->
-    </div>
-
-    <div class="card-body">
-
-        <!-- Filter -->
-        <div class="d-flex align-items-center justify-content-between flex-wrap row-gap-2 mb-4">
-            <div class="d-flex align-items-center flex-wrap row-gap-2">
-                <div class="dropdown me-2">
-                    <a href="javascript:void(0);" class="dropdown-toggle" data-bs-toggle="dropdown"><i
-                            class="ti ti-sort-ascending-2 me-2"></i>Sort </a>
-                    <div class="dropdown-menu  dropdown-menu-start">
-                        <ul>
-                            <li>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <i class="ti ti-circle-chevron-right me-1"></i>Ascending
-                                </a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <i class="ti ti-circle-chevron-right me-1"></i>Descending
-                                </a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <i class="ti ti-circle-chevron-right me-1"></i>Recently
-                                    Viewed
-                                </a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <i class="ti ti-circle-chevron-right me-1"></i>Recently
-                                    Added
-                                </a>
-                            </li>
-                        </ul>
+            {{-- Page title chip --}}
+            <div class="col-12 col-sm-auto me-auto">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="dispatch-index-icon">
+                        <i class="ti ti-truck"></i>
+                    </div>
+                    <div>
+                        <div class="dispatch-index-eyebrow">Records</div>
+                        <div class="dispatch-index-title">Dispatch Management</div>
                     </div>
                 </div>
+            </div>
+
+            {{-- Search --}}
+            {{-- <div class="col-12 col-sm-4 col-lg-3">
                 <div class="icon-form">
-                    <span class="form-icon"><i class="ti ti-calendar"></i></span>
-                    <input type="text" class="form-control bookingrange" placeholder="">
+                    <span class="form-icon"><i class="ti ti-search"></i></span>
+                    <input type="text" class="form-control" id="dispatchSearch"
+                           placeholder="Search truck, driver…">
                 </div>
+            </div> --}}
+
+            {{-- Order Number filter --}}
+            <div class="col-12 col-sm-4 col-lg-3">
+                <select class="form-select select" id="orderFilter" name="order_id">
+                    <option value="all">All Orders</option>
+                    @foreach ($orders as $order)
+                        <option value="{{ $order->id }}">{{ $order->unique_order_id }}</option>
+                    @endforeach
+                </select>
             </div>
 
         </div>
-        <!-- /Filter -->
-
-        <!-- Manage Users List -->
-        <div class="table-responsive custom-table">
-            <div id="manage-users-list_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer">
-
-                <div class="row">
-                    <div class="col-sm-12 col-md-6"></div>
-                    <div class="col-sm-12 col-md-6"></div>
-                </div>
-
-                <div class="row dt-row">
-                    <div class="col-sm-12 table-responsive">
-
-                        <table class="table dataTable no-footer">
-
-                            <thead class="thead-light">
-                                <tr>
-
-
-                                    <th>SR.No</th>
-                                    <th>Order number</th>
-                                    <th>Phone</th>
-                                    <th>Email</th>
-                                    <th>Location</th>
-                                    <th>Created</th>
-                                    <th>Status</th>
-                                    <th class="text-end">Action</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                <!-- Row -->
-                                <tr>
-                                    <td>1</td>
-
-                                    <td>
-                                        <h2 class="d-flex align-items-center">
-                                            <!-- <a href="#" class="avatar avatar-sm me-2">
-                    <img src="assets/images/avatar-19.png" alt="User Image">
-                  </a> -->
-                                            <a href="#" class="d-flex flex-column">
-                                                0123456789
-                                                <!-- <span class="text-default">Facility Manager</span> -->
-                                            </a>
-                                        </h2>
-                                    </td>
-
-                                    <td>1234567890</td>
-                                    <td>robertson@example.com</td>
-                                    <td>Germany</td>
-                                    <td>25 Sep 2023, 12:12 pm</td>
-
-
-                                    <td>
-                                        <span class="badge badge-pill badge-status bg-success">
-                                            Active
-                                        </span>
-                                    </td>
-
-                                    <td class="text-end">
-                                        <div class="dropdown table-action">
-                                            <a href="#" class="action-icon" data-bs-toggle="dropdown">
-                                                <i class="fa fa-ellipsis-v"></i>
-                                            </a>
-
-                                            <div class="dropdown-menu dropdown-menu-end">
-                                                <a class="dropdown-item" href="#" data-bs-toggle="offcanvas"
-                                                    data-bs-target="#offcanvas_edit">
-                                                    <i class="ti ti-edit text-blue"></i> Edit
-                                                </a>
-
-                                                <a class="dropdown-item" href="#" data-bs-toggle="modal"
-                                                    data-bs-target="#delete_contact">
-                                                    <i class="ti ti-trash text-danger"></i> Delete
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>2</td>
-
-                                    <td>
-                                        <h2 class="d-flex align-items-center">
-                                            <!-- <a href="#" class="avatar avatar-sm me-2">
-                    <img src="assets/images/avatar-19.png" alt="User Image">
-                  </a> -->
-                                            <a href="#" class="d-flex flex-column">
-                                                0123456789
-                                                <!-- <span class="text-default">Facility Manager</span> -->
-                                            </a>
-                                        </h2>
-                                    </td>
-
-                                    <td>1234567890</td>
-                                    <td>robertson@example.com</td>
-                                    <td>Germany</td>
-                                    <td>25 Sep 2023, 12:12 pm</td>
-
-
-                                    <td>
-                                        <span class="badge badge-pill badge-status bg-success">
-                                            Active
-                                        </span>
-                                    </td>
-
-                                    <td class="text-end">
-                                        <div class="dropdown table-action">
-                                            <a href="#" class="action-icon" data-bs-toggle="dropdown">
-                                                <i class="fa fa-ellipsis-v"></i>
-                                            </a>
-
-                                            <div class="dropdown-menu dropdown-menu-end">
-                                                <a class="dropdown-item" href="#" data-bs-toggle="offcanvas"
-                                                    data-bs-target="#offcanvas_edit">
-                                                    <i class="ti ti-edit text-blue"></i> Edit
-                                                </a>
-
-                                                <a class="dropdown-item" href="#" data-bs-toggle="modal"
-                                                    data-bs-target="#delete_contact">
-                                                    <i class="ti ti-trash text-danger"></i> Delete
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <tr>
-                                    <td>3</td>
-
-                                    <td>
-                                        <h2 class="d-flex align-items-center">
-                                            <!-- <a href="#" class="avatar avatar-sm me-2">
-                    <img src="assets/images/avatar-19.png" alt="User Image">
-                  </a> -->
-                                            <a href="#" class="d-flex flex-column">
-                                                0123456789
-                                                <!-- <span class="text-default">Facility Manager</span> -->
-                                            </a>
-                                        </h2>
-                                    </td>
-
-                                    <td>1234567890</td>
-                                    <td>robertson@example.com</td>
-                                    <td>Germany</td>
-                                    <td>25 Sep 2023, 12:12 pm</td>
-
-
-                                    <td>
-                                        <span class="badge badge-pill badge-status bg-success">
-                                            Active
-                                        </span>
-                                    </td>
-
-                                    <td class="text-end">
-                                        <div class="dropdown table-action">
-                                            <a href="#" class="action-icon" data-bs-toggle="dropdown">
-                                                <i class="fa fa-ellipsis-v"></i>
-                                            </a>
-
-                                            <div class="dropdown-menu dropdown-menu-end">
-                                                <a class="dropdown-item" href="#" data-bs-toggle="offcanvas"
-                                                    data-bs-target="#offcanvas_edit">
-                                                    <i class="ti ti-edit text-blue"></i> Edit
-                                                </a>
-
-                                                <a class="dropdown-item" href="#" data-bs-toggle="modal"
-                                                    data-bs-target="#delete_contact">
-                                                    <i class="ti ti-trash text-danger"></i> Delete
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <tr>
-                                    <td>4</td>
-
-                                    <td>
-                                        <h2 class="d-flex align-items-center">
-                                            <!-- <a href="#" class="avatar avatar-sm me-2">
-                    <img src="assets/images/avatar-19.png" alt="User Image">
-                  </a> -->
-                                            <a href="#" class="d-flex flex-column">
-                                                0123456789
-                                                <!-- <span class="text-default">Facility Manager</span> -->
-                                            </a>
-                                        </h2>
-                                    </td>
-
-                                    <td>1234567890</td>
-                                    <td>robertson@example.com</td>
-                                    <td>Germany</td>
-                                    <td>25 Sep 2023, 12:12 pm</td>
-
-
-                                    <td>
-                                        <span class="badge badge-pill badge-status bg-success">
-                                            Active
-                                        </span>
-                                    </td>
-
-                                    <td class="text-end">
-                                        <div class="dropdown table-action">
-                                            <a href="#" class="action-icon" data-bs-toggle="dropdown">
-                                                <i class="fa fa-ellipsis-v"></i>
-                                            </a>
-
-                                            <div class="dropdown-menu dropdown-menu-end">
-                                                <a class="dropdown-item" href="#" data-bs-toggle="offcanvas"
-                                                    data-bs-target="#offcanvas_edit">
-                                                    <i class="ti ti-edit text-blue"></i> Edit
-                                                </a>
-
-                                                <a class="dropdown-item" href="#" data-bs-toggle="modal"
-                                                    data-bs-target="#delete_contact">
-                                                    <i class="ti ti-trash text-danger"></i> Delete
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <tr>
-                                    <td>5</td>
-
-                                    <td>
-                                        <h2 class="d-flex align-items-center">
-                                            <!-- <a href="#" class="avatar avatar-sm me-2">
-                    <img src="assets/images/avatar-19.png" alt="User Image">
-                  </a> -->
-                                            <a href="#" class="d-flex flex-column">
-                                                0123456789
-                                                <!-- <span class="text-default">Facility Manager</span> -->
-                                            </a>
-                                        </h2>
-                                    </td>
-
-                                    <td>1234567890</td>
-                                    <td>robertson@example.com</td>
-                                    <td>Germany</td>
-                                    <td>25 Sep 2023, 12:12 pm</td>
-
-
-                                    <td>
-                                        <span class="badge badge-pill badge-status bg-success">
-                                            Active
-                                        </span>
-                                    </td>
-
-                                    <td class="text-end">
-                                        <div class="dropdown table-action">
-                                            <a href="#" class="action-icon" data-bs-toggle="dropdown">
-                                                <i class="fa fa-ellipsis-v"></i>
-                                            </a>
-
-                                            <div class="dropdown-menu dropdown-menu-end">
-                                                <a class="dropdown-item" href="#" data-bs-toggle="offcanvas"
-                                                    data-bs-target="#offcanvas_edit">
-                                                    <i class="ti ti-edit text-blue"></i> Edit
-                                                </a>
-
-                                                <a class="dropdown-item" href="#" data-bs-toggle="modal"
-                                                    data-bs-target="#delete_contact">
-                                                    <i class="ti ti-trash text-danger"></i> Delete
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <tr>
-                                    <td>6</td>
-
-                                    <td>
-                                        <h2 class="d-flex align-items-center">
-                                            <!-- <a href="#" class="avatar avatar-sm me-2">
-                    <img src="assets/images/avatar-19.png" alt="User Image">
-                  </a> -->
-                                            <a href="#" class="d-flex flex-column">
-                                                0123456789
-                                                <!-- <span class="text-default">Facility Manager</span> -->
-                                            </a>
-                                        </h2>
-                                    </td>
-
-                                    <td>1234567890</td>
-                                    <td>robertson@example.com</td>
-                                    <td>Germany</td>
-                                    <td>25 Sep 2023, 12:12 pm</td>
-
-
-                                    <td>
-                                        <span class="badge badge-pill badge-status bg-success">
-                                            Active
-                                        </span>
-                                    </td>
-
-                                    <td class="text-end">
-                                        <div class="dropdown table-action">
-                                            <a href="#" class="action-icon" data-bs-toggle="dropdown">
-                                                <i class="fa fa-ellipsis-v"></i>
-                                            </a>
-
-                                            <div class="dropdown-menu dropdown-menu-end">
-                                                <a class="dropdown-item" href="#" data-bs-toggle="offcanvas"
-                                                    data-bs-target="#offcanvas_edit">
-                                                    <i class="ti ti-edit text-blue"></i> Edit
-                                                </a>
-
-                                                <a class="dropdown-item" href="#" data-bs-toggle="modal"
-                                                    data-bs-target="#delete_contact">
-                                                    <i class="ti ti-trash text-danger"></i> Delete
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <!-- Repeat rows same structure -->
-                            </tbody>
-
-                        </table>
-
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-sm-12 col-md-5"></div>
-                    <div class="col-sm-12 col-md-7"></div>
-                </div>
-
-            </div>
-        </div>
-        <div class="row align-items-center">
-            <div class="col-md-6">
-                <div class="datatable-length"></div>
-            </div>
-            <div class="col-md-6">
-                <div class="datatable-paginate"></div>
-            </div>
-        </div>
-        <!-- /Manage Users List -->
-
     </div>
-</div>
 
+    {{-- ══════════════════════════════════════════════════════════════
+         TABLE
+    ══════════════════════════════════════════════════════════════ --}}
+    <div class="card-body">
+        <div class="table-responsive custom-table">
+            <table class="table dataTable no-footer" id="dispatch_table">
+                <thead class="thead-light">
+                    <tr>
+                        <th hidden>ID</th>
+                        <th class="no-sort" style="width:60px;">Sr No</th>
+                        <th>Order ID</th>
+                        <th>Product</th>
+                        <th style="width:130px;">Bags / Ton</th>
+                        <th>Dealer Name</th>
+                        <th style="width:130px;">Dispatch Date</th>
+                        <th>Transport</th>
+                        <th>Truck Number</th>
+                        <th>Driver Contact</th>
+                        <th >is_complete</th>
+                        <th class="text-center no-sort" style="width:80px;">Action</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+
+</div>
 
 @endsection
 @section('script')
-<script></script>
+<script>
+$(document).ready(function () {
+
+    /* ── Order filter — Select2 ────────────────────────────────── */
+    $('#orderFilter').select2({
+        placeholder: 'Filter by Order…',
+        width      : '100%',
+    });
+
+    /* ── DataTable ─────────────────────────────────────────────── */
+    var dispatch_table = $('#dispatch_table').DataTable({
+        pageLength  : 10,
+        deferRender : true,
+        processing  : true,
+        serverSide  : true,
+        responsive  : true,
+        dom         : 'lrtip',
+        order       : [[0, 'desc']],
+
+        ajax: {
+            url  : "{{ route('dispatch.index') }}",
+            data : function (d) {
+                d.order_id = $('#orderFilter').val() || 'all';
+            }
+        },
+
+        columns: [
+            /*
+             * orderable / searchable rules for server-side DataTables:
+             *   TRUE  → only for real columns that exist on dispatch_management table
+             *   FALSE → for computed values (DT_RowIndex, addColumn relationships, action HTML)
+             *           Yajra would try ORDER BY / WHERE on these → SQL error or wrong results
+             */
+            { data: 'id',              name: 'id',              visible: false,  orderable: false, searchable: false },
+            { data: 'DT_RowIndex',     name: 'DT_RowIndex',                      orderable: false, searchable: false },
+            { data: 'unique_order_id', name: 'unique_order_id',                  orderable: false,  searchable: false },
+            { data: 'product_name',    name: 'product_name',                     orderable: false, searchable: false },
+            { data: 'no_of_bags',      name: 'no_of_bags',                       orderable: false,  searchable: false },
+            { data: 'dealer_name',     name: 'dealer_name',                      orderable: false, searchable: false },
+            { data: 'dispatch_date',   name: 'dispatch_date',                    orderable: false,  searchable: false },
+            { data: 'transporter_name',name: 'transporter_name',                 orderable: false, searchable: false },
+            { data: 'truck_number',    name: 'truck_number',                     orderable: false,  searchable: false },
+            { data: 'driver_contact',  name: 'driver_contact',                   orderable: false,  searchable: false },
+            { data: 'is_complete',     name: 'is_complete',     visible: true,  orderable: false, searchable: false },
+            { data: 'action',          name: 'action',          className: 'text-center',
+                                                                                 orderable: false, searchable: false },
+        ],
+
+        createdRow: function (row, data) {
+            if (data.is_complete) {
+                $(row).addClass('dispatch-row-complete');
+            }
+        },
+
+        language: {
+            processing: '<div class="text-primary">Loading…</div>',
+            emptyTable: 'No dispatch records found.',
+            zeroRecords: 'No matching records found.',
+        },
+    });
+
+    /* ── Redraw when order filter changes ─────────────────────── */
+    $('#orderFilter').on('change', function () {
+        dispatch_table.draw();
+    });
+
+    /* ── Live search ───────────────────────────────────────────── */
+    $('#dispatchSearch').on('keyup', function () {
+        dispatch_table.search(this.value).draw();
+    });
+
+});
+</script>
 @endsection
