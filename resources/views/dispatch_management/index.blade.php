@@ -65,7 +65,7 @@
                         <th>Transport</th>
                         <th>Truck Number</th>
                         <th>Driver Contact</th>
-                        <th >is_complete</th>
+                        {{-- <th >is_complete</th> --}}
                         <th class="text-center no-sort" style="width:80px;">Action</th>
                     </tr>
                 </thead>
@@ -120,7 +120,7 @@ $(document).ready(function () {
             { data: 'transporter_name',name: 'transporter_name',                 orderable: false, searchable: false },
             { data: 'truck_number',    name: 'truck_number',                     orderable: false,  searchable: false },
             { data: 'driver_contact',  name: 'driver_contact',                   orderable: false,  searchable: false },
-            { data: 'is_complete',     name: 'is_complete',     visible: true,  orderable: false, searchable: false },
+            // { data: 'is_complete',     name: 'is_complete',     visible: true,  orderable: false, searchable: false },
             { data: 'action',          name: 'action',          className: 'text-center',
                                                                                  orderable: false, searchable: false },
         ],
