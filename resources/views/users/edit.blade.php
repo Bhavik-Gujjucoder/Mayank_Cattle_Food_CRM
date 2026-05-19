@@ -8,8 +8,9 @@
         {{-- <form action="{{ route('users.update',['type' => $type,'id' => $user->id]) }}" method="POST" enctype="multipart/form-data"> --}}
         @if (isset($my_profile))
             <form action="{{ route('my_profile.update', $user->id) }}" method="POST" enctype="multipart/form-data">
-        @else
-            <form action="{{ route('users.update', ['type' => $type, 'id' => $user->id]) }}" method="POST" enctype="multipart/form-data">
+            @else
+                <form action="{{ route('users.update', ['type' => $type, 'id' => $user->id]) }}" method="POST"
+                    enctype="multipart/form-data">
         @endif
         @csrf
         @method('PUT')
@@ -66,25 +67,29 @@
                 </div>
 
                 <!-- Role -->
-                @if (isset($type) && $type == 'user')
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="col-form-label">Role <span class="text-danger">*</span></label>
-                            <select class="form-select @error('role') is-invalid @enderror" name="role">
-                                @foreach ($roles as $key => $role)
-                                    @if ($role != 'super admin')
-                                        <option value="{{ $role }}"
-                                            @if ($user->hasRole($role)) selected @endif>{{ $role }}
-                                        </option>
-                                    @endif
-                                @endforeach
-                            </select>
-                            @error('role')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
+                {{-- @if (!Auth::user()->hasRole('super admin')) --}}
+                    @if (isset($type) && $type == 'user')
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="col-form-label">Role <span class="text-danger">*</span></label>
+                                <select class="form-select @error('role') is-invalid @enderror" name="role">
+                                    @foreach ($roles as $key => $role)
+                                        @if ($role != 'super admin')
+                                            <option value="{{ $role }}"
+                                                @if ($user->hasRole($role)) selected @endif>{{ $role }}
+                                            </option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                                @error('role')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
                         </div>
-                    </div>
-                @endif
+                    @endif
+                {{-- @endif --}}
+
+
                 <!-- Phone -->
                 <div class="col-md-6">
                     <div class="mb-3">

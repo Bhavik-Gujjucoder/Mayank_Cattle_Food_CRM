@@ -6,14 +6,46 @@
 
 <div class="card">
     <div class="card-header">
+
+        <div class="cls-cardhed-part">
+            <div class="cls-form-left">
+                <div class="common-hed-form cls-form-serc">
+                    <div class="icon-form">
+                        <span class="form-icon"><i class="ti ti-search"></i></span>
+                        <input type="text" class="form-control" id="customSearch" placeholder="Search">
+                    </div>
+                </div>
+                <div class="common-hed-form cls-form-select-input">
+                    <label class="col-form-label">Brand </label>
+                    <select class="form-select select search-dropdown" name="brand_id" id="BrandId">
+                        <option value="all">All Brand</option>
+                        @foreach ($brands as $brand)
+                            <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="cls-form-right">
+                <div class="comm-header-right-btn">
+                    @can('add-product')
+                        <a href="javascript:void(0);" class="btn btn-primary" id="openModal">
+                            <i class="ti ti-square-rounded-plus me-2"></i>Add Product
+                        </a>
+                    @endcan
+                </div>
+            </div>
+        </div>
+
+
         <!-- Search -->
-        <div class="row align-items-center">
+        {{-- <div class="row align-items-center">
             <div class="col-sm-4">
                 <div class="icon-form mb-3 mb-sm-0">
                     <span class="form-icon"><i class="ti ti-search"></i></span>
                     <input type="text" class="form-control" id="customSearch" placeholder="Search">
                 </div>
             </div>
+
             <div class="col-sm-4 col-lg-2 col-md-12">
                 <div class="mb-3">
                     <label class="col-form-label">Brand </label>
@@ -35,9 +67,11 @@
                     @endcan
                 </div>
             </div>
-        </div>
+        </div> --}}
         <!-- /Search -->
     </div>
+
+
     <div class="card-body">
         <div class="table-responsive custom-table">
             <table class="table dataTable no-footer" id="product_table">

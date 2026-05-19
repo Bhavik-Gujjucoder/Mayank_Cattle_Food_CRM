@@ -7,15 +7,101 @@ use App\Models\OrderItem;
 use App\Models\OrderManagement;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Yajra\DataTables\DataTables;
 
 class DispatchManagementController extends Controller
 {
     /* ------------------------------------------------------------------ */
-    /*  INDEX  (general listing — kept as stub)                           */
+    /*  INDEX  — all dispatch records, with optional order filter         */
     /* ------------------------------------------------------------------ */
-    public function index()
+    public function index(Request $request)
     {
+        /* Orders that have at least one dispatch — used to populate filter */
         $data['page_title'] = 'Dispatch Management';
+        $data['orders']     = OrderManagement::has('dispatches')
+                                ->orderBy('unique_order_id')
+                                ->get(['id', 'unique_order_id']);
+
+        if ($request->ajax()) {
+            $query = DispatchManagement::with([
+                'order.items.dispatches',   /* needed for is_complete check */
+                'orderItem.product',
+                'transporter',
+            ])->latest();
+
+            /* Order filter */
+            if ($request->filled('order_id') && $request->order_id !== 'all') {
+                $query->where('order_id', $request->order_id);
+            }
+
+            return DataTables::of($query)
+                ->addIndexColumn()
+
+                /*
+                 * unique_order_id is a relationship value, not a real column on
+                 * dispatch_management. Tell Yajra to ORDER BY order_id (the FK)
+                 * when the user clicks that column header — reliable proxy sort.
+                 */
+                ->orderColumn('unique_order_id', 'order_id $1')
+
+                /* Order ID — clickable link to the history page */
+                ->addColumn('unique_order_id', function ($row) {
+                    $url = route('dispatch.orderHistory', $row->order_id);
+                    $id  = $row->order?->unique_order_id ?? '—';
+
+                    /* Is every item in this order fully dispatched? */
+                    $isComplete = $row->order
+                        && $row->order->items->isNotEmpty()
+                        && $row->order->items->every(fn($item) =>
+                            (int) $item->dispatches->sum('no_of_bags') >= (int) $item->qty
+                        );
+
+                    $chip = $isComplete
+                        ? ' <span class="dispatch-complete-chip"><i class="ti ti-circle-check"></i> Complete</span>'
+                        : '';
+
+                    return '<a href="' . $url . '" class="fw-semibold text-primary">' . e($id) . '</a>' . $chip;
+                })
+
+                ->addColumn('product_name',    fn($row) => $row->orderItem?->product?->name ?? '—')
+                ->addColumn('transporter_name',fn($row) => $row->transporter?->name ?? '—')
+                ->editColumn('dispatch_date',  fn($row) => $row->dispatch_date?->format('d M Y') ?? '—')
+                ->addColumn('dealer_name',    fn($row) => $row->orderItem?->order?->dealer?->user?->name ?? '—')
+
+                /* 1/0 flag — used by DataTables createdRow to highlight complete rows */
+                ->addColumn('is_complete', function ($row) {
+                    if (!$row->order || $row->order->items->isEmpty()) return 0;
+                    return $row->order->items->every(fn($item) =>
+                        (int) $item->dispatches->sum('no_of_bags') >= (int) $item->qty
+                    ) ? 1 : 0;
+                })
+
+                /* Action dropdown */
+                ->addColumn('action', function ($row) {
+                    $historyUrl = route('dispatch.orderHistory', $row->order_id);
+                    // $editUrl    = $historyUrl . '?edit=' . $row->id;
+
+                    $btn  = '<div class="dropdown table-action">
+                                 <a href="#" class="action-icon" data-bs-toggle="dropdown" aria-expanded="false">
+                                     <i class="fa fa-ellipsis-v"></i>
+                                 </a>
+                                 <div class="dropdown-menu dropdown-menu-right">';
+                    $btn .= '<a href="' . $historyUrl . '" class="dropdown-item">
+                                 <i class="ti ti-history text-info me-1"></i> View History
+                             </a>';
+                    // if (auth()->user()->can('edit-dispatch')) {
+                    //     $btn .= '<a href="' . $editUrl . '" class="dropdown-item">
+                    //                  <i class="ti ti-edit text-warning me-1"></i> Edit
+                    //              </a>';
+                    // }
+                    $btn .= '</div></div>';
+                    return $btn;
+                })
+
+                ->rawColumns(['unique_order_id', 'action', 'is_complete'])
+                ->make(true);
+        }
+
         return view('dispatch_management.index', $data);
     }
 
@@ -26,6 +112,7 @@ class DispatchManagementController extends Controller
     {
         $data['page_title']   = 'Dispatch History';
         $data['order']        = $order->load([
+            'dealer.user',
             'items.product',
             'items.dispatches.product',
             'items.dispatches.transporter',

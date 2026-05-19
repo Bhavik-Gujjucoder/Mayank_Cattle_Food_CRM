@@ -35,7 +35,7 @@ class UserController extends Controller
                 });
             } else {
                 $query->whereHas('roles', function ($q) use ($type) {
-                    $q->whereIn('name', ['admin', 'staff']);
+                    $q->whereIn('name', ['admin', 'staff', 'super admin']);
                 });
             }
         });
@@ -341,10 +341,10 @@ class UserController extends Controller
             $user->profile_picture = $filename;
         }
         $user->save();
-        if (!$user->hasRole('super admin')) {
-            $user->syncRoles([$request->role]); /* Update role */
-        }
-        if ($type === 'user') {
+        // if (!$user->hasRole('super admin')) {
+        //     $user->syncRoles([$request->role]); /* Update role */
+        // }
+        if ($type === 'user' && !auth()->user()->hasRole('super admin')) {
             $user->syncRoles([$request->role]);
         } elseif ($type == 'broker') {
             $user->syncRoles(['broker']);
