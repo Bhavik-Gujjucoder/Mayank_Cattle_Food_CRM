@@ -121,6 +121,21 @@ class DispatchManagementController extends Controller
                                     ->orderBy('name')
                                     ->get();
 
+        /* ── Sequential dispatch eligibility ──────────────────────────
+           Find the first prior order (same dealer, smaller id) that is
+           not yet fully dispatched. Pass the result to the view so it
+           can render a blocked-dispatch warning and disable the Add form.
+        ──────────────────────────────────────────────────────────────── */
+        $blockingOrder = OrderManagement::where('dealer_id', $order->dealer_id)
+            ->where('id', '<', $order->id)
+            ->orderBy('id')
+            ->with(['items.dispatches', 'items.product'])
+            ->get()
+            ->first(fn($o) => ! $o->isFullyDispatched());
+
+        $data['dispatchBlocked'] = $blockingOrder !== null;
+        $data['blockingOrder']   = $blockingOrder;
+
         return view('dispatch_management.history', $data);
     }
 
@@ -160,6 +175,28 @@ class DispatchManagementController extends Controller
                 ->withInput()
                 ->withErrors([
                     'no_of_bags' => 'The entered quantity cannot exceed the pending quantity.',
+                ]);
+        }
+
+        /* ── Sequential dispatch guard ────────────────────────────────
+           Prevent saving a dispatch entry if any earlier order for the
+           same dealer has not yet been fully dispatched.
+           This catches direct-URL / API attempts that bypass the JS popup.
+        ──────────────────────────────────────────────────────────────── */
+        $parentOrder   = OrderManagement::findOrFail($validated['order_id']);
+        $blockingPrior = OrderManagement::where('dealer_id', $parentOrder->dealer_id)
+            ->where('id', '<', $parentOrder->id)
+            ->orderBy('id')
+            ->with(['items.dispatches'])
+            ->get()
+            ->first(fn($o) => ! $o->isFullyDispatched());
+
+        if ($blockingPrior) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'order_item_id' => 'Order ' . $blockingPrior->unique_order_id
+                        . ' must be fully dispatched before dispatching this order.',
                 ]);
         }
 

@@ -91,7 +91,7 @@
                         <th scope="col">Product Name</th>
                         <th scope="col">Brand</th>
                         <th scope="col">Unit</th>
-                        <th scope="col">Price</th>
+                        {{-- <th scope="col">Price</th> --}}
                         <th scope="col">Status</th>
                         @canany(['edit-product', 'delete-product'])
                             <th class="" scope="col">Action</th>
@@ -150,7 +150,7 @@
                     </div>
 
                     {{-- Price --}}
-                    <div class="mb-3">
+                    <div class="mb-3" hidden>
                         <label class="col-form-label">Price (₹) <span class="text-danger">*</span></label>
                         <input type="number" name="price" id="modal_price" class="form-control" placeholder="0.00"
                             min="0" step="0.01">
@@ -243,11 +243,11 @@
                 name: 'unit',
                 searchable: true
             },
-            {
-                data: 'price',
-                name: 'price',
-                searchable: false
-            },
+            // {
+            //     data: 'price',
+            //     name: 'price',
+            //     searchable: false
+            // },
             {
                 data: 'status',
                 name: 'status',

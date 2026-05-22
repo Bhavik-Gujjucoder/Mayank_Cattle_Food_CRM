@@ -21,23 +21,18 @@ class OrderManagementController extends Controller
         $data['page_title'] = 'Soda/Order Management';
         $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
         $data['brands']     = BrandManagement::where('status', 1)->orderBy('name')->get();
-
         if ($request->ajax()) {
             $query = OrderManagement::with(['broker', 'brand', 'dealer']);
-
             if (auth()->user()->hasRole('broker')) {
                 $query->where('broker_id', auth()->id());
             }
-
-             if ($request->has('brand_id') && $request->brand_id !== 'all') {
+            if ($request->has('brand_id') && $request->brand_id !== 'all') {
                 $query->where('brand_id', $request->brand_id);
             }
-
             // Broker filter (only if user is not broker)
             if (!auth()->user()->hasRole('broker') && $request->has('broker_id') && $request->broker_id !== 'all') {
                 $query->where('broker_id', $request->broker_id);
             }
-
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('checkbox', function ($row) {
@@ -54,19 +49,26 @@ class OrderManagementController extends Controller
                 ->addColumn('payment_status', fn($row) => $row->paymentBadge())
                 // ->addColumn('order_status', fn($row) => '<span class="badge badge-pill badge-status bg-secondary">Pending</span>')
                 ->addColumn('action', function ($row) {
-                    $dispatch_btn = '<a href="' . route('dispatch.orderHistory', $row->id) . '" class="dropdown-item">
+                    $dispatch_btn = '<a href="javascript:void(0)"
+                                        class="dropdown-item dispatch-check-btn"
+                                        data-order-id="' . $row->id . '"
+                                        data-history-url="' . route('dispatch.orderHistory', $row->id) . '"
+                                        data-check-url="' . route('order.dispatchCheck', $row->id) . '">
                                         <i class="ti ti-truck me-1 text-info"></i> Dispatch
                                     </a>';
                     $edit_btn = '<a href="' . route('order.edit', $row->id) . '" class="dropdown-item">
                                     <i class="ti ti-edit text-warning"></i> Edit
                                 </a>';
-                    $delete_btn = '<a href="javascript:void(0)" class="dropdown-item deleteOrder" data-id="' . $row->id . '">
+                    $delete_btn = '<a href="javascript:void(0)"
+                                    class="dropdown-item deleteOrder"
+                                    data-id="' . $row->id . '"
+                                    data-check-url="' . route('order.deleteCheck', $row->id) . '">
                                     <i class="ti ti-trash text-danger"></i> Delete
                                 </a>
                                 <form action="' . route('order.destroy', $row->id) . '" method="POST"
                                     class="delete-form" id="order-delete-form-' . $row->id . '">'
-                                    . csrf_field() . method_field('DELETE') .
-                                '</form>';
+                        . csrf_field() . method_field('DELETE') .
+                        '</form>';
                     $btn  = '<div class="dropdown table-action">
                                  <a href="#" class="action-icon" data-bs-toggle="dropdown" aria-expanded="false">
                                      <i class="fa fa-ellipsis-v"></i>
@@ -136,7 +138,7 @@ class OrderManagementController extends Controller
             'delivery_address'    => $validated['delivery_address'],
             'payment_status'      => $validated['payment_status'],
             'partial_paid_amount' => $validated['payment_status'] === 'partial'
-                                     ? $validated['partial_paid_amount'] : null,
+                ? $validated['partial_paid_amount'] : null,
             'total_order_amount'  => $totalAmount,
             'grand_total'         => $totalAmount,
             'status'              => 1,
@@ -145,7 +147,7 @@ class OrderManagementController extends Controller
         $order->items()->createMany($items);
 
         return redirect()->route('order.index')
-                         ->with('success', 'Order created successfully.');
+            ->with('success', 'Order created successfully.');
     }
 
     /* ------------------------------------------------------------------ */
@@ -154,7 +156,7 @@ class OrderManagementController extends Controller
     public function edit(OrderManagement $order)
     {
         $data['page_title'] = 'Edit - Soda/Order';
-        $data['order']      = $order->load('items.product');
+        $data['order']      = $order->load('items.product', 'items.dispatches');
         $data['brands']     = BrandManagement::where('status', 1)->orderBy('name')->get();
         $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
         $data['products']   = Product::where('status', 1)->orderBy('name')->get();
@@ -176,6 +178,29 @@ class OrderManagementController extends Controller
     {
         $validated = $this->validateOrder($request, $order->id);
 
+        /* ── Guard: broker / brand / dealer are immutable once any item is dispatched ── */
+        $order->loadMissing(['items.dispatches']);
+        $hasDispatches = $order->items->some(
+            fn($item) => $item->dispatches->sum('no_of_bags') > 0
+        );
+        if ($hasDispatches) {
+            if ($request->broker_id != $order->broker_id) {
+                return back()->withInput()->withErrors([
+                    'broker_id' => 'Broker cannot be changed — this order has dispatched product items.',
+                ]);
+            }
+            if ($request->brand_id != $order->brand_id) {
+                return back()->withInput()->withErrors([
+                    'brand_id' => 'Brand cannot be changed — this order has dispatched product items.',
+                ]);
+            }
+            if ($request->dealer_id != $order->dealer_id) {
+                return back()->withInput()->withErrors([
+                    'dealer_id' => 'Dealer cannot be changed — this order has dispatched product items.',
+                ]);
+            }
+        }
+
         /* IDs that currently exist in the DB for this order */
         $existingIds = $order->items()->pluck('id')->toArray();
 
@@ -188,7 +213,66 @@ class OrderManagementController extends Controller
         /* Any existing ID not present in the submission was removed by the user */
         $toDelete = array_diff($existingIds, $submittedItemIds);
 
-        $rawItemIds  = $request->input('item_id', []);
+        /* Raw item_id[] array — positions match product_id[], qty[], price[] */
+        $rawItemIds = $request->input('item_id', []);
+
+        /* ── Pre-load existing items with dispatch totals ─────────────────
+           Keyed by item ID so both guards below can look up any item in O(1)
+           without hitting the database again.
+        ──────────────────────────────────────────────────────────────────── */
+        $existingItemsMap = OrderItem::whereIn('id', $existingIds)
+            ->with(['dispatches', 'product'])
+            ->get()
+            ->keyBy('id');
+
+        /* ── Guard 1: cannot remove an item that has been dispatched ──────
+           Even partially dispatched items must stay so dispatch history
+           remains intact.
+        ──────────────────────────────────────────────────────────────────── */
+        foreach ($toDelete as $deleteId) {
+            $item = $existingItemsMap->get($deleteId);
+            if (! $item) continue;
+
+            $dispatched = (int) $item->dispatches->sum('no_of_bags');
+            if ($dispatched > 0) {
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'product_id' => 'Product "' . ($item->product?->name ?? 'Unknown')
+                            . '" cannot be removed — it has already been dispatched ('
+                            . $dispatched . ' bag(s)).',
+                    ]);
+            }
+        }
+
+        /* ── Guard 2: qty cannot fall below already-dispatched qty ────────
+           Prevents making the ordered qty smaller than what has already
+           been sent out, which would produce a negative pending balance.
+        ──────────────────────────────────────────────────────────────────── */
+        foreach ($validated['product_id'] as $i => $productId) {
+            $itemId = isset($rawItemIds[$i]) && $rawItemIds[$i] !== ''
+                ? (int) $rawItemIds[$i]
+                : null;
+
+            if (! $itemId) continue;   // new row — nothing dispatched yet
+
+            $item       = $existingItemsMap->get($itemId);
+            if (! $item) continue;
+
+            $dispatched = (int) $item->dispatches->sum('no_of_bags');
+            $newQty     = (int) $validated['qty'][$i];
+
+            if ($dispatched > 0 && $newQty < $dispatched) {
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'qty' => 'Quantity for "' . ($item->product?->name ?? 'item')
+                            . '" cannot be less than the already dispatched quantity ('
+                            . $dispatched . ' bag(s)).',
+                    ]);
+            }
+        }
+
         $totalAmount = 0;
 
         foreach ($validated['product_id'] as $i => $productId) {
@@ -198,8 +282,8 @@ class OrderManagementController extends Controller
             $totalAmount += $total;
 
             $itemId = isset($rawItemIds[$i]) && $rawItemIds[$i] !== ''
-                      ? (int) $rawItemIds[$i]
-                      : null;
+                ? (int) $rawItemIds[$i]
+                : null;
 
             if ($itemId && in_array($itemId, $existingIds)) {
                 /* ── Update the existing order_item row ── */
@@ -234,13 +318,43 @@ class OrderManagementController extends Controller
             'delivery_address'    => $validated['delivery_address'],
             'payment_status'      => $validated['payment_status'],
             'partial_paid_amount' => $validated['payment_status'] === 'partial'
-                                     ? $validated['partial_paid_amount'] : null,
+                ? $validated['partial_paid_amount'] : null,
             'total_order_amount'  => $totalAmount,
             'grand_total'         => $totalAmount,
         ]);
 
         return redirect()->route('order.index')
-                         ->with('success', 'Order updated successfully.');
+            ->with('success', 'Order updated successfully.');
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  DELETE ELIGIBILITY CHECK  (AJAX)                                    */
+    /* ------------------------------------------------------------------ */
+    public function deleteCheck(OrderManagement $order)
+    {
+        $order->load(['items.dispatches', 'items.product']);
+
+        $dispatchedItems = $order->items
+            ->filter(fn($item) => $item->dispatches->sum('no_of_bags') > 0)
+            ->map(function ($item) {
+                $dispatched = (int) $item->dispatches->sum('no_of_bags');
+                $lastDate   = $item->dispatches
+                    ->sortByDesc('dispatch_date')
+                    ->first()?->dispatch_date?->format('d M Y') ?? '—';
+                return [
+                    'product_name'   => $item->product?->name ?? '—',
+                    'ordered_qty'    => (int) $item->qty,
+                    'dispatched_qty' => $dispatched,
+                    'remaining_qty'  => max(0, (int) $item->qty - $dispatched),
+                    'last_dispatch'  => $lastDate,
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'can_delete'       => $dispatchedItems->isEmpty(),
+            'dispatched_items' => $dispatchedItems,
+        ]);
     }
 
     /* ------------------------------------------------------------------ */
@@ -248,11 +362,21 @@ class OrderManagementController extends Controller
     /* ------------------------------------------------------------------ */
     public function destroy(OrderManagement $order)
     {
+        /* Server-side safety guard — block if any item was dispatched */
+        $order->load(['items.dispatches']);
+        $hasDispatched = $order->items->some(
+            fn($item) => $item->dispatches->sum('no_of_bags') > 0
+        );
+        if ($hasDispatched) {
+            return redirect()->route('order.index')
+                ->with('error', 'This order cannot be deleted because it has dispatched product items.');
+        }
+
         $order->items()->delete();  // soft-delete line items first
         $order->delete();
 
         return redirect()->route('order.index')
-                         ->with('success', 'Order deleted successfully.');
+            ->with('success', 'Order deleted successfully.');
     }
 
     /* ------------------------------------------------------------------ */
@@ -268,8 +392,8 @@ class OrderManagementController extends Controller
         }
 
         $lastItem = OrderItem::whereHas('order', function ($q) use ($dealerId) {
-                $q->where('dealer_id', $dealerId);
-            })
+            $q->where('dealer_id', $dealerId);
+        })
             ->where('product_id', $productId)
             ->latest()
             ->first();
@@ -289,7 +413,25 @@ class OrderManagementController extends Controller
             return response()->json(['message' => 'No records selected.'], 400);
         }
 
-        $orders = OrderManagement::whereIn('id', $ids)->get();
+        $orders = OrderManagement::whereIn('id', $ids)
+            ->with(['items.dispatches'])
+            ->get();
+
+        /* Block if any selected order has dispatched items */
+        $blockedIds = $orders
+            ->filter(fn($o) => $o->items->some(fn($item) => $item->dispatches->sum('no_of_bags') > 0))
+            ->pluck('unique_order_id')
+            ->all();
+
+        if (!empty($blockedIds)) {
+            return response()->json([
+                'blocked'        => true,
+                'blocked_orders' => $blockedIds,
+                'message'        => 'Cannot delete: the following order(s) have dispatched items — '
+                    . implode(', ', $blockedIds) . '.',
+            ], 422);
+        }
+
         foreach ($orders as $order) {
             $order->items()->delete();
             $order->delete();
@@ -299,12 +441,76 @@ class OrderManagementController extends Controller
     }
 
     /* ------------------------------------------------------------------ */
+    /*  SEQUENTIAL DISPATCH ELIGIBILITY CHECK  (AJAX)                       */
+    /* ------------------------------------------------------------------ */
+    /**
+     * Returns JSON indicating whether the given order can be dispatched next.
+     * An order is eligible only when every earlier order for the same dealer
+     * (ordered by id ASC, i.e. creation order) is fully dispatched.
+     *
+     * Response shape:
+     *   { eligible: true }
+     *   { eligible: false, blocking_order: { unique_order_id, order_date,
+     *                                         history_url, pending_items[] } }
+     */
+    public function checkDispatchEligibility(OrderManagement $order): \Illuminate\Http\JsonResponse
+    {
+        /* All non-deleted orders for the same dealer, oldest first */
+        $dealerOrders = OrderManagement::where('dealer_id', $order->dealer_id)
+            ->orderBy('id')
+            ->with(['items.dispatches', 'items.product'])
+            ->get();
+
+        /* Walk the sorted list; stop when we reach the requested order.
+           The first incomplete order we encounter is the blocker. */
+        $blockingOrder = null;
+        foreach ($dealerOrders as $dealerOrder) {
+            if ($dealerOrder->id === $order->id) {
+                break;  // reached the target order — no blocker found
+            }
+            if (! $dealerOrder->isFullyDispatched()) {
+                $blockingOrder = $dealerOrder;
+                break;
+            }
+        }
+
+        if (! $blockingOrder) {
+            return response()->json(['eligible' => true]);
+        }
+
+        /* Build the list of products that still have pending bags */
+        $pendingItems = $blockingOrder->items
+            ->map(function ($item) {
+                $dispatched = (int) $item->dispatches->sum('no_of_bags');
+                $pending    = max(0, (int) $item->qty - $dispatched);
+                return [
+                    'product_name'   => $item->product?->name ?? '—',
+                    'ordered_qty'    => (int) $item->qty,
+                    'dispatched_qty' => $dispatched,
+                    'pending_qty'    => $pending,
+                ];
+            })
+            ->filter(fn($i) => $i['pending_qty'] > 0)
+            ->values();
+
+        return response()->json([
+            'eligible'       => false,
+            'blocking_order' => [
+                'unique_order_id' => $blockingOrder->unique_order_id,
+                'order_date'      => $blockingOrder->order_date?->format('d M Y') ?? '—',
+                'history_url'     => route('dispatch.orderHistory', $blockingOrder->id),
+                'pending_items'   => $pendingItems,
+            ],
+        ]);
+    }
+
+    /* ------------------------------------------------------------------ */
     /*  SHARED VALIDATION                                                   */
     /* ------------------------------------------------------------------ */
     private function validateOrder(Request $request, ?int $ignoreId = null): array
     {
         $uniqueRule = 'required|string|unique:order_management,unique_order_id'
-                    . ($ignoreId ? ",$ignoreId" : '');
+            . ($ignoreId ? ",$ignoreId" : '');
 
         return $request->validate([
             'unique_order_id'     => $uniqueRule,
