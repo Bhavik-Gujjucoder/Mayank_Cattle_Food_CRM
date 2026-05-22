@@ -33769,6 +33769,266 @@ textarea.form-control {resize: none;}
 
 
 /* ══════════════════════════════════════════════════════════════
+   DEALER DETAILS POPUP  (ddp-* namespace)
+   Rendered inside a SweetAlert2 popup via dealer/show.blade.php
+══════════════════════════════════════════════════════════════ */
+
+/* ── SweetAlert shell ────────────────────────────────────────── */
+.ddp-popup {
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22) !important;
+}
+.ddp-html-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    text-align: left !important;
+    max-height: 82vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+/* Close (×) button — sits in the header gradient */
+.ddp-close-btn {
+    color: rgba(255, 255, 255, 0.82) !important;
+    font-size: 1.5rem !important;
+    top: 10px !important;
+    right: 14px !important;
+    z-index: 10 !important;
+    position: absolute !important;
+}
+.ddp-close-btn:hover {
+    color: #fff !important;
+    transform: scale(1.15) !important;
+}
+
+/* ── Outer wrapper ───────────────────────────────────────────── */
+.ddp-wrap {
+    font-family: 'Nunito', 'Noto Sans', sans-serif;
+}
+
+/* ── Gradient header strip ───────────────────────────────────── */
+.ddp-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 55%, #3b82f6 100%);
+    padding: 26px 28px 36px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    position: relative;
+}
+/* White "bite" rounding at bottom of header */
+.ddp-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: #f8f9fc;
+    border-radius: 18px 18px 0 0;
+}
+
+/* ── Avatar ring ─────────────────────────────────────────────── */
+.ddp-avatar-wrap {
+    flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.45);
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+.ddp-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.ddp-avatar-initials {
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.20);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.02em;
+}
+
+/* ── Header text block ───────────────────────────────────────── */
+.ddp-header-info {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    min-width: 0;
+}
+.ddp-dealer-name {
+    font-size: 1.18rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.25;
+    margin-bottom: 9px;
+    word-break: break-word;
+}
+.ddp-header-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+.ddp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 20px;
+    padding: 4px 13px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.ddp-chip .ti {
+    font-size: 0.83rem;
+}
+/* Code number chip — translucent white */
+.ddp-chip-code {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+}
+/* Brand chip — solid white with blue text */
+.ddp-chip-brand {
+    background: #fff;
+    color: #1d4ed8;
+}
+/* Role chip — lighter translucent */
+.ddp-chip-role {
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+}
+
+/* ── Body / content area ─────────────────────────────────────── */
+.ddp-body {
+    background: #f8f9fc;
+    padding: 10px 16px 18px;
+}
+
+/* ── Section card ────────────────────────────────────────────── */
+.ddp-section {
+    background: #fff;
+    border: 1px solid #e5e9f0;
+    border-radius: 12px;
+    padding: 15px 17px;
+    margin-bottom: 11px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+.ddp-section:last-child,
+.ddp-section-last {
+    margin-bottom: 0;
+}
+
+/* Section heading row */
+.ddp-section-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.70rem;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1.5px solid #f0f2f7;
+}
+.ddp-section-head .ti {
+    font-size: 0.92rem;
+    color: #9ca3af;
+}
+
+/* ── Fields two-column auto grid ─────────────────────────────── */
+.ddp-fields-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px 24px;
+}
+
+/* Single field row */
+.ddp-field {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+}
+/* Address / full-width field spans both columns */
+.ddp-field-full {
+    grid-column: 1 / -1;
+}
+
+/* ── Icon box ────────────────────────────────────────────────── */
+.ddp-field-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+/* Colour variants */
+.ddp-icon-blue   { background: #eff6ff; color: #2563eb; }
+.ddp-icon-indigo { background: #eef2ff; color: #4338ca; }
+.ddp-icon-green  { background: #f0fdf4; color: #16a34a; }
+.ddp-icon-purple { background: #f5f3ff; color: #7c3aed; }
+.ddp-icon-amber  { background: #fffbeb; color: #d97706; }
+
+/* ── Label & value text ──────────────────────────────────────── */
+.ddp-field-label {
+    font-size: 0.70rem;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+    line-height: 1.2;
+}
+.ddp-field-value {
+    font-size: 0.91rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+/* Monospace for document IDs (PAN / GST / Aadhar) */
+.ddp-mono {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.86rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    color: #374151;
+}
+
+/* ── Responsive: single column on narrow popups ──────────────── */
+@media (max-width: 520px) {
+    .ddp-fields-grid {
+        grid-template-columns: 1fr;
+    }
+    .ddp-field-full {
+        grid-column: 1;
+    }
+    .ddp-header {
+        padding: 22px 18px 32px;
+    }
+    .ddp-body {
+        padding: 10px 12px 16px;
+    }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
    SEQUENTIAL DISPATCH BLOCKED POPUP  (dbp-* namespace)
    Fires when user clicks "Dispatch" on an order while a prior
    order for the same dealer still has un-dispatched items.
