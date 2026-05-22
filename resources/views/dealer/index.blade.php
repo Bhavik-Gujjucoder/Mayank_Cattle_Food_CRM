@@ -178,7 +178,9 @@
     </div>
 @endsection
 @section('script')
-    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    {{-- jquery.dataTables is already loaded by the main layout with Bootstrap5 integration.
+         Loading it again from CDN here would wipe that integration and break Bootstrap pagination.
+         Only the Buttons extension (for Excel export) is loaded here. --}}
     <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
@@ -502,9 +504,9 @@
                             padding: '0',
                             width: 700,
                             customClass: {
-                                popup:         'ddp-popup',
+                                popup: 'ddp-popup',
                                 htmlContainer: 'ddp-html-container',
-                                closeButton:   'ddp-close-btn',
+                                closeButton: 'ddp-close-btn',
                             },
                         });
                     }
