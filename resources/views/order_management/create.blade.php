@@ -112,7 +112,7 @@
                         <th style="min-width:200px;">Product Name <span class="text-danger">*</span></th>
                         <th style="width:100px;">QTY <span class="text-danger">*</span></th>
                         <th style="width:160px;">Unit Price <span class="text-danger">*</span></th>
-                        <th style="width:140px;">Total Price</th>
+                        <th style="width:140px;" class="d-none">Total Price</th>
                         <th style="width:100px;" class="text-center">Action</th>
                     </tr>
                 </thead>
@@ -150,7 +150,7 @@
                             </small>
                         </td>
 
-                        <td>
+                        <td class="d-none">
                             <input type="number" name="total[]" class="form-control total-field"
                                    placeholder="0.00" readonly>
                         </td>
@@ -210,7 +210,7 @@
                 Last unit price: <span class="last-price-val">—</span>
             </small>
         </td>
-        <td>
+        <td class="d-none">
             <input type="number" name="total[]" class="form-control total-field"
                    placeholder="0.00" readonly>
         </td>
@@ -281,11 +281,13 @@
 
             </div>
 
-            {{-- Order Totals (right) --}}
+            {{-- Order Totals (right) — display hidden, calculations still run via JS --}}
             <div class="col-md-6">
-                <p class="form-section-title text-end"><i class="ti ti-calculator me-1"></i>Order Summary</p>
+                {{-- Section title hidden --}}
+                <p class="form-section-title text-end d-none"><i class="ti ti-calculator me-1"></i>Order Summary</p>
 
-                <div class="totals-box ms-auto" style="max-width:360px;">
+                {{-- Totals display hidden — spans still updated by calculateTotals() --}}
+                <div class="totals-box ms-auto d-none" style="max-width:360px;">
                     <div class="totals-row">
                         <span class="totals-label">Sub Total</span>
                         <span class="totals-value">
@@ -300,7 +302,7 @@
                     </div>
                 </div>
 
-                {{-- Hidden fields for submission --}}
+                {{-- Hidden fields for submission — always submitted regardless of visibility --}}
                 <input type="hidden" name="total_order_amount" id="total_order_amount">
                 <input type="hidden" name="grand_total"        id="grand_total">
             </div>

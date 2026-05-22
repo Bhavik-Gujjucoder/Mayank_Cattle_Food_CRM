@@ -49,6 +49,20 @@ class OrderManagement extends Model
 
     /* ── Helpers ─────────────────────────────────────────────────── */
 
+    /**
+     * Returns true when every order item has been completely dispatched.
+     * Requires 'items.dispatches' to be eager-loaded before calling.
+     * An order with no items is treated as complete (nothing to block).
+     */
+    public function isFullyDispatched(): bool
+    {
+        if ($this->items->isEmpty()) return true;
+
+        return $this->items->every(
+            fn($item) => (int) $item->dispatches->sum('no_of_bags') >= (int) $item->qty
+        );
+    }
+
     public function statusBadge(): string
     {
         return $this->status

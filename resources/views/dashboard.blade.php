@@ -13,6 +13,7 @@
     </div>
 </div>
 <div class="row detials-gc-user">
+
     @can('total-dealers')
         <div class="col-xl-3 col-sm-6 d-flex">
             <div class="card flex-fill total-dealers">
@@ -32,6 +33,7 @@
             </div>
         </div>
     @endcan
+
     @can('total-brokers')
         <div class="col-xl-3 col-sm-6 d-flex">
             <div class="card flex-fill total-broker">
@@ -51,6 +53,7 @@
             </div>
         </div>
     @endcan
+
     @can('total-soda-order')
         <div class="col-xl-3 col-sm-6 d-flex">
             <div class="card flex-fill total-soda-order">
@@ -70,6 +73,7 @@
             </div>
         </div>
     @endcan
+
     @can('total-dispatch-request')
         <div class="col-xl-3 col-sm-6 d-flex">
             <div class="card flex-fill total-dispatch-request">
@@ -89,7 +93,9 @@
             </div>
         </div>
     @endcan
+
 </div>
+
 <div class="row">
     <div class="col-lg-6 d-flex">
         <!--col-xxl-3 -->
@@ -132,10 +138,9 @@
         @endcan
     </div> --}}
 </div>
+
 <div class="row">
-
-
-    <!------------ Recent Dealers ------------>
+    <!------------ Recent Dealers ---------------->
     @can('recent-dealers')
         <div class="col-xxl-4 col-xl-6 d-flex">
             <div class="card flex-fill recent-cards">
@@ -173,16 +178,15 @@
             </div>
         </div>
     @endcan
-
+    <!------------ Recent Soda/Orders ------------>
     @can('recent-orders')
         <div class="col-xxl-4 col-xl-12 d-flex">
             <div class="card flex-fill recent-cards">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
-                    <h5 class="mb-2">Recent soda/Orders</h5>
+                    <h5 class="mb-2">Recent Soda/Orders</h5>
                     <a href="{{ route('order.index') }}" class="btn btn-light btn-md mb-2">View All</a>
                 </div>
                 <div class="card-body pb-2">
-
                     @foreach ($soda_order->sortByDesc('created_at')->take(5) as $order)
                         <div class="d-flex justify-content-between flex-wrap dashboard-card">
                             <div class="d-flex align-items-center mb-2">
@@ -210,15 +214,12 @@
                             </div>
                         </div>
                     @endforeach
-
                 </div>
             </div>
         </div>
     @endcan
 
-
-
-    <!---------------- Recent Dispatch Request ---------------->
+    <!------------ Recent Dispatch Request ------->
     @can('recent-dispatch-request')
         <div class="col-xxl-4 col-xl-6 d-flex">
             <div class="card flex-fill recent-cards">
@@ -254,8 +255,6 @@
                                                 </a>
                                                 <i class="ti ti-circle-filled fs-4 text-primary mx-1"></i>
                                                 {{ $dispatch_order->dispatch_date->format('d M Y') }}
-
-
                                             </p>
                                         </div>
                                     </div>
@@ -268,8 +267,8 @@
         </div>
     @endcan
 
-    <!---------------- Recent Broker ---------------->
-    @can('recent-broker')
+    <!------------ Recent Broker ----------------->
+    {{-- @can('recent-broker')
         <div class="col-xxl-4 col-xl-6 d-flex">
             <div class="card flex-fill recent-cards">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
@@ -308,10 +307,10 @@
                 </div>
             </div>
         </div>
-    @endcan
+    @endcan --}}
 
-    <!---------------- Recent Transporter ---------------->
-    @can('recent-transporter')
+    <!------------ Recent Transporter ------------>
+    {{-- @can('recent-transporter')
         <div class="col-xxl-4 col-xl-6 d-flex">
             <div class="card flex-fill recent-cards">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
@@ -350,7 +349,7 @@
                 </div>
             </div>
         </div>
-    @endcan
+    @endcan --}}
 </div>
 @endsection
 @section('script')

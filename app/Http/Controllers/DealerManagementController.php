@@ -30,11 +30,11 @@ class DealerManagementController extends Controller
             'firm_shop_name'    => 'required|string|max:255',
             'firm_shop_address' => 'required|string|max:500',
             'mobile_no'         => 'required|digits:10',
-            'pancard'           => 'required|string|size:10|regex:/^[A-Z]{5}[0-9]{4}[A-Z]$/i',
+            'pancard'           => 'nullable|string|size:10|regex:/^[A-Z]{5}[0-9]{4}[A-Z]$/i',
             'gstin'             => 'nullable|string|size:15',
             'aadhar_card'       => 'nullable|digits:12',
 
-            'email'             => 'required|email|unique:users,email,' . $ignoreId . ',id,deleted_at,NULL',
+            'email'             => 'nullable|email|unique:users,email,' . $ignoreId . ',id,deleted_at,NULL',
             'password'          => 'required|min:6|confirmed',
             'state_id'          => 'required',
             'city_id'           => 'required',
@@ -56,11 +56,11 @@ class DealerManagementController extends Controller
             'firm_shop_name'    => 'required|string|max:255',
             'firm_shop_address' => 'required|string|max:500',
             'mobile_no'         => 'required|digits:10',
-            'pancard'           => 'required|string|size:10|regex:/^[A-Z]{5}[0-9]{4}[A-Z]$/i',
+            'pancard'           => 'nullable|string|size:10|regex:/^[A-Z]{5}[0-9]{4}[A-Z]$/i',
             'gstin'             => 'nullable|string|size:15',
             'aadhar_card'       => 'nullable|digits:12',
 
-            'email'             => 'required|email|unique:users,email,' . $userId . ',id,deleted_at,NULL',
+            'email'             => 'nullable|email|unique:users,email,' . $userId . ',id,deleted_at,NULL',
             'password'          => 'nullable|min:6|confirmed',
             'state_id'          => 'required',
             'city_id'           => 'required',
@@ -84,7 +84,7 @@ class DealerManagementController extends Controller
             'firm_shop_address.required' => 'Firm / shop address is required.',
             'mobile_no.required'        => 'Mobile no is required.',
             'mobile_no.digits'          => 'Mobile no must be exactly 10 digits.',
-            'pancard.required'          => 'PAN card no is required.',
+            // 'pancard.required'          => 'PAN card no is required.',
             'pancard.size'              => 'PAN card must be exactly 10 characters.',
             'pancard.regex'             => 'Invalid PAN format. Expected: AAAAA9999A',
             'gstin.size'                => 'GSTIN must be exactly 15 characters.',
@@ -93,7 +93,7 @@ class DealerManagementController extends Controller
             'profile_picture.mimes'     => 'Allowed formats: JPG, JPEG, PNG, GIF.',
             'profile_picture.max'       => 'Profile image must not exceed 2MB.',
 
-            'email.required'            => 'Email is required.',
+            // 'email.required'            => 'Email is required.',
             'email.email'               => 'Please enter a valid email address.',
             'email.unique'              => 'This email is already registered.',
             'password.confirmed'        => 'Password and Confirm Password must match.',
@@ -123,7 +123,6 @@ class DealerManagementController extends Controller
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('action', function ($row) {
-
                     $edit_btn = '<a href="' . route('dealer.edit', $row->id) . '"class="dropdown-item"><i class="ti ti-edit text-warning"></i> Edit</a>';
                     $delete_btn = '<a href="javascript:void(0)"class="dropdown-item delete-dealer-btn"data-id="' . $row->id . '"><i class="ti ti-trash text-danger"></i> Delete</a><form action="' . route('dealer.destroy', $row->id) . '" method="POST" class="delete-form" id="delete-dealer-form-' . $row->id . '" style="display:none;">' . csrf_field() . '' . method_field('DELETE') . '</form>';
 
