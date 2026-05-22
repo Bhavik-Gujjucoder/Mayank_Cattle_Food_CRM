@@ -37,7 +37,7 @@ class ProductController extends Controller
                 ->addColumn('brand_name', function ($row) {
                     return $row->brand?->name ?? '—';
                 })
-                ->editColumn('price', fn($row) => '₹ ' . number_format($row->price, 2))
+                // ->editColumn('price', fn($row) => '₹ ' . number_format($row->price, 2))
                 ->editColumn('status', fn($row) => $row->statusBadge())
                 ->addColumn('action', function ($row) {
                     $edit_btn = '<a href="javascript:void(0)" class="dropdown-item edit-btn" data-id="' . $row->id . '">
@@ -49,8 +49,8 @@ class ProductController extends Controller
                                 </a>
                                 <form action="' . route('product.destroy', $row->id) . '" method="POST"
                                     class="delete-form" id="delete-form-' . $row->id . '">'
-                                    . csrf_field() . method_field('DELETE') .
-                                '</form>';
+                        . csrf_field() . method_field('DELETE') .
+                        '</form>';
 
                     $action_btn  = '<div class="dropdown table-action">
                                         <a href="#" class="action-icon" data-bs-toggle="dropdown" aria-expanded="false">
@@ -79,7 +79,7 @@ class ProductController extends Controller
             'name'     => 'required|string|max:255|unique:products,name,NULL,id,deleted_at,NULL',
             'brand_id' => 'required|exists:brand_management,id',
             'unit'     => 'required|in:' . implode(',', self::UNITS),
-            'price'    => 'required|numeric|min:0',
+            'price'    => 'nullable|numeric|min:0',
             'status'   => 'required|in:0,1',
         ], [
             'name.required'     => 'Product name is required.',
@@ -88,7 +88,7 @@ class ProductController extends Controller
             'brand_id.exists'   => 'Selected brand is invalid.',
             'unit.required'     => 'Please select a unit.',
             'unit.in'           => 'Unit must be Bag or Ton.',
-            'price.required'    => 'Price is required.',
+            // 'price.nullable'    => 'Price is optional.',
             'price.numeric'     => 'Price must be a number.',
             'price.min'         => 'Price cannot be negative.',
             'status.required'   => 'Status is required.',
@@ -98,7 +98,7 @@ class ProductController extends Controller
             'name'     => $request->name,
             'brand_id' => $request->brand_id,
             'unit'     => $request->unit,
-            'price'    => $request->price,
+            'price'    => $request->price ?? 0,
             'status'   => $request->status,
         ]);
 
@@ -122,7 +122,7 @@ class ProductController extends Controller
             'name'     => 'required|string|max:255|unique:products,name,' . $product->id . ',id,deleted_at,NULL',
             'brand_id' => 'required|exists:brand_management,id',
             'unit'     => 'required|in:' . implode(',', self::UNITS),
-            'price'    => 'required|numeric|min:0',
+            'price'    => 'nullable|numeric|min:0',
             'status'   => 'required|in:0,1',
         ], [
             'name.required'     => 'Product name is required.',
@@ -131,7 +131,7 @@ class ProductController extends Controller
             'brand_id.exists'   => 'Selected brand is invalid.',
             'unit.required'     => 'Please select a unit.',
             'unit.in'           => 'Unit must be Bag or Ton.',
-            'price.required'    => 'Price is required.',
+            // 'price.required'    => 'Price is required.',
             'price.numeric'     => 'Price must be a number.',
             'price.min'         => 'Price cannot be negative.',
             'status.required'   => 'Status is required.',
@@ -141,7 +141,7 @@ class ProductController extends Controller
             'name'     => $request->name,
             'brand_id' => $request->brand_id,
             'unit'     => $request->unit,
-            'price'    => $request->price,
+            'price'    => $request->price ?? 0,
             'status'   => $request->status,
         ]);
 

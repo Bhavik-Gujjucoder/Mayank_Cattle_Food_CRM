@@ -3,6 +3,11 @@
     {{ $page_title }}
 @endsection
 @section('content')
+    @php
+        /* True if ANY item in this order has been (partially or fully) dispatched.
+ items.dispatches is already eager-loaded by edit() in the controller.   */
+        $orderHasDispatches = $order->items->some(fn($item) => $item->dispatches->sum('no_of_bags') > 0);
+    @endphp
     <form action="{{ route('order.update', $order->id) }}" id="orderForm" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
@@ -14,6 +19,49 @@
             <div class="card-body">
 
                 <p class="form-section-title"><i class="ti ti-file-description me-1"></i>Order Information</p>
+
+                {{-- Dispatch-lock panel — shown only when at least one item is dispatched --}}
+                @if ($orderHasDispatches)
+                    <div class="oln-panel">
+                        <div class="oln-panel-inner">
+
+                            {{-- Icon --}}
+                            <div class="oln-icon mt-1">
+                                <i class="ti ti-lock-access"></i>
+                            </div>
+
+                            {{-- Content: eyebrow → restricted chips → description --}}
+                            <div class="oln-content">
+                                {{-- <span class="oln-eyebrow">Dispatch Lock Active</span> --}}
+                                <p class="oln-desc">
+                                    These fields cannot be edited while dispatch history exists for this order.
+                                </p>
+                                {{-- <span class="oln-eyebrow">These fields cannot be edited while dispatch history exists for
+                                    this order.</span> --}}
+
+                                {{-- Restricted field chips — prime position, directly below title --}}
+                                <div class="oln-chips-row mt-2">
+                                    <span class="oln-chip">
+                                        <i class="ti ti-user-x"></i> Broker
+                                    </span>
+                                    <span class="oln-chip">
+                                        <i class="ti ti-rosette-discount-off"></i> Brand
+                                    </span>
+                                    <span class="oln-chip">
+                                        <i class="ti ti-building-off"></i> Dealer
+                                    </span>
+                                    <span class="oln-chip">
+                                        <i class="ti ti-building-off"></i> Product Name
+                                    </span>
+                                </div>
+
+
+                            </div>
+
+                        </div>
+                    </div>
+                @endif
+
                 <div class="row">
 
                     {{-- Order ID --}}
@@ -26,24 +74,35 @@
                     {{-- Broker --}}
                     <div class="col-md-4 mb-3">
                         <label class="col-form-label">Broker <span class="text-danger">*</span></label>
-                        <select name="broker_id" id="broker_id" class="form-select search-select"
-                            {{ auth()->user()->hasRole('broker') ? 'disabled' : '' }}>
-                            <option value="">-- Select Broker --</option>
-                            @foreach ($brokers as $broker)
-                                {{-- <option value="{{ $broker->id }}"
-                            {{ $order->broker_id == $broker->id ? 'selected' : '' }}> --}}
-                                <option value="{{ $broker->id }}"
-                                    {{ auth()->user()->hasRole('broker')
-                                        ? (auth()->id() == $broker->id
-                                            ? 'selected'
-                                            : '')
-                                        : ($order->broker_id == $broker->id
-                                            ? 'selected'
-                                            : '') }}>
-                                    {{ $broker->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        @if ($orderHasDispatches)
+                            {{-- Locked: hidden input submits the value; visual select is disabled --}}
+                            <input type="hidden" name="broker_id" value="{{ $order->broker_id }}">
+                            <select id="broker_id" class="form-select search-select field-dispatch-locked" disabled
+                                title="This order has dispatched items — Broker cannot be changed.">
+                                @foreach ($brokers as $broker)
+                                    @if ($broker->id == $order->broker_id)
+                                        <option value="{{ $broker->id }}" selected>{{ $broker->name }}</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        @else
+                            <select name="broker_id" id="broker_id" class="form-select search-select"
+                                {{ auth()->user()->hasRole('broker') ? 'disabled' : '' }}>
+                                <option value="">-- Select Broker --</option>
+                                @foreach ($brokers as $broker)
+                                    <option value="{{ $broker->id }}"
+                                        {{ auth()->user()->hasRole('broker')
+                                            ? (auth()->id() == $broker->id
+                                                ? 'selected'
+                                                : '')
+                                            : ($order->broker_id == $broker->id
+                                                ? 'selected'
+                                                : '') }}>
+                                        {{ $broker->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @endif
                         <span class="text-danger small broker_id_error">
                             @error('broker_id')
                                 {{ $message }}
@@ -54,14 +113,27 @@
                     {{-- Brand --}}
                     <div class="col-md-4 mb-3">
                         <label class="col-form-label">Brand <span class="text-danger">*</span></label>
-                        <select name="brand_id" id="brand_id" class="form-select search-select">
-                            <option value="">-- Select Brand --</option>
-                            @foreach ($brands as $brand)
-                                <option value="{{ $brand->id }}" {{ $order->brand_id == $brand->id ? 'selected' : '' }}>
-                                    {{ $brand->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        @if ($orderHasDispatches)
+                            <input type="hidden" name="brand_id" value="{{ $order->brand_id }}">
+                            <select id="brand_id" class="form-select search-select field-dispatch-locked" disabled
+                                title="This order has dispatched items — Brand cannot be changed.">
+                                @foreach ($brands as $brand)
+                                    @if ($brand->id == $order->brand_id)
+                                        <option value="{{ $brand->id }}" selected>{{ $brand->name }}</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        @else
+                            <select name="brand_id" id="brand_id" class="form-select search-select">
+                                <option value="">-- Select Brand --</option>
+                                @foreach ($brands as $brand)
+                                    <option value="{{ $brand->id }}"
+                                        {{ $order->brand_id == $brand->id ? 'selected' : '' }}>
+                                        {{ $brand->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @endif
                         <span class="text-danger small brand_id_error">
                             @error('brand_id')
                                 {{ $message }}
@@ -72,21 +144,38 @@
                     {{-- Dealer (pre-loaded for current broker + brand) --}}
                     <div class="col-md-4 mb-3">
                         <label class="col-form-label">Dealer <span class="text-danger">*</span></label>
-                        <select name="dealer_id" id="dealer_id" class="form-select search-select">
-                            <option value="">-- Select Dealer --</option>
-                            @foreach ($dealers as $dealer)
-                                <option value="{{ $dealer->id }}" data-address="{{ $dealer->firm_shop_address }}"
-                                    {{ $order->dealer_id == $dealer->id ? 'selected' : '' }}>
-                                    {{ $dealer->user?->name ?? $dealer->firm_shop_name }}
-                                    @if ($dealer->firm_shop_name)
-                                        — {{ $dealer->firm_shop_name }}
+                        @if ($orderHasDispatches)
+                            <input type="hidden" name="dealer_id" value="{{ $order->dealer_id }}">
+                            <select id="dealer_id" class="form-select search-select field-dispatch-locked" disabled
+                                title="This order has dispatched items — Dealer cannot be changed.">
+                                @foreach ($dealers as $dealer)
+                                    @if ($dealer->id == $order->dealer_id)
+                                        <option value="{{ $dealer->id }}" selected>
+                                            {{ $dealer->user?->name ?? $dealer->firm_shop_name }}
+                                            @if ($dealer->firm_shop_name)
+                                                — {{ $dealer->firm_shop_name }}
+                                            @endif
+                                        </option>
                                     @endif
-                                </option>
-                            @endforeach
-                        </select>
-                        <small class="dealer-address-hint text-muted">
-                            Change broker &amp; brand to reload dealers.
-                        </small>
+                                @endforeach
+                            </select>
+                        @else
+                            <select name="dealer_id" id="dealer_id" class="form-select search-select">
+                                <option value="">-- Select Dealer --</option>
+                                @foreach ($dealers as $dealer)
+                                    <option value="{{ $dealer->id }}" data-address="{{ $dealer->firm_shop_address }}"
+                                        {{ $order->dealer_id == $dealer->id ? 'selected' : '' }}>
+                                        {{ $dealer->user?->name ?? $dealer->firm_shop_name }}
+                                        @if ($dealer->firm_shop_name)
+                                            — {{ $dealer->firm_shop_name }}
+                                        @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="dealer-address-hint text-muted">
+                                Change broker &amp; brand to reload dealers.
+                            </small>
+                        @endif
                         <span class="text-danger small dealer_id_error">
                             @error('dealer_id')
                                 {{ $message }}
@@ -137,6 +226,20 @@
 
                 <p class="form-section-title"><i class="ti ti-packages me-1"></i>Product Items</p>
 
+                {{-- Server-side dispatch validation errors (safety-net, normally caught by JS) --}}
+                @if ($errors->has('product_id') || $errors->has('qty'))
+                    <div class="alert alert-danger alert-dismissible fade show mb-3 py-2">
+                        <i class="ti ti-alert-circle me-1"></i>
+                        @error('product_id')
+                            <span>{{ $message }}</span>
+                        @enderror
+                        @error('qty')
+                            <span>{{ $message }}</span>
+                        @enderror
+                        <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
+                    </div>
+                @endif
+
                 <div class="table-responsive">
                     <table class="table table-bordered order-product-table" id="productTable">
                         <thead>
@@ -145,14 +248,18 @@
                                 <th style="min-width:200px;">Product Name <span class="text-danger">*</span></th>
                                 <th style="width:100px;">QTY <span class="text-danger">*</span></th>
                                 <th style="width:160px;">Unit Price <span class="text-danger">*</span></th>
-                                <th style="width:140px;">Total Price</th>
+                                <th style="width:140px;" class="d-none">Total Price</th>
                                 <th style="width:130px;" class="text-center">Action</th>
                             </tr>
                         </thead>
                         <tbody id="productTableBody">
 
                             @foreach ($order->items as $index => $item)
-                                <tr class="product-row">
+                                @php $itemDispatchedQty = (int) $item->dispatches->sum('no_of_bags'); @endphp
+                                <tr class="product-row" data-dispatched-qty="{{ $itemDispatchedQty }}"
+                                    data-ordered-qty="{{ (int) $item->qty }}"
+                                    data-product-name="{{ e($item->product?->name ?? '') }}"
+                                    data-product-unit="{{ e($item->product?->unit ?? 'Bags') }}">
                                     <td class="row-index text-center fw-semibold">
                                         {{ $index + 1 }}
                                         {{-- Carries the existing order_item ID so the controller
@@ -161,23 +268,51 @@
                                     </td>
 
                                     <td>
-                                        <select name="product_id[]" class="form-select product-select"
-                                            style="min-width:180px;">
-                                            <option value="">-- Select Product --</option>
-                                            @foreach ($products as $product)
-                                                <option value="{{ $product->id }}" data-unit="{{ $product->unit }}"
-                                                    data-brand="{{ $product->brand_id }}"
-                                                    data-price="{{ $product->price }}"
-                                                    {{ $item->product_id == $product->id ? 'selected' : '' }}>
-                                                    {{ $product->name }} ({{ $product->unit }})
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                        @if ($itemDispatchedQty > 0)
+                                            {{-- Product is locked — hidden input carries the value; visual select is disabled --}}
+                                            <input type="hidden" name="product_id[]" value="{{ $item->product_id }}">
+                                            <select class="form-select product-select-locked" style="min-width:180px;"
+                                                disabled tabindex="-1"
+                                                title="This product item is already dispatched, so the product cannot be changed.">
+                                                @foreach ($products as $product)
+                                                    @if ($product->id == $item->product_id)
+                                                        <option value="{{ $product->id }}" selected>
+                                                            {{ $product->name }} ({{ $product->unit }})
+                                                        </option>
+                                                    @endif
+                                                @endforeach
+                                            </select>
+                                            <small class="d-block mt-1" style="color:#888; font-size:0.78rem;">
+                                                <i class="ti ti-lock me-1" style="color:#e6a817;"></i>Product locked —
+                                                already dispatched.
+                                            </small>
+                                        @else
+                                            <select name="product_id[]" class="form-select product-select"
+                                                style="min-width:180px;">
+                                                <option value="">-- Select Product --</option>
+                                                @foreach ($products as $product)
+                                                    <option value="{{ $product->id }}" data-unit="{{ $product->unit }}"
+                                                        data-brand="{{ $product->brand_id }}"
+                                                        data-price="{{ $product->price }}"
+                                                        {{ $item->product_id == $product->id ? 'selected' : '' }}>
+                                                        {{ $product->name }} ({{ $product->unit }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        @endif
                                     </td>
 
                                     <td>
                                         <input type="number" name="qty[]" class="form-control qty-field"
                                             value="{{ $item->qty }}" placeholder="0" min="0" step="1">
+                                        @if ($itemDispatchedQty > 0)
+                                            <small class="dispatched-qty-hint text-muted d-block mt-1">
+                                                <i class="ti ti-truck me-1" style="color:#3d5dd4;"></i>Dispatched:
+                                                <strong>{{ $itemDispatchedQty }}</strong> — min qty allowed.
+                                            </small>
+                                        @endif
+                                        <span class="qty-min-error text-danger small d-block mt-1"
+                                            style="display:none;"></span>
                                     </td>
 
                                     <td>
@@ -189,7 +324,7 @@
                                         </small>
                                     </td>
 
-                                    <td>
+                                    <td class="d-none">
                                         <input type="number" name="total[]" class="form-control total-field"
                                             value="{{ $item->total_price }}" placeholder="0.00" readonly>
                                     </td>
@@ -226,7 +361,7 @@
 
         {{-- ── Product row template (for JS-added rows) ── --}}
         <template id="productRowTpl">
-            <tr class="product-row">
+            <tr class="product-row" data-dispatched-qty="0" data-ordered-qty="0" data-product-name="">
                 <td class="row-index text-center fw-semibold">
                     {{-- Empty item_id = new row, will be inserted not updated --}}
                     <input type="hidden" name="item_id[]" value="">
@@ -245,6 +380,8 @@
                 <td>
                     <input type="number" name="qty[]" class="form-control qty-field" placeholder="0" min="0"
                         step="1">
+                    {{-- error span present in template so JS can find it consistently --}}
+                    <span class="qty-min-error text-danger small d-block mt-1" style="display:none;"></span>
                 </td>
                 <td>
                     <input type="number" name="price[]" class="form-control price-field" placeholder="0.00"
@@ -253,7 +390,7 @@
                         Last unit price: <span class="last-price-val">—</span>
                     </small>
                 </td>
-                <td>
+                <td class="d-none">
                     <input type="number" name="total[]" class="form-control total-field" placeholder="0.00" readonly>
                 </td>
                 <td class="text-center row-actions">
@@ -324,11 +461,14 @@
                         </div>
                     </div>
 
-                    {{-- Order Totals --}}
+                    {{-- Order Totals — display hidden, calculations still run via JS --}}
                     <div class="col-md-6">
-                        <p class="form-section-title text-end"><i class="ti ti-calculator me-1"></i>Order Summary</p>
+                        {{-- Section title hidden --}}
+                        <p class="form-section-title text-end d-none"><i class="ti ti-calculator me-1"></i>Order Summary
+                        </p>
 
-                        <div class="totals-box ms-auto" style="max-width:360px;">
+                        {{-- Totals display hidden — spans still updated by calculateTotals() --}}
+                        <div class="totals-box ms-auto d-none" style="max-width:360px;">
                             <div class="totals-row">
                                 <span class="totals-label">Sub Total</span>
                                 <span class="totals-value">
@@ -343,6 +483,7 @@
                             </div>
                         </div>
 
+                        {{-- Hidden fields for submission — always submitted regardless of visibility --}}
                         <input type="hidden" name="total_order_amount" id="total_order_amount">
                         <input type="hidden" name="grand_total" id="grand_total">
                     </div>
@@ -525,7 +666,88 @@
 
             /* ── Remove product row ──────────────────────────────────── */
             $(document).on('click', '.remove-row-btn', function() {
-                var $row = $(this).closest('tr');
+                var $row = $(this).closest('tr.product-row');
+                var dispatchedQty = parseInt($row.data('dispatched-qty')) || 0;
+
+                /* Block removal of any item that has been dispatched */
+                if (dispatchedQty > 0) {
+                    var productName = $row.data('product-name') || '—';
+                    var productUnit = $row.data('product-unit') || 'Bags';
+                    var orderedQty = parseInt($row.data('ordered-qty')) || 0;
+                    var remainingQty = Math.max(0, orderedQty - dispatchedQty);
+
+                    var dispatchPct = orderedQty > 0 ? Math.round((dispatchedQty / orderedQty) * 100) : 100;
+                    var remainColor = remainingQty > 0 ? '#e6a817' : '#28a745';
+                    var remainLabel = remainingQty > 0 ? 'Pending' : 'Fully Dispatched';
+
+                    var popupHtml =
+                        /* ── Alert bar ── */
+                        '<div class="cr-alert-bar">' +
+                        '<span class="cr-alert-icon"><i class="ti ti-ban"></i></span>' +
+                        '<div>' +
+                        '<div class="cr-alert-title">Cannot Remove Product Item</div>' +
+                        '<div class="cr-alert-sub">This item has dispatch history and is protected from removal.</div>' +
+                        '</div>' +
+                        '</div>' +
+
+                        /* ── Product name chip ── */
+                        '<div class="cr-product-chip">' +
+                        '<i class="ti ti-box me-2" style="color:#3d5dd4;font-size:1rem;"></i>' +
+                        '<span class="cr-product-name">' + productName + ' (' + productUnit + ')</span>' +
+                        '</div>' +
+
+                        /* ── Stat cards ── */
+                        '<div class="cr-stat-row">' +
+                        '<div class="cr-stat-card">' +
+                        '<div class="cr-stat-value">' + orderedQty + '</div>' +
+                        '<div class="cr-stat-label">Ordered</div>' +
+                        '</div>' +
+                        '<div class="cr-stat-card cr-stat-dispatched">' +
+                        '<div class="cr-stat-value" style="color:#3d5dd4;">' + dispatchedQty + '</div>' +
+                        '<div class="cr-stat-label">Dispatched</div>' +
+                        '</div>' +
+                        '<div class="cr-stat-card">' +
+                        '<div class="cr-stat-value" style="color:' + remainColor + ';">' + remainingQty +
+                        '</div>' +
+                        '<div class="cr-stat-label">' + remainLabel + '</div>' +
+                        '</div>' +
+                        '</div>' +
+
+                        /* ── Progress bar ── */
+                        '<div class="cr-prog-wrap">' +
+                        '<div class="cr-prog-bar">' +
+                        '<div class="cr-prog-fill" style="width:' + dispatchPct + '%;"></div>' +
+                        '</div>' +
+                        '<div class="cr-prog-label">' +
+                        '<span>' + dispatchPct + '% dispatched</span>' +
+                        '<span>' + productUnit + ': ' + dispatchedQty + ' / ' + orderedQty + '</span>' +
+                        '</div>' +
+                        '</div>' +
+
+                        /* ── Footer note ── */
+                        '<p class="cr-footer-note">' +
+                        '<i class="ti ti-info-circle me-1"></i>' +
+                        'To remove this item, first reverse or cancel all associated dispatches.' +
+                        '</p>';
+
+                    Swal.fire({
+                        html: popupHtml,
+                        showConfirmButton: true,
+                        confirmButtonText: '<i class="ti ti-check me-1"></i> Got it',
+                        width: 480,
+                        padding: '0',
+                        customClass: {
+                            popup: 'my-custom-popup cr-popup',
+                            htmlContainer: 'cr-html-container',
+                            confirmButton: 'btn cr-confirm-btn px-4',
+                            actions: 'cr-actions',
+                        },
+                        buttonsStyling: false,
+                    });
+                    return; /* stop — do not remove the row */
+                }
+
+                /* No dispatch — safe to remove */
                 $row.next('.product-row-error').remove();
                 $row.remove();
                 reindexRows();
@@ -535,7 +757,18 @@
 
             function reindexRows() {
                 $('#productTableBody .product-row').each(function(i) {
-                    $(this).find('.row-index').text(i + 1);
+                    var $cell = $(this).find('.row-index');
+                    /*
+                     * jQuery .text() sets element.textContent, which destroys ALL
+                     * child nodes — including the hidden item_id input inside this
+                     * cell. Detach it first, update the label, then re-attach so
+                     * the item_id[] array is never lost on add/remove operations.
+                     */
+                    var $hidden = $cell.find('input[type="hidden"]').detach();
+                    $cell.text(i + 1);
+                    if ($hidden.length) {
+                        $cell.append($hidden);
+                    }
                 });
             }
 
@@ -563,7 +796,7 @@
 
             /* ── Recalculate row total on qty / price change ─────────── */
             $(document).on('input', '.qty-field, .price-field', function() {
-                var $row = $(this).closest('tr');
+                var $row = $(this).closest('tr.product-row');
                 var qty = parseFloat($row.find('.qty-field').val()) || 0;
                 var price = parseFloat($row.find('.price-field').val()) || 0;
                 $row.find('.total-field').val((qty * price).toFixed(2));
@@ -572,6 +805,21 @@
                 $(this).removeClass('is-invalid');
                 if (!$row.find('.is-invalid').length) {
                     $row.next('.product-row-error').hide();
+                }
+
+                /* ── Dispatched-qty minimum check (qty field only) ──────── */
+                if ($(this).hasClass('qty-field')) {
+                    var dispatchedQty = parseInt($row.data('dispatched-qty')) || 0;
+                    var $err = $row.find('.qty-min-error');
+                    if (dispatchedQty > 0 && qty < dispatchedQty) {
+                        $(this).addClass('is-invalid');
+                        $err.text(
+                            'Quantity cannot be less than already dispatched qty (' + dispatchedQty +
+                            ').'
+                        ).show();
+                    } else {
+                        $err.hide().text('');
+                    }
                 }
             });
 
@@ -608,6 +856,7 @@
                 $('[class$="_error"]').text('');
                 $('.is-invalid').removeClass('is-invalid');
                 $('.product-row-error').hide();
+                $('.qty-min-error').hide().text('');
             }
 
             function showFieldError(fieldName, message) {
@@ -642,16 +891,38 @@
 
                 $('#productTableBody .product-row').each(function() {
                     var $row = $(this);
-                    var pid = $row.find('.product-select').val();
+                    /* For dispatched rows the product <select> is disabled and uses class
+                       'product-select-locked'; the actual value lives in a hidden input.
+                       Check both so locked rows don't trigger a false "required" error. */
+                    var pid = $row.find('.product-select').val()
+                           || $row.find('input[name="product_id[]"]').val();
                     var qty = $.trim($row.find('.qty-field').val());
                     var price = $.trim($row.find('.price-field').val());
 
                     if (!pid || !qty || !price) {
-                        if (!pid) $row.find('.product-select').addClass('is-invalid');
+                        if (!pid) {
+                            /* Only mark the visible (unlocked) select as invalid */
+                            var $sel = $row.find('.product-select');
+                            if ($sel.length) $sel.addClass('is-invalid');
+                        }
                         if (!qty) $row.find('.qty-field').addClass('is-invalid');
                         if (!price) $row.find('.price-field').addClass('is-invalid');
                         $row.next('.product-row-error').show();
                         isValid = false;
+                    }
+
+                    /* ── Dispatched-qty minimum constraint ───────────────── */
+                    var dispatchedQty = parseInt($row.data('dispatched-qty')) || 0;
+                    if (dispatchedQty > 0) {
+                        var qtyVal = parseFloat(qty) || 0;
+                        if (qtyVal < dispatchedQty) {
+                            $row.find('.qty-field').addClass('is-invalid');
+                            $row.find('.qty-min-error')
+                                .text('Minimum ' + dispatchedQty +
+                                    ' (already dispatched). Cannot set lower.')
+                                .show();
+                            isValid = false;
+                        }
                     }
                 });
 

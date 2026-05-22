@@ -135,7 +135,7 @@
 
                     {{-- ── PAN Card ────────────────────────────────────── --}}
                     <div class="col-md-4 mb-3">
-                        <label class="col-form-label">PAN Card No <span class="text-danger">*</span></label>
+                        <label class="col-form-label">PAN Card No</label>
                         <input type="text" name="pancard" id="pancard" value="{{ old('pancard') }}"
                             class="form-control @error('pancard') is-invalid @enderror" placeholder="e.g. ABCDE1234F"
                             maxlength="10" oninput="this.value = this.value.toUpperCase()">
@@ -194,7 +194,7 @@
 
                     {{-- ── Email ───────────────────────────────────── --}}
                     <div class="col-md-4 mb-3">
-                        <label class="col-form-label">Email <span class="text-danger">*</span></label>
+                        <label class="col-form-label">Email</label>
                         <input type="email" name="email" id="email" value="{{ old('email') }}"
                             class="form-control @error('email') is-invalid @enderror" placeholder="email">
                         @error('email')

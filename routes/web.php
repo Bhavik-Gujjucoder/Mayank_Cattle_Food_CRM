@@ -80,6 +80,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /*  Order / Soda-Order Management  (type: soda-order)                  */
     /* ------------------------------------------------------------------ */
     Route::get('order-last-price', [OrderManagementController::class, 'lastItemPrice'])->name('order.lastItemPrice');
+    /* Sequential-dispatch eligibility check (AJAX) — must precede resource to avoid
+       Laravel treating 'dispatch-check' as an {order} segment for the show() route. */
+    Route::get('order/{order}/dispatch-check', [OrderManagementController::class, 'checkDispatchEligibility'])
+        ->name('order.dispatchCheck');
+    /* Delete eligibility check — returns dispatch details if order cannot be deleted */
+    Route::get('order/{order}/delete-check', [OrderManagementController::class, 'deleteCheck'])
+        ->name('order.deleteCheck');
     Route::resource('order', OrderManagementController::class)->except(['store', 'update', 'destroy']);
     Route::post('order', [OrderManagementController::class, 'store'])
         ->name('order.store')->middleware('permission:add-order');
@@ -92,7 +99,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     /* ------------------------------------------------------------------ */
-    /*  Dispatch Management  (type: dispatch)                               */
+    /*  Dispatch Management  (type: dispatch)                             */
     /* ------------------------------------------------------------------ */
     /* Dispatch history for a specific order — must be BEFORE resource route */
     Route::get('dispatch/order/{order}', [DispatchManagementController::class, 'orderHistory'])
