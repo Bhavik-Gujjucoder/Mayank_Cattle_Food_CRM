@@ -499,7 +499,13 @@
                             html: response.html,
                             showCloseButton: true,
                             showConfirmButton: false,
-                            width: '70%'
+                            padding: '0',
+                            width: 700,
+                            customClass: {
+                                popup:         'ddp-popup',
+                                htmlContainer: 'ddp-html-container',
+                                closeButton:   'ddp-close-btn',
+                            },
                         });
                     }
                 },
