@@ -461,23 +461,24 @@
                                     <span class="field-error" id="transport_id-error"></span>
                                 </div>
 
-                                {{-- ── Truck Number ──────────────────────────────── --}}
+                                {{-- ── Truck Number (dynamic dropdown) ─────────── --}}
                                 <div class="col-md-4 mb-3">
                                     <label class="col-form-label">
                                         Truck Number <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" name="truck_number" id="dispatchTruckNumber" class="form-control"
-                                        placeholder="e.g. GJ 01 AB 1234" value="{{ old('truck_number') }}">
+                                    <select name="truck_number" id="dispatchTruckNumber" class="form-select" disabled>
+                                        <option value="">-- Select Transporter First --</option>
+                                    </select>
                                     <span class="field-error" id="truck_number-error"></span>
                                 </div>
 
-                                {{-- ── Driver Contact ────────────────────────────── --}}
+                                {{-- ── Driver Contact (auto-filled from transporter) --}}
                                 <div class="col-md-4 mb-3">
                                     <label class="col-form-label">
                                         Driver Contact <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" name="driver_contact" id="dispatchDriverContact"
-                                        class="form-control" placeholder="Mobile number"
+                                        class="form-control" placeholder="Auto-filled from transporter"
                                         value="{{ old('driver_contact') }}">
                                     <span class="field-error" id="driver_contact-error"></span>
                                 </div>
@@ -574,13 +575,14 @@
                                     <span class="field-error" id="edit_transport_id-error"></span>
                                 </div>
 
-                                {{-- ── Truck Number ──────────────────────────────── --}}
+                                {{-- ── Truck Number (dynamic dropdown) ─────────── --}}
                                 <div class="col-md-4 mb-3">
                                     <label class="col-form-label">
                                         Truck Number <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" name="truck_number" id="editTruckNumber" class="form-control"
-                                        placeholder="e.g. GJ 01 AB 1234">
+                                    <select name="truck_number" id="editTruckNumber" class="form-select" disabled>
+                                        <option value="">-- Loading trucks... --</option>
+                                    </select>
                                     <span class="field-error" id="edit_truck_number-error"></span>
                                 </div>
 
@@ -621,7 +623,83 @@
         $(document).ready(function() {
 
             /* ════════════════════════════════════════════════════════════
-               ADD DISPATCH — flatpickr, product select, validate
+               SHARED HELPER — load trucks for a transporter via AJAX
+               ---------------------------------------------------------
+               transporterId  : the selected transporter's User ID
+               $truckSelect   : the <select> to populate
+               $contactInput  : the driver_contact <input> to update
+               opts           : {
+                   setTruckNumber  : pre-select this truck_number string,
+                   setDriverContact: set contact to this value (overrides phone),
+                   autoFillContact : if true, fill contact from transporter phone
+               }
+            ════════════════════════════════════════════════════════════ */
+            var TRUCKS_URL = '{{ route('dispatch.transporterTrucks', ':id') }}';
+
+            function loadTrucksForTransporter(transporterId, $truckSelect, $contactInput, opts) {
+                opts = opts || {};
+
+                if (!transporterId) {
+                    $truckSelect
+                        .html('<option value="">-- Select Transporter First --</option>')
+                        .prop('disabled', true);
+                    return;
+                }
+
+                /* Show loading state */
+                $truckSelect
+                    .html('<option value="">Loading trucks…</option>')
+                    .prop('disabled', true);
+
+                var url = TRUCKS_URL.replace(':id', transporterId);
+
+                $.get(url)
+                    .done(function(data) {
+                        var opts_html = '<option value="">-- Select Truck Number --</option>';
+
+                        if (data.trucks && data.trucks.length > 0) {
+                            $.each(data.trucks, function(i, truck) {
+                                opts_html += '<option value="' + $('<span>').text(truck.truck_number).html() + '">'
+                                           + $('<span>').text(truck.truck_number).html()
+                                           + '</option>';
+                            });
+                        } else {
+                            opts_html += '<option value="" disabled>No trucks found for this transporter</option>';
+                        }
+
+                        $truckSelect.html(opts_html).prop('disabled', false);
+
+                        /* Pre-select a specific truck number if requested */
+                        if (opts.setTruckNumber) {
+                            /* If the saved truck_number is not in the list (e.g. was deleted
+                               from trucks table), add it as a fallback option */
+                            if ($truckSelect.find('option[value="' + opts.setTruckNumber + '"]').length === 0) {
+                                $truckSelect.append(
+                                    '<option value="' + $('<span>').text(opts.setTruckNumber).html() + '">'
+                                    + $('<span>').text(opts.setTruckNumber).html()
+                                    + '</option>'
+                                );
+                            }
+                            $truckSelect.val(opts.setTruckNumber);
+                        }
+
+                        /* Driver contact: use supplied value or auto-fill from transporter phone */
+                        if (opts.setDriverContact !== undefined && opts.setDriverContact !== null) {
+                            $contactInput.val(opts.setDriverContact);
+                        } else if (opts.autoFillContact && data.phone) {
+                            $contactInput.val(data.phone);
+                        }
+                    })
+                    .fail(function() {
+                        $truckSelect
+                            .html('<option value="">-- Select Truck Number --</option>')
+                            .prop('disabled', false);
+                    });
+            }
+
+
+            /* ════════════════════════════════════════════════════════════
+               ADD DISPATCH — flatpickr, product select, transporter, validate
             ════════════════════════════════════════════════════════════ */
 
             /* ── Flatpickr — Add form ──────────────────────────────────── */
@@ -645,6 +723,25 @@
                 $('#dispatchPendingHint').text($opt.val() ? 'Available pending qty: ' + pending : '');
             });
 
+            /* ── Transporter change — load trucks + auto-fill driver contact */
+            $('#dispatchTransport').on('change', function() {
+                var transporterId = $(this).val();
+                loadTrucksForTransporter(
+                    transporterId,
+                    $('#dispatchTruckNumber'),
+                    $('#dispatchDriverContact'),
+                    { autoFillContact: true }
+                );
+            });
+
+            /* ── Reset Add modal on open ────────────────────────────────── */
+            $('#addDispatchModal').on('show.bs.modal', function() {
+                /* Reset truck dropdown to initial disabled state */
+                $('#dispatchTruckNumber')
+                    .html('<option value="">-- Select Transporter First --</option>')
+                    .prop('disabled', true);
+            });
+
             /* ── Custom rule: bags ≤ pending (Add form) ─────────────────── */
             $.validator.addMethod('maxPending', function(value) {
                 var $opt = $('#dispatchOrderItemId').find(':selected');
@@ -656,49 +753,20 @@
             $('#dispatchForm').validate({
                 ignore: ':hidden:not(#dispatchDate)',
                 rules: {
-                    order_item_id: {
-                        required: true
-                    },
-                    no_of_bags: {
-                        required: true,
-                        number: true,
-                        min: 1,
-                        maxPending: true
-                    },
-                    dispatch_date: {
-                        required: true
-                    },
-                    transport_id: {
-                        required: true
-                    },
-                    truck_number: {
-                        required: true
-                    },
-                    driver_contact: {
-                        required: true
-                    },
+                    order_item_id:  { required: true },
+                    no_of_bags:     { required: true, number: true, min: 1, maxPending: true },
+                    dispatch_date:  { required: true },
+                    transport_id:   { required: true },
+                    truck_number:   { required: true },
+                    driver_contact: { required: true },
                 },
                 messages: {
-                    order_item_id: {
-                        required: 'Please select a product.'
-                    },
-                    no_of_bags: {
-                        required: 'No of bags/ton is required.',
-                        number: 'Please enter a valid number.',
-                        min: 'Must be at least 1.',
-                    },
-                    dispatch_date: {
-                        required: 'Please select a dispatch date.'
-                    },
-                    transport_id: {
-                        required: 'Please select a transporter.'
-                    },
-                    truck_number: {
-                        required: 'Truck number is required.'
-                    },
-                    driver_contact: {
-                        required: 'Driver contact is required.'
-                    },
+                    order_item_id:  { required: 'Please select a product.' },
+                    no_of_bags:     { required: 'No of bags/ton is required.', number: 'Please enter a valid number.', min: 'Must be at least 1.' },
+                    dispatch_date:  { required: 'Please select a dispatch date.' },
+                    transport_id:   { required: 'Please select a transporter.' },
+                    truck_number:   { required: 'Please select a truck number.' },
+                    driver_contact: { required: 'Driver contact is required.' },
                 },
                 errorElement: 'span',
                 errorClass: 'text-danger small d-block mt-1',
@@ -712,31 +780,36 @@
                         error.insertAfter(element);
                     }
                 },
-                highlight: function(element) {
-                    var $el = $(element);
-                    $el.attr('id') === 'dispatchDate' ?
-                        $el.next('.flatpickr-input').addClass('is-invalid') :
-                        $el.addClass('is-invalid');
-                },
-                unhighlight: function(element) {
-                    var $el = $(element);
-                    $el.attr('id') === 'dispatchDate' ?
-                        $el.next('.flatpickr-input').removeClass('is-invalid') :
-                        $el.removeClass('is-invalid');
-                },
-                submitHandler: function(form) {
-                    form.submit();
-                },
+                highlight:   function(el) { var $e = $(el); $e.attr('id') === 'dispatchDate' ? $e.next('.flatpickr-input').addClass('is-invalid') : $e.addClass('is-invalid'); },
+                unhighlight: function(el) { var $e = $(el); $e.attr('id') === 'dispatchDate' ? $e.next('.flatpickr-input').removeClass('is-invalid') : $e.removeClass('is-invalid'); },
+                submitHandler: function(form) { form.submit(); },
             });
 
             /* ── Re-open Add modal on server validation failure ─────────── */
             @if (!session('edit_dispatch_id') && $errors->any())
-                (new bootstrap.Modal(document.getElementById('addDispatchModal'))).show();
+                (function() {
+                    /* Restore transporter + trucks + contact when re-opening */
+                    var savedTransporter = '{{ old('transport_id') }}';
+                    var savedTruck       = '{{ old('truck_number') }}';
+                    var savedContact     = '{{ old('driver_contact') }}';
+
+                    if (savedTransporter) {
+                        $('#dispatchTransport').val(savedTransporter);
+                        loadTrucksForTransporter(
+                            savedTransporter,
+                            $('#dispatchTruckNumber'),
+                            $('#dispatchDriverContact'),
+                            { setTruckNumber: savedTruck, setDriverContact: savedContact || null }
+                        );
+                    }
+
+                    (new bootstrap.Modal(document.getElementById('addDispatchModal'))).show();
+                })();
             @endif
 
 
             /* ════════════════════════════════════════════════════════════
-               EDIT DISPATCH — flatpickr, custom rule, validate, populate
+               EDIT DISPATCH — flatpickr, transporter/truck, validate
             ════════════════════════════════════════════════════════════ */
 
             /* ── Flatpickr — Edit form ─────────────────────────────────── */
@@ -751,7 +824,7 @@
                 }
             });
 
-            /* Tracks the maximum bags allowed for the dispatch being edited */
+            /* Maximum bags allowed for the dispatch being edited */
             var editEffectivePending = 0;
 
             /* ── Custom rule: bags ≤ effective pending (Edit form) ──────── */
@@ -763,43 +836,18 @@
             $('#editDispatchForm').validate({
                 ignore: ':hidden:not(#editDispatchDate)',
                 rules: {
-                    no_of_bags: {
-                        required: true,
-                        number: true,
-                        min: 1,
-                        maxEditPending: true
-                    },
-                    dispatch_date: {
-                        required: true
-                    },
-                    transport_id: {
-                        required: true
-                    },
-                    truck_number: {
-                        required: true
-                    },
-                    driver_contact: {
-                        required: true
-                    },
+                    no_of_bags:     { required: true, number: true, min: 1, maxEditPending: true },
+                    dispatch_date:  { required: true },
+                    transport_id:   { required: true },
+                    truck_number:   { required: true },
+                    driver_contact: { required: true },
                 },
                 messages: {
-                    no_of_bags: {
-                        required: 'No of bags/ton is required.',
-                        number: 'Please enter a valid number.',
-                        min: 'Must be at least 1.',
-                    },
-                    dispatch_date: {
-                        required: 'Please select a dispatch date.'
-                    },
-                    transport_id: {
-                        required: 'Please select a transporter.'
-                    },
-                    truck_number: {
-                        required: 'Truck number is required.'
-                    },
-                    driver_contact: {
-                        required: 'Driver contact is required.'
-                    },
+                    no_of_bags:     { required: 'No of bags/ton is required.', number: 'Please enter a valid number.', min: 'Must be at least 1.' },
+                    dispatch_date:  { required: 'Please select a dispatch date.' },
+                    transport_id:   { required: 'Please select a transporter.' },
+                    truck_number:   { required: 'Please select a truck number.' },
+                    driver_contact: { required: 'Driver contact is required.' },
                 },
                 errorElement: 'span',
                 errorClass: 'text-danger small d-block mt-1',
@@ -813,58 +861,73 @@
                         error.insertAfter(element);
                     }
                 },
-                highlight: function(element) {
-                    var $el = $(element);
-                    $el.attr('id') === 'editDispatchDate' ?
-                        $el.next('.flatpickr-input').addClass('is-invalid') :
-                        $el.addClass('is-invalid');
-                },
-                unhighlight: function(element) {
-                    var $el = $(element);
-                    $el.attr('id') === 'editDispatchDate' ?
-                        $el.next('.flatpickr-input').removeClass('is-invalid') :
-                        $el.removeClass('is-invalid');
-                },
-                submitHandler: function(form) {
-                    form.submit();
-                },
+                highlight:   function(el) { var $e = $(el); $e.attr('id') === 'editDispatchDate' ? $e.next('.flatpickr-input').addClass('is-invalid') : $e.addClass('is-invalid'); },
+                unhighlight: function(el) { var $e = $(el); $e.attr('id') === 'editDispatchDate' ? $e.next('.flatpickr-input').removeClass('is-invalid') : $e.removeClass('is-invalid'); },
+                submitHandler: function(form) { form.submit(); },
             });
 
-            /* ── Edit button click — populate modal and open it ─────────── */
-            $(document).on('click', '.edit-dispatch-btn', function() {
-                var $btn = $(this);
+            /* ── Transporter change in Edit form — reload trucks ─────────── */
+            $('#editTransport').on('change', function() {
+                var transporterId = $(this).val();
+                /* User manually changed transporter: load trucks + auto-fill contact */
+                loadTrucksForTransporter(
+                    transporterId,
+                    $('#editTruckNumber'),
+                    $('#editDriverContact'),
+                    { autoFillContact: true }
+                );
+            });
 
-                /* Set the effective pending for the custom rule */
-                editEffectivePending = parseInt($btn.data('effective-pending')) || 0;
+            /* ── Helper: populate edit modal fields ─────────────────────── */
+            function populateEditModal(transportId, truckNumber, driverContact, noBags, dispatchDate, productName, effectivePending, updateUrl) {
+                editEffectivePending = effectivePending;
+                $('#editDispatchForm').attr('action', updateUrl);
+                $('#editProductName').text(productName || '—');
+                $('#editNoBags').val(noBags);
+                $('#editDriverContact').val(driverContact);
+                editDatePicker.setDate(dispatchDate, false);
+                $('#editPendingHint').text('Maximum allowed: ' + effectivePending + ' bags/ton');
 
-                /* Point the form at the correct update URL */
-                $('#editDispatchForm').attr('action', $btn.data('update-url'));
-
-                /* Fill every field */
-                $('#editProductName').text($btn.data('product-name') || '—');
-                $('#editNoBags').val($btn.data('no-of-bags'));
-                $('#editTransport').val($btn.data('transport-id'));
-                $('#editTruckNumber').val($btn.data('truck-number'));
-                $('#editDriverContact').val($btn.data('driver-contact'));
-                editDatePicker.setDate($btn.data('dispatch-date'), false);
-
-                /* Pending hint */
-                $('#editPendingHint').text('Maximum allowed: ' + editEffectivePending + ' bags/ton');
+                /* Set transporter — then load its trucks and pre-select the saved truck */
+                $('#editTransport').val(transportId);
+                loadTrucksForTransporter(
+                    transportId,
+                    $('#editTruckNumber'),
+                    $('#editDriverContact'),
+                    {
+                        setTruckNumber:  truckNumber,
+                        setDriverContact: driverContact  /* keep stored contact, not transporter phone */
+                    }
+                );
 
                 /* Reset previous validation state */
-                var editValidator = $('#editDispatchForm').validate();
-                editValidator.resetForm();
+                var v = $('#editDispatchForm').validate();
+                v.resetForm();
                 $('#editDispatchForm .is-invalid').removeClass('is-invalid');
                 $('#editDispatchDate').next('.flatpickr-input').removeClass('is-invalid');
                 $('#editDispatchForm .field-error').empty();
 
                 (new bootstrap.Modal(document.getElementById('editDispatchModal'))).show();
+            }
+
+            /* ── Edit button click ───────────────────────────────────────── */
+            $(document).on('click', '.edit-dispatch-btn', function() {
+                var $btn = $(this);
+                populateEditModal(
+                    $btn.data('transport-id'),
+                    $btn.data('truck-number'),
+                    $btn.data('driver-contact'),
+                    $btn.data('no-of-bags'),
+                    $btn.data('dispatch-date'),
+                    $btn.data('product-name'),
+                    parseInt($btn.data('effective-pending')) || 0,
+                    $btn.data('update-url')
+                );
             });
 
             /* ── Re-open Edit modal on server validation failure ─────────── */
             @if (session('edit_dispatch_id'))
                 @php
-                    /* Find the dispatch + its order item from already-loaded data */
                     $reopenId = session('edit_dispatch_id');
                     $reopenDispatch = null;
                     $reopenItem = null;
@@ -878,35 +941,25 @@
                         }
                     }
                     if ($reopenDispatch && $reopenItem) {
-                        /* Sum every OTHER dispatch for this item (collection, no extra query) */
                         $reopenOtherBags = (int) $reopenItem->dispatches->where('id', '!=', $reopenDispatch->id)->sum('no_of_bags');
                         $reopenEffectivePending = max(0, (int) $reopenItem->qty - $reopenOtherBags);
                     }
                 @endphp
                 @if ($reopenDispatch && $reopenItem)
-                    (function() {
-                        editEffectivePending = {{ $reopenEffectivePending }};
-                        $('#editDispatchForm').attr('action',
-                            '{{ route('dispatch.update', $reopenDispatch->id) }}');
-                        $('#editProductName').text({{ json_encode($reopenItem->product?->name ?? '—') }});
-                        $('#editNoBags').val(
-                            {{ json_encode(old('no_of_bags', $reopenDispatch->no_of_bags)) }});
-                        $('#editTransport').val(
-                            {{ json_encode(old('transport_id', (string) $reopenDispatch->transport_id)) }});
-                        $('#editTruckNumber').val(
-                            {{ json_encode(old('truck_number', $reopenDispatch->truck_number)) }});
-                        $('#editDriverContact').val(
-                            {{ json_encode(old('driver_contact', $reopenDispatch->driver_contact)) }});
-                        editDatePicker.setDate(
-                            {{ json_encode(old('dispatch_date', $reopenDispatch->dispatch_date?->format('Y-m-d'))) }},
-                            false);
-                        $('#editPendingHint').text('Maximum allowed: ' + editEffectivePending + ' bags/ton');
-                        (new bootstrap.Modal(document.getElementById('editDispatchModal'))).show();
-                    })();
+                    populateEditModal(
+                        {{ json_encode(old('transport_id', (string) $reopenDispatch->transport_id)) }},
+                        {{ json_encode(old('truck_number', $reopenDispatch->truck_number)) }},
+                        {{ json_encode(old('driver_contact', $reopenDispatch->driver_contact)) }},
+                        {{ json_encode(old('no_of_bags', $reopenDispatch->no_of_bags)) }},
+                        {{ json_encode(old('dispatch_date', $reopenDispatch->dispatch_date?->format('Y-m-d'))) }},
+                        {{ json_encode($reopenItem->product?->name ?? '—') }},
+                        {{ $reopenEffectivePending }},
+                        '{{ route('dispatch.update', $reopenDispatch->id) }}'
+                    );
                 @endif
             @endif
 
-            /* ── Auto-open edit modal when arriving from the index listing ─ */
+            /* ── Auto-open edit modal from index listing ─ */
             @if (!session('edit_dispatch_id') && request()->query('edit'))
                 @php
                     $autoEditId = (int) request()->query('edit');
@@ -927,26 +980,22 @@
                     }
                 @endphp
                 @if ($autoDispatch && $autoItem)
-                    (function() {
-                        editEffectivePending = {{ $autoEffectivePending }};
-                        $('#editDispatchForm').attr('action',
-                            '{{ route('dispatch.update', $autoDispatch->id) }}');
-                        $('#editProductName').text({{ json_encode($autoItem->product?->name ?? '—') }});
-                        $('#editNoBags').val({{ $autoDispatch->no_of_bags }});
-                        $('#editTransport').val({{ $autoDispatch->transport_id }});
-                        $('#editTruckNumber').val({{ json_encode($autoDispatch->truck_number) }});
-                        $('#editDriverContact').val({{ json_encode($autoDispatch->driver_contact) }});
-                        editDatePicker.setDate(
-                            {{ json_encode($autoDispatch->dispatch_date?->format('Y-m-d')) }}, false);
-                        $('#editPendingHint').text('Maximum allowed: ' + editEffectivePending + ' bags/ton');
-                        (new bootstrap.Modal(document.getElementById('editDispatchModal'))).show();
-                    })();
+                    populateEditModal(
+                        {{ $autoDispatch->transport_id }},
+                        {{ json_encode($autoDispatch->truck_number) }},
+                        {{ json_encode($autoDispatch->driver_contact) }},
+                        {{ $autoDispatch->no_of_bags }},
+                        {{ json_encode($autoDispatch->dispatch_date?->format('Y-m-d')) }},
+                        {{ json_encode($autoItem->product?->name ?? '—') }},
+                        {{ $autoEffectivePending }},
+                        '{{ route('dispatch.update', $autoDispatch->id) }}'
+                    );
                 @endif
             @endif
 
 
             /* ════════════════════════════════════════════════════════════
-               DELETE DISPATCH — SweetAlert  confirmation
+               DELETE DISPATCH — SweetAlert confirmation
             ════════════════════════════════════════════════════════════ */
 
             $(document).on('click', '.delete-dispatch-btn', function() {

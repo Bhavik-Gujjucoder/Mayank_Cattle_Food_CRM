@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DispatchManagement;
 use App\Models\OrderItem;
 use App\Models\OrderManagement;
+use App\Models\Truck;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
@@ -264,6 +265,22 @@ class DispatchManagementController extends Controller
         return redirect()
             ->route('dispatch.orderHistory', $dispatch->order_id)
             ->with('success', 'Dispatch entry updated successfully.');
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  AJAX — trucks for a transporter (used by truck dropdown)          */
+    /* ------------------------------------------------------------------ */
+    public function getTrucksByTransporter(User $transporter)
+    {
+        $trucks = Truck::where('transporter_id', $transporter->id)
+            ->where('status', 1)
+            ->orderBy('truck_number')
+            ->get(['id', 'truck_number']);
+
+        return response()->json([
+            'trucks' => $trucks,
+            'phone'  => $transporter->phone_no ?? '',
+        ]);
     }
 
     /* ------------------------------------------------------------------ */

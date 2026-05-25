@@ -16,6 +16,7 @@ use App\Http\Controllers\RawMaterialPurchaseController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StateManagementController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\TruckManagementController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -104,6 +105,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* Dispatch history for a specific order — must be BEFORE resource route */
     Route::get('dispatch/order/{order}', [DispatchManagementController::class, 'orderHistory'])
         ->name('dispatch.orderHistory');
+
+    /* AJAX: trucks that belong to a given transporter (for dynamic truck dropdown) */
+    Route::get('dispatch/transporter-trucks/{transporter}', [DispatchManagementController::class, 'getTrucksByTransporter'])
+        ->name('dispatch.transporterTrucks');
 
     Route::resource('dispatch', DispatchManagementController::class)->except(['store', 'update', 'destroy']);
     Route::post('dispatch', [DispatchManagementController::class, 'store'])
@@ -194,6 +199,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('product.destroy')->middleware('permission:delete-product');
     Route::post('/product/bulk-delete', [ProductController::class, 'bulkDelete'])
         ->name('product.bulkDelete')->middleware('permission:delete-product');
+
+
+    /* ------------------------------------------------------------------ */
+    /*  Truck Management                                                    */
+    /* ------------------------------------------------------------------ */
+    Route::resource('truck', TruckManagementController::class)->except(['store', 'update', 'destroy']);
+    Route::post('truck', [TruckManagementController::class, 'store'])
+        ->name('truck.store')->middleware('permission:add-truck');
+    Route::match(['put', 'patch'], 'truck/{truck}', [TruckManagementController::class, 'update'])
+        ->name('truck.update')->middleware('permission:edit-truck');
+    Route::delete('truck/{truck}', [TruckManagementController::class, 'destroy'])
+        ->name('truck.destroy')->middleware('permission:delete-truck');
+    Route::post('/truck/bulk-delete', [TruckManagementController::class, 'bulkDelete'])
+        ->name('truck.bulkDelete')->middleware('permission:delete-truck');
 
 
     /* ------------------------------------------------------------------ */

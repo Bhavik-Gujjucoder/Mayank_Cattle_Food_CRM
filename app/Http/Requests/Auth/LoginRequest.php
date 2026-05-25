@@ -27,9 +27,15 @@ class LoginRequest extends FormRequest
      */
     public function rules(): array
     {
+        /*
+         * Accept any non-empty string so both an e-mail address and a
+         * mobile number pass framework-level validation.
+         * The actual email-vs-phone logic and the password requirement
+         * are handled inside AuthenticatedSessionController::store().
+         */
         return [
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
+            'email'    => ['required', 'string'],
+            'password' => ['nullable', 'string'],
         ];
     }
 

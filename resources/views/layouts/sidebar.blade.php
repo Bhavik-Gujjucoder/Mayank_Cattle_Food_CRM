@@ -221,12 +221,14 @@
                         /* ------------------------------------------------------------------ --}}
                         @canany(['add-supplier', 'edit-supplier', 'delete-supplier', 'add-broker', 'edit-broker',
                             'delete-broker', 'add-dealer', 'edit-dealer', 'delete-dealer', 'add-transporter',
-                            'edit-transporter', 'delete-transporter', 'add-user', 'edit-user', 'delete-user'])
+                            'edit-transporter', 'delete-transporter', 'add-truck', 'edit-truck', 'delete-truck', 'add-user',
+                            'edit-user', 'delete-user'])
                             <li class="submenu">
                                 <a href="javascript:void(0);"
                                     class="@if (request()->routeIs('users*') ||
                                             request()->routeIs('supplier*') ||
                                             request()->routeIs('dealer*') ||
+                                            request()->routeIs('truck*') ||
                                             request()->routeIs('roles*')) active subdrop @endif">
                                     <i class="ti ti-users"></i>
                                     <span>Users & Permissions</span>
@@ -235,6 +237,7 @@
                                 <ul style="display: @if (request()->routeIs('users*') ||
                                         request()->routeIs('supplier*') ||
                                         request()->routeIs('dealer*') ||
+                                        request()->routeIs('truck*') ||
                                         request()->routeIs('roles*')) block @else none @endif;">
 
                                     {{-- ------------------------------------------------------------------ */
@@ -263,6 +266,18 @@
                                 /* ------------------------------------------------------------------ --}}
                                     @canany(['add-transporter', 'edit-transporter', 'delete-transporter'])
                                         <li><a href="{{ route('users.index', 'transporter') }}">Transporter</a></li>
+                                    @endcanany
+
+                                    {{-- ------------------------------------------------------------------ */
+                                /*  Truck Management (type: truck-management)
+                                /* ------------------------------------------------------------------ --}}
+                                    @canany(['add-truck', 'edit-truck', 'delete-truck'])
+                                        <li>
+                                            <a href="{{ route('truck.index') }}"
+                                                class="{{ request()->routeIs('truck*') ? 'active' : '' }}">
+                                                Truck Management
+                                            </a>
+                                        </li>
                                     @endcanany
 
                                     {{-- ------------------------------------------------------------------ */
