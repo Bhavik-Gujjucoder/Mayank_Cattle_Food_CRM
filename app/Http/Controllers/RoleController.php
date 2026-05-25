@@ -96,10 +96,10 @@ class RoleController extends Controller
     {
         // auth()->user()->assignRole('super admin');
         $data['page_title']   = 'Edit Role & Permission';
-        $data['permissions'] = Permission::whereNull('deleted_at')->get()->groupBy('type');
+        $data['permissions']  = Permission::whereNull('deleted_at')->get()->groupBy('type');
         $data['dashboard_permissions']  = Permission::where('deleted_at', null)->where('is_dashboard', 1)->get()->all();
 
-        $data['role']  = $role;
+        $data['role'] = $role;
         return view('roles.edit', $data);
     }
 

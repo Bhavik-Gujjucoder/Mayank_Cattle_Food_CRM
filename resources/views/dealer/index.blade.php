@@ -181,9 +181,7 @@
     {{-- jquery.dataTables is already loaded by the main layout with Bootstrap5 integration.
          Loading it again from CDN here would wipe that integration and break Bootstrap pagination.
          Only the Buttons extension (for Excel export) is loaded here. --}}
-    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+    
     <script>
         $(document).ready(function() {
             $('.search-dropdown').select2({
