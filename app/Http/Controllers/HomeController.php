@@ -45,7 +45,6 @@ class HomeController extends Controller
 
             $data['soda_order'] = OrderManagement::where('broker_id', $loginUser->id)
                 ->latest()->take(5)->get();
-
         } elseif ($data['role'] === 'dealer') {
 
             /* dealer_id on order_management is dealer_management.id, not users.id.
@@ -53,11 +52,9 @@ class HomeController extends Controller
             $data['soda_order'] = OrderManagement::whereHas('dealer', function ($q) use ($loginUser) {
                 $q->where('user_id', $loginUser->id);
             })->latest()->take(5)->get();
-
         } else {
 
             $data['soda_order'] = OrderManagement::latest()->take(5)->get();
-
         }
 
         $data['total_dealers']    = $data['dealers']->count();
@@ -89,7 +86,7 @@ class HomeController extends Controller
             $data['dispatch_order'] = DispatchManagement::whereHas('order', function ($q) use ($loginUser) {
                 $q->where('broker_id', $loginUser->id);
             })->latest()->take(5)->get();
-
+            $data['total_dispatch_order'] = $data['dispatch_order']->count();
         } elseif ($data['role'] === 'dealer') {
 
             /* dealer_id on order_management is dealer_management.id, not users.id.
@@ -99,14 +96,13 @@ class HomeController extends Controller
                     $q2->where('user_id', $loginUser->id);
                 });
             })->latest()->take(5)->get();
-
+            $data['total_dispatch_order'] = $data['dispatch_order']->count();
         } else {
 
             $data['dispatch_order'] = DispatchManagement::latest()->take(5)->get();
-
         }
 
-        $data['total_dispatch_order'] = $data['role'] == 'broker' ? $data['dispatch_order']->where('broker_id', $data['login_user']->id)->count() : $data['dispatch_order']->count();
+        // $data['total_dispatch_order'] = $data['role'] == 'broker' ? $data['dispatch_order']->where('broker_id', $data['login_user']->id)->count() : $data['dispatch_order']->count();
 
 
         return view('dashboard', $data);
