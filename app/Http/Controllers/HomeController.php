@@ -100,6 +100,7 @@ class HomeController extends Controller
         } else {
 
             $data['dispatch_order'] = DispatchManagement::latest()->take(5)->get();
+            $data['total_dispatch_order'] = $data['dispatch_order']->count();
         }
 
         // $data['total_dispatch_order'] = $data['role'] == 'broker' ? $data['dispatch_order']->where('broker_id', $data['login_user']->id)->count() : $data['dispatch_order']->count();
