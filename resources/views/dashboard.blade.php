@@ -187,33 +187,37 @@
                     <a href="{{ route('order.index') }}" class="btn btn-light btn-md mb-2">View All</a>
                 </div>
                 <div class="card-body pb-2">
-                    @foreach ($soda_order->sortByDesc('created_at')->take(5) as $order)
-                        <div class="d-flex justify-content-between flex-wrap dashboard-card">
-                            <div class="d-flex align-items-center mb-2">
-                                {{-- <a href="#" class="avatar avatar-sm border flex-shrink-0" target="_blank">
-                                    <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
-                                        class="img-thumbnail mb-2">
-                                </a> --}}
-                                <div class="ms-2 flex-fill">
-                                    <h6 class="fs-medium text-truncate mb-1">
-                                        <a href="{{ route('order.edit', $order->id) }}">
-                                            {{ $order->dealer->user->name ?? '—' }}
-                                        </a>
-                                    </h6>
-                                    <p class="fs-13 d-inline-flex align-items-center">
-                                        <a href="{{ route('order.edit', $order->id) }}">
-                                            <spa class="text-info">{{ $order->unique_order_id ?? '—' }}</spa>
-                                        </a>
-                                        <i class="ti ti-circle-filled fs-4 text-primary mx-1"></i>
-                                        {{ $order->order_date->format('d M Y') }}
-                                    </p>
+                    @if ($soda_order->isEmpty())
+                        <p class="text-muted center">No recent soda orders found.</p>
+                    @else
+                        @foreach ($soda_order->sortByDesc('created_at')->take(5) as $order)
+                            <div class="d-flex justify-content-between flex-wrap dashboard-card">
+                                <div class="d-flex align-items-center mb-2">
+                                    {{-- <a href="#" class="avatar avatar-sm border flex-shrink-0" target="_blank">
+                                        <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
+                                            class="img-thumbnail mb-2">
+                                    </a> --}}
+                                    <div class="ms-2 flex-fill">
+                                        <h6 class="fs-medium text-truncate mb-1">
+                                            <a href="{{ route('order.edit', $order->id) }}">
+                                                {{ $order->dealer->user->name ?? '—' }}
+                                            </a>
+                                        </h6>
+                                        <p class="fs-13 d-inline-flex align-items-center">
+                                            <a href="{{ route('order.edit', $order->id) }}">
+                                                <spa class="text-info">{{ $order->unique_order_id ?? '—' }}</spa>
+                                            </a>
+                                            <i class="ti ti-circle-filled fs-4 text-primary mx-1"></i>
+                                            {{ $order->order_date->format('d M Y') }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="text-sm-end mb-2">
+                                    <h6 class="mb-1">{{-- $order->totalAmount() --}}</h6>
                                 </div>
                             </div>
-                            <div class="text-sm-end mb-2">
-                                <h6 class="mb-1">{{-- $order->totalAmount() --}}</h6>
-                            </div>
-                        </div>
-                    @endforeach
+                        @endforeach
+                    @endif
                 </div>
             </div>
         </div>
@@ -228,7 +232,9 @@
                     <a href="{{ route('dispatch.index') }}" class="btn btn-light btn-md mb-2">View All</a>
                 </div>
                 <div class="card-body pb-2">
-                    <div>
+                    @if ($dispatch_order->isEmpty())
+                        <p class="text-muted center">No recent dispatch requests found.</p>
+                    @else
                         <div>
                             @foreach ($dispatch_order->sortByDesc('created_at')->take(5) as $dispatch_order)
                                 <div class="d-flex justify-content-between flex-wrap dashboard-card">
@@ -261,14 +267,15 @@
                                 </div>
                             @endforeach
                         </div>
-                    </div>
+                    @endif
                 </div>
             </div>
         </div>
-    @endcan
+    </div>
+@endcan
 
-    <!------------ Recent Broker ----------------->
-    {{-- @can('recent-broker')
+<!------------ Recent Broker ----------------->
+{{-- @can('recent-broker')
         <div class="col-xxl-4 col-xl-6 d-flex">
             <div class="card flex-fill recent-cards">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
@@ -309,8 +316,8 @@
         </div>
     @endcan --}}
 
-    <!------------ Recent Transporter ------------>
-    {{-- @can('recent-transporter')
+<!------------ Recent Transporter ------------>
+{{-- @can('recent-transporter')
         <div class="col-xxl-4 col-xl-6 d-flex">
             <div class="card flex-fill recent-cards">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">

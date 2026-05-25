@@ -229,7 +229,8 @@
                                             request()->routeIs('supplier*') ||
                                             request()->routeIs('dealer*') ||
                                             request()->routeIs('truck*') ||
-                                            request()->routeIs('roles*')) active subdrop @endif">
+                                            request()->routeIs('roles*')) active  
+                                            subdrop @endif">
                                     <i class="ti ti-users"></i>
                                     <span>Users & Permissions</span>
                                     <span class="menu-arrow"></span>
@@ -273,8 +274,8 @@
                                 /* ------------------------------------------------------------------ --}}
                                     @canany(['add-truck', 'edit-truck', 'delete-truck'])
                                         <li>
-                                            <a href="{{ route('truck.index') }}"
-                                                class="{{ request()->routeIs('truck*') ? 'active' : '' }}">
+                                            <a href="{{ route('truck.index') }}">
+                                                {{-- class="{{ request()->routeIs('truck*') ? 'active' : '' }}"> --}}
                                                 Truck Management
                                             </a>
                                         </li>
