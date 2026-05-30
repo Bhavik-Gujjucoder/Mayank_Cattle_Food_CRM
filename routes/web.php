@@ -12,7 +12,8 @@ use App\Http\Controllers\OtpController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RawMaterialController;
-use App\Http\Controllers\RawMaterialPurchaseController;
+use App\Http\Controllers\RawMaterialOrderController;
+use App\Http\Controllers\RawMaterialReceiveController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StateManagementController;
 use App\Http\Controllers\SupplierController;
@@ -174,8 +175,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     /* ------------------------------------------------------------------ */
-    /*  Raw Material Inventory  (type: raw-material-inventory)             */
+    /*  Raw Material Module                                                 */
     /* ------------------------------------------------------------------ */
+    Route::get('raw-material/export', [RawMaterialController::class, 'export'])
+        ->name('raw-material.export');
     Route::resource('raw-material', RawMaterialController::class)->except(['store', 'update', 'destroy']);
     Route::post('raw-material', [RawMaterialController::class, 'store'])
         ->name('raw-material.store')->middleware('permission:add-raw-material-inventory');
@@ -183,8 +186,48 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('raw-material.update')->middleware('permission:edit-raw-material-inventory');
     Route::delete('raw-material/{raw_material}', [RawMaterialController::class, 'destroy'])
         ->name('raw-material.destroy')->middleware('permission:delete-raw-material-inventory');
-    Route::post('/raw-material/bulk-delete', [RawMaterialController::class, 'bulkDelete'])
-        ->name('raw-material.bulkDelete')->middleware('permission:delete-raw-material-inventory');
+    Route::patch('raw-material/{raw_material}/toggle-status', [RawMaterialController::class, 'toggleStatus'])
+        ->name('raw-material.toggleStatus')->middleware('permission:edit-raw-material-inventory');
+
+    Route::get('raw-material-order/export', [RawMaterialOrderController::class, 'export'])
+        ->name('raw-material-order.export');
+    Route::get('raw-material-order/export-pdf-list', [RawMaterialOrderController::class, 'exportListPdf'])
+        ->name('raw-material-order.export-list-pdf');
+    Route::get('raw-material-order/export-full', [RawMaterialOrderController::class, 'exportFull'])
+        ->name('raw-material-order.export-full');
+    Route::get('raw-material-order/export-full-pdf', [RawMaterialOrderController::class, 'exportFullPdf'])
+        ->name('raw-material-order.export-full-pdf');
+    Route::get('raw-material-order/{raw_material_order}/export-excel', [RawMaterialOrderController::class, 'exportOrderExcel'])
+        ->name('raw-material-order.export-order-excel');
+    Route::get('raw-material-order/{raw_material_order}/export-order-pdf', [RawMaterialOrderController::class, 'exportOrderPdf'])
+        ->name('raw-material-order.export-order-pdf');
+    Route::get('raw-material-order/{raw_material_order}/export-pdf', [RawMaterialOrderController::class, 'exportPdf'])
+        ->name('raw-material-order.exportPdf');
+    Route::get('raw-material-order/{raw_material_order}/items', [RawMaterialOrderController::class, 'orderItems'])
+        ->name('raw-material-order.items');
+    Route::patch('raw-material-order/{raw_material_order}/cancel', [RawMaterialOrderController::class, 'cancel'])
+        ->name('raw-material-order.cancel')->middleware('permission:edit-raw-material-purchas-order');
+    Route::resource('raw-material-order', RawMaterialOrderController::class)->except(['store', 'update', 'destroy']);
+    Route::post('raw-material-order', [RawMaterialOrderController::class, 'store'])
+        ->name('raw-material-order.store')->middleware('permission:add-raw-material-purchas-order');
+    Route::match(['put', 'patch'], 'raw-material-order/{raw_material_order}', [RawMaterialOrderController::class, 'update'])
+        ->name('raw-material-order.update')->middleware('permission:edit-raw-material-purchas-order');
+    Route::delete('raw-material-order/{raw_material_order}', [RawMaterialOrderController::class, 'destroy'])
+        ->name('raw-material-order.destroy')->middleware('permission:delete-raw-material-purchas-order');
+
+    Route::get('raw-material-receive/export', [RawMaterialReceiveController::class, 'export'])
+        ->name('raw-material-receive.export');
+    Route::patch('raw-material-receive/{raw_material_receive}/mark-received', [RawMaterialReceiveController::class, 'markReceived'])
+        ->name('raw-material-receive.markReceived')->middleware('permission:edit-raw-material-purchas-order');
+    Route::patch('raw-material-receive/{raw_material_receive}/cancel', [RawMaterialReceiveController::class, 'cancel'])
+        ->name('raw-material-receive.cancel')->middleware('permission:edit-raw-material-purchas-order');
+    Route::resource('raw-material-receive', RawMaterialReceiveController::class)->except(['store', 'update', 'destroy']);
+    Route::post('raw-material-receive', [RawMaterialReceiveController::class, 'store'])
+        ->name('raw-material-receive.store')->middleware('permission:add-raw-material-purchas-order');
+    Route::match(['put', 'patch'], 'raw-material-receive/{raw_material_receive}', [RawMaterialReceiveController::class, 'update'])
+        ->name('raw-material-receive.update')->middleware('permission:edit-raw-material-purchas-order');
+    Route::delete('raw-material-receive/{raw_material_receive}', [RawMaterialReceiveController::class, 'destroy'])
+        ->name('raw-material-receive.destroy')->middleware('permission:delete-raw-material-purchas-order');
 
 
     /* ------------------------------------------------------------------ */
@@ -214,17 +257,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/truck/bulk-delete', [TruckManagementController::class, 'bulkDelete'])
         ->name('truck.bulkDelete')->middleware('permission:delete-truck');
 
-
-    /* ------------------------------------------------------------------ */
-    /*  Raw Material Purchase Order  (type: raw-material-purchas-order)    */
-    /* ------------------------------------------------------------------ */
-    Route::resource('raw-material-order', RawMaterialPurchaseController::class)->except(['store', 'update', 'destroy']);
-    Route::post('raw-material-order', [RawMaterialPurchaseController::class, 'store'])
-        ->name('raw-material-order.store')->middleware('permission:add-raw-material-purchas-order');
-    Route::match(['put', 'patch'], 'raw-material-order/{raw_material_order}', [RawMaterialPurchaseController::class, 'update'])
-        ->name('raw-material-order.update')->middleware('permission:edit-raw-material-purchas-order');
-    Route::delete('raw-material-order/{raw_material_order}', [RawMaterialPurchaseController::class, 'destroy'])
-        ->name('raw-material-order.destroy')->middleware('permission:delete-raw-material-purchas-order');
 
 
     /* ------------------------------------------------------------------ */

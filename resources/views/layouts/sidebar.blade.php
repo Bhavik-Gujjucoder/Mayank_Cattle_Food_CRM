@@ -71,35 +71,35 @@
                             'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'])
                             <li class="submenu">
                                 <a href="javascript:void(0);"
-                                    class="@if (request()->routeIs('raw-material*') || request()->routeIs('raw-material-order*')) active subdrop @endif">
+                                    class="@if (request()->routeIs('raw-material*') || request()->routeIs('raw-material-order*') || request()->routeIs('raw-material-receive*')) active subdrop @endif">
                                     <i class="ti ti-package"></i>
                                     <span>Raw Material</span>
                                     <span class="menu-arrow"></span>
                                 </a>
-                                <ul style="display: @if (request()->routeIs('raw-material*') || request()->routeIs('raw-material-order*')) block @else none @endif;">
+                                <ul style="display: @if (request()->routeIs('raw-material*') || request()->routeIs('raw-material-order*') || request()->routeIs('raw-material-receive*')) block @else none @endif;">
 
-                                    {{-- ------------------------------------------------------------------ */
-                                    /*  Raw Material Inventory
-                                    /* ------------------------------------------------------------------ --}}
                                     @canany(['add-raw-material-inventory', 'edit-raw-material-inventory',
                                         'delete-raw-material-inventory'])
                                         <li>
                                             <a href="{{ route('raw-material.index') }}"
-                                                class="@if (request()->routeIs('raw-material*')) active @endif">
-                                                <span>Inventory</span>
+                                                class="@if (request()->routeIs('raw-material*') && !request()->routeIs('raw-material-order*') && !request()->routeIs('raw-material-receive*')) active @endif">
+                                                <span>Material</span>
                                             </a>
                                         </li>
                                     @endcanany
 
-                                    {{-- ------------------------------------------------------------------ */
-                                    /*  Raw Material Purchase Order
-                                    /* ------------------------------------------------------------------ --}}
                                     @canany(['add-raw-material-purchas-order', 'edit-raw-material-purchas-order',
                                         'delete-raw-material-purchas-order'])
                                         <li>
                                             <a href="{{ route('raw-material-order.index') }}"
                                                 class="@if (request()->routeIs('raw-material-order*')) active @endif">
-                                                <span>Purchase Order</span>
+                                                <span>Orders</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ route('raw-material-receive.index') }}"
+                                                class="@if (request()->routeIs('raw-material-receive*')) active @endif">
+                                                <span>Received</span>
                                             </a>
                                         </li>
                                     @endcanany

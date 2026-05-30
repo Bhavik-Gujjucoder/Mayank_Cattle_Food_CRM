@@ -10,14 +10,15 @@ return new class extends Migration
     {
         Schema::create('raw_materials', function (Blueprint $table) {
             $table->id();
+            $table->string('raw_material_unique_id', 20)->unique();
             $table->string('name')->index();
-            $table->string('unit');
+            $table->string('unit', 50);
             $table->decimal('total_stock', 12, 2)->default(0);
             $table->decimal('available_stock', 12, 2)->default(0);
             $table->decimal('used_stock', 12, 2)->default(0);
             $table->decimal('last_purchase_price', 12, 2)->default(0);
             $table->decimal('average_price', 12, 2)->default(0);
-            $table->tinyInteger('status')->default(1);
+            $table->tinyInteger('status')->default(1)->comment('1=active,0=inactive');
             $table->timestamps();
             $table->softDeletes();
         });
