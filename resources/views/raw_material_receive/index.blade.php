@@ -59,12 +59,12 @@
             <div class="cls-form-right">
                 <div class="comm-header-right-btn">
                     @canany(['add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'])
-                        <a href="#" id="exportBtn" class="btn btn-outline-primary me-2" data-export-url="{{ route('raw-material-receive.export') }}">
+                        <a href="#" id="exportBtn" class="btn btn-outline-primary me-2" data-export-url="{{ route('raw-material.receive.export') }}">
                             <i class="ti ti-file-export me-2"></i>Export (0)
                         </a>
                     @endcanany
                     @can('add-raw-material-purchas-order')
-                        <a href="{{ route('raw-material-receive.create') }}" class="btn btn-primary">
+                        <a href="{{ route('raw-material.receive.create') }}" class="btn btn-primary">
                             <i class="ti ti-square-rounded-plus me-2"></i>Add Received Entry
                         </a>
                     @endcan
@@ -127,7 +127,7 @@ $(document).ready(function () {
         dom: 'lrtip',
         order: [[0, 'desc']],
         ajax: {
-            url: "{{ route('raw-material-receive.index') }}",
+            url: "{{ route('raw-material.receive.index') }}",
             data: function (d) {
                 d.status = $('#statusFilter').val();
                 d.raw_material_id = $('#materialFilter').val();

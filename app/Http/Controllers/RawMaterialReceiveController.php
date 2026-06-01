@@ -40,16 +40,16 @@ class RawMaterialReceiveController extends Controller
                 ->editColumn('received_date', fn ($row) => $row->received_date?->format('d M Y') ?? '—')
                 ->editColumn('status', fn ($row) => $row->statusBadge())
                 ->addColumn('action', function ($row) {
-                    $view   = '<a href="' . route('raw-material-receive.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>';
+                    $view   = '<a href="' . route('raw-material.receive.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>';
                     $edit   = ($row->isEditable() && auth()->user()->can('edit-raw-material-purchas-order'))
-                        ? '<a href="' . route('raw-material-receive.edit', $row->id) . '" class="dropdown-item"><i class="ti ti-edit text-warning"></i> Edit</a>' : '';
+                        ? '<a href="' . route('raw-material.receive.edit', $row->id) . '" class="dropdown-item"><i class="ti ti-edit text-warning"></i> Edit</a>' : '';
                     $mark   = ($row->isEditable() && auth()->user()->can('edit-raw-material-purchas-order'))
-                        ? '<a href="javascript:void(0)" class="dropdown-item mark-received-btn" data-url="' . route('raw-material-receive.markReceived', $row->id) . '"><i class="ti ti-check text-success"></i> Mark Received</a>' : '';
+                        ? '<a href="javascript:void(0)" class="dropdown-item mark-received-btn" data-url="' . route('raw-material.receive.markReceived', $row->id) . '"><i class="ti ti-check text-success"></i> Mark Received</a>' : '';
                     $cancel = ($row->isEditable() && auth()->user()->can('edit-raw-material-purchas-order'))
-                        ? '<a href="javascript:void(0)" class="dropdown-item cancel-receive-btn" data-url="' . route('raw-material-receive.cancel', $row->id) . '"><i class="ti ti-ban text-danger"></i> Cancel</a>' : '';
+                        ? '<a href="javascript:void(0)" class="dropdown-item cancel-receive-btn" data-url="' . route('raw-material.receive.cancel', $row->id) . '"><i class="ti ti-ban text-danger"></i> Cancel</a>' : '';
                     $delete = auth()->user()->can('delete-raw-material-purchas-order')
                         ? '<a href="javascript:void(0)" class="dropdown-item delete-btn" data-id="' . $row->id . '"><i class="ti ti-trash text-danger"></i> Delete</a>
-                           <form action="' . route('raw-material-receive.destroy', $row->id) . '" method="POST" class="delete-form" id="delete-form-' . $row->id . '">' . csrf_field() . method_field('DELETE') . '</form>' : '';
+                           <form action="' . route('raw-material.receive.destroy', $row->id) . '" method="POST" class="delete-form" id="delete-form-' . $row->id . '">' . csrf_field() . method_field('DELETE') . '</form>' : '';
 
                     return '<div class="dropdown table-action"><a href="#" class="action-icon" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right">' . $view . $edit . $mark . $cancel . $delete . '</div></div>';
                 })
@@ -83,7 +83,7 @@ class RawMaterialReceiveController extends Controller
             'status'                     => $request->status,
         ]);
 
-        return redirect()->route('raw-material-receive.index')->with('success', 'Receive entry created successfully.');
+        return redirect()->route('raw-material.receive.index')->with('success', 'Receive entry created successfully.');
     }
 
     public function show(RawMaterialReceive $raw_material_receive)
@@ -97,7 +97,7 @@ class RawMaterialReceiveController extends Controller
     public function edit(RawMaterialReceive $raw_material_receive)
     {
         if (! $raw_material_receive->isEditable()) {
-            return redirect()->route('raw-material-receive.show', $raw_material_receive)
+            return redirect()->route('raw-material.receive.show', $raw_material_receive)
                 ->with('error', 'Only on-road entries can be edited.');
         }
 
@@ -115,7 +115,7 @@ class RawMaterialReceiveController extends Controller
     public function update(UpdateRawMaterialReceiveRequest $request, RawMaterialReceive $raw_material_receive)
     {
         if (! $raw_material_receive->isEditable()) {
-            return redirect()->route('raw-material-receive.index')->with('error', 'Only on-road entries can be edited.');
+            return redirect()->route('raw-material.receive.index')->with('error', 'Only on-road entries can be edited.');
         }
 
         $item = RawMaterialOrderItem::findOrFail($request->raw_material_order_item_id);
@@ -129,19 +129,19 @@ class RawMaterialReceiveController extends Controller
             'received_date'              => $request->received_date,
         ]);
 
-        return redirect()->route('raw-material-receive.index')->with('success', 'Receive entry updated successfully.');
+        return redirect()->route('raw-material.receive.index')->with('success', 'Receive entry updated successfully.');
     }
 
     public function destroy(RawMaterialReceive $raw_material_receive)
     {
         if ((int) $raw_material_receive->status === 1) {
-            return redirect()->route('raw-material-receive.index')
+            return redirect()->route('raw-material.receive.index')
                 ->with('error', 'Cannot delete — entry is already received.');
         }
 
         $raw_material_receive->delete();
 
-        return redirect()->route('raw-material-receive.index')->with('success', 'Receive entry deleted successfully.');
+        return redirect()->route('raw-material.receive.index')->with('success', 'Receive entry deleted successfully.');
     }
 
     public function markReceived(RawMaterialReceive $raw_material_receive)

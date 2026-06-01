@@ -6,7 +6,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form action="{{ route('raw-material-receive.update', $receive->id) }}" method="POST" id="receiveForm">
+        <form action="{{ route('raw-material.receive.update', $receive->id) }}" method="POST" id="receiveForm">
             @csrf
             @method('PUT')
             <p class="form-section-title"><i class="ti ti-truck-delivery me-1"></i>Received Entry</p>
@@ -85,7 +85,7 @@
                 </div>
             </div>
             <div class="d-flex align-items-center justify-content-end gap-2 mt-3">
-                <a href="{{ route('raw-material-receive.index') }}" class="btn btn-light px-4">Cancel</a>
+                <a href="{{ route('raw-material.receive.index') }}" class="btn btn-light px-4">Cancel</a>
                 <button type="submit" class="btn btn-primary px-5">Update Entry</button>
             </div>
         </form>
@@ -117,7 +117,7 @@ $(document).ready(function () {
     function loadOrderItems(orderId, selectedItemId) {
         if (!orderId) return;
 
-        $.get("{{ route('raw-material-order.items', '__ORDER__') }}".replace('__ORDER__', orderId), function (items) {
+        $.get("{{ route('raw-material.order.items', '__ORDER__') }}".replace('__ORDER__', orderId), function (items) {
             var $itemSelect = $('#raw_material_order_item_id');
             var currentVal = selectedItemId || $itemSelect.val();
             $itemSelect.empty().append('<option value="">-- Select Order Item --</option>');

@@ -79,7 +79,7 @@
                             <td>{{ $index + 1 }}</td>
                             <td>
                                 @if ($item->order)
-                                    <a href="{{ route('raw-material-order.show', $item->order->id) }}">
+                                    <a href="{{ route('raw-material.order.show', $item->order->id) }}">
                                         {{ $item->order->order_unique_id }}
                                     </a>
                                 @else

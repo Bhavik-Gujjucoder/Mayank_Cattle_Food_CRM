@@ -13,6 +13,35 @@
                             <input type="text" class="form-control" id="customSearch" placeholder="Search">
                         </div>
                     </div>
+
+                    {{-- Status filter --}}
+                    <div class="common-hed-form cls-form-select-input">
+                        <label class="col-form-label">Status</label>
+                        <select class="form-select select search-dropdown" id="filterStatus">
+                            <option value="all">All</option>
+                            <option value="1">Active</option>
+                            <option value="0">Inactive</option>
+                        </select>
+                    </div>
+
+                    {{-- State filter --}}
+                    <div class="common-hed-form cls-form-select-input">
+                        <label class="col-form-label">State</label>
+                        <select class="form-select select search-dropdown" id="filterState">
+                            <option value="all">All States</option>
+                            @foreach ($states as $state)
+                                <option value="{{ $state->id }}">{{ $state->state_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- City filter --}}
+                    <div class="common-hed-form cls-form-select-input">
+                        <label class="col-form-label">City</label>
+                        <select class="form-select select search-dropdown" id="filterCity" disabled>
+                            <option value="all">All Cities</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="cls-form-right">
                     <div class="comm-header-right-btn">
@@ -63,6 +92,7 @@
                             <th>Mobile</th>
                             <th>Email</th>
                             <th>Address</th>
+                            <th>City</th>
                             <th>Opening Balance</th>
                             <th>Status</th>
                             @canany(['edit-supplier', 'delete-supplier'])
@@ -134,6 +164,27 @@
                                 <span class="address_error text-danger small"></span>
                             </div>
 
+                            {{-- State --}}
+                            <div class="col-md-6 mb-3">
+                                <label class="col-form-label">State <span class="text-dangers">*</span></label>
+                                <select name="state_id" id="supplier_state_id" class="form-select">
+                                    <option value="">-- Select State --</option>
+                                    @foreach ($states as $state)
+                                        <option value="{{ $state->id }}">{{ $state->state_name }}</option>
+                                    @endforeach
+                                </select>
+                                <span class="state_id_error text-danger small"></span>
+                            </div>
+
+                            {{-- City --}}
+                            <div class="col-md-6 mb-3">
+                                <label class="col-form-label">City <span class="text-dangers">*</span></label>
+                                <select name="city_id" id="supplier_city_id" class="form-select" disabled>
+                                    <option value="">-- Select City --</option>
+                                </select>
+                                <span class="city_id_error text-danger small"></span>
+                            </div>
+
                             {{-- Status --}}
                             <div class="col-md-12 mb-3">
                                 <label class="col-form-label">Status <span class="text-danger">*</span></label>
@@ -181,7 +232,14 @@
             order: [
                 [0, 'desc']
             ],
-            ajax: "{{ route('supplier.index') }}",
+            ajax: {
+                url: "{{ route('supplier.index') }}",
+                data: function(d) {
+                    d.status = $('#filterStatus').val();
+                    d.state_id = $('#filterState').val();
+                    d.city_id = $('#filterCity').val();
+                }
+            },
             columns: [{
                     data: 'id',
                     name: 'id',
@@ -219,6 +277,11 @@
                     orderable: false
                 },
                 {
+                    data: 'city_name',
+                    name: 'city_name',
+                    orderable: false
+                },
+                {
                     data: 'opening_balance',
                     name: 'opening_balance'
                 },
@@ -241,6 +304,84 @@
             supplier_table.search(this.value).draw();
         });
 
+        /* Filter change handlers */
+        $('#filterStatus, #filterCity').on('change', function() {
+            supplier_table.draw();
+        });
+
+        function loadSupplierCities(stateId, selectedCityId) {
+            $('#supplier_city_id').html('<option value="">Loading...</option>');
+
+            if (!stateId) {
+                $('#supplier_city_id').prop('disabled', true)
+                    .html('<option value="">-- Select City --</option>');
+                return;
+            }
+
+            $.ajax({
+                url: "{{ route('get.cities') }}",
+                type: 'POST',
+                data: {
+                    state_id: stateId,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(cities) {
+                    $('#supplier_city_id').empty().prop('disabled', false)
+                        .append('<option value="">-- Select City --</option>');
+                    $.each(cities, function(key, city) {
+                        let selected = (selectedCityId == city.id) ? 'selected' : '';
+                        $('#supplier_city_id').append(
+                            '<option value="' + city.id + '" ' + selected + '>' + city.city_name + '</option>'
+                        );
+                    });
+                }
+            });
+        }
+
+        function loadFilterCities(stateId, selectedCityId) {
+            $('#filterCity').html('<option value="all">Loading...</option>');
+
+            if (!stateId || stateId === 'all') {
+                $('#filterCity').prop('disabled', true)
+                    .html('<option value="all">All Cities</option>');
+                return;
+            }
+
+            $.ajax({
+                url: "{{ route('get.cities') }}",
+                type: 'POST',
+                data: {
+                    state_id: stateId,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(cities) {
+                    $('#filterCity').empty().prop('disabled', false)
+                        .append('<option value="all">All Cities</option>');
+                    $.each(cities, function(key, city) {
+                        let selected = (selectedCityId == city.id) ? 'selected' : '';
+                        $('#filterCity').append(
+                            '<option value="' + city.id + '" ' + selected + '>' + city.city_name + '</option>'
+                        );
+                    });
+                }
+            });
+        }
+
+        $('#supplier_state_id').on('change', function() {
+            loadSupplierCities($(this).val(), null);
+        });
+
+        $('#filterState').on('change', function() {
+            loadFilterCities($(this).val(), null);
+            supplier_table.draw();
+        });
+
+        function resetSupplierLocationFields() {
+            $('#supplier_state_id').val('');
+            $('#supplier_city_id').prop('disabled', true)
+                .html('<option value="">-- Select City --</option>');
+        }
+
         /* ── Open modal for Add ────────────────────────────────────────────── */
         $('#openSupplierModal').on('click', function() {
             $('#supplierForm')[0].reset();
@@ -249,6 +390,7 @@
             $('#supplierSubmitBtn').text('Save');
             clearSupplierErrors();
             $('input[name="status"][value="1"]').prop('checked', true);
+            resetSupplierLocationFields();
             $('#supplierModal').modal('show');
         });
 
@@ -267,6 +409,10 @@
                 $('textarea[name="address"]').val(data.address);
                 $('input[name="opening_balance"]').val(data.opening_balance);
                 $('input[name="status"][value="' + data.status + '"]').prop('checked', true);
+
+                $('#supplier_state_id').val(data.state_id);
+                loadSupplierCities(data.state_id, data.city_id);
+
                 $('#supplierModal').modal('show');
             });
         });

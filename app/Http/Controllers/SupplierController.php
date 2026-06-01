@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CityManagement;
+use App\Models\StateManagement;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Yajra\DataTables\DataTables;
 
 class SupplierController extends Controller
@@ -14,8 +18,23 @@ class SupplierController extends Controller
     public function index(Request $request)
     {
         $data['page_title'] = 'Supplier Management';
+        $data['states']     = StateManagement::where('status', 1)->orderBy('state_name')->get();
+
         if ($request->ajax()) {
-            $query = Supplier::query();
+            $query = Supplier::with(['city', 'state']);
+
+            if ($request->filled('status') && $request->status !== 'all') {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('state_id') && $request->state_id !== 'all') {
+                $query->where('state_id', $request->state_id);
+            }
+
+            if ($request->filled('city_id') && $request->city_id !== 'all') {
+                $query->where('city_id', $request->city_id);
+            }
+
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('checkbox', function ($row) {
@@ -49,18 +68,25 @@ class SupplierController extends Controller
                                 '</div>
                             </div>';
                 })
-                ->editColumn('mobile', fn($row) => $row->mobile ?? '-')
-                ->editColumn('email', fn($row) => $row->email ?? '-')
+                ->addColumn('city_name', fn ($row) => e($row->city?->city_name ?? '—'))
+                ->editColumn('mobile', fn ($row) => $row->mobile ?? '-')
+                ->editColumn('email', fn ($row) => $row->email ?? '-')
                 ->editColumn('address', function ($row) {
                     return $row->address
                         ? '<span title="' . e($row->address) . '">' . e(\Str::limit($row->address, 40)) . '</span>'
                         : '-';
                 })
-                ->editColumn('opening_balance', fn($row) => '₹ ' . number_format($row->opening_balance, 2))
-                ->editColumn('status', fn($row) => $row->statusBadge())
+                ->editColumn('opening_balance', fn ($row) => '₹ ' . number_format($row->opening_balance, 2))
+                ->editColumn('status', fn ($row) => $row->statusBadge())
+                ->filterColumn('city_name', function ($query, $keyword) {
+                    $query->whereHas('city', function ($q) use ($keyword) {
+                        $q->where('city_name', 'like', "%{$keyword}%");
+                    });
+                })
                 ->rawColumns(['checkbox', 'address', 'opening_balance', 'status', 'action'])
                 ->make(true);
         }
+
         return view('supplier.index', $data);
     }
 
@@ -69,26 +95,16 @@ class SupplierController extends Controller
     /* ------------------------------------------------------------------ */
     public function store(Request $request)
     {
-        $request->validate([
-            'name'            => 'required|string|max:255',
-            'mobile'          => 'required|string|max:20',
-            'email'           => 'required|email|unique:suppliers,email,NULL,id,deleted_at,NULL',
-            'address'         => 'required|string',
-            'opening_balance' => 'nullable|numeric|min:0',
-            'status'          => 'required|in:0,1',
-        ], [
-            'name.required'  => 'Supplier name is required.',
-            'email.email'    => 'Please enter a valid email address.',
-            'status.required'=> 'Status is required.',
-        ]);
+        $validated = $request->validate(
+            $this->validationRules(),
+            $this->validationMessages()
+        );
+
+        $this->validateCityBelongsToState($request);
 
         Supplier::create([
-            'name'            => $request->name,
-            'mobile'          => $request->mobile ?: null,
-            'email'           => $request->email ?: null,
-            'address'         => $request->address ?: null,
-            'opening_balance' => $request->opening_balance ?? 0,
-            'status'          => $request->status,
+            ...$validated,
+            'opening_balance' => $validated['opening_balance'] ?? 0,
         ]);
 
         return response()->json(['success' => true, 'message' => 'Supplier created successfully.']);
@@ -99,7 +115,7 @@ class SupplierController extends Controller
     /* ------------------------------------------------------------------ */
     public function edit(Supplier $supplier)
     {
-        return response()->json($supplier);
+        return response()->json($supplier->load(['state', 'city']));
     }
 
     /* ------------------------------------------------------------------ */
@@ -107,30 +123,16 @@ class SupplierController extends Controller
     /* ------------------------------------------------------------------ */
     public function update(Request $request, Supplier $supplier)
     {
-        $request->validate([
-            'name'            => 'required|string|max:255',
-            'mobile'          => 'required|string|max:20',
-            'email'           => 'required|email|unique:suppliers,email,' . $supplier->id . ',id,deleted_at,NULL',
-            'address'         => 'required|string',
-            'opening_balance' => 'nullable|numeric|min:0',
-            'status'          => 'required|in:0,1',
-        ], [
-            'name.required'  => 'Supplier name is required.',
-            'mobile.required'=> 'Mobile number is required.',
-            'email.required' => 'Email address is required.',
-            'email.email'    => 'Please enter a valid email address.',
-            'email.unique'   => 'Email address already exists.',
-            'address.required'=> 'Address is required.',
-            'status.required'=> 'Status is required.',
-        ]);
+        $validated = $request->validate(
+            $this->validationRules($supplier->id),
+            $this->validationMessages()
+        );
+
+        $this->validateCityBelongsToState($request);
 
         $supplier->update([
-            'name'            => $request->name,
-            'mobile'          => $request->mobile ?: null,
-            'email'           => $request->email ?: null,
-            'address'         => $request->address ?: null,
-            'opening_balance' => $request->opening_balance ?? 0,
-            'status'          => $request->status,
+            ...$validated,
+            'opening_balance' => $validated['opening_balance'] ?? 0,
         ]);
 
         return response()->json(['success' => true, 'message' => 'Supplier updated successfully.']);
@@ -153,11 +155,62 @@ class SupplierController extends Controller
     {
         $ids = $request->ids;
 
-        if (!empty($ids)) {
+        if (! empty($ids)) {
             Supplier::whereIn('id', $ids)->delete();
+
             return response()->json(['message' => 'Selected suppliers deleted successfully.']);
         }
 
         return response()->json(['message' => 'No records selected.'], 400);
+    }
+
+    private function validationRules(?int $supplierId = null): array
+    {
+        return [
+            'name'            => 'required|string|max:255',
+            'mobile'          => 'required|string|max:20',
+            'email'           => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('suppliers', 'email')->ignore($supplierId)->whereNull('deleted_at'),
+            ],
+            'address'         => 'required|string',
+            'opening_balance' => 'nullable|numeric|min:0',
+            'state_id'        => 'required|exists:state_management,id',
+            'city_id'         => 'required|exists:city_management,id',
+            'status'          => 'required|in:0,1',
+        ];
+    }
+
+    private function validateCityBelongsToState(Request $request): void
+    {
+        $valid = CityManagement::where('id', $request->city_id)
+            ->where('state_id', $request->state_id)
+            ->where('status', 1)
+            ->exists();
+
+        if (! $valid) {
+            throw ValidationException::withMessages([
+                'city_id' => 'Selected city does not belong to the selected state.',
+            ]);
+        }
+    }
+
+    private function validationMessages(): array
+    {
+        return [
+            'name.required'     => 'Supplier name is required.',
+            'mobile.required'   => 'Mobile number is required.',
+            'email.required'    => 'Email address is required.',
+            'email.email'       => 'Please enter a valid email address.',
+            'email.unique'      => 'Email address already exists.',
+            'address.required'  => 'Address is required.',
+            'state_id.required' => 'State is required.',
+            'state_id.exists'   => 'Selected state is invalid.',
+            'city_id.required'  => 'City is required.',
+            'city_id.exists'    => 'Selected city is invalid.',
+            'status.required'   => 'Status is required.',
+        ];
     }
 }

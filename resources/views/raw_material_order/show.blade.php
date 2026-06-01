@@ -10,14 +10,14 @@
             <p class="form-section-title mb-0"><i class="ti ti-file-description me-1"></i>Purchase Order</p>
             <div class="d-flex gap-2">
                 @if ($order->isEditable() && auth()->user()->can('edit-raw-material-purchas-order'))
-                    <a href="{{ route('raw-material-order.edit', $order->id) }}" class="btn btn-warning btn-sm">
+                    <a href="{{ route('raw-material.order.edit', $order->id) }}" class="btn btn-warning btn-sm">
                         <i class="ti ti-edit me-1"></i>Edit
                     </a>
                 @endif
-                <a href="{{ route('raw-material-order.exportPdf', $order->id) }}" class="btn btn-outline-primary btn-sm">
+                <a href="{{ route('raw-material.order.exportPdf', $order->id) }}" class="btn btn-outline-primary btn-sm">
                     <i class="ti ti-file-type-pdf me-1"></i>Export PDF
                 </a>
-                <a href="{{ route('raw-material-order.index') }}" class="btn btn-light btn-sm">
+                <a href="{{ route('raw-material.order.index') }}" class="btn btn-light btn-sm">
                     <i class="ti ti-arrow-left me-1"></i>Back
                 </a>
             </div>
@@ -130,7 +130,7 @@
                             <td>{{ $receive->received_date?->format('d M Y') ?? '—' }}</td>
                             <td>{!! $receive->statusBadge() !!}</td>
                             <td>
-                                <a href="{{ route('raw-material-receive.show', $receive->id) }}" class="btn btn-sm btn-info">
+                                <a href="{{ route('raw-material.receive.show', $receive->id) }}" class="btn btn-sm btn-info">
                                     <i class="ti ti-eye"></i>
                                 </a>
                             </td>

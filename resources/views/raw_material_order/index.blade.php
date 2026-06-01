@@ -57,12 +57,12 @@
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
-                                    <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('raw-material-order.export') }}">
+                                    <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('raw-material.order.export') }}">
                                         <i class="ti ti-file-spreadsheet me-2"></i>Export Excel
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('raw-material-order.export-list-pdf') }}">
+                                    <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('raw-material.order.export-list-pdf') }}">
                                         <i class="ti ti-file-type-pdf me-2"></i>Export PDF
                                     </a>
                                 </li>
@@ -74,12 +74,12 @@
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('raw-material-order.export-full') }}">
+                                    <a class="dropdown-item" href="{{ route('raw-material.order.export-full') }}">
                                         <i class="ti ti-file-spreadsheet me-2"></i>Export Excel
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('raw-material-order.export-full-pdf') }}">
+                                    <a class="dropdown-item" href="{{ route('raw-material.order.export-full-pdf') }}">
                                         <i class="ti ti-file-type-pdf me-2"></i>Export PDF
                                     </a>
                                 </li>
@@ -87,7 +87,7 @@
                         </div>
                     @endcanany
                     @can('add-raw-material-purchas-order')
-                        <a href="{{ route('raw-material-order.create') }}" class="btn btn-primary">
+                        <a href="{{ route('raw-material.order.create') }}" class="btn btn-primary">
                             <i class="ti ti-square-rounded-plus me-2"></i>Add Purchase Order
                         </a>
                     @endcan
@@ -151,7 +151,7 @@ $(document).ready(function () {
         dom: 'lrtip',
         order: [[0, 'desc']],
         ajax: {
-            url: "{{ route('raw-material-order.index') }}",
+            url: "{{ route('raw-material.order.index') }}",
             data: function (d) {
                 d.status = $('#statusFilter').val();
                 d.supplier_id = $('#supplierFilter').val();

@@ -10,10 +10,10 @@
             <p class="form-section-title mb-0"><i class="ti ti-truck-delivery me-1"></i>Received Entry</p>
             <div class="d-flex gap-2">
                 @if ($receive->isEditable() && auth()->user()->can('edit-raw-material-purchas-order'))
-                    <a href="{{ route('raw-material-receive.edit', $receive->id) }}" class="btn btn-warning btn-sm">
+                    <a href="{{ route('raw-material.receive.edit', $receive->id) }}" class="btn btn-warning btn-sm">
                         <i class="ti ti-edit me-1"></i>Edit
                     </a>
-                    <form action="{{ route('raw-material-receive.markReceived', $receive->id) }}" method="POST" class="d-inline">
+                    <form action="{{ route('raw-material.receive.markReceived', $receive->id) }}" method="POST" class="d-inline">
                         @csrf
                         @method('PATCH')
                         <button type="submit" class="btn btn-success btn-sm">
@@ -21,7 +21,7 @@
                         </button>
                     </form>
                 @endif
-                <a href="{{ route('raw-material-receive.index') }}" class="btn btn-light btn-sm">
+                <a href="{{ route('raw-material.receive.index') }}" class="btn btn-light btn-sm">
                     <i class="ti ti-arrow-left me-1"></i>Back
                 </a>
             </div>
@@ -31,7 +31,7 @@
                 <label class="col-form-label text-muted">Order ID</label>
                 <div class="fw-semibold">
                     @if ($receive->order)
-                        <a href="{{ route('raw-material-order.show', $receive->order->id) }}">
+                        <a href="{{ route('raw-material.order.show', $receive->order->id) }}">
                             {{ $receive->order->order_unique_id }}
                         </a>
                     @else

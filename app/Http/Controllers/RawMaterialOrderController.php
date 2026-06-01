@@ -44,18 +44,18 @@ class RawMaterialOrderController extends Controller
                 ->editColumn('total_freight', fn ($row) => '₹ ' . number_format($row->total_freight, 3))
                 ->editColumn('status', fn ($row) => $row->statusBadge())
                 ->addColumn('action', function ($row) {
-                    $view   = '<a href="' . route('raw-material-order.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>';
+                    $view   = '<a href="' . route('raw-material.order.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>';
                     $edit   = ($row->isEditable() && auth()->user()->can('edit-raw-material-purchas-order'))
-                        ? '<a href="' . route('raw-material-order.edit', $row->id) . '" class="dropdown-item"><i class="ti ti-edit text-warning"></i> Edit</a>' : '';
+                        ? '<a href="' . route('raw-material.order.edit', $row->id) . '" class="dropdown-item"><i class="ti ti-edit text-warning"></i> Edit</a>' : '';
                     $cancel = (in_array((int) $row->status, [0, 1], true) && auth()->user()->can('edit-raw-material-purchas-order'))
-                        ? '<a href="javascript:void(0)" class="dropdown-item cancel-order-btn" data-url="' . route('raw-material-order.cancel', $row->id) . '"><i class="ti ti-ban text-danger"></i> Cancel</a>' : '';
+                        ? '<a href="javascript:void(0)" class="dropdown-item cancel-order-btn" data-url="' . route('raw-material.order.cancel', $row->id) . '"><i class="ti ti-ban text-danger"></i> Cancel</a>' : '';
                     $exportExcel = auth()->user()->canAny(['add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'])
-                        ? '<a href="' . route('raw-material-order.export-order-excel', $row->id) . '" class="dropdown-item"><i class="ti ti-file-spreadsheet text-success"></i> Export Excel</a>' : '';
+                        ? '<a href="' . route('raw-material.order.export-order-excel', $row->id) . '" class="dropdown-item"><i class="ti ti-file-spreadsheet text-success"></i> Export Excel</a>' : '';
                     $exportPdf = auth()->user()->canAny(['add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'])
-                        ? '<a href="' . route('raw-material-order.export-order-pdf', $row->id) . '" class="dropdown-item"><i class="ti ti-file-type-pdf text-danger"></i> Export PDF</a>' : '';
+                        ? '<a href="' . route('raw-material.order.export-order-pdf', $row->id) . '" class="dropdown-item"><i class="ti ti-file-type-pdf text-danger"></i> Export PDF</a>' : '';
                     $delete = auth()->user()->can('delete-raw-material-purchas-order')
                         ? '<a href="javascript:void(0)" class="dropdown-item delete-btn" data-id="' . $row->id . '"><i class="ti ti-trash text-danger"></i> Delete</a>
-                           <form action="' . route('raw-material-order.destroy', $row->id) . '" method="POST" class="delete-form" id="delete-form-' . $row->id . '">' . csrf_field() . method_field('DELETE') . '</form>' : '';
+                           <form action="' . route('raw-material.order.destroy', $row->id) . '" method="POST" class="delete-form" id="delete-form-' . $row->id . '">' . csrf_field() . method_field('DELETE') . '</form>' : '';
 
                     return '<div class="dropdown table-action"><a href="#" class="action-icon" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right">' . $view . $edit . $cancel . $exportExcel . $exportPdf . $delete . '</div></div>';
                 })
@@ -94,7 +94,7 @@ class RawMaterialOrderController extends Controller
             }
         });
 
-        return redirect()->route('raw-material-order.index')->with('success', 'Order created successfully.');
+        return redirect()->route('raw-material.order.index')->with('success', 'Order created successfully.');
     }
 
     public function show(RawMaterialOrder $raw_material_order)
@@ -108,7 +108,7 @@ class RawMaterialOrderController extends Controller
     public function edit(RawMaterialOrder $raw_material_order)
     {
         if (! $raw_material_order->isEditable()) {
-            return redirect()->route('raw-material-order.show', $raw_material_order)
+            return redirect()->route('raw-material.order.show', $raw_material_order)
                 ->with('error', 'Only pending orders can be edited.');
         }
 
@@ -123,7 +123,7 @@ class RawMaterialOrderController extends Controller
     public function update(UpdateRawMaterialOrderRequest $request, RawMaterialOrder $raw_material_order)
     {
         if (! $raw_material_order->isEditable()) {
-            return redirect()->route('raw-material-order.index')->with('error', 'Only pending orders can be edited.');
+            return redirect()->route('raw-material.order.index')->with('error', 'Only pending orders can be edited.');
         }
 
         DB::transaction(function () use ($request, $raw_material_order) {
@@ -143,20 +143,20 @@ class RawMaterialOrderController extends Controller
             }
         });
 
-        return redirect()->route('raw-material-order.index')->with('success', 'Order updated successfully.');
+        return redirect()->route('raw-material.order.index')->with('success', 'Order updated successfully.');
     }
 
     public function destroy(RawMaterialOrder $raw_material_order)
     {
         if ($raw_material_order->receives()->exists()) {
-            return redirect()->route('raw-material-order.index')
+            return redirect()->route('raw-material.order.index')
                 ->with('error', 'Cannot delete — receive entries exist for this order.');
         }
 
         $raw_material_order->items()->delete();
         $raw_material_order->delete();
 
-        return redirect()->route('raw-material-order.index')->with('success', 'Order deleted successfully.');
+        return redirect()->route('raw-material.order.index')->with('success', 'Order deleted successfully.');
     }
 
     public function cancel(RawMaterialOrder $raw_material_order)

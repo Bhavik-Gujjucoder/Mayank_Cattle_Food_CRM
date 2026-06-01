@@ -4,7 +4,7 @@
 @endsection
 @section('content')
 
-<form action="{{ route('raw-material-order.store') }}" id="rmOrderForm" method="POST">
+<form action="{{ route('raw-material.order.store') }}" id="rmOrderForm" method="POST">
 @csrf
 
 <div class="card mb-3">
@@ -162,7 +162,7 @@
 </div>
 
 <div class="d-flex align-items-center justify-content-end gap-2 mb-4">
-    <a href="{{ route('raw-material-order.index') }}" class="btn btn-light px-4">Cancel</a>
+    <a href="{{ route('raw-material.order.index') }}" class="btn btn-light px-4">Cancel</a>
     <button type="button" class="btn btn-primary px-5" id="submitOrderBtn">Create Order</button>
 </div>
 
