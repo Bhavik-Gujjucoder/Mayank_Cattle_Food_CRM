@@ -2,8 +2,12 @@
 @section('title')
     {{ $page_title }}
 @endsection
+@section('styles')
+    @include('raw_material.partials.module-responsive')
+@endsection
 @section('content')
 
+<div class="raw-material-module">
 <form action="{{ route('raw-material.order.store') }}" id="rmOrderForm" method="POST">
 @csrf
 
@@ -11,13 +15,13 @@
     <div class="card-body">
         <p class="form-section-title"><i class="ti ti-file-description me-1"></i>Order Information</p>
         <div class="row">
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-md-4 mb-3">
                 <label class="col-form-label">Order ID</label>
                 <input type="text" name="order_unique_id" id="order_unique_id"
                        value="{{ old('order_unique_id', $order_unique_id) }}"
                        class="form-control fw-semibold" readonly>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-md-4 mb-3">
                 <label class="col-form-label">Supplier <span class="text-danger">*</span></label>
                 <select name="supplier_id" id="supplier_id" class="form-select search-select">
                     <option value="">-- Select Supplier --</option>
@@ -29,7 +33,7 @@
                 </select>
                 <span class="text-danger small supplier_id_error">@error('supplier_id'){{ $message }}@enderror</span>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-md-4 mb-3">
                 <label class="col-form-label">Order Date <span class="text-danger">*</span></label>
                 <div class="icon-form">
                     <span class="form-icon"><i class="ti ti-calendar-check"></i></span>
@@ -161,15 +165,17 @@
     </div>
 </div>
 
-<div class="d-flex align-items-center justify-content-end gap-2 mb-4">
+<div class="d-flex align-items-center justify-content-end gap-2 mb-4 rm-form-actions">
     <a href="{{ route('raw-material.order.index') }}" class="btn btn-light px-4">Cancel</a>
     <button type="button" class="btn btn-primary px-5" id="submitOrderBtn">Create Order</button>
 </div>
 
 </form>
+</div>
 
 @endsection
 @section('script')
+@include('raw_material.partials.form-validation-script')
 <script>
 $(document).ready(function () {
     flatpickr('.flatpickr', {
@@ -265,18 +271,24 @@ $(document).ready(function () {
     function validateForm() {
         var isValid = true;
         $('.supplier_id_error, .order_date_error').text('');
-        $('#supplier_id, #order_date').removeClass('is-invalid');
+        rmSetInvalid($('#supplier_id'), false);
+        rmSetInvalid($('#order_date'), false);
         $('.item-row-error').hide();
-        $('.item-row .is-invalid').removeClass('is-invalid');
+        $('#itemTableBody .item-row').each(function () {
+            var $row = $(this);
+            rmSetInvalid($row.find('.material-select'), false);
+            rmSetInvalid($row.find('.qty-field'), false);
+            rmSetInvalid($row.find('.price-field'), false);
+        });
 
         if (!$('#supplier_id').val()) {
             $('.supplier_id_error').text('Please select a supplier.');
-            $('#supplier_id').addClass('is-invalid');
+            rmSetInvalid($('#supplier_id'), true);
             isValid = false;
         }
         if (!$.trim($('#order_date').val())) {
             $('.order_date_error').text('Please select an order date.');
-            $('#order_date').addClass('is-invalid');
+            rmSetInvalid($('#order_date'), true);
             isValid = false;
         }
 
@@ -286,9 +298,9 @@ $(document).ready(function () {
             var qty = $.trim($row.find('.qty-field').val());
             var price = $.trim($row.find('.price-field').val());
             if (!materialId || !qty || !price) {
-                if (!materialId) $row.find('.material-select').addClass('is-invalid');
-                if (!qty) $row.find('.qty-field').addClass('is-invalid');
-                if (!price) $row.find('.price-field').addClass('is-invalid');
+                if (!materialId) rmSetInvalid($row.find('.material-select'), true);
+                if (!qty) rmSetInvalid($row.find('.qty-field'), true);
+                if (!price) rmSetInvalid($row.find('.price-field'), true);
                 $row.next('.item-row-error').show();
                 isValid = false;
             }
@@ -300,6 +312,8 @@ $(document).ready(function () {
     $('#submitOrderBtn').on('click', function () {
         if (validateForm()) {
             $('#rmOrderForm').submit();
+        } else {
+            rmScrollToFirstInvalid('#rmOrderForm');
         }
     });
 

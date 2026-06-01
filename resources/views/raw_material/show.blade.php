@@ -2,8 +2,12 @@
 @section('title')
     {{ $page_title }}
 @endsection
+@section('styles')
+    @include('raw_material.partials.module-responsive')
+@endsection
 @section('content')
 
+<div class="raw-material-module">
 <div class="card mb-3">
     <div class="card-body">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
@@ -20,35 +24,35 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Material ID</label>
                 <div class="fw-semibold">{{ $raw_material->raw_material_unique_id }}</div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Name</label>
                 <div class="fw-semibold">{{ $raw_material->name }}</div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Unit</label>
                 <div class="fw-semibold">{{ $raw_material->unit }}</div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Total Stock</label>
                 <div class="fw-semibold">{{ number_format($raw_material->total_stock, 2) }} {{ $raw_material->unit }}</div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Available Stock</label>
                 <div class="fw-semibold">{{ number_format($raw_material->available_stock, 2) }} {{ $raw_material->unit }}</div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Status</label>
                 <div>{!! $raw_material->statusBadge() !!}</div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Last Purchase Price</label>
                 <div class="fw-semibold">₹ {{ number_format($raw_material->last_purchase_price, 2) }} / kg</div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Average Price</label>
                 <div class="fw-semibold">₹ {{ number_format($raw_material->average_price, 2) }} / kg</div>
             </div>
@@ -102,6 +106,7 @@
             </table>
         </div>
     </div>
+</div>
 </div>
 
 @endsection

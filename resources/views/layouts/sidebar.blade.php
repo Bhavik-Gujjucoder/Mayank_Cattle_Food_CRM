@@ -134,16 +134,16 @@
                         /*  Sales submenu (Soda / Order + Dispatch)
                         /* ------------------------------------------------------------------ --}}
                         @canany(['add-order', 'edit-order', 'delete-order', 'add-dispatch', 'edit-dispatch',
-                            'delete-dispatch'])
+                            'delete-dispatch', 'view-delivery-pending-payments'])
                             <li class="submenu">
                                 <a href="javascript:void(0);"
-                                    class="@if (request()->routeIs('order*') || request()->routeIs('dispatch*')) active subdrop @endif">
+                                    class="@if (request()->routeIs('order*') || request()->routeIs('dispatch*') || request()->routeIs('delivery-pending-payments*')) active subdrop @endif">
                                     <i class="ti ti-list-check"></i>
                                     <span>Sales</span>
                                     <span class="menu-arrow"></span>
                                 </a>
 
-                                <ul style="display: @if (request()->routeIs('order*') || request()->routeIs('dispatch*')) block @else none @endif;">
+                                <ul style="display: @if (request()->routeIs('order*') || request()->routeIs('dispatch*') || request()->routeIs('delivery-pending-payments*')) block @else none @endif;">
 
                                     {{-- ------------------------------------------------------------------ */
                                     /*  Soda / Order (type: soda-order)
@@ -163,11 +163,23 @@
                                     @canany(['add-dispatch', 'edit-dispatch', 'delete-dispatch'])
                                         <li>
                                             <a href="{{ route('dispatch.index') }}"
-                                                class="@if (request()->routeIs('dispatch*')) active @endif">
+                                                class="@if (request()->routeIs('dispatch*') && !request()->routeIs('delivery-pending-payments*')) active @endif">
                                                 <span>Dispatch</span>
                                             </a>
                                         </li>
                                     @endcanany
+
+                                    {{-- ------------------------------------------------------------------ */
+                                    /*  Dispatch Pending Payments
+                                    /* ------------------------------------------------------------------ --}}
+                                    @can('view-delivery-pending-payments')
+                                        <li>
+                                            <a href="{{ route('delivery-pending-payments.index') }}"
+                                                class="@if (request()->routeIs('delivery-pending-payments*')) active @endif">
+                                                <span>Dispatch Pending Payments</span>
+                                            </a>
+                                        </li>
+                                    @endcan
                                 </ul>
                             </li>
                         @endcanany

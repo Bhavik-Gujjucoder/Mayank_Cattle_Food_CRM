@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CityManagementController;
 use App\Http\Controllers\DealerManagementController;
+use App\Http\Controllers\DeliveryPendingPaymentsController;
 use App\Http\Controllers\DispatchManagementController;
 use App\Http\Controllers\GeneralSettingController;
 use App\Http\Controllers\HomeController;
@@ -107,6 +108,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dispatch/order/{order}', [DispatchManagementController::class, 'orderHistory'])
         ->name('dispatch.orderHistory');
 
+    /* AJAX: order line items + eligibility for dashboard dispatch modal */
+    Route::get('dispatch/order/{order}/form-data', [DispatchManagementController::class, 'getOrderDispatchFormData'])
+        ->name('dispatch.orderFormData');
+
     /* AJAX: trucks that belong to a given transporter (for dynamic truck dropdown) */
     Route::get('dispatch/transporter-trucks/{transporter}', [DispatchManagementController::class, 'getTrucksByTransporter'])
         ->name('dispatch.transporterTrucks');
@@ -118,6 +123,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('dispatch.update')->middleware('permission:edit-dispatch');
     Route::delete('dispatch/{dispatch}', [DispatchManagementController::class, 'destroy'])
         ->name('dispatch.destroy')->middleware('permission:delete-dispatch');
+
+
+    /* ------------------------------------------------------------------ */
+    /*  Dispatch Pending Payments (type: delivery-pending-payments)       */
+    /* ------------------------------------------------------------------ */
+    Route::get('delivery-pending-payments/export', [DeliveryPendingPaymentsController::class, 'export'])
+        ->name('delivery-pending-payments.export')
+        ->middleware('permission:view-delivery-pending-payments');
+    Route::get('delivery-pending-payments', [DeliveryPendingPaymentsController::class, 'index'])
+        ->name('delivery-pending-payments.index')
+        ->middleware('permission:view-delivery-pending-payments');
 
 
     /* ------------------------------------------------------------------ */

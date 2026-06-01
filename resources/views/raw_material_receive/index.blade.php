@@ -2,9 +2,12 @@
 @section('title')
     {{ $page_title }}
 @endsection
+@section('styles')
+    @include('raw_material.partials.module-responsive')
+@endsection
 @section('content')
 
-<div class="card">
+<div class="card raw-material-module">
     <div class="card-header">
         <div class="cls-cardhed-part">
             <div class="cls-form-left">

@@ -2,8 +2,12 @@
 @section('title')
     {{ $page_title }}
 @endsection
+@section('styles')
+    @include('raw_material.partials.module-responsive')
+@endsection
 @section('content')
 
+<div class="raw-material-module">
 <div class="card mb-3">
     <div class="card-body">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
@@ -27,7 +31,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Order ID</label>
                 <div class="fw-semibold">
                     @if ($receive->order)
@@ -39,31 +43,31 @@
                     @endif
                 </div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Supplier</label>
                 <div class="fw-semibold">{{ $receive->order?->supplier?->name ?? '—' }}</div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Material</label>
                 <div class="fw-semibold">{{ $receive->rawMaterial?->name ?? '—' }}</div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Quantity</label>
                 <div class="fw-semibold">{{ $receive->qty }} tons</div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Freight per ton</label>
                 <div class="fw-semibold">₹ {{ number_format($receive->freight, 3) }}</div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Line Freight (freight × qty)</label>
                 <div class="fw-semibold">₹ {{ number_format($receive->freight * $receive->qty, 3) }}</div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Received Date</label>
                 <div class="fw-semibold">{{ $receive->received_date?->format('d M Y') ?? '—' }}</div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Status</label>
                 <div>{!! $receive->statusBadge() !!}</div>
             </div>
@@ -76,19 +80,19 @@
     <div class="card-body">
         <p class="form-section-title"><i class="ti ti-list-details me-1"></i>Order Item Details</p>
         <div class="row">
-            <div class="col-md-3 mb-3">
+            <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Total Qty</label>
                 <div class="fw-semibold">{{ $receive->orderItem->total_qty }} tons</div>
             </div>
-            <div class="col-md-3 mb-3">
+            <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Pending Qty</label>
                 <div class="fw-semibold">{{ $receive->orderItem->pending_qty }} tons</div>
             </div>
-            <div class="col-md-3 mb-3">
+            <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Received Qty</label>
                 <div class="fw-semibold">{{ $receive->orderItem->received_qty }} tons</div>
             </div>
-            <div class="col-md-3 mb-3">
+            <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Price / kg</label>
                 <div class="fw-semibold">₹ {{ number_format($receive->orderItem->price, 3) }}</div>
             </div>
@@ -96,5 +100,6 @@
     </div>
 </div>
 @endif
+</div>
 
 @endsection

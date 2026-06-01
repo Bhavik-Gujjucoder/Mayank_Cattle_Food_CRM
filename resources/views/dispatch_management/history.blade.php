@@ -300,6 +300,7 @@
                             <th>Transport</th>
                             <th>Truck number</th>
                             <th>Driver contact</th>
+                            <th class="dh-col-status">Status</th>
                             <th class="text-center dh-col-action">Action</th>
                         </tr>
                     </thead>
@@ -316,6 +317,7 @@
                                     <td>{{ $dispatch->transporter?->name ?? '—' }}</td>
                                     <td>{{ $dispatch->truck_number }}</td>
                                     <td>{{ $dispatch->driver_contact }}</td>
+                                    <td>{!! $dispatch->statusBadge() !!}</td>
                                     <td class="text-center">
                                         <div class="dh-action-btns">
 
@@ -327,6 +329,7 @@
                                                     data-transport-id="{{ $dispatch->transport_id }}"
                                                     data-truck-number="{{ $dispatch->truck_number }}"
                                                     data-driver-contact="{{ $dispatch->driver_contact }}"
+                                                    data-status="{{ $dispatch->status }}"
                                                     data-product-name="{{ $item->product?->name ?? '' }}"
                                                     data-effective-pending="{{ $item->pendingQty() + $dispatch->no_of_bags }}"
                                                     data-update-url="{{ route('dispatch.update', $dispatch->id) }}">
@@ -356,7 +359,7 @@
 
                         @if (!$hasRows)
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
+                                <td colspan="9" class="text-center text-muted py-4">
                                     No dispatch entries found for this order.
                                 </td>
                             </tr>
@@ -483,6 +486,11 @@
                                     <span class="field-error" id="driver_contact-error"></span>
                                 </div>
 
+                                @include('dispatch_management.partials.status-field', [
+                                    'idPrefix' => 'dispatch',
+                                    'value'    => old('status', '0'),
+                                ])
+
                             </div>
                         </div>
 
@@ -595,6 +603,12 @@
                                         placeholder="Mobile number">
                                     <span class="field-error" id="edit_driver_contact-error"></span>
                                 </div>
+
+                                @include('dispatch_management.partials.status-field', [
+                                    'idPrefix' => 'edit',
+                                    'errorId'  => 'edit_status',
+                                    'value'    => '0',
+                                ])
 
                             </div>
                         </div>
@@ -759,6 +773,7 @@
                     transport_id:   { required: true },
                     truck_number:   { required: true },
                     driver_contact: { required: true },
+                    status:         { required: true },
                 },
                 messages: {
                     order_item_id:  { required: 'Please select a product.' },
@@ -767,6 +782,7 @@
                     transport_id:   { required: 'Please select a transporter.' },
                     truck_number:   { required: 'Please select a truck number.' },
                     driver_contact: { required: 'Driver contact is required.' },
+                    status:         { required: 'Please select a payment status.' },
                 },
                 errorElement: 'span',
                 errorClass: 'text-danger small d-block mt-1',
@@ -841,6 +857,7 @@
                     transport_id:   { required: true },
                     truck_number:   { required: true },
                     driver_contact: { required: true },
+                    status:         { required: true },
                 },
                 messages: {
                     no_of_bags:     { required: 'No of bags/ton is required.', number: 'Please enter a valid number.', min: 'Must be at least 1.' },
@@ -848,6 +865,7 @@
                     transport_id:   { required: 'Please select a transporter.' },
                     truck_number:   { required: 'Please select a truck number.' },
                     driver_contact: { required: 'Driver contact is required.' },
+                    status:         { required: 'Please select a payment status.' },
                 },
                 errorElement: 'span',
                 errorClass: 'text-danger small d-block mt-1',
@@ -879,12 +897,14 @@
             });
 
             /* ── Helper: populate edit modal fields ─────────────────────── */
-            function populateEditModal(transportId, truckNumber, driverContact, noBags, dispatchDate, productName, effectivePending, updateUrl) {
+            function populateEditModal(transportId, truckNumber, driverContact, status, noBags, dispatchDate, productName, effectivePending, updateUrl) {
                 editEffectivePending = effectivePending;
                 $('#editDispatchForm').attr('action', updateUrl);
                 $('#editProductName').text(productName || '—');
                 $('#editNoBags').val(noBags);
                 $('#editDriverContact').val(driverContact);
+                $('input[name="status"][id^="edit_"]').prop('checked', false);
+                $('#edit_status_' + (String(status) === '1' ? 'paid' : 'unpaid')).prop('checked', true);
                 editDatePicker.setDate(dispatchDate, false);
                 $('#editPendingHint').text('Maximum allowed: ' + effectivePending + ' bags/ton');
 
@@ -917,6 +937,7 @@
                     $btn.data('transport-id'),
                     $btn.data('truck-number'),
                     $btn.data('driver-contact'),
+                    $btn.data('status'),
                     $btn.data('no-of-bags'),
                     $btn.data('dispatch-date'),
                     $btn.data('product-name'),
@@ -950,6 +971,7 @@
                         {{ json_encode(old('transport_id', (string) $reopenDispatch->transport_id)) }},
                         {{ json_encode(old('truck_number', $reopenDispatch->truck_number)) }},
                         {{ json_encode(old('driver_contact', $reopenDispatch->driver_contact)) }},
+                        {{ json_encode(old('status', (string) $reopenDispatch->status)) }},
                         {{ json_encode(old('no_of_bags', $reopenDispatch->no_of_bags)) }},
                         {{ json_encode(old('dispatch_date', $reopenDispatch->dispatch_date?->format('Y-m-d'))) }},
                         {{ json_encode($reopenItem->product?->name ?? '—') }},
@@ -984,6 +1006,7 @@
                         {{ $autoDispatch->transport_id }},
                         {{ json_encode($autoDispatch->truck_number) }},
                         {{ json_encode($autoDispatch->driver_contact) }},
+                        {{ $autoDispatch->status }},
                         {{ $autoDispatch->no_of_bags }},
                         {{ json_encode($autoDispatch->dispatch_date?->format('Y-m-d')) }},
                         {{ json_encode($autoItem->product?->name ?? '—') }},

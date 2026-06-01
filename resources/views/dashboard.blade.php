@@ -3,14 +3,24 @@
 @section('title')
     <h3>{{ $page_title }}</h3>
 @endsection
-<!-- Welcome Wrap -->
-<div class="welcome-wrap mb-4">
-    <div class="d-flex align-items-center justify-content-between flex-wrap">
-        <div class="mb-3">
-            <h2 class="mb-1 text-white">Welcome Back, {{ $user_name }}</h2>
-            <p class="text-light"></p>
+<!-- Welcome + quick actions -->
+<div class="mb-4">
+    <div class="welcome-wrap">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div class="mb-3">
+                <h2 class="mb-1 text-white">Welcome Back, {{ $user_name }}</h2>
+                <p class="text-light"></p>
+            </div>
         </div>
     </div>
+    @can('add-dispatch')
+        <div class="d-flex justify-content-end mt-3">
+            <a href="javascript:void(0)" class="btn btn-primary btn-md" data-bs-toggle="modal"
+                data-bs-target="#dashboardDispatchModal">
+                <i class="ti ti-truck me-1"></i>Soda/Order Dispatch
+            </a>
+        </div>
+    @endcan
 </div>
 <div class="row detials-gc-user">
 
@@ -94,7 +104,75 @@
         </div>
     @endcan
 
+    @can('view-delivery-pending-payments')
+        <div class="col-xl-3 col-sm-6 d-flex">
+            <div class="card flex-fill total-dispatch-request">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="avatar avatar-md rounded bg-dark mb-3">
+                            <i class="ti ti-report-money fs-16"></i>
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h2 class="mb-1">{{ $dpp_dashboard_summary['dispatch_count'] ?? 0 }}</h2>
+                            <p class="fs-13">Unpaid Dispatches ({{ $dpp_dashboard_min_days }}+ days)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endcan
+
 </div>
+
+@can('view-delivery-pending-payments')
+    @include('delivery_pending_payments.partials.module-responsive')
+    <style>
+        .dashboard-dpp-widget .dashboard-dpp-stat-pill {
+            background: #f8fafc;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 0.65rem 0.75rem;
+            text-align: center;
+        }
+
+        .dashboard-dpp-widget .dashboard-dpp-stat-num {
+            display: block;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #262a2a;
+            line-height: 1.2;
+        }
+
+        .dashboard-dpp-widget .dashboard-dpp-stat-label {
+            display: block;
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 0.15rem;
+        }
+
+        .dashboard-dpp-widget .dashboard-dpp-brands-stack {
+            max-height: 520px;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        .dashboard-dpp-widget .dpp-brand-section {
+            margin-bottom: 1.25rem;
+        }
+
+        .dashboard-dpp-widget .dpp-brand-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .dashboard-dpp-widget .dpp-header-actions,
+        .dashboard-dpp-widget .dpp-header-filters,
+        .dashboard-dpp-widget .dpp-footnotes {
+            display: none !important;
+        }
+    </style>
+@endcan
 
 <div class="row">
     <div class="col-lg-6 d-flex">
@@ -139,6 +217,12 @@
     </div> --}}
 </div>
 
+@can('view-delivery-pending-payments')
+    <div class="row">
+        @include('dashboard.partials.delivery_pending_payments_widget')
+    </div>
+@endcan
+
 <div class="row">
     <!------------ Recent Dealers ---------------->
     @can('recent-dealers')
@@ -182,7 +266,7 @@
     @can('recent-orders')
         <div class="col-xxl-4 col-xl-12 d-flex">
             <div class="card flex-fill recent-cards">
-                <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
+                <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <h5 class="mb-2">Recent Soda/Orders</h5>
                     <a href="{{ route('order.index') }}" class="btn btn-light btn-md mb-2">View All</a>
                 </div>
@@ -205,7 +289,7 @@
                                         </h6>
                                         <p class="fs-13 d-inline-flex align-items-center">
                                             <a href="{{ route('order.edit', $order->id) }}">
-                                                <spa class="text-info">{{ $order->unique_order_id ?? '—' }}</spa>
+                                                <span class="text-info">{{ $order->unique_order_id ?? '—' }}</span>
                                             </a>
                                             <i class="ti ti-circle-filled fs-4 text-primary mx-1"></i>
                                             {{ $order->order_date->format('d M Y') }}
@@ -271,7 +355,6 @@
                 </div>
             </div>
         </div>
-    </div>
 @endcan
 
 <!------------ Recent Broker ----------------->
@@ -358,6 +441,283 @@
         </div>
     @endcan --}}
 </div>
+
+@can('add-dispatch')
+    @include('dispatch_management.partials.dashboard_dispatch_modal')
+@endcan
+
 @endsection
 @section('script')
+    @can('view-delivery-pending-payments')
+        <script>
+            document.querySelectorAll('.dashboard-dpp-widget [data-bs-toggle="tooltip"]')
+                .forEach(function (el) {
+                    new bootstrap.Tooltip(el, { trigger: 'hover focus' });
+                });
+        </script>
+    @endcan
+    @can('add-dispatch')
+        <script>
+            $(document).ready(function() {
+                var TRUCKS_URL = '{{ route('dispatch.transporterTrucks', ':id') }}';
+                var dashboardDispatchEligible = true;
+
+                function loadTrucksForTransporter(transporterId, $truckSelect, $contactInput, opts) {
+                    opts = opts || {};
+                    if (!transporterId) {
+                        $truckSelect.html('<option value="">-- Select Transporter First --</option>').prop('disabled', true);
+                        return;
+                    }
+                    $truckSelect.html('<option value="">Loading trucks…</option>').prop('disabled', true);
+                    $.get(TRUCKS_URL.replace(':id', transporterId))
+                        .done(function(data) {
+                            var html = '<option value="">-- Select Truck Number --</option>';
+                            if (data.trucks && data.trucks.length) {
+                                $.each(data.trucks, function(i, truck) {
+                                    html += '<option value="' + $('<span>').text(truck.truck_number).html() + '">' +
+                                        $('<span>').text(truck.truck_number).html() + '</option>';
+                                });
+                            } else {
+                                html += '<option value="" disabled>No trucks found for this transporter</option>';
+                            }
+                            $truckSelect.html(html).prop('disabled', false);
+                            if (opts.setTruckNumber) {
+                                if ($truckSelect.find('option[value="' + opts.setTruckNumber + '"]').length === 0) {
+                                    $truckSelect.append('<option value="' + $('<span>').text(opts.setTruckNumber)
+                                        .html() + '">' + $('<span>').text(opts.setTruckNumber).html() + '</option>');
+                                }
+                                $truckSelect.val(opts.setTruckNumber);
+                            }
+                            if (opts.setDriverContact !== undefined && opts.setDriverContact !== null) {
+                                $contactInput.val(opts.setDriverContact);
+                            } else if (opts.autoFillContact && data.phone) {
+                                $contactInput.val(data.phone);
+                            }
+                        })
+                        .fail(function() {
+                            $truckSelect.html('<option value="">-- Select Truck Number --</option>').prop('disabled', false);
+                        });
+                }
+
+                function resetProductSelect(message) {
+                    $('#dashboardDispatchOrderItemId')
+                        .html('<option value="">' + (message || '-- Select Order First --') + '</option>')
+                        .prop('disabled', true)
+                        .val('');
+                    $('#dashboardDispatchProductId').val('');
+                    $('#dashboardDispatchPendingHint').text('');
+                }
+
+                function populateProductSelect(items) {
+                    var $sel = $('#dashboardDispatchOrderItemId');
+                    var html = '<option value="">-- Select Product --</option>';
+                    $.each(items, function(i, item) {
+                        var disabled = item.disabled ? ' disabled' : '';
+                        html += '<option value="' + item.id + '" data-product-id="' + item.product_id +
+                            '" data-pending="' + item.pending + '"' + disabled + '>' +
+                            item.product_name + ' — Ordered: ' + item.qty + ', Pending: ' + item.pending +
+                            '</option>';
+                    });
+                    $sel.html(html).prop('disabled', false);
+                }
+
+                function showBlockedAlert(blocking) {
+                    var msg = 'Order <strong>' + blocking.unique_order_id + '</strong> (' + blocking.order_date +
+                        ') must be fully dispatched first. ' +
+                        '<a href="' + blocking.history_url + '" class="alert-link">Go to pending order</a>';
+                    $('#dashboardDispatchBlockedAlert').html(msg).removeClass('d-none');
+                    dashboardDispatchEligible = false;
+                    resetProductSelect('Dispatch blocked for this order');
+                    $('#dashboardSaveDispatchBtn').prop('disabled', true);
+                }
+
+                function hideBlockedAlert() {
+                    $('#dashboardDispatchBlockedAlert').addClass('d-none').empty();
+                    dashboardDispatchEligible = true;
+                    $('#dashboardSaveDispatchBtn').prop('disabled', false);
+                }
+
+                function loadOrderItems(orderId) {
+                    hideBlockedAlert();
+                    resetProductSelect(orderId ? 'Loading products…' : '-- Select Order First --');
+                    if (!orderId) {
+                        return;
+                    }
+                    var formUrl = $('#dashboardDispatchOrderId option:selected').data('form-url');
+                    $.get(formUrl)
+                        .done(function(data) {
+                            if (!data.eligible) {
+                                showBlockedAlert(data.blocking_order);
+                                return;
+                            }
+                            populateProductSelect(data.items || []);
+                            var savedItem = '{{ old('order_item_id') }}';
+                            if (savedItem) {
+                                $('#dashboardDispatchOrderItemId').val(savedItem).trigger('change');
+                            }
+                        })
+                        .fail(function() {
+                            resetProductSelect('Could not load products');
+                        });
+                }
+
+                flatpickr('#dashboardDispatchDate', {
+                    dateFormat: 'Y-m-d',
+                    altInput: true,
+                    altFormat: 'd-m-Y',
+                    allowInput: true,
+                    defaultDate: '{{ old('dispatch_date') }}' || 'today',
+                    onChange: function() {
+                        $('#dispatch_date-error').text('');
+                        $('#dashboardDispatchDate').next('.flatpickr-input').removeClass('is-invalid');
+                    }
+                });
+
+                $('#dashboardDispatchOrderId').on('change', function() {
+                    loadOrderItems($(this).val());
+                });
+
+                $('#dashboardDispatchOrderItemId').on('change', function() {
+                    var $opt = $(this).find(':selected');
+                    var pending = parseInt($opt.data('pending')) || 0;
+                    $('#dashboardDispatchProductId').val($opt.data('product-id') || '');
+                    $('#dashboardDispatchPendingHint').text($opt.val() ? 'Available pending qty: ' + pending : '');
+                });
+
+                $('#dashboardDispatchTransport').on('change', function() {
+                    loadTrucksForTransporter($(this).val(), $('#dashboardDispatchTruckNumber'),
+                        $('#dashboardDispatchDriverContact'), {
+                            autoFillContact: true
+                        });
+                });
+
+                $('#dashboardDispatchModal').on('show.bs.modal', function() {
+                    $('#dashboardDispatchTruckNumber')
+                        .html('<option value="">-- Select Transporter First --</option>')
+                        .prop('disabled', true);
+                });
+
+                $.validator.addMethod('maxDashboardPending', function(value) {
+                    if (!dashboardDispatchEligible) return false;
+                    var $opt = $('#dashboardDispatchOrderItemId').find(':selected');
+                    if (!$opt.val()) return true;
+                    return parseInt(value) <= (parseInt($opt.data('pending')) || 0);
+                }, 'The entered quantity cannot exceed the pending quantity.');
+
+                $('#dashboardDispatchForm').validate({
+                    ignore: ':hidden:not(#dashboardDispatchDate)',
+                    rules: {
+                        order_id: {
+                            required: true
+                        },
+                        order_item_id: {
+                            required: true
+                        },
+                        no_of_bags: {
+                            required: true,
+                            number: true,
+                            min: 1,
+                            maxDashboardPending: true
+                        },
+                        dispatch_date: {
+                            required: true
+                        },
+                        transport_id: {
+                            required: true
+                        },
+                        truck_number: {
+                            required: true
+                        },
+                        driver_contact: {
+                            required: true
+                        },
+                        status: {
+                            required: true
+                        },
+                    },
+                    messages: {
+                        order_id: {
+                            required: 'Please select an order.'
+                        },
+                        order_item_id: {
+                            required: 'Please select a product.'
+                        },
+                        no_of_bags: {
+                            required: 'No of bags/ton is required.'
+                        },
+                        dispatch_date: {
+                            required: 'Please select a dispatch date.'
+                        },
+                        transport_id: {
+                            required: 'Please select a transporter.'
+                        },
+                        truck_number: {
+                            required: 'Please select a truck number.'
+                        },
+                        driver_contact: {
+                            required: 'Driver contact is required.'
+                        },
+                        status: {
+                            required: 'Please select a payment status.'
+                        },
+                    },
+                    errorElement: 'span',
+                    errorClass: 'text-danger small d-block mt-1',
+                    errorPlacement: function(error, element) {
+                        var $target = $('#' + element.attr('name') + '-error');
+                        if ($target.length) {
+                            $target.html(error);
+                        } else if (element.attr('name') === 'status') {
+                            error.appendTo('#status-error');
+                        } else if (element.attr('id') === 'dashboardDispatchDate') {
+                            error.appendTo('#dispatch_date-error');
+                        } else {
+                            error.insertAfter(element);
+                        }
+                    },
+                    highlight: function(el) {
+                        var $e = $(el);
+                        $e.attr('id') === 'dashboardDispatchDate' ? $e.next('.flatpickr-input').addClass(
+                            'is-invalid') : $e.addClass('is-invalid');
+                    },
+                    unhighlight: function(el) {
+                        var $e = $(el);
+                        $e.attr('id') === 'dashboardDispatchDate' ? $e.next('.flatpickr-input').removeClass(
+                            'is-invalid') : $e.removeClass('is-invalid');
+                    },
+                    submitHandler: function(form) {
+                        if (!dashboardDispatchEligible) {
+                            return false;
+                        }
+                        form.submit();
+                    },
+                });
+
+                @if (session('open_dashboard_dispatch_modal') || ($errors->any() && old('from_dashboard')))
+                    (function() {
+                        var savedTransporter = '{{ old('transport_id') }}';
+                        var savedTruck = '{{ old('truck_number') }}';
+                        var savedContact = '{{ old('driver_contact') }}';
+                        var savedOrder = '{{ old('order_id') }}';
+
+                        if (savedOrder) {
+                            $('#dashboardDispatchOrderId').val(savedOrder);
+                            loadOrderItems(savedOrder);
+                        }
+
+                        if (savedTransporter) {
+                            $('#dashboardDispatchTransport').val(savedTransporter);
+                            loadTrucksForTransporter(savedTransporter, $('#dashboardDispatchTruckNumber'),
+                                $('#dashboardDispatchDriverContact'), {
+                                    setTruckNumber: savedTruck,
+                                    setDriverContact: savedContact || null
+                                });
+                        }
+
+                        (new bootstrap.Modal(document.getElementById('dashboardDispatchModal'))).show();
+                    })();
+                @endif
+            });
+        </script>
+    @endcan
 @endsection
