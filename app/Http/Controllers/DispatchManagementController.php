@@ -7,11 +7,19 @@ use App\Models\OrderItem;
 use App\Models\OrderManagement;
 use App\Models\Truck;
 use App\Models\User;
+use App\Support\SalesScope;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
 class DispatchManagementController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:view-dispatch')->only(['index']);
+        $this->middleware('permission:add-dispatch')->only(['create']);
+        $this->middleware('permission:edit-dispatch')->only(['edit']);
+    }
+
     /* ------------------------------------------------------------------ */
     /*  INDEX  — all dispatch records, with optional order filter         */
     /* ------------------------------------------------------------------ */
@@ -19,16 +27,18 @@ class DispatchManagementController extends Controller
     {
         /* Orders that have at least one dispatch — used to populate filter */
         $data['page_title'] = 'Dispatch Management';
-        $data['orders']     = OrderManagement::has('dispatches')
-                                ->orderBy('unique_order_id')
-                                ->get(['id', 'unique_order_id']);
+        $data['orders']     = SalesScope::scopeOrders(
+            OrderManagement::has('dispatches')->orderBy('unique_order_id')
+        )->get(['id', 'unique_order_id']);
 
         if ($request->ajax()) {
-            $query = DispatchManagement::with([
-                'order.items.dispatches',   /* needed for is_complete check */
-                'orderItem.product',
-                'transporter',
-            ])->latest();
+            $query = SalesScope::scopeDispatches(
+                DispatchManagement::with([
+                    'order.items.dispatches',   /* needed for is_complete check */
+                    'orderItem.product',
+                    'transporter',
+                ])
+            )->latest();
 
             /* Order filter */
             if ($request->filled('order_id') && $request->order_id !== 'all') {
@@ -97,6 +107,8 @@ class DispatchManagementController extends Controller
                     //              </a>';
                     // }
                     $btn .= '</div></div>';
+                    
+                    $btn = auth()->user()->canAny(['view-dispatch']) ? $btn : '';
                     return $btn;
                 })
 
@@ -112,6 +124,8 @@ class DispatchManagementController extends Controller
     /* ------------------------------------------------------------------ */
     public function orderHistory(OrderManagement $order)
     {
+        SalesScope::authorizeOrderAccess($order);
+
         $data['page_title']   = 'Dispatch History';
         $data['order']        = $order->load([
             'dealer.user',
@@ -187,6 +201,8 @@ class DispatchManagementController extends Controller
            This catches direct-URL / API attempts that bypass the JS popup.
         ──────────────────────────────────────────────────────────────── */
         $parentOrder   = OrderManagement::findOrFail($validated['order_id']);
+        SalesScope::authorizeOrderAccess($parentOrder);
+
         $blockingPrior = OrderManagement::where('dealer_id', $parentOrder->dealer_id)
             ->where('id', '<', $parentOrder->id)
             ->orderBy('id')
@@ -213,6 +229,8 @@ class DispatchManagementController extends Controller
     /* ------------------------------------------------------------------ */
     public function destroy(DispatchManagement $dispatch)
     {
+        SalesScope::authorizeDispatchAccess($dispatch);
+
         $orderId = $dispatch->order_id;
         $dispatch->delete();
 
@@ -226,6 +244,8 @@ class DispatchManagementController extends Controller
     /* ------------------------------------------------------------------ */
     public function update(Request $request, DispatchManagement $dispatch)
     {
+        SalesScope::authorizeDispatchAccess($dispatch);
+
         $validated = $request->validate([
             'no_of_bags'     => 'required|integer|min:1',
             'dispatch_date'  => 'required|date',
@@ -275,7 +295,7 @@ class DispatchManagementController extends Controller
     /* ------------------------------------------------------------------ */
     public function getOrderDispatchFormData(OrderManagement $order)
     {
-        $this->authorizeDispatchOrderAccess($order);
+        SalesScope::authorizeOrderAccess($order);
 
         $order->load(['items.product', 'items.dispatches']);
 
@@ -361,25 +381,6 @@ class DispatchManagementController extends Controller
         }
 
         return $redirect;
-    }
-
-    private function authorizeDispatchOrderAccess(OrderManagement $order): void
-    {
-        $user = auth()->user();
-
-        if ($user->hasRole('broker') && (int) $order->broker_id !== (int) $user->id) {
-            abort(403);
-        }
-
-        if ($user->hasRole('dealer')) {
-            $ownsOrder = OrderManagement::where('id', $order->id)
-                ->whereHas('dealer', fn ($q) => $q->where('user_id', $user->id))
-                ->exists();
-
-            if (! $ownsOrder) {
-                abort(403);
-            }
-        }
     }
 
     /* ------------------------------------------------------------------ */

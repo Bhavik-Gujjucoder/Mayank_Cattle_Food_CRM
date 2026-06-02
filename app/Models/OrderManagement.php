@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Support\SalesScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -19,6 +21,16 @@ class OrderManagement extends Model
         'total_order_amount'   => 'decimal:2',
         'grand_total'          => 'decimal:2',
     ];
+
+    /**
+     * Limit orders to what the given user may see (role-based sales scope).
+     *
+     * @param  Builder<OrderManagement>  $query
+     */
+    public function scopeForUser(Builder $query, ?\App\Models\User $user = null): Builder
+    {
+        return SalesScope::scopeOrders($query, $user);
+    }
 
     /* ── Relationships ───────────────────────────────────────────── */
 

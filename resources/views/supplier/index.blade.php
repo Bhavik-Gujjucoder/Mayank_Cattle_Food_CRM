@@ -93,7 +93,7 @@
                             <th>Email</th>
                             <th>Address</th>
                             <th>City</th>
-                            <th>Opening Balance</th>
+                            {{-- <th>Opening Balance</th> --}}
                             <th>Status</th>
                             @canany(['edit-supplier', 'delete-supplier'])
                                 <th class="no-sort">Action</th>
@@ -150,12 +150,14 @@
                             </div>
 
                             {{-- Opening Balance --}}
+                            {{--
                             <div class="col-md-6 mb-3">
                                 <label class="col-form-label">Opening Balance (₹)</label>
                                 <input type="number" name="opening_balance" class="form-control" placeholder="0.00"
                                     min="0" step="0.01">
                                 <span class="opening_balance_error text-danger small"></span>
                             </div>
+                            --}}
 
                             {{-- Address --}}
                             <div class="col-md-12 mb-3">
@@ -282,10 +284,6 @@
                     orderable: false
                 },
                 {
-                    data: 'opening_balance',
-                    name: 'opening_balance'
-                },
-                {
                     data: 'status',
                     name: 'status'
                 },
@@ -407,7 +405,6 @@
                 $('input[name="mobile"]').val(data.mobile);
                 $('input[name="email"]').val(data.email);
                 $('textarea[name="address"]').val(data.address);
-                $('input[name="opening_balance"]').val(data.opening_balance);
                 $('input[name="status"][value="' + data.status + '"]').prop('checked', true);
 
                 $('#supplier_state_id').val(data.state_id);

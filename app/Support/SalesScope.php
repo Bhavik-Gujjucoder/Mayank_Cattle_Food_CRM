@@ -1,0 +1,170 @@
+<?php
+
+namespace App\Support;
+
+use App\Models\DealerManagement;
+use App\Models\DispatchManagement;
+use App\Models\OrderManagement;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+
+/**
+ * Role-based row visibility for the Sales module (orders + dispatches).
+ *
+ * - super admin, admin, staff → all records
+ * - broker → orders where broker_id = user id
+ * - dealer → orders where dealer_management.user_id = user id
+ */
+class SalesScope
+{
+    public const GLOBAL_ROLES = ['super admin', 'admin', 'staff'];
+
+    public static function hasGlobalAccess(?User $user = null): bool
+    {
+        $user = $user ?? auth()->user();
+
+        return $user && $user->hasAnyRole(self::GLOBAL_ROLES);
+    }
+
+    public static function isBroker(?User $user = null): bool
+    {
+        $user = $user ?? auth()->user();
+
+        return $user && $user->hasRole('broker') && ! static::hasGlobalAccess($user);
+    }
+
+    public static function isDealer(?User $user = null): bool
+    {
+        $user = $user ?? auth()->user();
+
+        return $user && $user->hasRole('dealer') && ! static::hasGlobalAccess($user);
+    }
+
+    /** Whether the order list broker filter should be shown. */
+    public static function showBrokerFilter(?User $user = null): bool
+    {
+        return ! static::isBroker($user) && ! static::isDealer($user);
+    }
+
+    /**
+     * @param  Builder<OrderManagement>  $query
+     * @return Builder<OrderManagement>
+     */
+    public static function scopeOrders(Builder $query, ?User $user = null): Builder
+    {
+        $user = $user ?? auth()->user();
+
+        if (! $user || static::hasGlobalAccess($user)) {
+            return $query;
+        }
+
+        if ($user->hasRole('broker')) {
+            return $query->where('broker_id', $user->id);
+        }
+
+        if ($user->hasRole('dealer')) {
+            return $query->whereHas('dealer', fn (Builder $q) => $q->where('user_id', $user->id));
+        }
+
+        return $query;
+    }
+
+    /**
+     * @param  Builder<DispatchManagement>  $query
+     * @return Builder<DispatchManagement>
+     */
+    public static function scopeDispatches(Builder $query, ?User $user = null): Builder
+    {
+        $user = $user ?? auth()->user();
+
+        if (! $user || static::hasGlobalAccess($user)) {
+            return $query;
+        }
+
+        if ($user->hasRole('broker')) {
+            return $query->whereHas('order', fn (Builder $q) => $q->where('broker_id', $user->id));
+        }
+
+        if ($user->hasRole('dealer')) {
+            return $query->whereHas('order.dealer', fn (Builder $q) => $q->where('user_id', $user->id));
+        }
+
+        return $query;
+    }
+
+    public static function userCanAccessOrder(OrderManagement $order, ?User $user = null): bool
+    {
+        $user = $user ?? auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return static::scopeOrders(OrderManagement::query()->whereKey($order->id), $user)->exists();
+    }
+
+    public static function authorizeOrderAccess(OrderManagement $order, ?User $user = null): void
+    {
+        if (! static::userCanAccessOrder($order, $user)) {
+            abort(403, 'You do not have access to this order.');
+        }
+    }
+
+    public static function authorizeDispatchAccess(DispatchManagement $dispatch, ?User $user = null): void
+    {
+        $dispatch->loadMissing('order');
+
+        if (! $dispatch->order) {
+            abort(404);
+        }
+
+        static::authorizeOrderAccess($dispatch->order, $user);
+    }
+
+    /**
+     * Enforce broker_id / dealer_id on create & update payloads.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    public static function enforceOrderAssignment(array $validated, ?User $user = null): array
+    {
+        $user = $user ?? auth()->user();
+
+        if (! $user) {
+            return $validated;
+        }
+
+        if (static::isBroker($user)) {
+            $validated['broker_id'] = $user->id;
+        }
+
+        if (static::isDealer($user)) {
+            $dealer = DealerManagement::where('user_id', $user->id)->first();
+
+            if (! $dealer) {
+                abort(403, 'No dealer profile linked to your account.');
+            }
+
+            $validated['dealer_id'] = $dealer->id;
+        }
+
+        return $validated;
+    }
+
+    /** Dealer may only use their own dealer_management id on forms / AJAX. */
+    public static function authorizeDealerId(int|string $dealerId, ?User $user = null): void
+    {
+        $user = $user ?? auth()->user();
+
+        if (! $user || ! static::isDealer($user)) {
+            return;
+        }
+
+        $allowed = DealerManagement::where('user_id', $user->id)->whereKey($dealerId)->exists();
+
+        if (! $allowed) {
+            abort(403, 'You do not have access to this dealer.');
+        }
+    }
+}

@@ -20,20 +20,133 @@
 
 ---
 
+## 📅 Changelog — 2 Jun 2026 (Sales module permissions)
+
+### Summary
+Implemented end-to-end Spatie permission enforcement for **Soda/Order** and **Dispatch**, fixed missing `add-dispatch` seeding, and aligned route/UI/controller checks.
+
+### Files changed / added
+
+| Area | File | Change |
+|---|---|---|
+| Base controller | `app/Http/Controllers/Controller.php` | Extends `Illuminate\Routing\Controller` so `$this->middleware()` works in controllers |
+| Middleware aliases | `bootstrap/app.php` | Registers `permission`, `role`, `role_or_permission` (Spatie) |
+| Seeder (new) | `database/seeders/SalesPermissionSeeder.php` | Creates sales permissions with `type` column; assigns all to `admin` role |
+| Seeder registry | `database/seeders/DatabaseSeeder.php` | Calls `SalesPermissionSeeder` |
+| Routes | `routes/web.php` | Dispatch resource uses `role_or_permission`; mutating routes use `permission:*` |
+| Order controller | `app/Http/Controllers/OrderManagementController.php` | Constructor middleware + Dispatch action gated by `canAny` |
+| Dispatch controller | `app/Http/Controllers/DispatchManagementController.php` | Dispatch list action column gated by `canAny` |
+| Views | `resources/views/dispatch_management/history.blade.php` | Add button: `@canany(['add-dispatch'])` |
+| Views | `resources/views/order_management/index.blade.php` | Action column visibility uses `canAny` |
+
+### After deploy — run once
+```bash
+php artisan db:seed --class=Database\Seeders\SalesPermissionSeeder
+php artisan permission:cache-reset
+```
+
+---
+
+## 📅 Changelog — 2 Jun 2026 (Role-based sales data scope)
+
+### Summary
+Centralized **who can see which orders/dispatches** by role. Works together with Spatie permissions (permissions = *what actions*; scope = *which rows*).
+
+### Roles & visibility
+
+| Role | Orders / dispatches visible |
+|---|---|
+| **super admin**, **admin**, **staff** | All records (no broker/dealer filter) |
+| **broker** | Only where `order_management.broker_id` = logged-in user id |
+| **dealer** | Only where `dealer_management.user_id` = logged-in user id |
+| **transporter** | Not scoped in sales module (uses other modules; no order ownership filter) |
+
+**Priority:** If a user has `super admin`, `admin`, or `staff`, they get **global** access even if they also have broker/dealer role.
+
+### Implementation: `App\Support\SalesScope`
+
+| Method | Purpose |
+|---|---|
+| `hasGlobalAccess()` | true for super admin / admin / staff |
+| `scopeOrders($query)` | Apply broker/dealer WHERE on `OrderManagement` |
+| `scopeDispatches($query)` | Apply scope via `order` / `order.dealer` |
+| `authorizeOrderAccess($order)` | `abort(403)` if order outside scope |
+| `authorizeDispatchAccess($dispatch)` | Same via parent order |
+| `enforceOrderAssignment($validated)` | Force `broker_id` / `dealer_id` on store & update |
+| `authorizeDealerId($dealerId)` | Dealer role may only use own dealer id (AJAX) |
+| `showBrokerFilter()` | false for broker & dealer (hide list filter) |
+
+**Model scopes:** `OrderManagement::forUser()`, `DispatchManagement::forUser()` delegate to `SalesScope`.
+
+### Where scope is applied
+
+| Area | Applied |
+|---|---|
+| Order list (DataTables) | `SalesScope::scopeOrders()` |
+| Order edit / update / destroy / deleteCheck / dispatchCheck | `authorizeOrderAccess()` |
+| Order store / update | `enforceOrderAssignment()` + dealer id check |
+| Order bulk delete | scoped query |
+| Order create (dealer) | locked dealer field + server enforcement |
+| Dispatch list + filter dropdown | `scopeOrders` / `scopeDispatches` |
+| Dispatch history / store / update / destroy / form-data AJAX | `authorizeOrderAccess` / `authorizeDispatchAccess` |
+| Dashboard (`HomeController`) | `scopeOrders` / `scopeDispatches` |
+
+### Files added / updated
+
+- `app/Support/SalesScope.php` (new)
+- `app/Models/OrderManagement.php` — `scopeForUser`
+- `app/Models/DispatchManagement.php` — `scopeForUser`
+- `app/Http/Controllers/OrderManagementController.php`
+- `app/Http/Controllers/DispatchManagementController.php`
+- `app/Http/Controllers/HomeController.php`
+- `resources/views/order_management/index.blade.php` — broker filter via `showBrokerFilter()`
+- `resources/views/order_management/create.blade.php` — locked dealer for dealer role
+
+---
+
 ## 🔐 Permissions (Spatie)
 
-| Permission | Used for |
-|---|---|
-| `add-order` | Create order, route `order.store` |
-| `edit-order` | Edit order, route `order.update` |
-| `delete-order` | Delete order, bulk delete, route `order.destroy` / `order.bulkDelete` |
-| `add-dispatch` | Add dispatch entry (modal on history page), route `dispatch.store` |
-| `edit-dispatch` | Edit dispatch entry (modal on history page), route `dispatch.update` |
-| `delete-dispatch` | Delete dispatch (route exists; UI delete button is currently commented out in history view) |
+| Permission | `type` (DB) | Used for |
+|---|---|---|
+| `add-order` | `soda-order` | Order list + create (`index`, `create`); route `order.store` |
+| `edit-order` | `soda-order` | Edit order (`edit`); route `order.update` |
+| `delete-order` | `soda-order` | Delete + bulk delete; routes `order.destroy`, `order.bulkDelete` |
+| `add-dispatch` | `dispatch` | Add dispatch modal on history page; route `dispatch.store` |
+| `edit-dispatch` | `dispatch` | Edit dispatch modal on history page; route `dispatch.update` |
+| `delete-dispatch` | `dispatch` | Route `dispatch.destroy` (UI delete button commented out in history view) |
+| `view-dispatch-pending-payments` | `dispatch` | Delivery pending payments module (also seeded here) |
 
-**Role behaviour:**
-- **Broker role:** On order list, only sees own orders (`broker_id = auth id`). Broker filter hidden. On create/edit, broker dropdown is pre-selected and disabled.
-- **Other roles:** See all orders; can filter by broker.
+### Seeder: `SalesPermissionSeeder`
+- Path: `database/seeders/SalesPermissionSeeder.php`
+- Recreates the permissions above (detach + delete + insert pattern, same as `RawMaterialPermissionSeeder`)
+- **Assigns all sales permissions to the `admin` role** by default
+- Registered in `DatabaseSeeder::run()`
+- **Note:** Other roles (e.g. broker) must be assigned permissions via Roles UI or a custom seeder
+
+### Enforcement layers (route + controller + Blade)
+
+| Layer | Order module | Dispatch module |
+|---|---|---|
+| **Routes** | `order.store` → `permission:add-order`; `order.update` → `edit-order`; `order.destroy` / `order.bulkDelete` → `delete-order` | Resource (`index`, `create`, `show`, `edit`) → `role_or_permission:add-dispatch\|edit-dispatch\|delete-dispatch`; `dispatch.store` → `add-dispatch`; `dispatch.update` → `edit-dispatch`; `dispatch.destroy` → `delete-dispatch` |
+| **Controller constructor** | `add-order` → `index`, `create`; `edit-order` → `edit` | *(none — route middleware only)* |
+| **DataTables / UI** | Dispatch row action → `canAny(['add-dispatch','edit-dispatch','delete-dispatch'])`; Edit/Delete → `can('edit-order')` / `can('delete-order')` | List action column → `canAny([...])` |
+| **Blade** | Sidebar / index `@canany` | History: Add modal `@canany(['add-dispatch'])`; Edit `@can('edit-dispatch')` |
+
+### `role_or_permission` vs `@canany`
+- **Routes:** Use middleware `role_or_permission:add-dispatch|edit-dispatch|delete-dispatch` (pipe = OR). Equivalent to Blade `@canany`.
+- **Blade:** `@canany(['add-dispatch', 'edit-dispatch'])` — do **not** use `@canany` on routes; it is view-only.
+- **PHP:** `auth()->user()->canAny([...])` in DataTables closures.
+
+### Routes without Spatie *permission* middleware (auth only)
+These rely on `auth` + **`SalesScope`** in controllers (not permission middleware on the route):
+- `order.lastItemPrice`, `order.dispatchCheck`, `order.deleteCheck`
+- `dispatch.orderHistory`, `dispatch.orderFormData`, `dispatch.transporterTrucks`
+
+**Role behaviour (data scope — see `SalesScope`):**
+- **super admin / admin / staff:** All orders; broker filter on list; full create/edit.
+- **Broker:** Own orders only; broker filter hidden; broker fixed on forms; dispatch/history limited to own orders.
+- **Dealer:** Own dealer’s orders only; broker filter hidden; dealer fixed on create; dispatch/history limited to own orders.
+- **Transporter:** Not filtered by sales scope (assign permissions separately if they need dispatch UI).
 
 ---
 
@@ -191,9 +304,10 @@
   - Brand → dropdown (`#BrandId`, All / specific brand)
   - Broker → dropdown (`#broker_id`, All / specific broker) — **hidden for broker role**
 - **Server-side:** Yajra DataTables AJAX to `order.index`
-- **Page-level action:** **Add Soda/Order** → `order.create` (permission `add-order`)
+- **Page-level action:** **Add Soda/Order** → `order.create` (requires `add-order` via controller middleware on `create`)
+- **List access:** `order.index` requires `add-order` (controller middleware)
 - **Row actions (⋮ dropdown):**
-  - **Dispatch** — always shown in action builder; runs sequential dispatch check then navigates to `dispatch.orderHistory`
+  - **Dispatch** — shown only if `canAny(['add-dispatch','edit-dispatch','delete-dispatch'])`; runs sequential dispatch check then navigates to `dispatch.orderHistory`
   - **Edit** — `order.edit` (permission `edit-order`)
   - **Delete** — AJAX delete-check then confirm (permission `delete-order`)
 - **Bulk delete:** Route and button exist (`#bulk_delete_button`); row checkboxes are **commented out** in current UI
@@ -268,13 +382,14 @@
   `Sr No` | `Order ID` | `Product` | `Bags / Ton` | `Dealer Name` | `Dispatch Date` | `Transport` | `Truck Number` | `Driver Contact` | `Action`
 - **Order ID column:** Link to order history; **Complete** chip when order fully dispatched
 - **Server-side:** Yajra DataTables
-- **Row action:** View History → `dispatch.orderHistory`
+- **Route access:** `dispatch.index` requires **any** of `add-dispatch`, `edit-dispatch`, `delete-dispatch` (`role_or_permission` on resource)
+- **Row action:** View History → `dispatch.orderHistory` (action dropdown hidden unless `canAny` dispatch permissions)
 - *(Edit from list is commented out)*
 
 ### 2. Dispatch History Page (`/dispatch/order/{order}`)
 
 - **Page title:** Dispatch History
-- **Header:** Order ID + dealer name; **Add New Dispatch** button (modal) if not blocked and `add-dispatch`
+- **Header:** Order ID + dealer name; **Add New Dispatch** button (modal) if not blocked and user has `add-dispatch` (`@canany(['add-dispatch'])` in `history.blade.php`)
 - **Blocked state:** Alert bar + pending item cards for **prior incomplete order**; CTA link to that order's history
 - **Pending summary:** Per order item — Pending / Dispatched / Total + progress bar
 - **Completion banner:** When all items 100% dispatched
@@ -361,7 +476,8 @@ Under **Sales** submenu (see `resources/views/layouts/sidebar.blade.php`):
 - Eloquent ORM + `SoftDeletes` on `OrderManagement`, `DispatchManagement` (not on `OrderItem`)
 - Controllers: `OrderManagementController`, `DispatchManagementController`
 - Yajra DataTables for list pages (server-side)
-- Permission middleware on mutating routes
+- **Spatie permissions:** middleware aliases in `bootstrap/app.php`; route-level + controller constructor + Blade/`canAny` for UI
+- Base `App\Http\Controllers\Controller` must extend `Illuminate\Routing\Controller` for `$this->middleware()` in constructors
 - No separate Form Request classes in current code — validation inline in controllers
 
 ### Models & relationships
@@ -390,12 +506,17 @@ DispatchManagement (dispatch_management)
 
 ### Routes (`routes/web.php`)
 
+All sales routes are inside `Route::middleware(['auth', 'verified'])`.
+
 ```php
 // Order / Soda-Order
 Route::get('order-last-price', ...)->name('order.lastItemPrice');
 Route::get('order/{order}/dispatch-check', ...)->name('order.dispatchCheck');
 Route::get('order/{order}/delete-check', ...)->name('order.deleteCheck');
 Route::resource('order', OrderManagementController::class)->except(['store','update','destroy']);
+// OrderManagementController __construct:
+//   permission:add-order → index, create
+//   permission:edit-order → edit
 Route::post('order', ...)->middleware('permission:add-order');
 Route::match(['put','patch'], 'order/{order}', ...)->middleware('permission:edit-order');
 Route::delete('order/{order}', ...)->middleware('permission:delete-order');
@@ -403,8 +524,11 @@ Route::post('order-bulk-delete', ...)->middleware('permission:delete-order');
 
 // Dispatch — orderHistory BEFORE resource
 Route::get('dispatch/order/{order}', ...)->name('dispatch.orderHistory');
+Route::get('dispatch/order/{order}/form-data', ...)->name('dispatch.orderFormData');
 Route::get('dispatch/transporter-trucks/{transporter}', ...)->name('dispatch.transporterTrucks');
-Route::resource('dispatch', DispatchManagementController::class)->except(['store','update','destroy']);
+Route::resource('dispatch', DispatchManagementController::class)
+    ->except(['store','update','destroy'])
+    ->middleware('role_or_permission:add-dispatch|edit-dispatch|delete-dispatch');
 Route::post('dispatch', ...)->middleware('permission:add-dispatch');
 Route::match(['put','patch'], 'dispatch/{dispatch}', ...)->middleware('permission:edit-dispatch');
 Route::delete('dispatch/{dispatch}', ...)->middleware('permission:delete-dispatch');
@@ -413,12 +537,25 @@ Route::delete('dispatch/{dispatch}', ...)->middleware('permission:delete-dispatc
 Route::get('/get-dealers', ...)->name('get.dealers');
 ```
 
+### Middleware registration (`bootstrap/app.php`)
+
+```php
+$middleware->alias([
+    'role' => RoleMiddleware::class,
+    'permission' => PermissionMiddleware::class,
+    'role_or_permission' => RoleOrPermissionMiddleware::class,
+]);
+```
+
 ### Key implementation files
 
 | File | Responsibility |
 |---|---|
-| `OrderManagementController` | index (DataTables), create, store, edit, update, destroy, bulkDelete, lastItemPrice, deleteCheck, checkDispatchEligibility, validateOrder() |
-| `DispatchManagementController` | index (DataTables), orderHistory, store, update, destroy, getTrucksByTransporter |
+| `OrderManagementController` | index (DataTables), create, store, edit, update, destroy, bulkDelete, lastItemPrice, deleteCheck, checkDispatchEligibility, validateOrder(); constructor middleware; Dispatch action `canAny`; **SalesScope** on queries & mutations |
+| `DispatchManagementController` | index (DataTables), orderHistory, store, update, destroy, getOrderDispatchFormData, getTrucksByTransporter; **SalesScope** on list & authorize |
+| `SalesPermissionSeeder` | Seed order + dispatch permissions; assign to `admin` |
+| `SalesScope` | Central role-based row filtering for orders & dispatches |
+| `app/Http/Controllers/Controller.php` | Laravel base controller (required for middleware in constructors) |
 
 ---
 
@@ -537,11 +674,15 @@ Sales tracks dealer orders placed by brokers (per brand) and physical dispatch o
 6. isFullyDispatched(): every item sum(bags) >= qty
 
 ## Permissions
-add-order, edit-order, delete-order, add-dispatch, edit-dispatch, delete-dispatch
+add-order, edit-order, delete-order, add-dispatch, edit-dispatch, delete-dispatch, view-dispatch-pending-payments
+
+Seed via: `php artisan db:seed --class=Database\\Seeders\\SalesPermissionSeeder`
 
 ## Routes
 See Sales_Module_Requirements.md technical section for full route list.
 Critical: register dispatch-check and delete-check BEFORE resource routes; dispatch/order/{order} BEFORE dispatch resource.
+Dispatch resource uses: `->middleware('role_or_permission:add-dispatch|edit-dispatch|delete-dispatch')`.
+Order list/create protected in `OrderManagementController::__construct()`.
 
 ## Design Instructions — IMPORTANT
 
@@ -578,6 +719,11 @@ resources/views/layouts/main.blade.php
 - Order list Grand Total column is intentionally hidden in current UI
 - Dispatch delete button in history view is commented out but backend destroy exists
 - Order item soft deletes are disabled — hard delete rows when removed on edit
-- Use permission middleware on POST/PUT/DELETE routes
+- Use permission middleware on POST/PUT/DELETE routes; use `role_or_permission` on dispatch GET resource routes
+- Order index/create: controller middleware `permission:add-order`; edit: `permission:edit-order`
+- UI: `canAny` for Dispatch buttons when any dispatch permission exists; `@can('add-dispatch')` for Add Dispatch modal only
+- Run `SalesPermissionSeeder` so `add-dispatch` exists in DB (was missing before Jun 2026 update)
+- Use `App\Support\SalesScope` for all order/dispatch queries and `authorizeOrderAccess` before single-record actions
+- Roles: super admin/admin/staff = all data; broker = broker_id scope; dealer = dealer.user_id scope
 - Flash messages: session success/error via existing layout helpers (show_success, show_error)
 ```

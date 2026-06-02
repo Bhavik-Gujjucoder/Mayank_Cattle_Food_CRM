@@ -24,7 +24,7 @@
                         @endforeach
                     </select>
                 </div>
-                @if (!auth()->user()->hasRole('broker'))
+                @if (\App\Support\SalesScope::showBrokerFilter())
                     <div class="common-hed-form cls-form-select-input">
                         <label class="col-form-label">Broker Person</label>
                         <select class="form-select select search-dropdown" name="broker_id" id="broker_id">
@@ -67,7 +67,7 @@
                         </select>
                     </div>
                 </div>
-                @if (!auth()->user()->hasRole('broker'))
+                @if (\App\Support\SalesScope::showBrokerFilter())
                     <div class="col-sm-4 col-lg-2 col-md-12">
                         <div class="mb-3">
                             <label class="col-form-label">Broker Person</label>

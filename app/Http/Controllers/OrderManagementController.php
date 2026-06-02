@@ -8,11 +8,19 @@ use App\Models\OrderManagement;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
+use App\Support\SalesScope;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
 class OrderManagementController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:view-order')->only(['index']);
+        $this->middleware('permission:add-order')->only(['create']);
+        $this->middleware('permission:edit-order')->only(['edit']);
+    }
+
     /* ------------------------------------------------------------------ */
     /*  INDEX                                                               */
     /* ------------------------------------------------------------------ */
@@ -23,14 +31,13 @@ class OrderManagementController extends Controller
         $data['brands']     = BrandManagement::where('status', 1)->orderBy('name')->get();
         if ($request->ajax()) {
             $query = OrderManagement::with(['broker', 'brand', 'dealer']);
-            if (auth()->user()->hasRole('broker')) {
-                $query->where('broker_id', auth()->id());
-            }
+            SalesScope::scopeOrders($query);
+
             if ($request->has('brand_id') && $request->brand_id !== 'all') {
                 $query->where('brand_id', $request->brand_id);
             }
-            // Broker filter (only if user is not broker)
-            if (!auth()->user()->hasRole('broker') && $request->has('broker_id') && $request->broker_id !== 'all') {
+            // Broker filter (staff/admin only — scoped users cannot override)
+            if (SalesScope::showBrokerFilter() && $request->has('broker_id') && $request->broker_id !== 'all') {
                 $query->where('broker_id', $request->broker_id);
             }
             return DataTables::of($query)
@@ -74,7 +81,7 @@ class OrderManagementController extends Controller
                                      <i class="fa fa-ellipsis-v"></i>
                                  </a>
                                  <div class="dropdown-menu dropdown-menu-right">';
-                    $btn .= $dispatch_btn;
+                    $btn .= auth()->user()->canAny(['view-dispatch']) ? $dispatch_btn : '';
                     $btn .= auth()->user()->can('edit-order')   ? $edit_btn   : '';
                     $btn .= auth()->user()->can('delete-order') ? $delete_btn : '';
                     $btn .= '</div></div>';
@@ -95,6 +102,9 @@ class OrderManagementController extends Controller
         $data['brands']     = BrandManagement::where('status', 1)->orderBy('name')->get();
         $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
         $data['products']   = Product::where('status', 1)->orderBy('name')->get();
+        $data['locked_dealer'] = SalesScope::isDealer()
+            ? DealerManagement::with('user')->where('user_id', auth()->id())->first()
+            : null;
 
         /* Auto-generate financial-year Order ID */
         $now           = now();
@@ -112,6 +122,8 @@ class OrderManagementController extends Controller
     public function store(Request $request)
     {
         $validated = $this->validateOrder($request);
+        $validated = SalesScope::enforceOrderAssignment($validated);
+        SalesScope::authorizeDealerId($validated['dealer_id']);
 
         /* Calculate totals from submitted line items */
         $totalAmount = 0;
@@ -155,6 +167,8 @@ class OrderManagementController extends Controller
     /* ------------------------------------------------------------------ */
     public function edit(OrderManagement $order)
     {
+        SalesScope::authorizeOrderAccess($order);
+
         $data['page_title'] = 'Edit - Soda/Order';
         $data['order']      = $order->load('items.product', 'items.dispatches');
         $data['brands']     = BrandManagement::where('status', 1)->orderBy('name')->get();
@@ -176,7 +190,11 @@ class OrderManagementController extends Controller
     /* ------------------------------------------------------------------ */
     public function update(Request $request, OrderManagement $order)
     {
+        SalesScope::authorizeOrderAccess($order);
+
         $validated = $this->validateOrder($request, $order->id);
+        $validated = SalesScope::enforceOrderAssignment($validated);
+        SalesScope::authorizeDealerId($validated['dealer_id']);
 
         /* ── Guard: broker / brand / dealer are immutable once any item is dispatched ── */
         $order->loadMissing(['items.dispatches']);
@@ -332,6 +350,8 @@ class OrderManagementController extends Controller
     /* ------------------------------------------------------------------ */
     public function deleteCheck(OrderManagement $order)
     {
+        SalesScope::authorizeOrderAccess($order);
+
         $order->load(['items.dispatches', 'items.product']);
 
         $dispatchedItems = $order->items
@@ -362,6 +382,8 @@ class OrderManagementController extends Controller
     /* ------------------------------------------------------------------ */
     public function destroy(OrderManagement $order)
     {
+        SalesScope::authorizeOrderAccess($order);
+
         /* Server-side safety guard — block if any item was dispatched */
         $order->load(['items.dispatches']);
         $hasDispatched = $order->items->some(
@@ -391,7 +413,10 @@ class OrderManagementController extends Controller
             return response()->json(['price' => null]);
         }
 
+        SalesScope::authorizeDealerId($dealerId);
+
         $lastItem = OrderItem::whereHas('order', function ($q) use ($dealerId) {
+            SalesScope::scopeOrders($q);
             $q->where('dealer_id', $dealerId);
         })
             ->where('product_id', $productId)
@@ -413,9 +438,9 @@ class OrderManagementController extends Controller
             return response()->json(['message' => 'No records selected.'], 400);
         }
 
-        $orders = OrderManagement::whereIn('id', $ids)
-            ->with(['items.dispatches'])
-            ->get();
+        $orders = SalesScope::scopeOrders(
+            OrderManagement::whereIn('id', $ids)->with(['items.dispatches'])
+        )->get();
 
         /* Block if any selected order has dispatched items */
         $blockedIds = $orders
@@ -455,6 +480,8 @@ class OrderManagementController extends Controller
      */
     public function checkDispatchEligibility(OrderManagement $order): \Illuminate\Http\JsonResponse
     {
+        SalesScope::authorizeOrderAccess($order);
+
         /* All non-deleted orders for the same dealer, oldest first */
         $dealerOrders = OrderManagement::where('dealer_id', $order->dealer_id)
             ->orderBy('id')

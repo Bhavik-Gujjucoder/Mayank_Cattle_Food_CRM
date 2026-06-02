@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Support\SalesScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -26,6 +28,14 @@ class DispatchManagement extends Model
         return (int) $this->status === self::STATUS_PAID
             ? '<span class="badge bg-success-light text-success">Paid</span>'
             : '<span class="badge bg-danger-light text-danger">Unpaid</span>';
+    }
+
+    /**
+     * @param  Builder<DispatchManagement>  $query
+     */
+    public function scopeForUser(Builder $query, ?\App\Models\User $user = null): Builder
+    {
+        return SalesScope::scopeDispatches($query, $user);
     }
 
     /* ── Relationships ───────────────────────────────────────────── */

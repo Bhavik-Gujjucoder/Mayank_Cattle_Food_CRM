@@ -147,7 +147,7 @@
                         {{-- ------------------------------------------------------------------ */
                         /*  Sales submenu (Soda / Order + Dispatch)
                         /* ------------------------------------------------------------------ --}}
-                        @canany(['add-order', 'edit-order', 'delete-order', 'add-dispatch', 'edit-dispatch',
+                        @canany(['view-order', 'add-order', 'edit-order', 'delete-order', 'view-dispatch', 'add-dispatch', 'edit-dispatch',
                             'delete-dispatch', 'view-dispatch-pending-payments'])
                             <li class="submenu">
                                 <a href="javascript:void(0);"
@@ -162,7 +162,7 @@
                                     {{-- ------------------------------------------------------------------ */
                                     /*  Soda / Order (type: soda-order)
                                     /* ------------------------------------------------------------------ --}}
-                                    @canany(['add-order', 'edit-order', 'delete-order'])
+                                    @canany(['view-order'])
                                         <li>
                                             <a href="{{ route('order.index') }}"
                                                 class="@if (request()->routeIs('order*')) active @endif">
@@ -174,7 +174,7 @@
                                     {{-- ------------------------------------------------------------------ */
                                     /*  Dispatch (type: dispatch)
                                     /* ------------------------------------------------------------------ --}}
-                                    @canany(['add-dispatch', 'edit-dispatch', 'delete-dispatch'])
+                                    @canany(['view-dispatch'])
                                         <li>
                                             <a href="{{ route('dispatch.index') }}"
                                                 class="@if (request()->routeIs('dispatch*') && !request()->routeIs('delivery-pending-payments*')) active @endif">

@@ -51,7 +51,7 @@
             </div>
 
             {{-- Right: action button --}}
-            @can('add-dispatch')
+            @canany(['add-dispatch'])
                 @if ($dispatchBlocked)
                     {{-- Disabled state — prior order must be completed first --}}
                     <button type="button" class="btn dh-add-btn dh-add-btn-blocked" disabled>
@@ -62,7 +62,7 @@
                         <i class="ti ti-circle-plus me-1"></i>Add New Dispatch
                     </button>
                 @endif
-            @endcan
+            @endcanany
 
         </div>
 

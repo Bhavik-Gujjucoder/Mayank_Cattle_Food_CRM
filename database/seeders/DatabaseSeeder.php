@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             DeliveryPendingPaymentsPermissionSeeder::class,
             TruckPermissionSeeder::class,
             RawMaterialPermissionSeeder::class,
+            SalesPermissionSeeder::class,
         ]);
 
         User::factory()->create([

@@ -62,10 +62,17 @@
             {{-- Dealer --}}
             <div class="col-md-4 mb-3">
                 <label class="col-form-label">Dealer <span class="text-danger">*</span></label>
-                <select name="dealer_id" id="dealer_id" class="form-select search-select" disabled>
-                    <option value="">-- Select Dealer --</option>
-                </select>
-                <small class="dealer-address-hint text-muted">Select broker &amp; brand first to load dealers.</small>
+                @if (!empty($locked_dealer))
+                    <input type="hidden" name="dealer_id" value="{{ $locked_dealer->id }}">
+                    <input type="text" class="form-control" readonly
+                           value="{{ $locked_dealer->user?->name ?? $locked_dealer->firm_shop_name }}">
+                    <small class="text-muted">Your dealer account is fixed for new orders.</small>
+                @else
+                    <select name="dealer_id" id="dealer_id" class="form-select search-select" disabled>
+                        <option value="">-- Select Dealer --</option>
+                    </select>
+                    <small class="dealer-address-hint text-muted">Select broker &amp; brand first to load dealers.</small>
+                @endif
                 <span class="text-danger small dealer_id_error">@error('dealer_id'){{ $message }}@enderror</span>
             </div>
 
@@ -326,6 +333,13 @@
 @section('script')
 <script>
 $(document).ready(function () {
+
+    @if (!empty($locked_dealer))
+    /* Dealer login: pre-fill broker, brand, and delivery address from profile */
+    $('#broker_id').val('{{ $locked_dealer->broker_id }}').trigger('change');
+    $('#brand_id').val('{{ $locked_dealer->brand_id }}').trigger('change');
+    $('#delivery_address').val(@json($locked_dealer->firm_shop_address ?? ''));
+    @endif
 
     /* ── Flatpickr on date fields ────────────────────────────── */
     flatpickr('.flatpickr', {

@@ -12,6 +12,82 @@
 2. **Orders** — Manage purchase orders and their line items
 3. **Received** — Manage delivery/receipt entries against order items
 
+**Route name prefix:** `raw-material.*` (URL prefix `/raw-material`)
+
+**Type identifiers (Spatie `permissions.type` column):**
+- `raw-material-inventory` → Material (inventory)
+- `raw-material-purchas-order` → Orders (note spelling: `purchas`, not `purchase`)
+- `raw-material-receive` → Received
+
+---
+
+## 📅 Changelog — 2 Jun 2026 (permissions, routes, display, exports)
+
+### Summary
+Aligned the module with `RawMaterialPermissionSeeder` (view/export per submodule), grouped routes under `/raw-material`, enforced **2 decimal places** for all money fields in UI/PDF/Excel/JS, and documented `average_price` landed-cost formula.
+
+### Highlights
+| Area | Change |
+|---|---|
+| **Permissions** | Five permissions per submodule: `view-*`, `add-*`, `edit-*`, `delete-*`, `export-*`. List/show → `view-*`; exports → `export-*`; create/store → `add-*` only; edit/update → `edit-*` only (not `view-*`). Received uses `*-raw-material-receive`, not purchase-order permissions. |
+| **Routes** | Single group: `Route::prefix('raw-material')->name('raw-material.')` with nested `order.*` and `receive.*`. |
+| **Display** | Prices, freight, and money totals: **2 decimals** in DataTables, Blade show/PDF, Excel exports, order form JS (`toFixed(2)`, placeholders `0.00`). DB columns may remain `DECIMAL(15,3)`; storage precision ≠ display precision. |
+| **Exports** | Filtered + full Excel/PDF for orders; per-order Excel/PDF; inventory and receive list exports — all gated by `export-*` permissions. |
+| **Forms** | Shared `public/assets/js/raw-material-forms.js` — client validation + scroll-to-first-error (same pattern as Sales orders). Responsive partial: `resources/views/raw_material/partials/module-responsive.blade.php`. |
+| **Seeder** | `database/seeders/RawMaterialPermissionSeeder.php` is **source of truth** — do not rename permissions in code without updating the seeder. Registered in `DatabaseSeeder`. |
+
+### After deploy — run once (if permissions are stale)
+```bash
+php artisan db:seed --class="Database\Seeders\RawMaterialPermissionSeeder"
+php artisan permission:cache-reset
+```
+
+---
+
+## 🔐 Permissions (Spatie)
+
+**Seeder:** `database/seeders/RawMaterialPermissionSeeder.php`  
+- Deletes existing permissions matching the list, re-inserts, assigns all to `admin`, calls `forgetCachedPermissions()`.
+
+### Material (`type: raw-material-inventory`)
+
+| Permission | Used for |
+|---|---|
+| `view-raw-material-inventory` | List, show |
+| `add-raw-material-inventory` | Create, store |
+| `edit-raw-material-inventory` | Edit, update, toggle status |
+| `delete-raw-material-inventory` | Destroy |
+| `export-raw-material-inventory` | Excel export (filtered list) |
+
+### Orders (`type: raw-material-purchas-order`)
+
+| Permission | Used for |
+|---|---|
+| `view-raw-material-purchas-order` | List, show, order items AJAX |
+| `add-raw-material-purchas-order` | Create, store |
+| `edit-raw-material-purchas-order` | Edit, update, cancel |
+| `delete-raw-material-purchas-order` | Destroy |
+| `export-raw-material-purchas-order` | All order exports (filtered list, full module, per-order Excel/PDF, view PDF) |
+
+### Received (`type: raw-material-receive`)
+
+| Permission | Used for |
+|---|---|
+| `view-raw-material-receive` | List, show |
+| `add-raw-material-receive` | Create, store |
+| `edit-raw-material-receive` | Edit, update, mark received, cancel |
+| `delete-raw-material-receive` | Destroy |
+| `export-raw-material-receive` | Excel export (filtered list) |
+
+### Enforcement layers
+| Layer | Rule |
+|---|---|
+| **Routes** | `permission:*` middleware on each route (see Routes section below). |
+| **Controllers** | DataTables action dropdowns: `@can` / `Gate::allows` per action (view, edit, delete, export). |
+| **Blade / sidebar** | `@can` / `@canany` on menu items, buttons, and row actions. |
+
+**Do not use** legacy names such as `view-raw-material-order` or `export-raw-material-order` — they are not in the seeder.
+
 ---
 
 ## 🗄️ Database Schema
@@ -142,6 +218,10 @@
 - All `qty` fields stored in **tons**
 - All `price` fields stored **per kg**
 - Conversion: `kg = ton * 1000`
+
+### Display formatting (money)
+- Database columns for order/receive money may use `DECIMAL(15,3)`; **user-facing output uses 2 decimals** (`number_format(..., 2)`, export formatters, PDF/Blade, JS `toFixed(2)`).
+- Applies to: `price`, `price_avg`, `total_price`, `pending_price`, `received_price`, `total_freight`, `freight`, `last_purchase_price`, `average_price`, and order header totals.
 
 ### Soft Deletes
 - All 4 tables use soft deletes (`deleted_at`)
@@ -376,23 +456,32 @@ RawMaterialReceive
 ```
 
 ### Routes
-```
-/raw-materials                  → Material list
-/raw-materials/create           → Add material
-/raw-materials/{id}/edit        → Edit material
-/raw-materials/{id}             → View material
+All routes live under `routes/web.php` inside `Route::prefix('raw-material')->name('raw-material.')`.
 
-/raw-material-orders            → Orders list
-/raw-material-orders/create     → Add order
-/raw-material-orders/{id}/edit  → Edit order
-/raw-material-orders/{id}       → View order
+| URL path | Route name | Middleware (permission) |
+|---|---|---|
+| `GET /raw-material` | `raw-material.index` | `view-raw-material-inventory` |
+| `GET /raw-material/create` | `raw-material.create` | `add-raw-material-inventory` |
+| `POST /raw-material` | `raw-material.store` | `add-raw-material-inventory` |
+| `GET /raw-material/{id}` | `raw-material.show` | `view-raw-material-inventory` |
+| `GET /raw-material/{id}/edit` | `raw-material.edit` | `edit-raw-material-inventory` |
+| `PUT/PATCH /raw-material/{id}` | `raw-material.update` | `edit-raw-material-inventory` |
+| `DELETE /raw-material/{id}` | `raw-material.destroy` | `delete-raw-material-inventory` |
+| `GET /raw-material/export` | `raw-material.export` | `export-raw-material-inventory` |
+| `PATCH /raw-material/{id}/toggle-status` | `raw-material.toggleStatus` | `edit-raw-material-inventory` |
+| `GET /raw-material/order` | `raw-material.order.index` | `view-raw-material-purchas-order` |
+| `GET /raw-material/order/create` | `raw-material.order.create` | `add-raw-material-purchas-order` |
+| `POST /raw-material/order` | `raw-material.order.store` | `add-raw-material-purchas-order` |
+| `GET /raw-material/order/{id}` | `raw-material.order.show` | `view-raw-material-purchas-order` |
+| `GET /raw-material/order/{id}/edit` | `raw-material.order.edit` | `edit-raw-material-purchas-order` |
+| `GET /raw-material/order/export` (+ full/filtered/per-order PDF routes) | `raw-material.order.*` | `export-raw-material-purchas-order` |
+| `GET /raw-material/receive` | `raw-material.receive.index` | `view-raw-material-receive` |
+| `GET /raw-material/receive/create` | `raw-material.receive.create` | `add-raw-material-receive` |
+| `POST /raw-material/receive` | `raw-material.receive.store` | `add-raw-material-receive` |
+| `PATCH /raw-material/receive/{id}/mark-received` | `raw-material.receive.markReceived` | `edit-raw-material-receive` |
+| `GET /raw-material/receive/export` | `raw-material.receive.export` | `export-raw-material-receive` |
 
-/raw-material-receives          → Received list
-/raw-material-receives/create   → Add received entry
-/raw-material-receives/{id}/edit→ Edit received entry
-/raw-material-receives/{id}     → View received entry
-/raw-material-receives/{id}/mark-received → Mark as received (PATCH)
-```
+Register **order** and **receive** route groups before material wildcard routes (`{raw_material}`).
 
 ### Key Migrations
 - All tables include: `id`, `created_at`, `updated_at`, `deleted_at`
@@ -602,6 +691,7 @@ Use these consistent colors for status badges (match to project's existing badge
 
 ## Additional Notes
 - suppliers table already exists with columns: id, name, mobile, email, address, status
+- **Money display:** Show prices, freight, and line/order totals with **2 decimal places** everywhere users read them (lists, detail pages, PDFs, Excel, order form calculations). Quantity/stock in tons may use 0–2 decimals as appropriate.
 - Use Laravel Observers for all cached field update logic
 - Keep controllers thin — move business logic to Service classes if needed
 - Add proper indexes on foreign key columns in migrations

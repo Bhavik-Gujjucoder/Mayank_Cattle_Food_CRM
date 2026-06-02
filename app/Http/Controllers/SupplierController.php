@@ -76,14 +76,13 @@ class SupplierController extends Controller
                         ? '<span title="' . e($row->address) . '">' . e(\Str::limit($row->address, 40)) . '</span>'
                         : '-';
                 })
-                ->editColumn('opening_balance', fn ($row) => '₹ ' . number_format($row->opening_balance, 2))
                 ->editColumn('status', fn ($row) => $row->statusBadge())
                 ->filterColumn('city_name', function ($query, $keyword) {
                     $query->whereHas('city', function ($q) use ($keyword) {
                         $q->where('city_name', 'like', "%{$keyword}%");
                     });
                 })
-                ->rawColumns(['checkbox', 'address', 'opening_balance', 'status', 'action'])
+                ->rawColumns(['checkbox', 'address', 'status', 'action'])
                 ->make(true);
         }
 
