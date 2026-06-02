@@ -134,7 +134,7 @@
                         /*  Sales submenu (Soda / Order + Dispatch)
                         /* ------------------------------------------------------------------ --}}
                         @canany(['add-order', 'edit-order', 'delete-order', 'add-dispatch', 'edit-dispatch',
-                            'delete-dispatch', 'view-delivery-pending-payments'])
+                            'delete-dispatch', 'view-dispatch-pending-payments'])
                             <li class="submenu">
                                 <a href="javascript:void(0);"
                                     class="@if (request()->routeIs('order*') || request()->routeIs('dispatch*') || request()->routeIs('delivery-pending-payments*')) active subdrop @endif">
@@ -172,7 +172,7 @@
                                     {{-- ------------------------------------------------------------------ */
                                     /*  Dispatch Pending Payments
                                     /* ------------------------------------------------------------------ --}}
-                                    @can('view-delivery-pending-payments')
+                                    @can('view-dispatch-pending-payments')
                                         <li>
                                             <a href="{{ route('delivery-pending-payments.index') }}"
                                                 class="@if (request()->routeIs('delivery-pending-payments*')) active @endif">

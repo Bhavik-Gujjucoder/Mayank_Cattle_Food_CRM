@@ -10,7 +10,7 @@ class DeliveryPendingPaymentsPermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        $permission = 'view-delivery-pending-payments';
+        $permission = 'view-dispatch-pending-payments';
 
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
 

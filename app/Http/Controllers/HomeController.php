@@ -138,7 +138,7 @@ class HomeController extends Controller
         $data['dpp_dashboard_can_link_order'] = false;
         $data['dpp_dashboard_min_days']       = DeliveryPendingPaymentsReportService::DASHBOARD_MIN_PENDING_DAYS;
 
-        if ($loginUser->can('view-delivery-pending-payments')) {
+        if ($loginUser->can('view-dispatch-pending-payments')) {
             $data['dpp_dashboard_sections'] = $this->pendingPaymentsReportService->buildForDashboard();
             $data['dpp_dashboard_summary']  = $this->pendingPaymentsReportService->summarize(
                 $data['dpp_dashboard_sections']
