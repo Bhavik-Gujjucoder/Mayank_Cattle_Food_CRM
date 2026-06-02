@@ -53,7 +53,7 @@
             </div>
             <div class="cls-form-right">
                 <div class="comm-header-right-btn">
-                    @canany(['add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'])
+                    @can('export-raw-material-purchas-order')
                         <div class="btn-group me-2">
                             <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="exportOrdersBtn">
                                 <i class="ti ti-file-export me-2"></i>Export Orders (0)
@@ -88,7 +88,7 @@
                                 </li>
                             </ul>
                         </div>
-                    @endcanany
+                    @endcan
                     @can('add-raw-material-purchas-order')
                         <a href="{{ route('raw-material.order.create') }}" class="btn btn-primary">
                             <i class="ti ti-square-rounded-plus me-2"></i>Add Purchase Order
@@ -112,7 +112,7 @@
                         <th scope="col">Total Price</th>
                         <th scope="col">Total Freight</th>
                         <th scope="col">Status</th>
-                        @canany(['add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'])
+                        @canany(['edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'])
                             <th scope="col">Action</th>
                         @endcanany
                     </tr>

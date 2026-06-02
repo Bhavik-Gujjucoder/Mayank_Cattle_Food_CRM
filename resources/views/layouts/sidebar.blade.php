@@ -66,9 +66,14 @@
                         {{-- ------------------------------------------------------------------ */
                         /*  Raw Material submenu (inventory + purchase order)
                         /* ------------------------------------------------------------------ --}}
-                        @canany(['add-raw-material-inventory', 'edit-raw-material-inventory',
-                            'delete-raw-material-inventory', 'add-raw-material-purchas-order',
-                            'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'])
+                        @canany([
+                            'view-raw-material-inventory', 'export-raw-material-inventory',
+                            'add-raw-material-inventory', 'edit-raw-material-inventory', 'delete-raw-material-inventory',
+                            'view-raw-material-purchas-order', 'export-raw-material-purchas-order',
+                            'add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order',
+                            'view-raw-material-receive', 'export-raw-material-receive',
+                            'add-raw-material-receive', 'edit-raw-material-receive', 'delete-raw-material-receive',
+                        ])
                             <li class="submenu">
                                 <a href="javascript:void(0);"
                                     class="@if (request()->routeIs('raw-material.*')) active subdrop @endif">
@@ -78,8 +83,10 @@
                                 </a>
                                 <ul style="display: @if (request()->routeIs('raw-material.*')) block @else none @endif;">
 
-                                    @canany(['add-raw-material-inventory', 'edit-raw-material-inventory',
-                                        'delete-raw-material-inventory'])
+                                    @canany([
+                                        'view-raw-material-inventory', 'export-raw-material-inventory',
+                                        'add-raw-material-inventory', 'edit-raw-material-inventory', 'delete-raw-material-inventory',
+                                    ])
                                         <li>
                                             <a href="{{ route('raw-material.index') }}"
                                                 class="@if (request()->routeIs('raw-material.index', 'raw-material.create', 'raw-material.edit', 'raw-material.show', 'raw-material.export')) active @endif">
@@ -88,14 +95,21 @@
                                         </li>
                                     @endcanany
 
-                                    @canany(['add-raw-material-purchas-order', 'edit-raw-material-purchas-order',
-                                        'delete-raw-material-purchas-order'])
+                                    @canany([
+                                        'view-raw-material-purchas-order', 'export-raw-material-purchas-order',
+                                        'add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order',
+                                    ])
                                         <li>
                                             <a href="{{ route('raw-material.order.index') }}"
                                                 class="@if (request()->routeIs('raw-material.order.*')) active @endif">
                                                 <span>Orders</span>
                                             </a>
                                         </li>
+                                    @endcanany
+                                    @canany([
+                                        'view-raw-material-receive', 'export-raw-material-receive',
+                                        'add-raw-material-receive', 'edit-raw-material-receive', 'delete-raw-material-receive',
+                                    ])
                                         <li>
                                             <a href="{{ route('raw-material.receive.index') }}"
                                                 class="@if (request()->routeIs('raw-material.receive.*')) active @endif">

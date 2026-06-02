@@ -40,14 +40,16 @@ class RawMaterialReceiveController extends Controller
                 ->editColumn('received_date', fn ($row) => $row->received_date?->format('d M Y') ?? '—')
                 ->editColumn('status', fn ($row) => $row->statusBadge())
                 ->addColumn('action', function ($row) {
-                    $view   = '<a href="' . route('raw-material.receive.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>';
-                    $edit   = ($row->isEditable() && auth()->user()->can('edit-raw-material-purchas-order'))
+                    $view   = auth()->user()->can('view-raw-material-receive')
+                        ? '<a href="' . route('raw-material.receive.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>'
+                        : '';
+                    $edit   = ($row->isEditable() && auth()->user()->can('edit-raw-material-receive'))
                         ? '<a href="' . route('raw-material.receive.edit', $row->id) . '" class="dropdown-item"><i class="ti ti-edit text-warning"></i> Edit</a>' : '';
-                    $mark   = ($row->isEditable() && auth()->user()->can('edit-raw-material-purchas-order'))
+                    $mark   = ($row->isEditable() && auth()->user()->can('edit-raw-material-receive'))
                         ? '<a href="javascript:void(0)" class="dropdown-item mark-received-btn" data-url="' . route('raw-material.receive.markReceived', $row->id) . '"><i class="ti ti-check text-success"></i> Mark Received</a>' : '';
-                    $cancel = ($row->isEditable() && auth()->user()->can('edit-raw-material-purchas-order'))
+                    $cancel = ($row->isEditable() && auth()->user()->can('edit-raw-material-receive'))
                         ? '<a href="javascript:void(0)" class="dropdown-item cancel-receive-btn" data-url="' . route('raw-material.receive.cancel', $row->id) . '"><i class="ti ti-ban text-danger"></i> Cancel</a>' : '';
-                    $delete = auth()->user()->can('delete-raw-material-purchas-order')
+                    $delete = auth()->user()->can('delete-raw-material-receive')
                         ? '<a href="javascript:void(0)" class="dropdown-item delete-btn" data-id="' . $row->id . '"><i class="ti ti-trash text-danger"></i> Delete</a>
                            <form action="' . route('raw-material.receive.destroy', $row->id) . '" method="POST" class="delete-form" id="delete-form-' . $row->id . '">' . csrf_field() . method_field('DELETE') . '</form>' : '';
 

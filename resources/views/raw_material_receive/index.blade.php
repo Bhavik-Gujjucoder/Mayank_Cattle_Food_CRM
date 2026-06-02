@@ -61,12 +61,12 @@
             </div>
             <div class="cls-form-right">
                 <div class="comm-header-right-btn">
-                    @canany(['add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'])
+                    @can('export-raw-material-receive')
                         <a href="#" id="exportBtn" class="btn btn-outline-primary me-2" data-export-url="{{ route('raw-material.receive.export') }}">
                             <i class="ti ti-file-export me-2"></i>Export (0)
                         </a>
-                    @endcanany
-                    @can('add-raw-material-purchas-order')
+                    @endcan
+                    @can('add-raw-material-receive')
                         <a href="{{ route('raw-material.receive.create') }}" class="btn btn-primary">
                             <i class="ti ti-square-rounded-plus me-2"></i>Add Received Entry
                         </a>
@@ -88,7 +88,7 @@
                         <th scope="col">Freight</th>
                         <th scope="col">Received Date</th>
                         <th scope="col">Status</th>
-                        @canany(['edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'])
+                        @canany(['edit-raw-material-receive', 'delete-raw-material-receive'])
                             <th scope="col">Action</th>
                         @endcanany
                     </tr>
@@ -119,7 +119,7 @@ $(document).ready(function () {
         window.history.replaceState({}, '', qs ? ('?' + qs) : window.location.pathname);
     }
 
-    const isShowAction = {{ auth()->user()->canAny(['edit-raw-material-purchas-order', 'delete-raw-material-purchas-order']) ? 'true' : 'false' }};
+    const isShowAction = {{ auth()->user()->canAny(['edit-raw-material-receive', 'delete-raw-material-receive']) ? 'true' : 'false' }};
 
     var raw_material_receive_table = $('#raw_material_receive_table').DataTable({
         pageLength: 10,

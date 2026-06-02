@@ -28,11 +28,11 @@
             </div>
             <div class="cls-form-right">
                 <div class="comm-header-right-btn">
-                    @canany(['add-raw-material-inventory', 'edit-raw-material-inventory', 'delete-raw-material-inventory'])
+                    @can('export-raw-material-inventory')
                         <a href="#" id="exportBtn" class="btn btn-outline-primary me-2" data-export-url="{{ route('raw-material.export') }}">
                             <i class="ti ti-file-export me-2"></i>Export (0)
                         </a>
-                    @endcanany
+                    @endcan
                     @can('add-raw-material-inventory')
                         <a href="{{ route('raw-material.create') }}" class="btn btn-primary">
                             <i class="ti ti-square-rounded-plus me-2"></i>Add Raw Material

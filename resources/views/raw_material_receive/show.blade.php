@@ -13,7 +13,7 @@
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
             <p class="form-section-title mb-0"><i class="ti ti-truck-delivery me-1"></i>Received Entry</p>
             <div class="d-flex gap-2">
-                @if ($receive->isEditable() && auth()->user()->can('edit-raw-material-purchas-order'))
+                @if ($receive->isEditable() && auth()->user()->can('edit-raw-material-receive'))
                     <a href="{{ route('raw-material.receive.edit', $receive->id) }}" class="btn btn-warning btn-sm">
                         <i class="ti ti-edit me-1"></i>Edit
                     </a>

@@ -32,7 +32,9 @@ class RawMaterialController extends Controller
                 ->editColumn('average_price', fn ($row) => '₹ ' . number_format($row->average_price, 2))
                 ->editColumn('status', fn ($row) => $row->statusBadge())
                 ->addColumn('action', function ($row) {
-                    $view = '<a href="' . route('raw-material.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>';
+                    $view = auth()->user()->can('view-raw-material-inventory')
+                        ? '<a href="' . route('raw-material.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>'
+                        : '';
                     $edit = auth()->user()->can('edit-raw-material-inventory')
                         ? '<a href="' . route('raw-material.edit', $row->id) . '" class="dropdown-item"><i class="ti ti-edit text-warning"></i> Edit</a>'
                         : '';

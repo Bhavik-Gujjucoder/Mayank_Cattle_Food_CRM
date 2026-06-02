@@ -44,14 +44,16 @@ class RawMaterialOrderController extends Controller
                 ->editColumn('total_freight', fn ($row) => '₹ ' . number_format($row->total_freight, 2))
                 ->editColumn('status', fn ($row) => $row->statusBadge())
                 ->addColumn('action', function ($row) {
-                    $view   = '<a href="' . route('raw-material.order.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>';
+                    $view   = auth()->user()->can('view-raw-material-purchas-order')
+                        ? '<a href="' . route('raw-material.order.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>'
+                        : '';
                     $edit   = ($row->isEditable() && auth()->user()->can('edit-raw-material-purchas-order'))
                         ? '<a href="' . route('raw-material.order.edit', $row->id) . '" class="dropdown-item"><i class="ti ti-edit text-warning"></i> Edit</a>' : '';
                     $cancel = (in_array((int) $row->status, [0, 1], true) && auth()->user()->can('edit-raw-material-purchas-order'))
                         ? '<a href="javascript:void(0)" class="dropdown-item cancel-order-btn" data-url="' . route('raw-material.order.cancel', $row->id) . '"><i class="ti ti-ban text-danger"></i> Cancel</a>' : '';
-                    $exportExcel = auth()->user()->canAny(['add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'])
+                    $exportExcel = auth()->user()->can('export-raw-material-purchas-order')
                         ? '<a href="' . route('raw-material.order.export-order-excel', $row->id) . '" class="dropdown-item"><i class="ti ti-file-spreadsheet text-success"></i> Export Excel</a>' : '';
-                    $exportPdf = auth()->user()->canAny(['add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'])
+                    $exportPdf = auth()->user()->can('export-raw-material-purchas-order')
                         ? '<a href="' . route('raw-material.order.export-order-pdf', $row->id) . '" class="dropdown-item"><i class="ti ti-file-type-pdf text-danger"></i> Export PDF</a>' : '';
                     $delete = auth()->user()->can('delete-raw-material-purchas-order')
                         ? '<a href="javascript:void(0)" class="dropdown-item delete-btn" data-id="' . $row->id . '"><i class="ti ti-trash text-danger"></i> Delete</a>
