@@ -13,7 +13,7 @@
             </div>
         </div>
     </div>
-    @can('add-dispatch')
+    @can('add-order')
         <div class="d-flex justify-content-end mt-3">
             <a href="javascript:void(0)" class="btn btn-primary btn-md" data-bs-toggle="modal"
                 data-bs-target="#dashboardDispatchModal">
