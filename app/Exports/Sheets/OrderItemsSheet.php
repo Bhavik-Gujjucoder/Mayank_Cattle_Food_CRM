@@ -68,12 +68,12 @@ class OrderItemsSheet implements FromCollection, WithHeadings, WithStyles, WithT
                 $item->total_qty,
                 $item->pending_qty,
                 $item->received_qty,
-                number_format((float) $item->price, 3),
-                number_format((float) $item->price_avg, 3),
-                number_format((float) $item->total_price, 3),
-                number_format((float) $item->pending_price, 3),
-                number_format((float) $item->received_price, 3),
-                number_format((float) $item->total_freight, 3),
+                number_format((float) $item->price, 2),
+                number_format((float) $item->price_avg, 2),
+                number_format((float) $item->total_price, 2),
+                number_format((float) $item->pending_price, 2),
+                number_format((float) $item->received_price, 2),
+                number_format((float) $item->total_freight, 2),
                 RawMaterialFilterService::orderItemStatusLabel((int) $item->status),
             ]);
 

@@ -36,8 +36,8 @@ class OrderDetailsSheet implements FromCollection, WithHeadings, WithStyles, Wit
             $this->order->supplier?->name ?? '—',
             $this->order->order_date?->format('d-m-Y') ?? '—',
             $this->order->total_qty,
-            number_format((float) $this->order->total_price, 3),
-            number_format((float) $this->order->total_freight, 3),
+            number_format((float) $this->order->total_price, 2),
+            number_format((float) $this->order->total_freight, 2),
             RawMaterialFilterService::orderStatusLabel((int) $this->order->status),
         ]]);
     }

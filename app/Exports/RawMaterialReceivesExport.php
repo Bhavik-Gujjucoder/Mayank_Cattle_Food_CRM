@@ -31,7 +31,7 @@ class RawMaterialReceivesExport implements FromCollection, WithHeadings, WithSty
                 $row->order?->order_unique_id ?? '—',
                 $row->rawMaterial?->name ?? '—',
                 $row->qty,
-                number_format((float) $row->freight, 3),
+                number_format((float) $row->freight, 2),
                 $row->received_date?->format('d-m-Y') ?? '—',
                 RawMaterialFilterService::receiveStatusLabel((int) $row->status),
             ];

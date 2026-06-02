@@ -36,8 +36,8 @@
                     <td>{{ $order->supplier?->name ?? '—' }}</td>
                     <td>{{ $order->order_date?->format('d M Y') ?? '—' }}</td>
                     <td class="text-right">{{ $order->total_qty }}</td>
-                    <td class="text-right">{{ number_format($order->total_price, 3) }}</td>
-                    <td class="text-right">{{ number_format($order->total_freight, 3) }}</td>
+                    <td class="text-right">{{ number_format($order->total_price, 2) }}</td>
+                    <td class="text-right">{{ number_format($order->total_freight, 2) }}</td>
                     <td>{{ \App\Services\RawMaterial\RawMaterialFilterService::orderStatusLabel((int) $order->status) }}</td>
                 </tr>
             @endforeach
