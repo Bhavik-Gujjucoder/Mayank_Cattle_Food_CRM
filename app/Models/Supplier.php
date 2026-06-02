@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Supplier extends Model
@@ -11,6 +13,21 @@ class Supplier extends Model
 
     protected $table = 'suppliers';
     protected $guarded = [];
+
+    public function state(): BelongsTo
+    {
+        return $this->belongsTo(StateManagement::class, 'state_id');
+    }
+
+    public function city(): BelongsTo
+    {
+        return $this->belongsTo(CityManagement::class, 'city_id');
+    }
+
+    public function rawMaterialOrders(): HasMany
+    {
+        return $this->hasMany(RawMaterialOrder::class);
+    }
 
     public function statusBadge(): string
     {

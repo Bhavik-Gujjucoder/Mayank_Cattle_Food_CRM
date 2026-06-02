@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\RawMaterialOrderItem;
+use App\Models\RawMaterialReceive;
+use App\Observers\RawMaterialOrderItemObserver;
+use App\Observers\RawMaterialReceiveObserver;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -24,5 +28,7 @@ class AppServiceProvider extends ServiceProvider
             return $user->hasRole('super admin')  ? true : null;
         });
 
+        RawMaterialOrderItem::observe(RawMaterialOrderItemObserver::class);
+        RawMaterialReceive::observe(RawMaterialReceiveObserver::class);
     }
 }

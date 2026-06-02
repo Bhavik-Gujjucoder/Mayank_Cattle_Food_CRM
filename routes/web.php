@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CityManagementController;
 use App\Http\Controllers\DealerManagementController;
+use App\Http\Controllers\DeliveryPendingPaymentsController;
 use App\Http\Controllers\DispatchManagementController;
 use App\Http\Controllers\GeneralSettingController;
 use App\Http\Controllers\HomeController;
@@ -12,7 +13,8 @@ use App\Http\Controllers\OtpController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RawMaterialController;
-use App\Http\Controllers\RawMaterialPurchaseController;
+use App\Http\Controllers\RawMaterialOrderController;
+use App\Http\Controllers\RawMaterialReceiveController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StateManagementController;
 use App\Http\Controllers\SupplierController;
@@ -106,6 +108,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dispatch/order/{order}', [DispatchManagementController::class, 'orderHistory'])
         ->name('dispatch.orderHistory');
 
+    /* AJAX: order line items + eligibility for dashboard dispatch modal */
+    Route::get('dispatch/order/{order}/form-data', [DispatchManagementController::class, 'getOrderDispatchFormData'])
+        ->name('dispatch.orderFormData');
+
     /* AJAX: trucks that belong to a given transporter (for dynamic truck dropdown) */
     Route::get('dispatch/transporter-trucks/{transporter}', [DispatchManagementController::class, 'getTrucksByTransporter'])
         ->name('dispatch.transporterTrucks');
@@ -117,6 +123,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('dispatch.update')->middleware('permission:edit-dispatch');
     Route::delete('dispatch/{dispatch}', [DispatchManagementController::class, 'destroy'])
         ->name('dispatch.destroy')->middleware('permission:delete-dispatch');
+
+
+    /* ------------------------------------------------------------------ */
+    /*  Dispatch Pending Payments (type: delivery-pending-payments)       */
+    /* ------------------------------------------------------------------ */
+    Route::get('delivery-pending-payments/export', [DeliveryPendingPaymentsController::class, 'export'])
+        ->name('delivery-pending-payments.export')
+        ->middleware('permission:view-delivery-pending-payments');
+    Route::get('delivery-pending-payments', [DeliveryPendingPaymentsController::class, 'index'])
+        ->name('delivery-pending-payments.index')
+        ->middleware('permission:view-delivery-pending-payments');
 
 
     /* ------------------------------------------------------------------ */
@@ -174,17 +191,71 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     /* ------------------------------------------------------------------ */
-    /*  Raw Material Inventory  (type: raw-material-inventory)             */
+    /*  Raw Material Module                                                 */
     /* ------------------------------------------------------------------ */
-    Route::resource('raw-material', RawMaterialController::class)->except(['store', 'update', 'destroy']);
-    Route::post('raw-material', [RawMaterialController::class, 'store'])
-        ->name('raw-material.store')->middleware('permission:add-raw-material-inventory');
-    Route::match(['put', 'patch'], 'raw-material/{raw_material}', [RawMaterialController::class, 'update'])
-        ->name('raw-material.update')->middleware('permission:edit-raw-material-inventory');
-    Route::delete('raw-material/{raw_material}', [RawMaterialController::class, 'destroy'])
-        ->name('raw-material.destroy')->middleware('permission:delete-raw-material-inventory');
-    Route::post('/raw-material/bulk-delete', [RawMaterialController::class, 'bulkDelete'])
-        ->name('raw-material.bulkDelete')->middleware('permission:delete-raw-material-inventory');
+    Route::prefix('raw-material')->name('raw-material.')->group(function () {
+        /* Material (inventory) */
+        Route::get('export', [RawMaterialController::class, 'export'])->name('export');
+        Route::patch('{raw_material}/toggle-status', [RawMaterialController::class, 'toggleStatus'])
+            ->name('toggleStatus')->middleware('permission:edit-raw-material-inventory');
+
+        /* Orders — register before {raw_material} wildcard routes */
+        Route::prefix('order')->name('order.')->group(function () {
+            Route::get('export', [RawMaterialOrderController::class, 'export'])->name('export');
+            Route::get('export-pdf-list', [RawMaterialOrderController::class, 'exportListPdf'])->name('export-list-pdf');
+            Route::get('export-full', [RawMaterialOrderController::class, 'exportFull'])->name('export-full');
+            Route::get('export-full-pdf', [RawMaterialOrderController::class, 'exportFullPdf'])->name('export-full-pdf');
+            Route::get('{raw_material_order}/export-excel', [RawMaterialOrderController::class, 'exportOrderExcel'])
+                ->name('export-order-excel');
+            Route::get('{raw_material_order}/export-order-pdf', [RawMaterialOrderController::class, 'exportOrderPdf'])
+                ->name('export-order-pdf');
+            Route::get('{raw_material_order}/export-pdf', [RawMaterialOrderController::class, 'exportPdf'])
+                ->name('exportPdf');
+            Route::get('{raw_material_order}/items', [RawMaterialOrderController::class, 'orderItems'])
+                ->name('items');
+            Route::patch('{raw_material_order}/cancel', [RawMaterialOrderController::class, 'cancel'])
+                ->name('cancel')->middleware('permission:edit-raw-material-purchas-order');
+            Route::resource('/', RawMaterialOrderController::class)
+                ->except(['store', 'update', 'destroy'])
+                ->parameters(['' => 'raw_material_order']);
+            Route::post('/', [RawMaterialOrderController::class, 'store'])
+                ->name('store')->middleware('permission:add-raw-material-purchas-order');
+            Route::match(['put', 'patch'], '{raw_material_order}', [RawMaterialOrderController::class, 'update'])
+                ->name('update')->middleware('permission:edit-raw-material-purchas-order');
+            Route::delete('{raw_material_order}', [RawMaterialOrderController::class, 'destroy'])
+                ->name('destroy')->middleware('permission:delete-raw-material-purchas-order');
+        });
+
+        /* Received */
+        Route::prefix('receive')->name('receive.')->group(function () {
+            Route::get('export', [RawMaterialReceiveController::class, 'export'])->name('export');
+            Route::patch('{raw_material_receive}/mark-received', [RawMaterialReceiveController::class, 'markReceived'])
+                ->name('markReceived')->middleware('permission:edit-raw-material-purchas-order');
+            Route::patch('{raw_material_receive}/cancel', [RawMaterialReceiveController::class, 'cancel'])
+                ->name('cancel')->middleware('permission:edit-raw-material-purchas-order');
+            Route::resource('/', RawMaterialReceiveController::class)
+                ->except(['store', 'update', 'destroy'])
+                ->parameters(['' => 'raw_material_receive']);
+            Route::post('/', [RawMaterialReceiveController::class, 'store'])
+                ->name('store')->middleware('permission:add-raw-material-purchas-order');
+            Route::match(['put', 'patch'], '{raw_material_receive}', [RawMaterialReceiveController::class, 'update'])
+                ->name('update')->middleware('permission:edit-raw-material-purchas-order');
+            Route::delete('{raw_material_receive}', [RawMaterialReceiveController::class, 'destroy'])
+                ->name('destroy')->middleware('permission:delete-raw-material-purchas-order');
+        });
+
+        /* Material CRUD — wildcard routes last */
+        Route::get('create', [RawMaterialController::class, 'create'])->name('create');
+        Route::get('/', [RawMaterialController::class, 'index'])->name('index');
+        Route::post('/', [RawMaterialController::class, 'store'])
+            ->name('store')->middleware('permission:add-raw-material-inventory');
+        Route::get('{raw_material}/edit', [RawMaterialController::class, 'edit'])->name('edit');
+        Route::get('{raw_material}', [RawMaterialController::class, 'show'])->name('show');
+        Route::match(['put', 'patch'], '{raw_material}', [RawMaterialController::class, 'update'])
+            ->name('update')->middleware('permission:edit-raw-material-inventory');
+        Route::delete('{raw_material}', [RawMaterialController::class, 'destroy'])
+            ->name('destroy')->middleware('permission:delete-raw-material-inventory');
+    });
 
 
     /* ------------------------------------------------------------------ */
@@ -214,17 +285,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/truck/bulk-delete', [TruckManagementController::class, 'bulkDelete'])
         ->name('truck.bulkDelete')->middleware('permission:delete-truck');
 
-
-    /* ------------------------------------------------------------------ */
-    /*  Raw Material Purchase Order  (type: raw-material-purchas-order)    */
-    /* ------------------------------------------------------------------ */
-    Route::resource('raw-material-order', RawMaterialPurchaseController::class)->except(['store', 'update', 'destroy']);
-    Route::post('raw-material-order', [RawMaterialPurchaseController::class, 'store'])
-        ->name('raw-material-order.store')->middleware('permission:add-raw-material-purchas-order');
-    Route::match(['put', 'patch'], 'raw-material-order/{raw_material_order}', [RawMaterialPurchaseController::class, 'update'])
-        ->name('raw-material-order.update')->middleware('permission:edit-raw-material-purchas-order');
-    Route::delete('raw-material-order/{raw_material_order}', [RawMaterialPurchaseController::class, 'destroy'])
-        ->name('raw-material-order.destroy')->middleware('permission:delete-raw-material-purchas-order');
 
 
     /* ------------------------------------------------------------------ */

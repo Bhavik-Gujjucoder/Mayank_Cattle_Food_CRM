@@ -68,6 +68,7 @@ class DispatchManagementController extends Controller
                 ->addColumn('transporter_name',fn($row) => $row->transporter?->name ?? '—')
                 ->editColumn('dispatch_date',  fn($row) => $row->dispatch_date?->format('d M Y') ?? '—')
                 ->addColumn('dealer_name',    fn($row) => $row->orderItem?->order?->dealer?->user?->name ?? '—')
+                ->addColumn('status',         fn($row) => $row->statusBadge())
 
                 /* 1/0 flag — used by DataTables createdRow to highlight complete rows */
                 ->addColumn('is_complete', function ($row) {
@@ -99,7 +100,7 @@ class DispatchManagementController extends Controller
                     return $btn;
                 })
 
-                ->rawColumns(['unique_order_id', 'action', 'is_complete'])
+                ->rawColumns(['unique_order_id', 'action', 'is_complete', 'status'])
                 ->make(true);
         }
 
@@ -154,6 +155,7 @@ class DispatchManagementController extends Controller
             'transport_id'   => 'required|exists:users,id',
             'truck_number'   => 'required|string|max:100',
             'driver_contact' => 'required|string|max:20',
+            'status'         => 'required|in:0,1',
         ], [
             'order_item_id.required'  => 'Please select a product.',
             'no_of_bags.required'     => 'No of bags/ton is required.',
@@ -164,6 +166,8 @@ class DispatchManagementController extends Controller
             'transport_id.exists'     => 'Selected transporter is invalid.',
             'truck_number.required'   => 'Truck number is required.',
             'driver_contact.required' => 'Driver contact is required.',
+            'status.required'         => 'Please select a payment status.',
+            'status.in'               => 'Invalid payment status selected.',
         ]);
 
         /* Guard against over-dispatch */
@@ -172,11 +176,9 @@ class DispatchManagementController extends Controller
         $pending    = max(0, (int) $orderItem->qty - $dispatched);
 
         if ((int) $validated['no_of_bags'] > $pending) {
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'no_of_bags' => 'The entered quantity cannot exceed the pending quantity.',
-                ]);
+            return $this->dispatchStoreErrorResponse($request, [
+                'no_of_bags' => 'The entered quantity cannot exceed the pending quantity.',
+            ]);
         }
 
         /* ── Sequential dispatch guard ────────────────────────────────
@@ -193,12 +195,10 @@ class DispatchManagementController extends Controller
             ->first(fn($o) => ! $o->isFullyDispatched());
 
         if ($blockingPrior) {
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'order_item_id' => 'Order ' . $blockingPrior->unique_order_id
-                        . ' must be fully dispatched before dispatching this order.',
-                ]);
+            return $this->dispatchStoreErrorResponse($request, [
+                'order_item_id' => 'Order ' . $blockingPrior->unique_order_id
+                    . ' must be fully dispatched before dispatching this order.',
+            ]);
         }
 
         DispatchManagement::create($validated);
@@ -232,6 +232,7 @@ class DispatchManagementController extends Controller
             'transport_id'   => 'required|exists:users,id',
             'truck_number'   => 'required|string|max:100',
             'driver_contact' => 'required|string|max:20',
+            'status'         => 'required|in:0,1',
         ], [
             'no_of_bags.required'     => 'No of bags/ton is required.',
             'no_of_bags.min'          => 'No of bags/ton must be at least 1.',
@@ -240,6 +241,8 @@ class DispatchManagementController extends Controller
             'transport_id.exists'     => 'Selected transporter is invalid.',
             'truck_number.required'   => 'Truck number is required.',
             'driver_contact.required' => 'Driver contact is required.',
+            'status.required'         => 'Please select a payment status.',
+            'status.in'               => 'Invalid payment status selected.',
         ]);
 
         /*
@@ -268,6 +271,69 @@ class DispatchManagementController extends Controller
     }
 
     /* ------------------------------------------------------------------ */
+    /*  AJAX — order items for dashboard dispatch modal                   */
+    /* ------------------------------------------------------------------ */
+    public function getOrderDispatchFormData(OrderManagement $order)
+    {
+        $this->authorizeDispatchOrderAccess($order);
+
+        $order->load(['items.product', 'items.dispatches']);
+
+        $blockingOrder = OrderManagement::where('dealer_id', $order->dealer_id)
+            ->where('id', '<', $order->id)
+            ->orderBy('id')
+            ->with(['items.dispatches', 'items.product'])
+            ->get()
+            ->first(fn ($o) => ! $o->isFullyDispatched());
+
+        $items = $order->items->map(function ($item) {
+            $pending = $item->pendingQty();
+
+            return [
+                'id'           => $item->id,
+                'product_id'   => $item->product_id,
+                'product_name' => $item->product?->name ?? '—',
+                'qty'          => (int) $item->qty,
+                'pending'      => $pending,
+                'disabled'     => $pending <= 0,
+            ];
+        })->values();
+
+        if ($blockingOrder) {
+            $pendingItems = $blockingOrder->items
+                ->map(function ($item) {
+                    $dispatched = (int) $item->dispatches->sum('no_of_bags');
+                    $pending    = max(0, (int) $item->qty - $dispatched);
+
+                    return [
+                        'product_name'   => $item->product?->name ?? '—',
+                        'ordered_qty'    => (int) $item->qty,
+                        'dispatched_qty' => $dispatched,
+                        'pending_qty'    => $pending,
+                    ];
+                })
+                ->filter(fn ($i) => $i['pending_qty'] > 0)
+                ->values();
+
+            return response()->json([
+                'eligible'       => false,
+                'items'          => [],
+                'blocking_order' => [
+                    'unique_order_id' => $blockingOrder->unique_order_id,
+                    'order_date'      => $blockingOrder->order_date?->format('d M Y') ?? '—',
+                    'history_url'     => route('dispatch.orderHistory', $blockingOrder->id),
+                    'pending_items'   => $pendingItems,
+                ],
+            ]);
+        }
+
+        return response()->json([
+            'eligible' => true,
+            'items'    => $items,
+        ]);
+    }
+
+    /* ------------------------------------------------------------------ */
     /*  AJAX — trucks for a transporter (used by truck dropdown)          */
     /* ------------------------------------------------------------------ */
     public function getTrucksByTransporter(User $transporter)
@@ -281,6 +347,39 @@ class DispatchManagementController extends Controller
             'trucks' => $trucks,
             'phone'  => $transporter->phone_no ?? '',
         ]);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  HELPERS                                                           */
+    /* ------------------------------------------------------------------ */
+    private function dispatchStoreErrorResponse(Request $request, array $errors)
+    {
+        $redirect = back()->withInput()->withErrors($errors);
+
+        if ($request->input('from_dashboard')) {
+            $redirect->with('open_dashboard_dispatch_modal', true);
+        }
+
+        return $redirect;
+    }
+
+    private function authorizeDispatchOrderAccess(OrderManagement $order): void
+    {
+        $user = auth()->user();
+
+        if ($user->hasRole('broker') && (int) $order->broker_id !== (int) $user->id) {
+            abort(403);
+        }
+
+        if ($user->hasRole('dealer')) {
+            $ownsOrder = OrderManagement::where('id', $order->id)
+                ->whereHas('dealer', fn ($q) => $q->where('user_id', $user->id))
+                ->exists();
+
+            if (! $ownsOrder) {
+                abort(403);
+            }
+        }
     }
 
     /* ------------------------------------------------------------------ */
