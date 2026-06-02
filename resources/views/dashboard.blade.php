@@ -103,30 +103,9 @@
             </div>
         </div>
     @endcan
-
-    @can('view-delivery-pending-payments')
-        <div class="col-xl-3 col-sm-6 d-flex">
-            <div class="card flex-fill total-dispatch-request">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <span class="avatar avatar-md rounded bg-dark mb-3">
-                            <i class="ti ti-report-money fs-16"></i>
-                        </span>
-                    </div>
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <h2 class="mb-1">{{ $dpp_dashboard_summary['dispatch_count'] ?? 0 }}</h2>
-                            <p class="fs-13">Unpaid Dispatches ({{ $dpp_dashboard_min_days }}+ days)</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endcan
-
 </div>
 
-@can('view-delivery-pending-payments')
+@can('view-dispatch-pending-payments')
     @include('delivery_pending_payments.partials.module-responsive')
     <style>
         .dashboard-dpp-widget .dashboard-dpp-stat-pill {
@@ -217,7 +196,7 @@
     </div> --}}
 </div>
 
-@can('view-delivery-pending-payments')
+@can('view-dispatch-pending-payments')
     <div class="row">
         @include('dashboard.partials.delivery_pending_payments_widget')
     </div>
@@ -448,7 +427,7 @@
 
 @endsection
 @section('script')
-    @can('view-delivery-pending-payments')
+    @can('view-dispatch-pending-payments')
         <script>
             document.querySelectorAll('.dashboard-dpp-widget [data-bs-toggle="tooltip"]')
                 .forEach(function (el) {

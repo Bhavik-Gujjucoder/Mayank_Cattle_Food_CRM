@@ -39,7 +39,7 @@
 
 **Display vs internal naming:**
 - **UI labels (user-facing):** **Dispatch Pending Payments** (sidebar, report page, Excel title, dashboard widget).
-- **Internal identifiers (unchanged):** routes `delivery-pending-payments.*`, permission `view-delivery-pending-payments`, view folder `delivery_pending_payments/`, CSS root `.delivery-pending-payments-module`, PHP classes `DeliveryPendingPayments*`.
+- **Internal identifiers (unchanged):** routes `delivery-pending-payments.*`, permission `view-dispatch-pending-payments`, view folder `delivery_pending_payments/`, CSS root `.delivery-pending-payments-module`, PHP classes `DeliveryPendingPayments*`.
 
 ---
 
@@ -47,7 +47,7 @@
 
 | Permission | Used for |
 |---|---|
-| `view-delivery-pending-payments` | View report page, route `delivery-pending-payments.index` |
+| `view-dispatch-pending-payments` | View report page, route `delivery-pending-payments.index` |
 
 **Suggested role behaviour:**
 - **Admin / accounts / sales manager:** Full report, all brands.
@@ -239,7 +239,7 @@ AND linked order not soft-deleted
 
 ## 🏠 Dashboard Integration (Implemented)
 
-The module surfaces on the main **Dashboard** (`HomeController@index`) for users with `view-delivery-pending-payments`. It does **not** add new routes — it reuses the report service and brand-section partials.
+The module surfaces on the main **Dashboard** (`HomeController@index`) for users with `view-dispatch-pending-payments`. It does **not** add new routes — it reuses the report service and brand-section partials.
 
 ### Layout order (top → bottom)
 
@@ -252,7 +252,7 @@ The module surfaces on the main **Dashboard** (`HomeController@index`) for users
 | Item | Value |
 |---|---|
 | File | `resources/views/dashboard.blade.php` |
-| Permission | `@can('view-delivery-pending-payments')` |
+| Permission | `@can('view-dispatch-pending-payments')` |
 | Label | **Unpaid Dispatches (10+ days)** |
 | Count | `$dpp_dashboard_summary['dispatch_count']` |
 | Icon | `ti ti-report-money` on dark avatar (same card style as other KPI tiles) |
@@ -287,7 +287,7 @@ $data['dpp_dashboard_summary']  = ['order_count' => 0, 'dispatch_count' => 0, 'b
 $data['dpp_dashboard_can_link_order'] = false;
 $data['dpp_dashboard_min_days'] = DeliveryPendingPaymentsReportService::DASHBOARD_MIN_PENDING_DAYS;
 
-if ($loginUser->can('view-delivery-pending-payments')) {
+if ($loginUser->can('view-dispatch-pending-payments')) {
     $data['dpp_dashboard_sections'] = $this->pendingPaymentsReportService->buildForDashboard();
     $data['dpp_dashboard_summary']  = $this->pendingPaymentsReportService->summarize($data['dpp_dashboard_sections']);
     $data['dpp_dashboard_can_link_order'] = $loginUser->can('add-dispatch')
@@ -337,7 +337,7 @@ Alternative: counts of dealers / orders per bucket per city.
 | URL | `/delivery-pending-payments` (suggested) |
 | Route name | `delivery-pending-payments.index` |
 | Method | `GET` |
-| Middleware | `auth`, `verified`, `permission:view-delivery-pending-payments` |
+| Middleware | `auth`, `verified`, `permission:view-dispatch-pending-payments` |
 | Controller | `DeliveryPendingPaymentsController@index` (new) |
 
 ### Page Title
@@ -399,7 +399,7 @@ Card `.dpp-footnotes-card`:
 |---|---|
 | URL | `GET /delivery-pending-payments/export` |
 | Route name | `delivery-pending-payments.export` |
-| Middleware | `auth`, `verified`, `permission:view-delivery-pending-payments` |
+| Middleware | `auth`, `verified`, `permission:view-dispatch-pending-payments` |
 | Controller | `DeliveryPendingPaymentsController@export` |
 | Export class | `App\Exports\DeliveryPendingPaymentsExport` (`FromArray`, `WithEvents`) |
 | Library | Maatwebsite Excel (`maatwebsite/excel`) |
@@ -527,7 +527,7 @@ Applied via `days_emphasis_class` on `.dpp-days-value` (screen + print inherit c
 Under **Sales** submenu (`resources/views/layouts/sidebar.blade.php`):
 
 ```blade
-@can('view-delivery-pending-payments')
+@can('view-dispatch-pending-payments')
 <li>
     <a href="{{ route('delivery-pending-payments.index') }}"
        class="@if (request()->routeIs('delivery-pending-payments.*')) active @endif">
@@ -537,7 +537,7 @@ Under **Sales** submenu (`resources/views/layouts/sidebar.blade.php`):
 @endcan
 ```
 
-Extend `@canany` on Sales parent menu to include `view-delivery-pending-payments`.
+Extend `@canany` on Sales parent menu to include `view-dispatch-pending-payments`.
 
 ---
 
@@ -702,10 +702,10 @@ Implemented in repo — includes:
 ```php
 Route::get('delivery-pending-payments/export', [DeliveryPendingPaymentsController::class, 'export'])
     ->name('delivery-pending-payments.export')
-    ->middleware('permission:view-delivery-pending-payments');
+    ->middleware('permission:view-dispatch-pending-payments');
 Route::get('delivery-pending-payments', [DeliveryPendingPaymentsController::class, 'index'])
     ->name('delivery-pending-payments.index')
-    ->middleware('permission:view-delivery-pending-payments');
+    ->middleware('permission:view-dispatch-pending-payments');
 ```
 
 ### Controller responsibility
@@ -736,7 +736,7 @@ Brands appear in **separate stacked sections** (Ajay Brand, Mahakal Brand, Mayan
 
 ## ✅ Acceptance Criteria
 
-1. Page loads under Sales → **Dispatch Pending Payments** with `view-delivery-pending-payments`.
+1. Page loads under Sales → **Dispatch Pending Payments** with `view-dispatch-pending-payments`.
 2. Only orders with **≥ 1** unpaid dispatch (`status = 0`) appear.
 3. Columns: **City** | **Dealer** | **Order** | **Pending Payment Days** (label without “Dispatch”).
 4. Day count = calendar days from `dispatch_date` to today; sorted descending per order.
@@ -750,7 +750,7 @@ Brands appear in **separate stacked sections** (Ajay Brand, Mahakal Brand, Mayan
 12. Mobile (`< md`): card list; desktop: table in `table-responsive`.
 13. No DB writes from this module; soft-deleted records excluded.
 14. Footnotes explain aging, screen hover, and scope.
-15. **Dashboard:** users with `view-delivery-pending-payments` see stat card **Unpaid Dispatches (10+ days)** (`dispatch_count`) and widget **Dispatch Pending Payments (10+ Days)** below KPI row, above Recent Dealers/Orders/Dispatch.
+15. **Dashboard:** users with `view-dispatch-pending-payments` see stat card **Unpaid Dispatches (10+ days)** (`dispatch_count`) and widget **Dispatch Pending Payments (10+ Days)** below KPI row, above Recent Dealers/Orders/Dispatch.
 16. Dashboard widget lists only unpaid dispatches with **≥ 10** calendar days; full report lists **all** unpaid dispatches (any age).
 17. Dashboard widget reuses `brand-section` partial and links to full report; order links respect dispatch permissions.
 
@@ -792,7 +792,7 @@ Read-only Sales report: orders with at least one UNPAID dispatch (status = 0). P
 
 ## UI naming
 - Display: "Dispatch Pending Payments" (sidebar, page title, Excel, dashboard widget)
-- Internal: routes/permission still `delivery-pending-payments` / `view-delivery-pending-payments`
+- Internal: routes/permission still `delivery-pending-payments` / `view-dispatch-pending-payments`
 
 ## Dashboard (10+ days)
 - Stat card label: "Unpaid Dispatches (10+ days)" — count = dispatch_count
@@ -818,7 +818,7 @@ Read-only Sales report: orders with at least one UNPAID dispatch (status = 0). P
 ## Routes
 GET delivery-pending-payments/export (before index)
 GET delivery-pending-payments
-Permission: view-delivery-pending-payments
+Permission: view-dispatch-pending-payments
 
 ## Full spec
 md-file-requirements/Dispatch_Pending_Payments_Module_Requirements.md

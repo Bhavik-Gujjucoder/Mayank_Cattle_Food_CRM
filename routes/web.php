@@ -130,10 +130,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ------------------------------------------------------------------ */
     Route::get('delivery-pending-payments/export', [DeliveryPendingPaymentsController::class, 'export'])
         ->name('delivery-pending-payments.export')
-        ->middleware('permission:view-delivery-pending-payments');
+        ->middleware('permission:view-dispatch-pending-payments');
     Route::get('delivery-pending-payments', [DeliveryPendingPaymentsController::class, 'index'])
         ->name('delivery-pending-payments.index')
-        ->middleware('permission:view-delivery-pending-payments');
+        ->middleware('permission:view-dispatch-pending-payments');
 
 
     /* ------------------------------------------------------------------ */
