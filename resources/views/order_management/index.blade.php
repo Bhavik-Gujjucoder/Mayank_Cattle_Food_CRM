@@ -15,15 +15,17 @@
                         <input type="text" class="form-control" id="customSearch" placeholder="Search Orders">
                     </div>
                 </div>
-                <div class="common-hed-form cls-form-select-input">
-                    <label class="col-form-label">Brand </label>
-                    <select class="form-select select search-dropdown" name="brand_id" id="BrandId">
-                        <option value="all">All Brand</option>
-                        @foreach ($brands as $brand)
-                            <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                @if (\App\Support\SalesScope::showBrandFilter())
+                    <div class="common-hed-form cls-form-select-input">
+                        <label class="col-form-label">Brand </label>
+                        <select class="form-select select search-dropdown" name="brand_id" id="BrandId">
+                            <option value="all">All Brand</option>
+                            @foreach ($brands as $brand)
+                                <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
                 @if (\App\Support\SalesScope::showBrokerFilter())
                     <div class="common-hed-form cls-form-select-input">
                         <label class="col-form-label">Broker Person</label>
@@ -56,17 +58,19 @@
                         <input type="text" class="form-control" id="customSearch" placeholder="Search Orders">
                     </div>
                 </div>
-                <div class="col-sm-4 col-lg-2 col-md-12">
-                    <div class="mb-3">
-                        <label class="col-form-label">Brand </label>
-                        <select class="form-select select search-dropdown" name="brand_id" id="BrandId">
-                            <option value="all">All Brand</option>
-                            @foreach ($brands as $brand)
-                                <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                            @endforeach
-                        </select>
+                @if (\App\Support\SalesScope::showBrandFilter())
+                    <div class="col-sm-4 col-lg-2 col-md-12">
+                        <div class="mb-3">
+                            <label class="col-form-label">Brand </label>
+                            <select class="form-select select search-dropdown" name="brand_id" id="BrandId">
+                                <option value="all">All Brand</option>
+                                @foreach ($brands as $brand)
+                                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
-                </div>
+                @endif
                 @if (\App\Support\SalesScope::showBrokerFilter())
                     <div class="col-sm-4 col-lg-2 col-md-12">
                         <div class="mb-3">
@@ -152,8 +156,12 @@
             ajax: {
                 url: "{{ route('order.index') }}",
                 data: function(d) {
-                    d.broker_id = $('#broker_id').val();
-                    d.brand_id = $('#BrandId').val();
+                    if ($('#broker_id').length) {
+                        d.broker_id = $('#broker_id').val();
+                    }
+                    if ($('#BrandId').length) {
+                        d.brand_id = $('#BrandId').val();
+                    }
                 }
             },
             columns: [{

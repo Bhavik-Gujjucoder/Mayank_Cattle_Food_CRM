@@ -28,14 +28,12 @@ class OrderManagementController extends Controller
     {
         $data['page_title'] = 'Soda/Order Management';
         $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
-        $data['brands']     = BrandManagement::where('status', 1)->orderBy('name')->get();
+        $data['brands']     = SalesScope::filterableBrands();
         if ($request->ajax()) {
             $query = OrderManagement::with(['broker', 'brand', 'dealer']);
             SalesScope::scopeOrders($query);
 
-            if ($request->has('brand_id') && $request->brand_id !== 'all') {
-                $query->where('brand_id', $request->brand_id);
-            }
+            SalesScope::applyBrandFilter($query, $request->input('brand_id'));
             // Broker filter (staff/admin only — scoped users cannot override)
             if (SalesScope::showBrokerFilter() && $request->has('broker_id') && $request->broker_id !== 'all') {
                 $query->where('broker_id', $request->broker_id);
