@@ -49,11 +49,11 @@
             </div>
             <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Total Price</label>
-                <div class="fw-semibold">₹ {{ number_format($order->total_price ?? 0, 3) }}</div>
+                <div class="fw-semibold">₹ {{ number_format($order->total_price ?? 0, 2) }}</div>
             </div>
             <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Total Freight</label>
-                <div class="fw-semibold">₹ {{ number_format($order->total_freight ?? 0, 3) }}</div>
+                <div class="fw-semibold">₹ {{ number_format($order->total_freight ?? 0, 2) }}</div>
             </div>
         </div>
     </div>
@@ -88,12 +88,12 @@
                             <td>{{ $item->total_qty }}</td>
                             <td>{{ $item->pending_qty }}</td>
                             <td>{{ $item->received_qty }}</td>
-                            <td>₹ {{ number_format($item->price, 3) }}</td>
-                            <td>₹ {{ number_format($item->price_avg, 3) }}</td>
-                            <td>₹ {{ number_format($item->total_price, 3) }}</td>
-                            <td>₹ {{ number_format($item->pending_price, 3) }}</td>
-                            <td>₹ {{ number_format($item->received_price, 3) }}</td>
-                            <td>₹ {{ number_format($item->total_freight, 3) }}</td>
+                            <td>₹ {{ number_format($item->price, 2) }}</td>
+                            <td>₹ {{ number_format($item->price_avg, 2) }}</td>
+                            <td>₹ {{ number_format($item->total_price, 2) }}</td>
+                            <td>₹ {{ number_format($item->pending_price, 2) }}</td>
+                            <td>₹ {{ number_format($item->received_price, 2) }}</td>
+                            <td>₹ {{ number_format($item->total_freight, 2) }}</td>
                             <td>{!! $item->statusBadge() !!}</td>
                         </tr>
                     @empty
@@ -129,8 +129,8 @@
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $receive->rawMaterial?->name ?? '—' }}</td>
                             <td>{{ $receive->qty }}</td>
-                            <td>₹ {{ number_format($receive->freight, 3) }}/ton<br>
-                                <small class="text-muted">Line: ₹ {{ number_format($receive->freight * $receive->qty, 3) }}</small></td>
+                            <td>₹ {{ number_format($receive->freight, 2) }}/ton<br>
+                                <small class="text-muted">Line: ₹ {{ number_format($receive->freight * $receive->qty, 2) }}</small></td>
                             <td>{{ $receive->received_date?->format('d M Y') ?? '—' }}</td>
                             <td>{!! $receive->statusBadge() !!}</td>
                             <td>

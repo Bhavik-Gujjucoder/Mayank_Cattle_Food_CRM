@@ -82,10 +82,10 @@
                         </td>
                         <td>
                             <input type="number" name="price[]" class="form-control price-field"
-                                   placeholder="0.000" min="0" step="0.001">
+                                   placeholder="0.00" min="0" step="0.001">
                         </td>
                         <td>
-                            <input type="text" class="form-control total-field" placeholder="0.000" readonly>
+                            <input type="text" class="form-control total-field" placeholder="0.00" readonly>
                         </td>
                         <td class="text-center row-actions">
                             <button type="button" class="btn btn-primary btn-sm" id="addRowBtn">
@@ -126,10 +126,10 @@
             <input type="number" name="total_qty[]" class="form-control qty-field" placeholder="0" min="1" step="1">
         </td>
         <td>
-            <input type="number" name="price[]" class="form-control price-field" placeholder="0.000" min="0" step="0.001">
+            <input type="number" name="price[]" class="form-control price-field" placeholder="0.00" min="0" step="0.001">
         </td>
         <td>
-            <input type="text" class="form-control total-field" placeholder="0.000" readonly>
+            <input type="text" class="form-control total-field" placeholder="0.00" readonly>
         </td>
         <td class="text-center row-actions">
             <button type="button" class="btn btn-primary btn-sm" id="addRowBtn">
@@ -159,7 +159,7 @@
             </div>
             <div class="totals-row totals-grand d-flex justify-content-between align-items-center">
                 <span class="totals-label-grand">Grand Total</span>
-                <span class="totals-value-grand">₹ <span id="display_grand_total">0.000</span></span>
+                <span class="totals-value-grand">₹ <span id="display_grand_total">0.00</span></span>
             </div>
         </div>
     </div>
@@ -220,12 +220,12 @@ $(document).ready(function () {
             var qty = parseFloat($(this).find('.qty-field').val()) || 0;
             var price = parseFloat($(this).find('.price-field').val()) || 0;
             var lineTotal = rowTotal(qty, price);
-            $(this).find('.total-field').val(lineTotal > 0 ? lineTotal.toFixed(3) : '');
+            $(this).find('.total-field').val(lineTotal > 0 ? lineTotal.toFixed(2) : '');
             totalQty += qty;
             grandTotal += lineTotal;
         });
         $('#display_total_qty').text(totalQty);
-        $('#display_grand_total').text(grandTotal.toFixed(3));
+        $('#display_grand_total').text(grandTotal.toFixed(2));
     }
 
     $(document).on('click', '#addRowBtn', function () {
@@ -253,7 +253,7 @@ $(document).ready(function () {
         var $row = $(this).closest('tr');
         var price = parseFloat($(this).find(':selected').data('price')) || 0;
         if (price > 0) {
-            $row.find('.price-field').val(price.toFixed(3));
+            $row.find('.price-field').val(price.toFixed(2));
         }
         $(this).removeClass('is-invalid');
         calculateTotals();

@@ -36,8 +36,8 @@ class AllOrdersSheet implements FromCollection, WithHeadings, WithStyles, WithTi
             $row->supplier?->name ?? '—',
             $row->order_date?->format('d-m-Y') ?? '—',
             $row->total_qty,
-            number_format((float) $row->total_price, 3),
-            number_format((float) $row->total_freight, 3),
+            number_format((float) $row->total_price, 2),
+            number_format((float) $row->total_freight, 2),
             RawMaterialFilterService::orderStatusLabel((int) $row->status),
         ]);
     }

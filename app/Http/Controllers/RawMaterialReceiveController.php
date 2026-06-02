@@ -35,7 +35,7 @@ class RawMaterialReceiveController extends Controller
                 ->editColumn('freight', function ($row) {
                     $line = RawMaterialCacheService::receiveFreightAmount($row);
 
-                    return '₹ ' . number_format($row->freight, 3) . '/ton<br><small class="text-muted">Line: ₹ ' . number_format($line, 3) . '</small>';
+                    return '₹ ' . number_format($row->freight, 2) . '/ton<br><small class="text-muted">Line: ₹ ' . number_format($line, 2) . '</small>';
                 })
                 ->editColumn('received_date', fn ($row) => $row->received_date?->format('d M Y') ?? '—')
                 ->editColumn('status', fn ($row) => $row->statusBadge())

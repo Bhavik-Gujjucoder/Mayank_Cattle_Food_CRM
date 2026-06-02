@@ -57,11 +57,11 @@
             </div>
             <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Freight per ton</label>
-                <div class="fw-semibold">₹ {{ number_format($receive->freight, 3) }}</div>
+                <div class="fw-semibold">₹ {{ number_format($receive->freight, 2) }}</div>
             </div>
             <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Line Freight (freight × qty)</label>
-                <div class="fw-semibold">₹ {{ number_format($receive->freight * $receive->qty, 3) }}</div>
+                <div class="fw-semibold">₹ {{ number_format($receive->freight * $receive->qty, 2) }}</div>
             </div>
             <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Received Date</label>
@@ -94,7 +94,7 @@
             </div>
             <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Price / kg</label>
-                <div class="fw-semibold">₹ {{ number_format($receive->orderItem->price, 3) }}</div>
+                <div class="fw-semibold">₹ {{ number_format($receive->orderItem->price, 2) }}</div>
             </div>
         </div>
     </div>
