@@ -421,6 +421,16 @@ Before generating any Blade views, the AI must:
 
 ---
 
+## 📱 Responsive Requirements
+
+- Use the existing project layout and responsive patterns (Bootstrap 5 + current CRM CSS).
+- All list pages must avoid full-page horizontal overflow; wrap tables in `table-responsive`.
+- Filter/search/export controls should stack and remain tappable on mobile.
+- Dynamic order item tables must support mobile use (either scroll within table wrapper or a mobile-friendly stacked layout where the project already uses it).
+- Forms (create/edit) should use the same responsive grid behavior as existing modules (stack on `xs`, multi-column on `md+`).
+
+---
+
 ## 🛠️ Laravel 12 Technical Requirements
 
 ### Architecture

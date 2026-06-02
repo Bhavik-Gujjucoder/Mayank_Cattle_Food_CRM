@@ -469,6 +469,16 @@ Under **Sales** submenu (see `resources/views/layouts/sidebar.blade.php`):
 
 ---
 
+## 📱 Responsive Requirements
+
+- Follow the project’s Bootstrap 5 responsive grid and existing CRM patterns (same as Order/Dispatch pages).
+- Filter/search header bars must wrap to multiple rows on small screens without breaking layout.
+- DataTables must not cause full-page horizontal overflow; keep scroll contained to `table-responsive`.
+- Modals (Add/Edit/Dispatch) must remain fully usable on mobile (scrollable modal body if needed, buttons stay reachable).
+- Keep action dropdowns and key CTAs (Add, Export, Dispatch) accessible at `xs` widths.
+
+---
+
 ## 🛠️ Laravel 12 Technical Requirements
 
 ### Architecture

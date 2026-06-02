@@ -182,6 +182,16 @@ Before generating any Blade views, the AI must:
 
 ---
 
+## 📱 Responsive Requirements
+
+- Use the project’s existing responsive patterns (Bootstrap grid / existing layout behavior).
+- List page filter bar must wrap/stack cleanly on small screens (no horizontal page overflow).
+- Tables must remain usable on mobile via the existing `table-responsive` wrapper (horizontal scroll only inside the table container).
+- Modal form fields should stack to a single column on small screens, and use two columns only where the project already does so.
+- Ensure dropdowns (State/City) are full-width on mobile and remain accessible.
+
+---
+
 ## 🛠️ Laravel 12 Technical Requirements
 
 ### Architecture

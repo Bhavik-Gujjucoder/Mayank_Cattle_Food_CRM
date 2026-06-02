@@ -301,6 +301,15 @@ Before changing Dashboard views:
 
 ---
 
+## 📱 Responsive Requirements
+
+- Use the existing Bootstrap grid (mobile-first). KPI cards must stack cleanly at small widths (e.g. `col-sm-6`, `col-xl-3` pattern).
+- Recent activity panels must become single-column on mobile and expand to multi-column at larger breakpoints.
+- Avoid fixed-width elements; no horizontal scrolling on the dashboard page.
+- Keep “View All” actions visible and reachable on small screens.
+
+---
+
 ## 📋 Role Management Integration
 
 `RoleController@create` and `@edit` load:
