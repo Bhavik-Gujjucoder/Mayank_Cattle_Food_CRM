@@ -6,10 +6,15 @@ use App\Models\DealerManagement;
 use App\Models\DispatchManagement;
 use App\Models\OrderManagement;
 use App\Models\User;
+use App\Services\DeliveryPendingPaymentsReportService;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {
+    public function __construct(
+        protected DeliveryPendingPaymentsReportService $pendingPaymentsReportService
+    ) {}
+
     /* ------------------------------------------------------------------ */
     /*  DASHBOARD                                                         */
     /* ------------------------------------------------------------------ */
@@ -105,6 +110,43 @@ class HomeController extends Controller
 
         // $data['total_dispatch_order'] = $data['role'] == 'broker' ? $data['dispatch_order']->where('broker_id', $data['login_user']->id)->count() : $data['dispatch_order']->count();
 
+        /* ── Orders for dashboard dispatch modal (not fully dispatched) ── */
+        $data['dispatch_form_orders'] = collect();
+        if ($loginUser->can('add-dispatch')) {
+            $orderQuery = OrderManagement::with(['items.dispatches', 'dealer.user'])
+                ->orderBy('id', 'desc');
+
+            if ($data['role'] === 'broker') {
+                $orderQuery->where('broker_id', $loginUser->id);
+            } elseif ($data['role'] === 'dealer') {
+                $orderQuery->whereHas('dealer', function ($q) use ($loginUser) {
+                    $q->where('user_id', $loginUser->id);
+                });
+            }
+
+            $data['dispatch_form_orders'] = $orderQuery->get()
+                ->filter(fn ($o) => ! $o->isFullyDispatched())
+                ->values();
+        }
+
+        $data['dpp_dashboard_sections'] = collect();
+        $data['dpp_dashboard_summary']  = [
+            'order_count'    => 0,
+            'dispatch_count' => 0,
+            'brand_count'    => 0,
+        ];
+        $data['dpp_dashboard_can_link_order'] = false;
+        $data['dpp_dashboard_min_days']       = DeliveryPendingPaymentsReportService::DASHBOARD_MIN_PENDING_DAYS;
+
+        if ($loginUser->can('view-delivery-pending-payments')) {
+            $data['dpp_dashboard_sections'] = $this->pendingPaymentsReportService->buildForDashboard();
+            $data['dpp_dashboard_summary']  = $this->pendingPaymentsReportService->summarize(
+                $data['dpp_dashboard_sections']
+            );
+            $data['dpp_dashboard_can_link_order'] = $loginUser->can('add-dispatch')
+                || $loginUser->can('edit-dispatch')
+                || $loginUser->can('delete-dispatch');
+        }
 
         return view('dashboard', $data);
     }

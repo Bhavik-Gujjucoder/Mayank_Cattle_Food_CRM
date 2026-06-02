@@ -53,6 +53,8 @@
     <link href="{{ asset('assets/css/toastify.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('assets/css/flatpickr.min.css') }}">
 
+    @yield('styles')
+
 </head>
 
 <body>

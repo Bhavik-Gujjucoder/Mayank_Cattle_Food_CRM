@@ -9,13 +9,24 @@ class DispatchManagement extends Model
 {
     use SoftDeletes;
 
+    public const STATUS_UNPAID = 0;
+    public const STATUS_PAID   = 1;
+
     protected $table = 'dispatch_management';
 
     protected $guarded = [];
 
     protected $casts = [
         'dispatch_date' => 'date',
+        'status'        => 'integer',
     ];
+
+    public function statusBadge(): string
+    {
+        return (int) $this->status === self::STATUS_PAID
+            ? '<span class="badge bg-success-light text-success">Paid</span>'
+            : '<span class="badge bg-danger-light text-danger">Unpaid</span>';
+    }
 
     /* ── Relationships ───────────────────────────────────────────── */
 
