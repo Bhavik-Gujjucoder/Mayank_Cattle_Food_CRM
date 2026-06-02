@@ -10,7 +10,7 @@ class RecalculateRawMaterialFreightCommand extends Command
 {
     protected $signature = 'raw-material:recalculate-freight';
 
-    protected $description = 'Recalculate order item total_freight from receives (freight × qty) and refresh price_avg / order totals';
+    protected $description = 'Recalculate order item total_freight from receives (freight × qty) and refresh price_avg, order totals, and material average_price';
 
     public function handle(): int
     {

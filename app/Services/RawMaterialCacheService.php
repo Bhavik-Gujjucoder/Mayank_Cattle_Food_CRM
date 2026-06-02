@@ -89,9 +89,12 @@ class RawMaterialCacheService
         $lastItem = RawMaterialOrderItem::where('raw_material_id', $rawMaterialId)->orderByDesc('id')->first();
         $material->last_purchase_price = $lastItem ? (float) $lastItem->price : 0;
 
-        $sumPrice = (float) RawMaterialOrderItem::where('raw_material_id', $rawMaterialId)->sum('total_price');
-        $sumQty   = (int) RawMaterialOrderItem::where('raw_material_id', $rawMaterialId)->sum('total_qty');
-        $material->average_price = $sumQty > 0 ? round($sumPrice / ($sumQty * 1000), 3) : 0;
+        $itemsQuery = RawMaterialOrderItem::where('raw_material_id', $rawMaterialId);
+        $sumLanded      = (float) (clone $itemsQuery)->selectRaw('COALESCE(SUM(received_price + total_freight), 0) as total')->value('total');
+        $sumReceivedQty = (int) (clone $itemsQuery)->sum('received_qty');
+        $material->average_price = $sumReceivedQty > 0
+            ? round($sumLanded / ($sumReceivedQty * 1000), 3)
+            : 0;
         $material->saveQuietly();
     }
 
@@ -137,6 +140,7 @@ class RawMaterialCacheService
         if ($item->order) {
             self::recalculateOrder($item->order);
         }
+        self::recalculateMaterialPrices((int) $item->raw_material_id);
     }
 
     public static function reverseReceive(RawMaterialReceive $receive): void

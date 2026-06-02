@@ -41,9 +41,9 @@
   `available_stock = available_stock + raw_material_receives.qty`
 - `last_purchase_price` → After every new `raw_material_order_items` record:
   Pull the latest `price (rate)` for this `raw_material_id` from `raw_material_order_items`
-- `average_price` → Recalculate on every order item insert/update:
-  `average_price = SUM(raw_material_order_items.total_price) / (SUM(raw_material_order_items.total_qty) * 1000)`
-  *(total_qty is in tons, price is per kg)*
+- `average_price` → Recalculate when order items or receives change (landed cost per kg on received qty only):
+  `average_price = SUM(raw_material_order_items.received_price + raw_material_order_items.total_freight) / (SUM(raw_material_order_items.received_qty) * 1000)`
+  *(received_qty is in tons, result is per kg; 0 when no quantity has been received yet)*
 
 ---
 
@@ -455,9 +455,9 @@ Generate the following complete Laravel 12 files:
 
 ### 3. Observers
 - RawMaterialOrderItemObserver
-  - On created/updated: recalculate raw_material_orders (total_qty, total_price, total_freight) and update raw_materials (last_purchase_price, average_price)
+  - On created/updated: recalculate raw_material_orders (total_qty, total_price, total_freight) and update raw_materials (last_purchase_price; average_price from received landed cost)
 - RawMaterialReceiveObserver
-  - On created/updated: when status=1, update raw_material_order_items (pending_qty, received_qty, pending_price, received_price, total_freight, price_avg, status) and update raw_materials (total_stock, available_stock)
+  - On created/updated: when status=1, update raw_material_order_items (pending_qty, received_qty, pending_price, received_price, total_freight, price_avg, status) and update raw_materials (total_stock, available_stock, average_price)
   - If status changes to cancelled (2), reverse previous cached updates
 
 ### 4. Form Requests (Validation)
@@ -515,7 +515,7 @@ On raw_materials:
 - total_stock += qty (when receive status = 1)
 - available_stock += qty (when receive status = 1)
 - last_purchase_price = most recent price from raw_material_order_items for this material
-- average_price = SUM(total_price) / (SUM(total_qty) * 1000) across all order items for this material
+- average_price = SUM(received_price + total_freight) / (SUM(received_qty) * 1000) across all order items for this material (0 if SUM(received_qty) = 0)
 
 ### Filters — implement on every list page
 **Material list:**

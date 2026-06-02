@@ -35,6 +35,11 @@
 | Views | `resources/views/delivery_pending_payments/` (+ `partials/`) |
 | Seeder | `database/seeders/DeliveryPendingPaymentsPermissionSeeder.php` |
 | Routes | `delivery-pending-payments.index`, `delivery-pending-payments.export` |
+| Dashboard | `HomeController@index`, `resources/views/dashboard.blade.php`, `resources/views/dashboard/partials/delivery_pending_payments_widget.blade.php` |
+
+**Display vs internal naming:**
+- **UI labels (user-facing):** **Dispatch Pending Payments** (sidebar, report page, Excel title, dashboard widget).
+- **Internal identifiers (unchanged):** routes `delivery-pending-payments.*`, permission `view-delivery-pending-payments`, view folder `delivery_pending_payments/`, CSS root `.delivery-pending-payments-module`, PHP classes `DeliveryPendingPayments*`.
 
 ---
 
@@ -198,6 +203,109 @@ Do **not** filter by `order_management.payment_status` alone. An order marked `p
 
 - Report is **computed on each page load** (no caching required in v1).
 - Day counts change daily without data migration.
+
+### 8. Full report vs dashboard (10+ days filter)
+
+| Surface | Scope | Aging filter |
+|---|---|---|
+| **Full report** (`delivery-pending-payments.index`) | All orders with ≥ 1 unpaid dispatch | **None** — every unpaid dispatch on the order is listed |
+| **Dashboard** (stat card + widget) | Same unpaid-dispatch rules, but only dispatches aged **≥ 10 calendar days** | `DeliveryPendingPaymentsReportService::DASHBOARD_MIN_PENDING_DAYS = 10` |
+
+**Dashboard inclusion (per dispatch row on `dispatch_management`):**
+
+```text
+status = 0 (Unpaid)
+AND deleted_at IS NULL
+AND dispatch_date IS NOT NULL
+AND pending_days >= 10   (calendar days from dispatch_date to today, start-of-day)
+AND linked order not soft-deleted
+```
+
+- An order appears on the dashboard widget only if it has **≥ 1** dispatch meeting the above.
+- Within each order row, **only** dispatch entries with `days >= 10` are shown (via `applyMinDaysFilter()` after `build()`).
+- Service entry point: `buildForDashboard()` → `build('all', DASHBOARD_MIN_PENDING_DAYS)`.
+- Summary helper: `summarize($brandSections)` returns `order_count`, `dispatch_count`, `brand_count`.
+
+**Count semantics on dashboard:**
+
+| UI element | Metric | Field |
+|---|---|---|
+| Top **summary stat card** | Number of **unpaid dispatch rows** at 10+ days | `dispatch_count` |
+| Widget summary pill “Orders” | Orders with ≥ 1 qualifying dispatch | `order_count` |
+| Widget summary pill “Unpaid Dispatches” | Same as stat card | `dispatch_count` |
+| Widget summary pill “Brands” | Brands with ≥ 1 qualifying row | `brand_count` |
+
+---
+
+## 🏠 Dashboard Integration (Implemented)
+
+The module surfaces on the main **Dashboard** (`HomeController@index`) for users with `view-delivery-pending-payments`. It does **not** add new routes — it reuses the report service and brand-section partials.
+
+### Layout order (top → bottom)
+
+1. Top KPI row (Total Dealers, Broker, Soda/Order, Dispatch request, **Unpaid Dispatches (10+ days)**).
+2. **Dispatch Pending Payments (10+ Days)** — full-width widget (`col-12`).
+3. Recent Dealers / Recent Soda/Orders / Recent Dispatch Request (three-column row).
+
+### 1. Summary stat card (top KPI row)
+
+| Item | Value |
+|---|---|
+| File | `resources/views/dashboard.blade.php` |
+| Permission | `@can('view-delivery-pending-payments')` |
+| Label | **Unpaid Dispatches (10+ days)** |
+| Count | `$dpp_dashboard_summary['dispatch_count']` |
+| Icon | `ti ti-report-money` on dark avatar (same card style as other KPI tiles) |
+
+Shows a **single number** — total unpaid dispatch rows aged 10+ days (not order count).
+
+### 2. Dashboard widget (detail preview)
+
+| Item | Value |
+|---|---|
+| Partial | `resources/views/dashboard/partials/delivery_pending_payments_widget.blade.php` |
+| Title | **Dispatch Pending Payments (10+ Days)** |
+| Subtitle | Unpaid dispatches with 10 or more pending payment days |
+| Actions | **View Full Report** → `route('delivery-pending-payments.index')` |
+| Data | `$dpp_dashboard_sections`, `$dpp_dashboard_summary`, `$dpp_dashboard_min_days`, `$dpp_dashboard_can_link_order` |
+
+**Widget body:**
+- Three summary pills: **Orders** | **Unpaid Dispatches** | **Brands**.
+- Scrollable brand stack (max-height ~520px) reusing `delivery_pending_payments.partials.brand-section`.
+- Empty state: green check + “No unpaid dispatch payments at 10+ days.”
+- Footer note: days from dispatch date to today; shown 10+ days per dispatch.
+
+**Scoped CSS:** `dashboard.blade.php` includes `delivery_pending_payments.partials.module-responsive` plus inline styles for `.dashboard-dpp-widget` (stat pills, scroll stack, hides report-only header/footnotes).
+
+**Order links:** `$dpp_dashboard_can_link_order` is `true` when user has any of `add-dispatch`, `edit-dispatch`, `delete-dispatch` (links to `dispatch.orderHistory` via brand-section partial).
+
+### 3. Controller wiring (`HomeController`)
+
+```php
+$data['dpp_dashboard_sections'] = collect();
+$data['dpp_dashboard_summary']  = ['order_count' => 0, 'dispatch_count' => 0, 'brand_count' => 0];
+$data['dpp_dashboard_can_link_order'] = false;
+$data['dpp_dashboard_min_days'] = DeliveryPendingPaymentsReportService::DASHBOARD_MIN_PENDING_DAYS;
+
+if ($loginUser->can('view-delivery-pending-payments')) {
+    $data['dpp_dashboard_sections'] = $this->pendingPaymentsReportService->buildForDashboard();
+    $data['dpp_dashboard_summary']  = $this->pendingPaymentsReportService->summarize($data['dpp_dashboard_sections']);
+    $data['dpp_dashboard_can_link_order'] = $loginUser->can('add-dispatch')
+        || $loginUser->can('edit-dispatch')
+        || $loginUser->can('delete-dispatch');
+}
+```
+
+Inject `DeliveryPendingPaymentsReportService` via constructor on `HomeController`.
+
+### 4. Service constants & methods
+
+| Symbol | Purpose |
+|---|---|
+| `DASHBOARD_MIN_PENDING_DAYS` | `10` — minimum calendar days for dashboard filter |
+| `buildForDashboard()` | `build('all', DASHBOARD_MIN_PENDING_DAYS)` |
+| `summarize(Collection $brandSections)` | Aggregates order / dispatch / brand counts for dashboard |
+| `applyMinDaysFilter($row, $minDays)` | Keeps only `pending_days_items` where `days >= $minDays`; drops order if none remain |
 
 ---
 
@@ -586,6 +694,8 @@ Implemented in repo — includes:
 | Permission seeder | `database/seeders/DeliveryPendingPaymentsPermissionSeeder.php` |
 | Routes | `routes/web.php` (`export` route registered **before** `index`) |
 | Sidebar | `resources/views/layouts/sidebar.blade.php` (Sales submenu) |
+| Dashboard stat + widget | `resources/views/dashboard.blade.php`, `resources/views/dashboard/partials/delivery_pending_payments_widget.blade.php` |
+| Dashboard controller | `app/Http/Controllers/HomeController.php` (`DeliveryPendingPaymentsReportService` injected) |
 
 ### Routes (`routes/web.php`)
 
@@ -640,6 +750,9 @@ Brands appear in **separate stacked sections** (Ajay Brand, Mahakal Brand, Mayan
 12. Mobile (`< md`): card list; desktop: table in `table-responsive`.
 13. No DB writes from this module; soft-deleted records excluded.
 14. Footnotes explain aging, screen hover, and scope.
+15. **Dashboard:** users with `view-delivery-pending-payments` see stat card **Unpaid Dispatches (10+ days)** (`dispatch_count`) and widget **Dispatch Pending Payments (10+ Days)** below KPI row, above Recent Dealers/Orders/Dispatch.
+16. Dashboard widget lists only unpaid dispatches with **≥ 10** calendar days; full report lists **all** unpaid dispatches (any age).
+17. Dashboard widget reuses `brand-section` partial and links to full report; order links respect dispatch permissions.
 
 ---
 
@@ -651,6 +764,7 @@ Brands appear in **separate stacked sections** (Ajay Brand, Mahakal Brand, Mayan
 | Dispatch payment status field | `resources/views/dispatch_management/partials/status-field.blade.php` |
 | Dispatch model constants | `app/Models/DispatchManagement.php` |
 | Mark payment on dispatch | `DispatchManagementController@store` / `@update` |
+| Dashboard home | `app/Http/Controllers/HomeController.php`, `resources/views/dashboard.blade.php` |
 
 ---
 
@@ -668,11 +782,23 @@ Read-only Sales report: orders with at least one UNPAID dispatch (status = 0). P
 
 ## Implemented files (do not duplicate)
 - app/Http/Controllers/DeliveryPendingPaymentsController.php
-- app/Services/DeliveryPendingPaymentsReportService.php (build, formatPendingDaysLabel, formatBrandSectionTitle)
+- app/Services/DeliveryPendingPaymentsReportService.php (build, buildForDashboard, summarize, formatPendingDaysLabel, formatBrandSectionTitle, DASHBOARD_MIN_PENDING_DAYS)
 - app/Exports/DeliveryPendingPaymentsExport.php (FromArray, WithEvents, spacers)
 - resources/views/delivery_pending_payments/index.blade.php
-- partials: brand-section, pending-days-cell, module-responsive
+- partials: brand-section, pending-days-cell, pending-days-chips, mobile-order-card, footnotes-legend, module-responsive
+- resources/views/dashboard/partials/delivery_pending_payments_widget.blade.php
 - database/seeders/DeliveryPendingPaymentsPermissionSeeder.php
+- HomeController: dashboard stat card + widget data (dpp_dashboard_*)
+
+## UI naming
+- Display: "Dispatch Pending Payments" (sidebar, page title, Excel, dashboard widget)
+- Internal: routes/permission still `delivery-pending-payments` / `view-delivery-pending-payments`
+
+## Dashboard (10+ days)
+- Stat card label: "Unpaid Dispatches (10+ days)" — count = dispatch_count
+- Widget: "Dispatch Pending Payments (10+ Days)" — buildForDashboard(), filter days >= 10
+- Full report index: all unpaid dispatches (no min-days filter)
+- Layout: KPI row → DPP widget → Recent Dealers/Orders/Dispatch
 
 ## Pending Payment Days — three contexts
 1. Screen: "15 - 13 - 9" with Bootstrap tooltip per number (dispatch date d M Y)
@@ -695,5 +821,5 @@ GET delivery-pending-payments
 Permission: view-delivery-pending-payments
 
 ## Full spec
-md-file-requirements/Delivery_Pending_Payments_Module_Requirements.md
+md-file-requirements/Dispatch_Pending_Payments_Module_Requirements.md
 ```
