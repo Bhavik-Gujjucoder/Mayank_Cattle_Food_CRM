@@ -30,7 +30,7 @@
                     <select name="unit" id="unit" class="form-select search-select">
                         <option value="">-- Select Unit --</option>
                         <option value="Ton" {{ old('unit', $raw_material->unit) == 'Ton' ? 'selected' : '' }}>Ton</option>
-                        <option value="Kg" {{ old('unit', $raw_material->unit) == 'Kg' ? 'selected' : '' }}>Kg</option>
+                        <!--<option value="Kg" {{ old('unit', $raw_material->unit) == 'Kg' ? 'selected' : '' }}>Kg</option>-->
                     </select>
                     <span class="text-danger small unit_error">@error('unit'){{ $message }}@enderror</span>
                 </div>
