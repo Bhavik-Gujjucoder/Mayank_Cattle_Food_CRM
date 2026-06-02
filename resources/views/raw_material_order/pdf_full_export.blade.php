@@ -47,8 +47,8 @@
                             <td>{{ $order->supplier?->name ?? '—' }}</td>
                             <td>{{ $order->order_date?->format('d M Y') ?? '—' }}</td>
                             <td class="text-right">{{ $order->total_qty }}</td>
-                            <td class="text-right">{{ number_format($order->total_price, 3) }}</td>
-                            <td class="text-right">{{ number_format($order->total_freight, 3) }}</td>
+                            <td class="text-right">{{ number_format($order->total_price, 2) }}</td>
+                            <td class="text-right">{{ number_format($order->total_freight, 2) }}</td>
                             <td>{{ \App\Services\RawMaterial\RawMaterialFilterService::orderStatusLabel((int) $order->status) }}</td>
                         </tr>
                     @endforeach
@@ -87,12 +87,12 @@
                             <td class="text-right">{{ $item->total_qty }}</td>
                             <td class="text-right">{{ $item->pending_qty }}</td>
                             <td class="text-right">{{ $item->received_qty }}</td>
-                            <td class="text-right">{{ number_format($item->price, 3) }}</td>
-                            <td class="text-right">{{ number_format($item->price_avg, 3) }}</td>
-                            <td class="text-right">{{ number_format($item->total_price, 3) }}</td>
-                            <td class="text-right">{{ number_format($item->pending_price, 3) }}</td>
-                            <td class="text-right">{{ number_format($item->received_price, 3) }}</td>
-                            <td class="text-right">{{ number_format($item->total_freight, 3) }}</td>
+                            <td class="text-right">{{ number_format($item->price, 2) }}</td>
+                            <td class="text-right">{{ number_format($item->price_avg, 2) }}</td>
+                            <td class="text-right">{{ number_format($item->total_price, 2) }}</td>
+                            <td class="text-right">{{ number_format($item->pending_price, 2) }}</td>
+                            <td class="text-right">{{ number_format($item->received_price, 2) }}</td>
+                            <td class="text-right">{{ number_format($item->total_freight, 2) }}</td>
                             <td>{{ \App\Services\RawMaterial\RawMaterialFilterService::orderItemStatusLabel((int) $item->status) }}</td>
                         </tr>
                     @endforeach
@@ -123,7 +123,7 @@
                             <td>{{ $receive->order?->order_unique_id ?? '—' }}</td>
                             <td>{{ $receive->rawMaterial?->name ?? '—' }}</td>
                             <td class="text-right">{{ $receive->qty }}</td>
-                            <td class="text-right">{{ number_format($receive->freight, 3) }}</td>
+                            <td class="text-right">{{ number_format($receive->freight, 2) }}</td>
                             <td>{{ $receive->received_date?->format('d M Y') ?? '—' }}</td>
                             <td>{{ \App\Services\RawMaterial\RawMaterialFilterService::receiveStatusLabel((int) $receive->status) }}</td>
                         </tr>

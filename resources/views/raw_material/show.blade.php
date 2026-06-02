@@ -93,8 +93,8 @@
                             <td>{{ $item->order?->supplier?->name ?? '—' }}</td>
                             <td>{{ $item->order?->order_date?->format('d M Y') ?? '—' }}</td>
                             <td>{{ $item->total_qty }}</td>
-                            <td>₹ {{ number_format($item->price, 3) }}</td>
-                            <td>₹ {{ number_format($item->total_price, 3) }}</td>
+                            <td>₹ {{ number_format($item->price, 2) }}</td>
+                            <td>₹ {{ number_format($item->total_price, 2) }}</td>
                             <td>{!! $item->statusBadge() !!}</td>
                         </tr>
                     @empty

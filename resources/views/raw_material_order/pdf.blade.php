@@ -60,8 +60,8 @@
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $item->rawMaterial?->name ?? '—' }}</td>
                     <td class="text-right">{{ $item->total_qty }}</td>
-                    <td class="text-right">{{ number_format($item->price, 3) }}</td>
-                    <td class="text-right">{{ number_format($item->total_price, 3) }}</td>
+                    <td class="text-right">{{ number_format($item->price, 2) }}</td>
+                    <td class="text-right">{{ number_format($item->total_price, 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
@@ -74,11 +74,11 @@
         </tr>
         <tr>
             <td class="label">Total Price (₹)</td>
-            <td class="value">{{ number_format($order->total_price, 3) }}</td>
+            <td class="value">{{ number_format($order->total_price, 2) }}</td>
         </tr>
         <tr>
             <td class="label">Total Freight (₹)</td>
-            <td class="value">{{ number_format($order->total_freight, 3) }}</td>
+            <td class="value">{{ number_format($order->total_freight, 2) }}</td>
         </tr>
     </table>
 </body>

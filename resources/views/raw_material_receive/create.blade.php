@@ -45,7 +45,7 @@
                 <div class="col-12 col-md-4 mb-3">
                     <label class="col-form-label">Freight per ton (₹)</label>
                     <input type="number" name="freight" id="freight" value="{{ old('freight', 0) }}"
-                           class="form-control" min="0" step="0.001" placeholder="0.000">
+                           class="form-control" min="0" step="0.001" placeholder="0.00">
                     <small class="text-muted">Applied to item freight as: freight × qty (tons)</small>
                     <span class="text-danger small freight_error">@error('freight'){{ $message }}@enderror</span>
                 </div>

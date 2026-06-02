@@ -40,8 +40,8 @@ class RawMaterialOrderController extends Controller
                 ->addColumn('supplier_name', fn ($row) => e($row->supplier?->name ?? '—'))
                 ->editColumn('order_date', fn ($row) => $row->order_date?->format('d M Y') ?? '—')
                 ->editColumn('total_qty', fn ($row) => number_format($row->total_qty) . ' tons')
-                ->editColumn('total_price', fn ($row) => '₹ ' . number_format($row->total_price, 3))
-                ->editColumn('total_freight', fn ($row) => '₹ ' . number_format($row->total_freight, 3))
+                ->editColumn('total_price', fn ($row) => '₹ ' . number_format($row->total_price, 2))
+                ->editColumn('total_freight', fn ($row) => '₹ ' . number_format($row->total_freight, 2))
                 ->editColumn('status', fn ($row) => $row->statusBadge())
                 ->addColumn('action', function ($row) {
                     $view   = '<a href="' . route('raw-material.order.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>';
