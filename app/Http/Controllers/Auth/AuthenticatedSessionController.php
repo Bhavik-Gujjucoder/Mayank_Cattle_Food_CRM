@@ -128,7 +128,7 @@ class AuthenticatedSessionController extends Controller
         }
         
         /* 5. All checks passed — log the dealer in */
-        Auth::login($user, $request->boolean('remember'));
+        //Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard', absolute: false));
