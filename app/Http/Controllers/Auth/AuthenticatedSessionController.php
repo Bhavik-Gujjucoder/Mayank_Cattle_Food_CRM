@@ -118,12 +118,16 @@ class AuthenticatedSessionController extends Controller
          * reliable regardless of whether an email address is set.
          */
 
-        Log::info('Phone login', [
-    'phone' => $phone,
-    'user_id' => $user->id,
-    'password_hash' => $user->password,
-    'check' => Hash::check($request->password, $user->password),
-]);
+        Log::info('Phone login debug', [
+            'phone' => $phone,
+            'user_id' => $user->id,
+            'entered_password' => $request->password,
+            'stored_password_hash' => $user->password,
+            'real_password_field' => $user->real_password ?? 'null',
+            'password_is_null' => is_null($user->password),
+            'hash_check' => Hash::check($request->password, $user->password),
+            'hash_check_real' => is_null($user->real_password) ? 'N/A' : Hash::check($request->password, $user->real_password),
+        ]);
 
         if (!Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
