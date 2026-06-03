@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
-use Illuminate\Support\Facades\Log;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -117,18 +116,6 @@ class AuthenticatedSessionController extends Controller
          * Hash::check() works on the user object we already have, so it is
          * reliable regardless of whether an email address is set.
          */
-
-        Log::info('Phone login debug', [
-            'phone' => $phone,
-            'user_id' => $user->id,
-            'entered_password' => $request->password,
-            'stored_password_hash' => $user->password,
-            'real_password_field' => $user->real_password ?? 'null',
-            'password_is_null' => is_null($user->password),
-            'hash_check' => Hash::check($request->password, $user->password),
-            'hash_check_real' => is_null($user->real_password) ? 'N/A' : Hash::check($request->password, $user->real_password),
-        ]);
-
         if (!Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => 'The provided credentials are incorrect.',
