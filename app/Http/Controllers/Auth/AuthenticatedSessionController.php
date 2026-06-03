@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -39,7 +40,7 @@ class AuthenticatedSessionController extends Controller
         if (filter_var($credential, FILTER_VALIDATE_EMAIL)) {
             return $this->handleEmailLogin($request, $credential);
         }
-    
+
         return $this->handlePhoneLogin($request, $credential);
     }
 
@@ -92,10 +93,10 @@ class AuthenticatedSessionController extends Controller
             'email.regex'       => 'Please enter a valid email address or mobile number (10–15 digits).',
             'password.required' => 'Password is required for mobile number login.',
         ]);
-        
+
         /* 2. Check if the mobile number exists in the system */
         $user = User::where('phone_no', $phone)->first();
-        
+
         if (!$user) {
             throw ValidationException::withMessages([
                 'email' => 'This mobile number is not registered in the system.',
@@ -116,19 +117,22 @@ class AuthenticatedSessionController extends Controller
          * Hash::check() works on the user object we already have, so it is
          * reliable regardless of whether an email address is set.
          */
-        /*if (!Hash::check($request->password, $user->password)) {
+
+        Log::info('Phone login', [
+    'phone' => $phone,
+    'user_id' => $user->id,
+    'password_hash' => $user->password,
+    'check' => Hash::check($request->password, $user->password),
+]);
+
+        if (!Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => 'The provided credentials are incorrect.',
             ]);
-        }*/
-        if (!$user || !Auth::validate(['phone_no' => $phone, 'password' => $request->password])) {
-            throw ValidationException::withMessages([
-                'phone_no' => __('auth.failed'),
-            ]);
         }
-        
+
         /* 5. All checks passed — log the dealer in */
-        //Auth::login($user, $request->boolean('remember'));
+        Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard', absolute: false));
