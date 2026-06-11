@@ -101,10 +101,7 @@ class SupplierController extends Controller
 
         $this->validateCityBelongsToState($request);
 
-        Supplier::create([
-            ...$validated,
-            'opening_balance' => $validated['opening_balance'] ?? 0,
-        ]);
+        Supplier::create($this->prepareSupplierData($validated));
 
         return response()->json(['success' => true, 'message' => 'Supplier created successfully.']);
     }
@@ -129,10 +126,7 @@ class SupplierController extends Controller
 
         $this->validateCityBelongsToState($request);
 
-        $supplier->update([
-            ...$validated,
-            'opening_balance' => $validated['opening_balance'] ?? 0,
-        ]);
+        $supplier->update($this->prepareSupplierData($validated));
 
         return response()->json(['success' => true, 'message' => 'Supplier updated successfully.']);
     }
@@ -167,18 +161,32 @@ class SupplierController extends Controller
     {
         return [
             'name'            => 'required|string|max:255',
-            'mobile'          => 'required|string|max:20',
+            'mobile'          => 'nullable|string|max:20',
             'email'           => [
-                'required',
+                'nullable',
                 'email',
                 'max:255',
                 Rule::unique('suppliers', 'email')->ignore($supplierId)->whereNull('deleted_at'),
             ],
-            'address'         => 'required|string',
+            'address'         => 'nullable|string',
             'opening_balance' => 'nullable|numeric|min:0',
             'state_id'        => 'required|exists:state_management,id',
             'city_id'         => 'required|exists:city_management,id',
-            'status'          => 'required|in:0,1',
+            'status'          => 'nullable|in:0,1',
+        ];
+    }
+
+    private function prepareSupplierData(array $validated): array
+    {
+        return [
+            'name'            => $validated['name'],
+            'mobile'          => filled($validated['mobile'] ?? null) ? $validated['mobile'] : null,
+            'email'           => filled($validated['email'] ?? null) ? $validated['email'] : null,
+            'address'         => filled($validated['address'] ?? null) ? $validated['address'] : null,
+            'opening_balance' => $validated['opening_balance'] ?? 0,
+            'state_id'        => $validated['state_id'],
+            'city_id'         => $validated['city_id'],
+            'status'          => $validated['status'] ?? 1,
         ];
     }
 
@@ -200,16 +208,12 @@ class SupplierController extends Controller
     {
         return [
             'name.required'     => 'Supplier name is required.',
-            'mobile.required'   => 'Mobile number is required.',
-            'email.required'    => 'Email address is required.',
             'email.email'       => 'Please enter a valid email address.',
             'email.unique'      => 'Email address already exists.',
-            'address.required'  => 'Address is required.',
             'state_id.required' => 'State is required.',
             'state_id.exists'   => 'Selected state is invalid.',
             'city_id.required'  => 'City is required.',
             'city_id.exists'    => 'Selected city is invalid.',
-            'status.required'   => 'Status is required.',
         ];
     }
 }

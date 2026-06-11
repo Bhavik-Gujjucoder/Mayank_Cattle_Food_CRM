@@ -71,7 +71,7 @@
             <div class="dpp-footnotes mt-3 pt-3 border-top small text-muted">
                 <p class="mb-1 d-md-none dpp-footnote dpp-footnote--mobile">
                     <span class="dpp-footnote-label">Tip:</span>
-                    Tap a day chip to see dispatch date. Only unpaid dispatches are listed.
+                    Tap a day chip to see dispatch date. Only unpaid or partial dispatches are listed.
                 </p>
                 @include('delivery_pending_payments.partials.footnotes-legend', [
                     'modifier' => 'd-none d-md-block d-print-block',

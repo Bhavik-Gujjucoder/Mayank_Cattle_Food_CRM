@@ -54,6 +54,69 @@ class SalesScope
         return ! static::isDealer($user);
     }
 
+    /** Whether list dealer filters should be shown (hidden for dealer role). */
+    public static function showDealerFilter(?User $user = null): bool
+    {
+        return ! static::isDealer($user);
+    }
+
+    /**
+     * Dealers for Soda/Order & Dispatch list filter dropdowns (scoped to visible orders).
+     *
+     * @return Collection<int, DealerManagement>
+     */
+    public static function filterableDealers(?User $user = null): Collection
+    {
+        $user = $user ?? auth()->user();
+
+        if (! $user || static::isDealer($user)) {
+            return collect();
+        }
+
+        $dealerIds = static::scopeOrders(OrderManagement::query())
+            ->distinct()
+            ->pluck('dealer_id')
+            ->filter();
+
+        if ($dealerIds->isEmpty()) {
+            return collect();
+        }
+
+        return DealerManagement::with('user')
+            ->whereIn('id', $dealerIds)
+            ->get()
+            ->sortBy(fn ($dealer) => strtolower($dealer->user?->name ?? $dealer->firm_shop_name ?? ''))
+            ->values();
+    }
+
+    /**
+     * @param  Builder<OrderManagement>  $query
+     * @return Builder<OrderManagement>
+     */
+    public static function applyDealerFilter(Builder $query, mixed $dealerId, ?User $user = null): Builder
+    {
+        if (! static::showDealerFilter($user)) {
+            return $query;
+        }
+
+        if ($dealerId === null || $dealerId === '' || $dealerId === 'all') {
+            return $query;
+        }
+
+        $dealerId = (int) $dealerId;
+
+        if (! static::userCanFilterByDealer($dealerId, $user)) {
+            return $query;
+        }
+
+        return $query->where('dealer_id', $dealerId);
+    }
+
+    public static function userCanFilterByDealer(int $dealerId, ?User $user = null): bool
+    {
+        return static::filterableDealers($user)->contains('id', $dealerId);
+    }
+
     /**
      * Active brands for the Soda/Order list filter dropdown.
      * - super admin, admin, staff → all active brands
@@ -66,7 +129,7 @@ class SalesScope
     {
         $user = $user ?? auth()->user();
 
-        $query = BrandManagement::query()->where('status', 1)->orderBy('name');
+        $query = BrandManagement::query()->where('status', 1)->ordered();
 
         if (! $user || static::hasGlobalAccess($user)) {
             return $query->get();

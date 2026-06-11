@@ -259,7 +259,7 @@
                                 <tr class="product-row" data-dispatched-qty="{{ $itemDispatchedQty }}"
                                     data-ordered-qty="{{ (int) $item->qty }}"
                                     data-product-name="{{ e($item->product?->name ?? '') }}"
-                                    data-product-unit="{{ e($item->product?->unit ?? 'Bags') }}">
+                                    data-product-unit="{{ e($item->product?->unit ?? 'Bag') }}">
                                     <td class="row-index text-center fw-semibold">
                                         {{ $index + 1 }}
                                         {{-- Carries the existing order_item ID so the controller
@@ -308,7 +308,7 @@
                                         @if ($itemDispatchedQty > 0)
                                             <small class="dispatched-qty-hint text-muted d-block mt-1">
                                                 <i class="ti ti-truck me-1" style="color:#3d5dd4;"></i>Dispatched:
-                                                <strong>{{ $itemDispatchedQty }}</strong> — min qty allowed.
+                                                <strong>{{ \App\Support\ProductUnit::formatWithUnit($itemDispatchedQty, $item->product?->unit) }}</strong> — min qty allowed.
                                             </small>
                                         @endif
                                         <span class="qty-min-error text-danger small d-block mt-1"
@@ -672,7 +672,7 @@
                 /* Block removal of any item that has been dispatched */
                 if (dispatchedQty > 0) {
                     var productName = $row.data('product-name') || '—';
-                    var productUnit = $row.data('product-unit') || 'Bags';
+                    var productUnit = $row.data('product-unit') || 'Bag';
                     var orderedQty = parseInt($row.data('ordered-qty')) || 0;
                     var remainingQty = Math.max(0, orderedQty - dispatchedQty);
 
@@ -777,6 +777,11 @@
                 var $row = $(this).closest('tr');
                 var $selected = $(this).find(':selected');
                 var price = parseFloat($selected.data('price')) || 0;
+                var unit = $selected.data('unit') || '';
+
+                if (unit) {
+                    $row.data('product-unit', unit);
+                }
 
                 $(this).removeClass('is-invalid');
                 if (!$row.find('.is-invalid').length) {

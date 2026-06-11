@@ -105,54 +105,6 @@
     @endcan
 </div>
 
-@can('view-dispatch-pending-payments')
-    @include('delivery_pending_payments.partials.module-responsive')
-    <style>
-        .dashboard-dpp-widget .dashboard-dpp-stat-pill {
-            background: #f8fafc;
-            border: 1px solid #e8e8e8;
-            border-radius: 8px;
-            padding: 0.65rem 0.75rem;
-            text-align: center;
-        }
-
-        .dashboard-dpp-widget .dashboard-dpp-stat-num {
-            display: block;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #262a2a;
-            line-height: 1.2;
-        }
-
-        .dashboard-dpp-widget .dashboard-dpp-stat-label {
-            display: block;
-            font-size: 0.75rem;
-            color: #64748b;
-            margin-top: 0.15rem;
-        }
-
-        .dashboard-dpp-widget .dashboard-dpp-brands-stack {
-            max-height: 520px;
-            overflow-y: auto;
-            padding-right: 0.25rem;
-        }
-
-        .dashboard-dpp-widget .dpp-brand-section {
-            margin-bottom: 1.25rem;
-        }
-
-        .dashboard-dpp-widget .dpp-brand-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .dashboard-dpp-widget .dpp-header-actions,
-        .dashboard-dpp-widget .dpp-header-filters,
-        .dashboard-dpp-widget .dpp-footnotes {
-            display: none !important;
-        }
-    </style>
-@endcan
-
 <div class="row">
     <div class="col-lg-6 d-flex">
         <!--col-xxl-3 -->
@@ -195,12 +147,6 @@
         @endcan
     </div> --}}
 </div>
-
-@can('view-dispatch-pending-payments')
-    <div class="row">
-        @include('dashboard.partials.delivery_pending_payments_widget')
-    </div>
-@endcan
 
 <div class="row">
     <!------------ Recent Dealers ---------------->
@@ -312,7 +258,7 @@
                                                 <a href="{{ route('dispatch.orderHistory', $dispatch_order->order_id) }}">
                                                     {{ $dispatch_order->product->name }}
                                                     <span class="text-info">
-                                                        <small>(bag/ton {{ $dispatch_order->no_of_bags }})</small>
+                                                        <small>({{ \App\Support\ProductUnit::formatWithUnit($dispatch_order->no_of_bags, $dispatch_order->product?->unit) }})</small>
                                                     </span>
                                                 </a>
                                             </h6>
@@ -427,15 +373,8 @@
 
 @endsection
 @section('script')
-    @can('view-dispatch-pending-payments')
-        <script>
-            document.querySelectorAll('.dashboard-dpp-widget [data-bs-toggle="tooltip"]')
-                .forEach(function (el) {
-                    new bootstrap.Tooltip(el, { trigger: 'hover focus' });
-                });
-        </script>
-    @endcan
     @can('add-dispatch')
+        @include('dispatch_management.partials.status-field-script')
         <script>
             $(document).ready(function() {
                 var TRUCKS_URL = '{{ route('dispatch.transporterTrucks', ':id') }}';
@@ -487,17 +426,24 @@
                     $('#dashboardDispatchPendingHint').text('');
                 }
 
+                function updateDashboardQtyLabel(unit) {
+                    var label = unit ? ('No of ' + unit) : @json(\App\Support\ProductUnit::quantityFieldLabel());
+                    $('#dashboardDispatchQtyLabel').text(label);
+                }
+
                 function populateProductSelect(items) {
                     var $sel = $('#dashboardDispatchOrderItemId');
                     var html = '<option value="">-- Select Product --</option>';
                     $.each(items, function(i, item) {
                         var disabled = item.disabled ? ' disabled' : '';
                         html += '<option value="' + item.id + '" data-product-id="' + item.product_id +
+                            '" data-product-unit="' + (item.product_unit || '') +
                             '" data-pending="' + item.pending + '"' + disabled + '>' +
                             item.product_name + ' — Ordered: ' + item.qty + ', Pending: ' + item.pending +
                             '</option>';
                     });
                     $sel.html(html).prop('disabled', false);
+                    updateDashboardQtyLabel('');
                 }
 
                 function showBlockedAlert(blocking) {
@@ -559,8 +505,10 @@
                 $('#dashboardDispatchOrderItemId').on('change', function() {
                     var $opt = $(this).find(':selected');
                     var pending = parseInt($opt.data('pending')) || 0;
+                    var unit = $opt.data('product-unit') || '';
                     $('#dashboardDispatchProductId').val($opt.data('product-id') || '');
-                    $('#dashboardDispatchPendingHint').text($opt.val() ? 'Available pending qty: ' + pending : '');
+                    updateDashboardQtyLabel(unit);
+                    $('#dashboardDispatchPendingHint').text($opt.val() ? 'Available pending qty: ' + pending + (unit ? ' ' + unit : '') : '');
                 });
 
                 $('#dashboardDispatchTransport').on('change', function() {
@@ -613,6 +561,9 @@
                         status: {
                             required: true
                         },
+                        partial_paid_amount: {
+                            dispatchPartialAmount: true
+                        },
                     },
                     messages: {
                         order_id: {
@@ -622,7 +573,7 @@
                             required: 'Please select a product.'
                         },
                         no_of_bags: {
-                            required: 'No of bags/ton is required.'
+                            required: @json(\App\Support\ProductUnit::requiredMessage())
                         },
                         dispatch_date: {
                             required: 'Please select a dispatch date.'
@@ -639,10 +590,17 @@
                         status: {
                             required: 'Please select a payment status.'
                         },
+                        partial_paid_amount: {
+                            dispatchPartialAmount: 'Please enter the paid amount.'
+                        },
                     },
                     errorElement: 'span',
                     errorClass: 'text-danger small d-block mt-1',
                     errorPlacement: function(error, element) {
+                        if (element.attr('name') === 'partial_paid_amount') {
+                            error.appendTo('#dashboard_partial_paid_amount-error');
+                            return;
+                        }
                         var $target = $('#' + element.attr('name') + '-error');
                         if ($target.length) {
                             $target.html(error);

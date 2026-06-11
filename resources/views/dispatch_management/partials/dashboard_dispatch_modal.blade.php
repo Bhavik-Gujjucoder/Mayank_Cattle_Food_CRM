@@ -52,7 +52,7 @@
 
                         <div class="col-md-6 mb-3">
                             <label class="col-form-label">
-                                No of Bags/Ton <span class="text-danger">*</span>
+                                <span id="dashboardDispatchQtyLabel">{{ \App\Support\ProductUnit::quantityFieldLabel() }}</span> <span class="text-danger">*</span>
                             </label>
                             <input type="number" name="no_of_bags" id="dashboardDispatchNoBags" class="form-control"
                                 placeholder="0" min="1" value="{{ old('no_of_bags') }}">

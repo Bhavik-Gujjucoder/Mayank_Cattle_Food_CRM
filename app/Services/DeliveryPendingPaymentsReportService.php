@@ -7,11 +7,8 @@ use Illuminate\Support\Collection;
 
 class DeliveryPendingPaymentsReportService
 {
-    /** Dashboard widget: only dispatches with pending days >= this value. */
-    public const DASHBOARD_MIN_PENDING_DAYS = 10;
-
     /**
-     * Build brand-grouped report sections for unpaid dispatch payments.
+     * Build brand-grouped report sections for unpaid/partial dispatch payments.
      *
      * @return Collection<int, array{brand_id: int, brand_name: string, rows: array<int, array>}>
      */
@@ -20,7 +17,7 @@ class DeliveryPendingPaymentsReportService
         $today = now()->startOfDay();
 
         $unpaidDispatches = DispatchManagement::query()
-            ->where('status', DispatchManagement::STATUS_UNPAID)
+            ->whereIn('status', DispatchManagement::pendingPaymentStatuses())
             ->whereHas('order', fn ($q) => $q->whereNull('deleted_at'))
             ->with([
                 'order:id,unique_order_id,brand_id,dealer_id,broker_id',
@@ -90,7 +87,7 @@ class DeliveryPendingPaymentsReportService
 
         return $rows
             ->sortBy([
-                ['brand_name', 'asc'],
+                ['brand_id', 'asc'],
                 ['city_name', 'asc'],
                 ['dealer_name', 'asc'],
                 ['order_id', 'asc'],
@@ -105,38 +102,8 @@ class DeliveryPendingPaymentsReportService
                     'rows'       => $brandRows->values()->all(),
                 ];
             })
-            ->sortBy('brand_name')
+            ->sortBy('brand_id')
             ->values();
-    }
-
-    /** Dashboard: unpaid dispatch payments with pending days >= 10. */
-    public function buildForDashboard(): Collection
-    {
-        return $this->build('all', self::DASHBOARD_MIN_PENDING_DAYS);
-    }
-
-    /**
-     * @param  Collection<int, array{brand_id: int, brand_name: string, rows: array}>  $brandSections
-     * @return array{order_count: int, dispatch_count: int, brand_count: int}
-     */
-    public function summarize(Collection $brandSections): array
-    {
-        $orderCount = 0;
-        $dispatchCount = 0;
-
-        foreach ($brandSections as $section) {
-            $rows = $section['rows'] ?? [];
-            $orderCount += count($rows);
-            foreach ($rows as $row) {
-                $dispatchCount += count($row['pending_days_items'] ?? []);
-            }
-        }
-
-        return [
-            'order_count'    => $orderCount,
-            'dispatch_count' => $dispatchCount,
-            'brand_count'    => $brandSections->count(),
-        ];
     }
 
     /**

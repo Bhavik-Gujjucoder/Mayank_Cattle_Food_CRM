@@ -135,7 +135,7 @@
 
                             {{-- Mobile --}}
                             <div class="col-md-6 mb-3">
-                                <label class="col-form-label">Mobile <span class="text-dangers">*</span></label>
+                                <label class="col-form-label">Mobile</label>
                                 <input type="text" name="mobile" class="form-control" placeholder="Mobile number"
                                     maxlength="10" oninput="this.value = this.value.replace(/[^0-9+\-\s]/g,'')">
                                 <span class="mobile_error text-danger small"></span>
@@ -143,7 +143,7 @@
 
                             {{-- Email --}}
                             <div class="col-md-6 mb-3">
-                                <label class="col-form-label">Email <span class="text-dangers">*</span></label>
+                                <label class="col-form-label">Email</label>
                                 <input type="email" name="email" class="form-control" placeholder="Email address"
                                     maxlength="255">
                                 <span class="email_error text-danger small"></span>
@@ -161,7 +161,7 @@
 
                             {{-- Address --}}
                             <div class="col-md-12 mb-3">
-                                <label class="col-form-label">Address <span class="text-dangers">*</span></label>
+                                <label class="col-form-label">Address</label>
                                 <textarea name="address" class="form-control" rows="3" placeholder="Supplier address"></textarea>
                                 <span class="address_error text-danger small"></span>
                             </div>
@@ -189,7 +189,7 @@
 
                             {{-- Status --}}
                             <div class="col-md-12 mb-3">
-                                <label class="col-form-label">Status <span class="text-danger">*</span></label>
+                                <label class="col-form-label">Status</label>
                                 <div class="d-flex align-items-center">
                                     <div class="me-3">
                                         <input type="radio" class="status-radio" id="sup_active" name="status"

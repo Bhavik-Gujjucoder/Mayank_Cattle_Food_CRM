@@ -295,7 +295,7 @@
                         <tr>
                             <th class="dh-col-sr">Sr no</th>
                             <th>Product</th>
-                            <th class="dh-col-bags">No of bags/ton</th>
+                            <th class="dh-col-bags">{{ \App\Support\ProductUnit::genericLabel() }}</th>
                             <th class="dh-col-date">Dispatch date</th>
                             <th>Transport</th>
                             <th>Truck number</th>
@@ -312,12 +312,17 @@
                                 <tr>
                                     <td class="text-center">{{ $itemIndex + 1 }}</td>
                                     <td>{{ $item->product?->name ?? '—' }}</td>
-                                    <td>{{ $dispatch->no_of_bags }}</td>
+                                    <td>{{ \App\Support\ProductUnit::formatWithUnit($dispatch->no_of_bags, $item->product?->unit) }}</td>
                                     <td>{{ $dispatch->dispatch_date?->format('d M Y') ?? '—' }}</td>
                                     <td>{{ $dispatch->transporter?->name ?? '—' }}</td>
                                     <td>{{ $dispatch->truck_number }}</td>
                                     <td>{{ $dispatch->driver_contact }}</td>
-                                    <td>{!! $dispatch->statusBadge() !!}</td>
+                                    <td>
+                                        {!! $dispatch->statusBadge() !!}
+                                        @if ((int) $dispatch->status === \App\Models\DispatchManagement::STATUS_PARTIAL && $dispatch->partial_paid_amount !== null)
+                                            <small class="d-block text-muted mt-1">₹{{ number_format((float) $dispatch->partial_paid_amount, 2) }}</small>
+                                        @endif
+                                    </td>
                                     <td class="text-center">
                                         <div class="dh-action-btns">
 
@@ -330,7 +335,9 @@
                                                     data-truck-number="{{ $dispatch->truck_number }}"
                                                     data-driver-contact="{{ $dispatch->driver_contact }}"
                                                     data-status="{{ $dispatch->status }}"
+                                                    data-partial-paid-amount="{{ $dispatch->partial_paid_amount }}"
                                                     data-product-name="{{ $item->product?->name ?? '' }}"
+                                                    data-product-unit="{{ $item->product?->unit ?? '' }}"
                                                     data-effective-pending="{{ $item->pendingQty() + $dispatch->no_of_bags }}"
                                                     data-update-url="{{ route('dispatch.update', $dispatch->id) }}">
                                                     <i class="ti ti-edit"></i>
@@ -411,6 +418,7 @@
                                         @foreach ($order->items as $item)
                                             @php $pending = $item->pendingQty(); @endphp
                                             <option value="{{ $item->id }}" data-product-id="{{ $item->product_id }}"
+                                                data-product-unit="{{ $item->product?->unit ?? '' }}"
                                                 data-pending="{{ $pending }}" {{ $pending <= 0 ? 'disabled' : '' }}>
                                                 {{ $item->product?->name }}
                                                 — Ordered: {{ $item->qty }},&nbsp;Pending: {{ $pending }}
@@ -425,7 +433,7 @@
                                 {{-- ── No of Bags ────────────────────────────────── --}}
                                 <div class="col-md-6 mb-3">
                                     <label class="col-form-label">
-                                        No of Bags/Ton <span class="text-danger">*</span>
+                                        <span id="dispatchQtyLabel">{{ \App\Support\ProductUnit::quantityFieldLabel() }}</span> <span class="text-danger">*</span>
                                     </label>
                                     <input type="number" name="no_of_bags" id="dispatchNoBags" class="form-control"
                                         placeholder="0" min="1">
@@ -545,7 +553,7 @@
                                 {{-- ── No of Bags ────────────────────────────────── --}}
                                 <div class="col-md-6 mb-3">
                                     <label class="col-form-label">
-                                        No of Bags/Ton <span class="text-danger">*</span>
+                                        <span id="editDispatchQtyLabel">{{ \App\Support\ProductUnit::quantityFieldLabel() }}</span> <span class="text-danger">*</span>
                                     </label>
                                     <input type="number" name="no_of_bags" id="editNoBags" class="form-control"
                                         placeholder="0" min="1">
@@ -632,9 +640,23 @@
 @section('script')
     {{-- jQuery Validate plugin --}}
     <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+    @include('dispatch_management.partials.status-field-script')
 
     <script>
         $(document).ready(function() {
+
+            var qtyRequiredMsg = @json(\App\Support\ProductUnit::requiredMessage());
+            var qtyGenericLabel = @json(\App\Support\ProductUnit::quantityFieldLabel());
+
+            function quantityFieldLabel(unit) {
+                return unit ? ('No of ' + unit) : qtyGenericLabel;
+            }
+
+            function maxAllowedHint(qty, unit) {
+                return unit
+                    ? ('Maximum allowed: ' + qty + ' ' + unit)
+                    : ('Maximum allowed: ' + qty + ' bag / ton / kg');
+            }
 
             /* ════════════════════════════════════════════════════════════
                SHARED HELPER — load trucks for a transporter via AJAX
@@ -733,8 +755,10 @@
                 var $opt = $(this).find(':selected');
                 var pending = parseInt($opt.data('pending')) || 0;
                 var prodId = $opt.data('product-id') || '';
+                var unit = $opt.data('product-unit') || '';
                 $('#dispatchProductId').val(prodId);
-                $('#dispatchPendingHint').text($opt.val() ? 'Available pending qty: ' + pending : '');
+                $('#dispatchQtyLabel').text(quantityFieldLabel(unit));
+                $('#dispatchPendingHint').text($opt.val() ? 'Available pending qty: ' + pending + (unit ? ' ' + unit : '') : '');
             });
 
             /* ── Transporter change — load trucks + auto-fill driver contact */
@@ -772,12 +796,13 @@
                     dispatch_date:  { required: true },
                     transport_id:   { required: true },
                     truck_number:   { required: true },
-                    driver_contact: { required: true },
-                    status:         { required: true },
+                    driver_contact:      { required: true },
+                    status:              { required: true },
+                    partial_paid_amount: { dispatchPartialAmount: true },
                 },
                 messages: {
                     order_item_id:  { required: 'Please select a product.' },
-                    no_of_bags:     { required: 'No of bags/ton is required.', number: 'Please enter a valid number.', min: 'Must be at least 1.' },
+                    no_of_bags:     { required: qtyRequiredMsg, number: 'Please enter a valid number.', min: 'Must be at least 1.' },
                     dispatch_date:  { required: 'Please select a dispatch date.' },
                     transport_id:   { required: 'Please select a transporter.' },
                     truck_number:   { required: 'Please select a truck number.' },
@@ -787,6 +812,10 @@
                 errorElement: 'span',
                 errorClass: 'text-danger small d-block mt-1',
                 errorPlacement: function(error, element) {
+                    if (element.attr('name') === 'partial_paid_amount') {
+                        error.appendTo('#dispatch_partial_paid_amount-error');
+                        return;
+                    }
                     var $target = $('#' + element.attr('name') + '-error');
                     if ($target.length) {
                         $target.html(error);
@@ -856,11 +885,12 @@
                     dispatch_date:  { required: true },
                     transport_id:   { required: true },
                     truck_number:   { required: true },
-                    driver_contact: { required: true },
-                    status:         { required: true },
+                    driver_contact:      { required: true },
+                    status:              { required: true },
+                    partial_paid_amount: { dispatchPartialAmount: true },
                 },
                 messages: {
-                    no_of_bags:     { required: 'No of bags/ton is required.', number: 'Please enter a valid number.', min: 'Must be at least 1.' },
+                    no_of_bags:     { required: qtyRequiredMsg, number: 'Please enter a valid number.', min: 'Must be at least 1.' },
                     dispatch_date:  { required: 'Please select a dispatch date.' },
                     transport_id:   { required: 'Please select a transporter.' },
                     truck_number:   { required: 'Please select a truck number.' },
@@ -897,16 +927,16 @@
             });
 
             /* ── Helper: populate edit modal fields ─────────────────────── */
-            function populateEditModal(transportId, truckNumber, driverContact, status, noBags, dispatchDate, productName, effectivePending, updateUrl) {
+            function populateEditModal(transportId, truckNumber, driverContact, status, partialPaidAmount, noBags, dispatchDate, productName, effectivePending, updateUrl, productUnit) {
                 editEffectivePending = effectivePending;
                 $('#editDispatchForm').attr('action', updateUrl);
                 $('#editProductName').text(productName || '—');
                 $('#editNoBags').val(noBags);
                 $('#editDriverContact').val(driverContact);
-                $('input[name="status"][id^="edit_"]').prop('checked', false);
-                $('#edit_status_' + (String(status) === '1' ? 'paid' : 'unpaid')).prop('checked', true);
+                window.dispatchPaymentStatusHelpers.setFormStatus($('#editDispatchForm'), status, partialPaidAmount);
                 editDatePicker.setDate(dispatchDate, false);
-                $('#editPendingHint').text('Maximum allowed: ' + effectivePending + ' bags/ton');
+                $('#editDispatchQtyLabel').text(quantityFieldLabel(productUnit || ''));
+                $('#editPendingHint').text(maxAllowedHint(effectivePending, productUnit || ''));
 
                 /* Set transporter — then load its trucks and pre-select the saved truck */
                 $('#editTransport').val(transportId);
@@ -938,11 +968,13 @@
                     $btn.data('truck-number'),
                     $btn.data('driver-contact'),
                     $btn.data('status'),
+                    $btn.data('partial-paid-amount'),
                     $btn.data('no-of-bags'),
                     $btn.data('dispatch-date'),
                     $btn.data('product-name'),
                     parseInt($btn.data('effective-pending')) || 0,
-                    $btn.data('update-url')
+                    $btn.data('update-url'),
+                    $btn.data('product-unit')
                 );
             });
 
@@ -972,11 +1004,13 @@
                         {{ json_encode(old('truck_number', $reopenDispatch->truck_number)) }},
                         {{ json_encode(old('driver_contact', $reopenDispatch->driver_contact)) }},
                         {{ json_encode(old('status', (string) $reopenDispatch->status)) }},
+                        {{ json_encode(old('partial_paid_amount', $reopenDispatch->partial_paid_amount)) }},
                         {{ json_encode(old('no_of_bags', $reopenDispatch->no_of_bags)) }},
                         {{ json_encode(old('dispatch_date', $reopenDispatch->dispatch_date?->format('Y-m-d'))) }},
                         {{ json_encode($reopenItem->product?->name ?? '—') }},
                         {{ $reopenEffectivePending }},
-                        '{{ route('dispatch.update', $reopenDispatch->id) }}'
+                        '{{ route('dispatch.update', $reopenDispatch->id) }}',
+                        {{ json_encode($reopenItem->product?->unit ?? '') }}
                     );
                 @endif
             @endif
@@ -1007,11 +1041,13 @@
                         {{ json_encode($autoDispatch->truck_number) }},
                         {{ json_encode($autoDispatch->driver_contact) }},
                         {{ $autoDispatch->status }},
+                        {{ json_encode($autoDispatch->partial_paid_amount) }},
                         {{ $autoDispatch->no_of_bags }},
                         {{ json_encode($autoDispatch->dispatch_date?->format('Y-m-d')) }},
                         {{ json_encode($autoItem->product?->name ?? '—') }},
                         {{ $autoEffectivePending }},
-                        '{{ route('dispatch.update', $autoDispatch->id) }}'
+                        '{{ route('dispatch.update', $autoDispatch->id) }}',
+                        {{ json_encode($autoItem->product?->unit ?? '') }}
                     );
                 @endif
             @endif

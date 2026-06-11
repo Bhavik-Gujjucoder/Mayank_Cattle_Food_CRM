@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DealerManagement;
 use App\Models\DispatchManagement;
 use App\Models\OrderItem;
 use App\Models\OrderManagement;
+use App\Models\Product;
 use App\Models\Truck;
 use App\Models\User;
+use App\Support\ProductUnit;
 use App\Support\SalesScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
@@ -25,11 +29,24 @@ class DispatchManagementController extends Controller
     /* ------------------------------------------------------------------ */
     public function index(Request $request)
     {
-        /* Orders that have at least one dispatch — used to populate filter */
         $data['page_title'] = 'Dispatch Management';
-        $data['orders']     = SalesScope::scopeOrders(
+
+        $scopedOrdersQuery = SalesScope::scopeOrders(
             OrderManagement::has('dispatches')->orderBy('unique_order_id')
-        )->get(['id', 'unique_order_id']);
+        );
+
+        $data['orders'] = (clone $scopedOrdersQuery)->get(['id', 'unique_order_id', 'dealer_id']);
+
+        $productIds = SalesScope::scopeDispatches(DispatchManagement::query())
+            ->distinct()
+            ->pluck('product_id');
+
+        $data['products'] = Product::query()
+            ->whereIn('id', $productIds)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $data['dealers'] = SalesScope::filterableDealers();
 
         if ($request->ajax()) {
             $query = SalesScope::scopeDispatches(
@@ -40,10 +57,7 @@ class DispatchManagementController extends Controller
                 ])
             )->latest();
 
-            /* Order filter */
-            if ($request->filled('order_id') && $request->order_id !== 'all') {
-                $query->where('order_id', $request->order_id);
-            }
+            $query = $this->applyDispatchIndexFilters($query, $request);
 
             return DataTables::of($query)
                 ->addIndexColumn()
@@ -75,6 +89,11 @@ class DispatchManagementController extends Controller
                 })
 
                 ->addColumn('product_name',    fn($row) => $row->orderItem?->product?->name ?? '—')
+                ->editColumn('no_of_bags', function ($row) {
+                    $unit = $row->orderItem?->product?->unit;
+
+                    return ProductUnit::formatWithUnit((int) $row->no_of_bags, $unit);
+                })
                 ->addColumn('transporter_name',fn($row) => $row->transporter?->name ?? '—')
                 ->editColumn('dispatch_date',  fn($row) => $row->dispatch_date?->format('d M Y') ?? '—')
                 ->addColumn('dealer_name',    fn($row) => $row->orderItem?->order?->dealer?->user?->name ?? '—')
@@ -169,20 +188,26 @@ class DispatchManagementController extends Controller
             'transport_id'   => 'required|exists:users,id',
             'truck_number'   => 'required|string|max:100',
             'driver_contact' => 'required|string|max:20',
-            'status'         => 'required|in:0,1',
+            'status'              => 'required|in:0,1,2',
+            'partial_paid_amount' => 'nullable|numeric|min:0|required_if:status,2',
         ], [
             'order_item_id.required'  => 'Please select a product.',
-            'no_of_bags.required'     => 'No of bags/ton is required.',
-            'no_of_bags.min'          => 'No of bags/ton must be at least 1.',
+            'no_of_bags.required'     => ProductUnit::requiredMessage(),
+            'no_of_bags.min'          => ProductUnit::minMessage(),
             // 'no_of_bags.max'          => 'The entered quantity cannot exceed the pending quantity.',
             'dispatch_date.required'   => 'Dispatch date is required.',
             'transport_id.required'   => 'Please select a transporter.',
             'transport_id.exists'     => 'Selected transporter is invalid.',
             'truck_number.required'   => 'Truck number is required.',
             'driver_contact.required' => 'Driver contact is required.',
-            'status.required'         => 'Please select a payment status.',
-            'status.in'               => 'Invalid payment status selected.',
+            'status.required'                 => 'Please select a payment status.',
+            'status.in'                       => 'Invalid payment status selected.',
+            'partial_paid_amount.required_if' => 'Please enter the paid amount.',
+            'partial_paid_amount.numeric'     => 'Please enter a valid paid amount.',
+            'partial_paid_amount.min'         => 'Paid amount cannot be negative.',
         ]);
+
+        $validated = $this->normalizeDispatchPayment($validated);
 
         /* Guard against over-dispatch */
         $orderItem  = OrderItem::findOrFail($validated['order_item_id']);
@@ -252,18 +277,24 @@ class DispatchManagementController extends Controller
             'transport_id'   => 'required|exists:users,id',
             'truck_number'   => 'required|string|max:100',
             'driver_contact' => 'required|string|max:20',
-            'status'         => 'required|in:0,1',
+            'status'              => 'required|in:0,1,2',
+            'partial_paid_amount' => 'nullable|numeric|min:0|required_if:status,2',
         ], [
-            'no_of_bags.required'     => 'No of bags/ton is required.',
-            'no_of_bags.min'          => 'No of bags/ton must be at least 1.',
+            'no_of_bags.required'     => ProductUnit::requiredMessage(),
+            'no_of_bags.min'          => ProductUnit::minMessage(),
             'dispatch_date.required'  => 'Dispatch date is required.',
             'transport_id.required'   => 'Please select a transporter.',
             'transport_id.exists'     => 'Selected transporter is invalid.',
             'truck_number.required'   => 'Truck number is required.',
             'driver_contact.required' => 'Driver contact is required.',
-            'status.required'         => 'Please select a payment status.',
-            'status.in'               => 'Invalid payment status selected.',
+            'status.required'                 => 'Please select a payment status.',
+            'status.in'                       => 'Invalid payment status selected.',
+            'partial_paid_amount.required_if' => 'Please enter the paid amount.',
+            'partial_paid_amount.numeric'     => 'Please enter a valid paid amount.',
+            'partial_paid_amount.min'         => 'Paid amount cannot be negative.',
         ]);
+
+        $validated = $this->normalizeDispatchPayment($validated);
 
         /*
          * Over-dispatch guard:
@@ -313,6 +344,7 @@ class DispatchManagementController extends Controller
                 'id'           => $item->id,
                 'product_id'   => $item->product_id,
                 'product_name' => $item->product?->name ?? '—',
+                'product_unit' => $item->product?->unit,
                 'qty'          => (int) $item->qty,
                 'pending'      => $pending,
                 'disabled'     => $pending <= 0,
@@ -381,6 +413,45 @@ class DispatchManagementController extends Controller
         }
 
         return $redirect;
+    }
+
+    private function normalizeDispatchPayment(array $validated): array
+    {
+        $validated['partial_paid_amount'] = (int) $validated['status'] === DispatchManagement::STATUS_PARTIAL
+            ? $validated['partial_paid_amount']
+            : null;
+
+        return $validated;
+    }
+
+    /**
+     * @param  Builder<DispatchManagement>  $query
+     * @return Builder<DispatchManagement>
+     */
+    private function applyDispatchIndexFilters(Builder $query, Request $request): Builder
+    {
+        if ($request->filled('date_from')) {
+            $query->whereDate('dispatch_date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('dispatch_date', '<=', $request->date_to);
+        }
+
+        if ($request->filled('dealer_id') && $request->dealer_id !== 'all') {
+            SalesScope::authorizeDealerId($request->dealer_id);
+            $query->whereHas('order', fn (Builder $q) => $q->where('dealer_id', $request->dealer_id));
+        }
+
+        if ($request->filled('order_id') && $request->order_id !== 'all') {
+            $query->where('order_id', $request->order_id);
+        }
+
+        if ($request->filled('product_id') && $request->product_id !== 'all') {
+            $query->where('product_id', $request->product_id);
+        }
+
+        return $query;
     }
 
     /* ------------------------------------------------------------------ */

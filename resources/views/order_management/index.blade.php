@@ -4,7 +4,292 @@
     {{ $page_title }}
 @endsection
 
-<div class="card">
+@section('styles')
+<style>
+    /* ── Order list module — responsive layout ── */
+    .order-list-module .cls-form-right {
+        flex-shrink: 0;
+    }
+    .order-list-module .comm-header-right-btn {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+    .order-list-module .order-table-scroll {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-gutter: stable;
+    }
+    .order-list-module .order-table-scroll-hint {
+        display: none;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.78rem;
+        color: #667085;
+        margin-bottom: 0.65rem;
+    }
+    .order-list-module .dataTables_wrapper {
+        width: 100%;
+        min-width: 0;
+    }
+    .order-list-module .dataTables_length,
+    .order-list-module .dataTables_info,
+    .order-list-module .dataTables_paginate {
+        flex-wrap: wrap;
+    }
+    #order_table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100% !important;
+        min-width: 1080px;
+    }
+    #order_table tbody tr.order-group-row > td {
+        background: #fff;
+        border-top: 2px solid #e4e7ec;
+        vertical-align: middle;
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+    #order_table tbody tr.order-group-row:first-child > td {
+        border-top: none;
+    }
+    #order_table tbody tr.order-group-row:not(.order-row-expanded) > td {
+        border-bottom: 2px solid #e4e7ec;
+    }
+    #order_table tbody tr.order-row-expanded > td {
+        background: #f8fafc;
+        border-top: 2px solid #3554d1;
+        border-bottom: none;
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+    #order_table tbody tr.order-detail-row > td {
+        padding: 0 !important;
+        background: #f2f4f7;
+        border-top: none;
+        border-bottom: 3px solid #d0d5dd;
+    }
+    #order_table tbody tr.order-detail-row + tr.order-group-row > td {
+        border-top: 10px solid #eef1f5;
+    }
+    #order_table tbody tr.order-detail-row > td .ol-detail-panel {
+        margin: 0 14px 14px;
+        padding: 14px 16px;
+        background: #fff;
+        border: 1px solid #e4e7ec;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06);
+    }
+    .order-expand-btn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        line-height: 1;
+        color: #3554d1;
+    }
+    .order-expand-btn:hover {
+        background: #eef2ff;
+        color: #1e3a8a;
+    }
+    .ol-amount-cell .ol-amount-avg {
+        font-size: 0.78rem;
+        margin-top: 2px;
+    }
+    .ol-dispatch-cell {
+        min-width: 140px;
+    }
+    .ol-dispatch-bar {
+        height: 6px;
+        border-radius: 4px;
+        background: #e9ecef;
+        margin-bottom: 4px;
+    }
+    .ol-dispatch-meta {
+        line-height: 1.3;
+        white-space: nowrap;
+    }
+    #order_table tbody tr.child > td,
+    #order_table tbody tr.order-detail-row > td {
+        width: 100% !important;
+    }
+    @media (max-width: 991.98px) {
+        .order-list-module .cls-cardhed-part {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .order-list-module .cls-form-left,
+        .order-list-module .cls-form-right {
+            width: 100%;
+        }
+        .order-list-module .cls-form-left {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 0.75rem;
+        }
+        .order-list-module .common-hed-form.cls-form-select-input,
+        .order-list-module .common-hed-form.cls-form-serc {
+            flex: 1 1 180px;
+            min-width: 0;
+        }
+        .order-list-module .common-hed-form.cls-form-select-input .select2-container {
+            width: 100% !important;
+        }
+        .order-list-module .comm-header-right-btn {
+            justify-content: flex-start;
+            width: 100%;
+        }
+        .order-list-module .order-table-scroll-hint {
+            display: flex;
+        }
+        #order_table {
+            min-width: 960px;
+        }
+        .order-list-module #order_table tbody tr.order-detail-row > td .ol-detail-panel {
+            margin: 0 10px 12px;
+            padding: 12px;
+        }
+    }
+    @media (max-width: 767.98px) {
+        .order-list-module .card-header {
+            padding: 0.75rem;
+        }
+        .order-list-module .cls-form-left {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .order-list-module .common-hed-form.cls-form-select-input,
+        .order-list-module .common-hed-form.cls-form-serc {
+            flex: 1 1 100%;
+            width: 100%;
+        }
+        #order_table {
+            min-width: 720px;
+        }
+        .ol-dispatch-meta {
+            white-space: normal;
+        }
+        .ol-amount-cell .ol-amount-total {
+            font-size: 0.88rem;
+        }
+        .order-list-module #order_table tbody tr.order-detail-row > td .ol-detail-panel {
+            margin: 0 6px 10px;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .ol-detail-head {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .ol-detail-meta {
+            line-height: 1.4;
+        }
+    }
+    @media (max-width: 575.98px) {
+        .order-list-module .comm-header-right-btn .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        #order_table {
+            min-width: 560px;
+        }
+        #order_table thead th,
+        #order_table tbody td {
+            font-size: 0.8125rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+        .order-expand-btn {
+            width: 28px;
+            height: 28px;
+        }
+    }
+    .ol-detail-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    .ol-detail-title {
+        font-weight: 600;
+        font-size: 0.88rem;
+        color: #344054;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .ol-detail-order-tag {
+        display: inline-block;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #3554d1;
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+        border-radius: 4px;
+        padding: 2px 8px;
+        letter-spacing: 0.02em;
+    }
+    .ol-detail-meta {
+        font-size: 0.8rem;
+        color: #667085;
+    }
+    .ol-detail-table-wrap {
+        -webkit-overflow-scrolling: touch;
+    }
+    .ol-detail-table {
+        min-width: 640px;
+    }
+    .ol-detail-table th {
+        font-size: 0.78rem;
+        white-space: nowrap;
+    }
+    .ol-detail-table td {
+        font-size: 0.82rem;
+        vertical-align: middle;
+    }
+    .ol-detail-prog {
+        height: 6px;
+        border-radius: 4px;
+    }
+    .ol-badge-dispatched {
+        display: inline-block;
+        min-width: 28px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: #e8f4fd;
+        color: #0d6efd;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+    .ol-badge-pending {
+        display: inline-block;
+        min-width: 28px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: #fff3cd;
+        color: #b45309;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+    .ol-badge-done {
+        display: inline-block;
+        min-width: 28px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: #d1fae5;
+        color: #047857;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+</style>
+@endsection
+
+<div class="card order-list-module">
     {{-- <div class="card-header"> --}}
     <div class="card-header">
         <div class="cls-cardhed-part">
@@ -37,6 +322,24 @@
                         </select>
                     </div>
                 @endif
+                @if (\App\Support\SalesScope::showDealerFilter())
+                    <div class="common-hed-form cls-form-select-input">
+                        <label class="col-form-label">Dealer</label>
+                        <select class="form-select select search-dropdown" name="dealer_id" id="dealerFilter">
+                            <option value="all">All Dealers</option>
+                            @foreach ($dealers as $dealer)
+                                <option value="{{ $dealer->id }}">
+                                    {{ $dealer->user?->name ?? $dealer->firm_shop_name ?? '—' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+                <div class="common-hed-form cls-form-select-input d-flex align-items-end">
+                    <button type="button" class="btn btn-light" id="resetOrderFilters">
+                        <i class="ti ti-refresh me-1"></i>Reset
+                    </button>
+                </div>
 
             </div>
             <div class="cls-form-right">
@@ -98,7 +401,11 @@
         <!-- /Search -->
     </div>
     <div class="card-body">
-        <div class="table-responsive custom-table">
+        <p class="order-table-scroll-hint mb-0">
+            <i class="ti ti-arrows-horizontal"></i>
+            Swipe horizontally to see all columns
+        </p>
+        <div class="table-responsive custom-table order-table-scroll">
             <table class="table dataTable no-footer" id="order_table">
                 <button class="btn btn-danger me-2" id="bulk_delete_button" style="display:none;">
                     <i class="ti ti-trash me-2"></i>Delete Selected
@@ -112,18 +419,19 @@
                                 <span class="checkmarks"></span>
                             </label>
                         </th> --}}
+                        <th class="no-sort" style="width:40px;" scope="col"></th>
+                        <th hidden scope="col"></th>
                         <th class="no-sort" scope="col">Sr No</th>
                         <th scope="col">Order ID</th>
                         <th scope="col">Broker</th>
                         <th scope="col">Brand</th>
                         <th scope="col">Dealer</th>
                         <th scope="col">Order Date</th>
-                        {{-- <th scope="col">Grand Total</th> --}}
+                        <th scope="col" class="no-sort">Amount</th>
+                        <th scope="col" class="no-sort">Dispatch</th>
                         <th scope="col">Payment Status</th>
                         {{-- <th scope="col">Order Status</th> --}}
-                        @canany(['edit-order', 'delete-order', 'add-dispatch'])
-                            <th scope="col">Action</th>
-                        @endcanany
+                        <th scope="col" @unless(auth()->user()->canAny(['edit-order', 'delete-order', 'view-dispatch'])) hidden @endunless>Action</th>
                     </tr>
                 </thead>
             </table>
@@ -140,15 +448,96 @@
             });
         });
 
-        const isShowAction = {{ auth()->user()->canAny(['edit-order', 'delete-order', 'add-dispatch'])? 'true': 'false' }};
+        const isShowAction = {{ auth()->user()->canAny(['edit-order', 'delete-order', 'view-dispatch'])? 'true': 'false' }};
         const isShowCheckbox = {{ auth()->user()->can('delete-order') ? 'true' : 'false' }};
+
+        /* Order IDs the user manually collapsed — others stay expanded on load/draw */
+        const collapsedOrderIds = new Set();
+
+        function showOrderDetails(row) {
+            var data = row.data();
+            var tr   = $(row.node());
+
+            if (!data.items_detail_html) {
+                return;
+            }
+
+            row.child(data.items_detail_html).show();
+            tr.addClass('order-row-expanded');
+            tr.next('tr.child').addClass('order-detail-row');
+            tr.find('.order-expand-btn')
+                .attr('title', 'Hide product details')
+                .attr('aria-expanded', 'true')
+                .find('i')
+                .removeClass('ti-chevron-down')
+                .addClass('ti-chevron-up');
+        }
+
+        function hideOrderDetails(row) {
+            var tr = $(row.node());
+            if (!row.child.isShown()) {
+                return;
+            }
+            row.child.hide();
+            tr.removeClass('order-row-expanded');
+            tr.next('tr.child').removeClass('order-detail-row');
+            tr.find('.order-expand-btn')
+                .attr('title', 'Show product details')
+                .attr('aria-expanded', 'false')
+                .find('i')
+                .removeClass('ti-chevron-up')
+                .addClass('ti-chevron-down');
+        }
+
+        function expandVisibleOrderRows() {
+            order_table.rows({ page: 'current' }).every(function() {
+                var id = this.data().id;
+                if (!collapsedOrderIds.has(id)) {
+                    showOrderDetails(this);
+                }
+            });
+        }
+
+        /* Column indexes — must match DataTables columns[] order */
+        var ORDER_COL = {
+            broker: 5,
+            brand: 6
+        };
+
+        function adjustOrderTableLayout() {
+            if (typeof order_table === 'undefined') {
+                return;
+            }
+
+            var w = window.innerWidth;
+            var showBroker = w >= 768;
+            var showBrand  = w >= 576;
+            var brokerCol  = order_table.column(ORDER_COL.broker);
+            var brandCol   = order_table.column(ORDER_COL.brand);
+
+            if (brokerCol.visible() !== showBroker) {
+                brokerCol.visible(showBroker);
+            }
+            if (brandCol.visible() !== showBrand) {
+                brandCol.visible(showBrand);
+            }
+
+            order_table.columns.adjust();
+
+            order_table.rows({ page: 'current' }).every(function() {
+                if ($(this.node()).hasClass('order-row-expanded')) {
+                    $(this.node()).next('tr.child').addClass('order-detail-row');
+                }
+            });
+        }
 
         var order_table = $('#order_table').DataTable({
             pageLength: 10,
-            deferRender: true,
+            deferRender: false,
             processing: true,
             serverSide: true,
-            responsive: true,
+            responsive: false,
+            autoWidth: false,
             dom: 'lrtip',
             order: [
                 [0, 'desc']
@@ -161,6 +550,9 @@
                     }
                     if ($('#BrandId').length) {
                         d.brand_id = $('#BrandId').val();
+                    }
+                    if ($('#dealerFilter').length) {
+                        d.dealer_id = $('#dealerFilter').val() || 'all';
                     }
                 }
             },
@@ -177,6 +569,20 @@
                 //     searchable: false,
                 //     visible: isShowCheckbox
                 // },
+                {
+                    data: 'expand_control',
+                    name: 'expand_control',
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-center'
+                },
+                {
+                    data: 'items_detail_html',
+                    name: 'items_detail_html',
+                    visible: false,
+                    searchable: false,
+                    orderable: false
+                },
                 {
                     data: 'DT_RowIndex',
                     name: 'DT_RowIndex',
@@ -211,11 +617,18 @@
                     name: 'order_date',
                     searchable: false
                 },
-                // {
-                //     data: 'grand_total',
-                //     name: 'grand_total',
-                //     searchable: false
-                // },
+                {
+                    data: 'amount_summary',
+                    name: 'amount_summary',
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    data: 'dispatch_summary',
+                    name: 'dispatch_summary',
+                    orderable: false,
+                    searchable: false
+                },
                 {
                     data: 'payment_status',
                     name: 'payment_status',
@@ -230,17 +643,76 @@
                     searchable: false,
                     visible: isShowAction
                 },
-            ]
+            ],
+            createdRow: function(row) {
+                $(row).addClass('order-group-row');
+            },
+            initComplete: function() {
+                adjustOrderTableLayout();
+            },
+            drawCallback: function() {
+                expandVisibleOrderRows();
+                order_table.columns.adjust();
+            }
         });
 
-        /* Broker /Brand */
-        $('#broker_id, #BrandId').on('change', function() {
+        var orderTableResizeTimer;
+        $(window).on('resize', function() {
+            clearTimeout(orderTableResizeTimer);
+            orderTableResizeTimer = setTimeout(adjustOrderTableLayout, 150);
+        });
+
+        /* Toggle product detail panel */
+        $(document).on('click', '.order-expand-btn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            var tr  = $(this).closest('tr');
+            var row = order_table.row(tr);
+
+            if (!row.length) {
+                return;
+            }
+
+            var id = row.data().id;
+
+            if (tr.hasClass('order-row-expanded')) {
+                collapsedOrderIds.add(id);
+                hideOrderDetails(row);
+            } else {
+                collapsedOrderIds.delete(id);
+                showOrderDetails(row);
+            }
+        });
+
+        /* Broker / Brand / Dealer filters */
+        $('#broker_id, #BrandId, #dealerFilter').on('change', function() {
             order_table.draw();
         });
 
         /* Custom search */
         $('#customSearch').on('keyup', function() {
             order_table.search(this.value).draw();
+        });
+
+        /* Reset all list filters */
+        $('#resetOrderFilters').on('click', function() {
+            $('#customSearch').val('');
+            order_table.search('');
+
+            if ($('#BrandId').length) {
+                $('#BrandId').val('all');
+            }
+            if ($('#broker_id').length) {
+                $('#broker_id').val('all');
+            }
+            if ($('#dealerFilter').length) {
+                $('#dealerFilter').val('all');
+            }
+
+            $('.search-dropdown').trigger('change.select2');
+            collapsedOrderIds.clear();
+            order_table.draw();
         });
 
         /* ── Sequential dispatch check ──────────────────────────────── */

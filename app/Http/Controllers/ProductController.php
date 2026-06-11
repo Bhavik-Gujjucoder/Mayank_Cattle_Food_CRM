@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\BrandManagement;
 use App\Models\Product;
+use App\Support\ProductUnit;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
 class ProductController extends Controller
 {
     /** Fixed unit options */
-    private const UNITS = ['Bag', 'Ton'];
+    private const UNITS = ProductUnit::UNITS;
 
     /* ------------------------------------------------------------------ */
     /*  INDEX                                                               */
@@ -18,7 +19,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $data['page_title'] = 'Product Management';
-        $data['brands']     = BrandManagement::where('status', 1)->orderBy('name')->get();
+        $data['brands']     = BrandManagement::activeForDropdown();
 
         if ($request->ajax()) {
             $query = Product::with('brand');
@@ -87,7 +88,7 @@ class ProductController extends Controller
             'brand_id.required' => 'Please select a brand.',
             'brand_id.exists'   => 'Selected brand is invalid.',
             'unit.required'     => 'Please select a unit.',
-            'unit.in'           => 'Unit must be Bag or Ton.',
+            'unit.in'           => 'Unit must be ' . implode(', ', self::UNITS) . '.',
             // 'price.nullable'    => 'Price is optional.',
             'price.numeric'     => 'Price must be a number.',
             'price.min'         => 'Price cannot be negative.',
@@ -130,7 +131,7 @@ class ProductController extends Controller
             'brand_id.required' => 'Please select a brand.',
             'brand_id.exists'   => 'Selected brand is invalid.',
             'unit.required'     => 'Please select a unit.',
-            'unit.in'           => 'Unit must be Bag or Ton.',
+            'unit.in'           => 'Unit must be ' . implode(', ', self::UNITS) . '.',
             // 'price.required'    => 'Price is required.',
             'price.numeric'     => 'Price must be a number.',
             'price.min'         => 'Price cannot be negative.',

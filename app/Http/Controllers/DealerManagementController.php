@@ -7,6 +7,7 @@ use App\Models\CityManagement;
 use App\Models\DealerManagement;
 use App\Models\StateManagement;
 use App\Models\User;
+use App\Support\SalesScope;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -113,7 +114,7 @@ class DealerManagementController extends Controller
     {
         $data['page_title'] = 'Dealers';
         $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
-        $data['brands']     = BrandManagement::where('status', 1)->orderBy('name')->get();
+        $data['brands']     = BrandManagement::activeForDropdown();
         if ($request->ajax()) {
             $query = DealerManagement::with('user', 'broker', 'brand', 'city')
                 ->when($request->broker_id && $request->broker_id != 'all',  fn($q) => $q->where('broker_id', $request->broker_id))
@@ -194,13 +195,57 @@ class DealerManagementController extends Controller
 
 
     /* ------------------------------------------------------------------ */
+    /*  QUICK CREATE FORM (modal from Soda/Order)                         */
+    /* ------------------------------------------------------------------ */
+    public function quickCreateForm(Request $request)
+    {
+        $request->validate([
+            'broker_id' => 'required|exists:users,id',
+            'brand_id'  => 'required|exists:brand_management,id',
+        ]);
+
+        $brokerId = (int) $request->broker_id;
+        $brandId  = (int) $request->brand_id;
+
+        if (SalesScope::isBroker() && auth()->id() !== $brokerId) {
+            abort(403, 'You can only add dealers for your own broker account.');
+        }
+
+        $broker = User::whereHas('roles', fn ($q) => $q->where('name', 'broker'))
+            ->findOrFail($brokerId);
+
+        $brand = BrandManagement::query()
+            ->where('status', 1)
+            ->findOrFail($brandId);
+
+        if (SalesScope::isBroker()) {
+            $allowedBrandIds = SalesScope::filterableBrands()->pluck('id');
+            if (! $allowedBrandIds->contains($brandId)) {
+                abort(403, 'Selected brand is not assigned to your account.');
+            }
+        }
+
+        $nextId  = (DealerManagement::max('id') ?? 0) + 1;
+        $codeNo  = 'MCF' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
+
+        return view('dealer.partials.quick-create-form', [
+            'lockedBrokerId' => $brokerId,
+            'lockedBrandId'  => $brandId,
+            'broker'         => $broker,
+            'brand'          => $brand,
+            'code_no'        => $codeNo,
+            'states'         => StateManagement::where('status', 1)->get(),
+        ]);
+    }
+
+    /* ------------------------------------------------------------------ */
     /*  CREATE                                                            */
     /* ------------------------------------------------------------------ */
     public function create()
     {
         $data['page_title'] = 'Add Dealer';
         $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
-        $data['brands']     = BrandManagement::where('status', 1)->orderBy('name')->get();
+        $data['brands']     = BrandManagement::activeForDropdown();
         $data['states']     = StateManagement::where('status', 1)->get()->all();
         $nextId             = (DealerManagement::max('id') ?? 0) + 1;
         $data['code_no']    = 'MCF' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
@@ -232,20 +277,35 @@ class DealerManagementController extends Controller
         ]);
         $user->assignRole('dealer');
 
-        DealerManagement::create([
+        $dealer = DealerManagement::create([
             'user_id'           => $user->id,
             'broker_id'         => $request->broker_id,
             'brand_id'          => $request->brand_id,
             'code_no'           => $request->code_no,
             'firm_shop_name'    => $request->firm_shop_name,
             'firm_shop_address' => $request->firm_shop_address,
-            'pancard'           => strtoupper($request->pancard),
+            'pancard'           => $request->pancard ? strtoupper($request->pancard) : null,
             'gstin'             => $request->gstin ? strtoupper($request->gstin) : null,
             'aadhar_card'       => $request->aadhar_card ?: null,
             'state_id'          => $request->state_id ?: null,
             'city_id'           => $request->city_id ?: null,
             'postal_code'       => $request->postal_code ?: null,
         ]);
+
+        if ($request->expectsJson()) {
+            $dealer->load('user');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Dealer created successfully.',
+                'dealer'  => [
+                    'id'                => $dealer->id,
+                    'name'              => $dealer->user?->name ?? $dealer->firm_shop_name,
+                    'firm_shop_name'    => $dealer->firm_shop_name,
+                    'firm_shop_address' => $dealer->firm_shop_address,
+                ],
+            ]);
+        }
 
         return redirect()->route('dealer.index')->with('success', 'Dealer created successfully.');
     }
@@ -272,7 +332,7 @@ class DealerManagementController extends Controller
         $data['page_title'] = 'Edit Dealer';
         $data['dealer']     = $dealer->load('user');
         $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
-        $data['brands']     = BrandManagement::where('status', 1)->orderBy('name')->get();
+        $data['brands']     = BrandManagement::activeForDropdown();
         $data['states']     = StateManagement::where('status', 1)->get()->all();
         $data['cities']     = CityManagement::where('state_id', $dealer->state_id)->where('status', 1)->get();
 

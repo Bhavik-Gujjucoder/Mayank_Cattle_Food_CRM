@@ -75,6 +75,46 @@ class OrderManagement extends Model
         );
     }
 
+    /** Sum of line item qty (bags/ton). Requires items loaded. */
+    public function totalOrderedQty(): int
+    {
+        return (int) $this->items->sum('qty');
+    }
+
+    /** Sum of dispatched bags across all line items. Requires items.dispatches loaded. */
+    public function totalDispatchedQty(): int
+    {
+        return (int) $this->items->sum(
+            fn($item) => (int) $item->dispatches->sum('no_of_bags')
+        );
+    }
+
+    public function dispatchPercent(): int
+    {
+        $ordered = $this->totalOrderedQty();
+
+        return $ordered > 0
+            ? (int) round(($this->totalDispatchedQty() / $ordered) * 100)
+            : 0;
+    }
+
+    /** Weighted average unit price: grand_total ÷ total ordered qty. */
+    public function weightedAvgUnitPrice(): float
+    {
+        $ordered = $this->totalOrderedQty();
+
+        return $ordered > 0
+            ? (float) $this->grand_total / $ordered
+            : 0.0;
+    }
+
+    public function pendingLineItemCount(): int
+    {
+        return $this->items->filter(
+            fn($item) => max(0, (int) $item->qty - (int) $item->dispatches->sum('no_of_bags')) > 0
+        )->count();
+    }
+
     public function statusBadge(): string
     {
         return $this->status

@@ -90,11 +90,11 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
         $this->pushSpacer($line, 'spacer-lg');
 
         $this->pushRow([
-            'Pending Payment Days: Days count from dispatch date to current day (per unpaid dispatch). Green ≤7, amber 8–15, red 16+.',
+            'Pending Payment Days: Days count from dispatch date to current day (per unpaid or partial dispatch). Green ≤7, amber 8–15, red 16+.',
         ], $line++, 'footnote');
 
         $this->pushRow([
-            'Scope: Only orders with at least one unpaid dispatch payment are listed.',
+            'Scope: Only orders with at least one unpaid or partial dispatch payment are listed.',
         ], $line++, 'footnote');
 
         return $this->rows;

@@ -11,23 +11,33 @@ class DispatchManagement extends Model
 {
     use SoftDeletes;
 
-    public const STATUS_UNPAID = 0;
-    public const STATUS_PAID   = 1;
+    public const STATUS_UNPAID  = 0;
+    public const STATUS_PAID    = 1;
+    public const STATUS_PARTIAL = 2;
 
     protected $table = 'dispatch_management';
 
     protected $guarded = [];
 
     protected $casts = [
-        'dispatch_date' => 'date',
-        'status'        => 'integer',
+        'dispatch_date'       => 'date',
+        'status'              => 'integer',
+        'partial_paid_amount' => 'decimal:2',
     ];
+
+    /** @return list<int> */
+    public static function pendingPaymentStatuses(): array
+    {
+        return [self::STATUS_UNPAID, self::STATUS_PARTIAL];
+    }
 
     public function statusBadge(): string
     {
-        return (int) $this->status === self::STATUS_PAID
-            ? '<span class="badge bg-success-light text-success">Paid</span>'
-            : '<span class="badge bg-danger-light text-danger">Unpaid</span>';
+        return match ((int) $this->status) {
+            self::STATUS_PAID    => '<span class="badge bg-success-light text-success">Paid</span>',
+            self::STATUS_PARTIAL => '<span class="badge bg-warning-light text-warning">Partial Payment</span>',
+            default              => '<span class="badge bg-danger-light text-danger">Unpaid</span>',
+        };
     }
 
     /**

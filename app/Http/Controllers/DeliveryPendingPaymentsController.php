@@ -21,10 +21,7 @@ class DeliveryPendingPaymentsController extends Controller
     {
         $brandFilter = $request->query('brand_id', 'all');
 
-        $brands = BrandManagement::query()
-            ->where('status', 1)
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $brands = BrandManagement::activeForDropdown(['id', 'name']);
 
         $brandSections = $this->reportService->build($brandFilter);
 

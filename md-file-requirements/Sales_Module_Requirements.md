@@ -20,6 +20,175 @@
 
 ---
 
+## 📅 Changelog — 11 Jun 2026 (Order list — dealer filter + reset)
+
+### Summary
+Soda/Order list (`/order`) filter bar extended with **Dealer** dropdown and **Reset** button (same pattern as Dispatch list).
+
+### Filters (server-side via DataTables AJAX)
+
+| Filter | Element | Request param | Notes |
+|---|---|---|---|
+| Search | `#customSearch` | DataTables `search` | Order ID |
+| Brand | `#BrandId` | `brand_id` | Role-based options — see brand filter changelog below |
+| Broker | `#broker_id` | `broker_id` | Hidden for broker & dealer roles |
+| Dealer | `#dealerFilter` | `dealer_id` | Hidden for **dealer** role; options = dealers with scoped orders |
+| **Reset** | `#resetOrderFilters` | — | Clears search + all dropdowns to `all`; redraws table |
+
+### Implementation
+- `SalesScope::filterableDealers()` — dealers from orders visible to current user (shared with Dispatch list)
+- `SalesScope::applyDealerFilter()` — server-side `where('dealer_id', …)` with allow-list check
+- `OrderManagementController@index` passes `$dealers` and applies dealer filter on AJAX
+
+### Files updated
+- `resources/views/order_management/index.blade.php`
+- `app/Http/Controllers/OrderManagementController.php`
+- `app/Support/SalesScope.php` — `filterableDealers()`, `applyDealerFilter()`, `userCanFilterByDealer()`
+- `app/Http/Controllers/DispatchManagementController.php` — reuses `filterableDealers()` for dispatch dealer dropdown
+
+---
+
+## 📅 Changelog — 11 Jun 2026 (Brand filter — role-based on order list)
+
+### Summary
+Brand dropdown on Soda/Order list shows different options by role; hidden entirely for dealer role.
+
+| Role | Brand filter |
+|---|---|
+| **super admin**, **admin**, **staff** | All active brands (`status = 1`) |
+| **broker** | Active brands linked via `dealer_management` for that broker (distinct `brand_id`) |
+| **dealer** | **Hidden** — no brand filter (already scoped to own orders) |
+
+### Implementation
+- `SalesScope::showBrandFilter()` — `false` for dealer role
+- `SalesScope::filterableBrands()` — dropdown data
+- `SalesScope::applyBrandFilter()` — blocks tampered `brand_id` in AJAX requests
+
+### Files updated
+- `resources/views/order_management/index.blade.php` — `@if (SalesScope::showBrandFilter())`
+- `app/Http/Controllers/OrderManagementController.php`
+- `app/Support/SalesScope.php`
+
+---
+
+## 📅 Changelog — 11 Jun 2026 (Quick Add Dealer from order create)
+
+### Summary
+On **Add Soda/Order** (`/order/create`), users with `add-dealer` can create a dealer inline without leaving the order form.
+
+### UI behaviour
+1. **“Add Dealer” link** below dealer field — visible only when **both broker and brand** are selected (hidden otherwise)
+2. Not shown for **dealer role** (locked dealer on create) or users without `add-dealer`
+3. Click opens **Bootstrap modal** (`#quickDealerModal`, `modal-xl`) with full dealer form
+4. **Broker** and **Brand** pre-filled from order form values — displayed read-only; submitted via hidden inputs
+5. Same **server validation** as dealer module (`DealerManagementController::rules()`)
+6. On success:
+   - Toast: `Dealer created successfully.` (via `show_success()`)
+   - Dealer dropdown reloads and **auto-selects** new dealer
+   - Delivery address auto-fills from new dealer
+
+### Routes & endpoints
+| Method | Route | Name | Permission |
+|---|---|---|---|
+| GET | `dealer/quick-create-form?broker_id=&brand_id=` | `dealer.quickCreateForm` | `add-dealer` |
+| POST | `dealer` (JSON) | `dealer.store` | `add-dealer` |
+
+- `quickCreateForm` must be registered **before** `Route::resource('dealer', …)` to avoid route conflict
+- `store()` returns JSON when `expectsJson()` / AJAX: `{ success, message, dealer: { id, name, firm_shop_name, firm_shop_address } }`
+- Validation errors: HTTP 422 with Laravel error bag (shown inline in modal)
+
+### Files added / updated
+- `resources/views/dealer/partials/quick-create-form.blade.php` (new)
+- `resources/views/order_management/create.blade.php` — link, modal, JS
+- `app/Http/Controllers/DealerManagementController.php` — `quickCreateForm()`, JSON `store()` response
+- `routes/web.php` — `dealer.quickCreateForm`
+
+### Scope guards on quick create
+- Broker role may only quick-create for **own** `broker_id`
+- Broker may only use brands in `SalesScope::filterableBrands()`
+
+---
+
+## 📅 Changelog — 11 Jun 2026 (`view-order` permission)
+
+### Summary
+Order **list** access split from create: `view-order` for index, `add-order` for create only.
+
+| Permission | Used for |
+|---|---|
+| `view-order` | `order.index` (list / DataTables) |
+| `add-order` | `order.create`, `order.store` |
+| `edit-order` | `order.edit`, `order.update` |
+| `delete-order` | `order.destroy`, `order.bulkDelete` |
+
+### Files updated
+- `database/seeders/SalesPermissionSeeder.php` — `view-order` added
+- `app/Http/Controllers/OrderManagementController.php` — `permission:view-order` → `index`
+- `resources/views/layouts/sidebar.blade.php` — Soda/Order menu uses `@canany(['view-order', …])`
+
+---
+
+## 📅 Changelog — 2 Jun 2026 (Dispatch payment status)
+
+### Summary
+Per-dispatch **payment status** on `dispatch_management` (separate from order-level `payment_status`). Supports **Unpaid**, **Paid**, and **Partial Payment** with optional paid amount.
+
+### `dispatch_management.status` (dispatch payment)
+
+| Value | Constant | Label | Badge |
+|---|---|---|---|
+| `0` | `DispatchManagement::STATUS_UNPAID` | Unpaid | `bg-danger-light text-danger` |
+| `1` | `DispatchManagement::STATUS_PAID` | Paid | `bg-success-light text-success` |
+| `2` | `DispatchManagement::STATUS_PARTIAL` | Partial Payment | `bg-warning-light text-warning` |
+
+- **`partial_paid_amount`** (DECIMAL 20,2, nullable) — required when `status = 2`; cleared when status is Unpaid or Paid.
+- Default on create: **Unpaid** (`0`).
+
+### Migrations
+- `database/migrations/2026_06_01_000002_add_status_to_dispatch_management_table.php`
+- `database/migrations/2026_06_01_000003_add_partial_paid_amount_to_dispatch_management_table.php`
+
+### UI / validation
+- Shared partial: `resources/views/dispatch_management/partials/status-field.blade.php` (radios + conditional paid amount)
+- Shared JS: `resources/views/dispatch_management/partials/status-field-script.blade.php` (toggle partial amount, validate)
+- Used on: dispatch history Add/Edit modals, dashboard dispatch modal (`dashboard_dispatch_modal.blade.php`)
+- `DispatchManagementController@store` / `@update`: `status` `required|in:0,1,2`; `partial_paid_amount` `required_if:status,2`
+- `DispatchManagement::statusBadge()` — list + history table
+- History table shows paid amount (₹) under badge when partial
+
+### Related report
+- **Dispatch Pending Payments** includes dispatches with `status` **Unpaid (0)** or **Partial Payment (2)** via `DispatchManagement::pendingPaymentStatuses()` — see `Dispatch_Pending_Payments_Module_Requirements.md`.
+
+---
+
+## 📅 Changelog — 2 Jun 2026 (Dispatch list filters)
+
+### Summary
+Dispatch Management list (`/dispatch`) filters extended beyond order-only filter.
+
+### Filters (server-side via DataTables AJAX)
+
+| Filter | Request param | Notes |
+|---|---|---|
+| From Date | `date_from` | `dispatch_date >=` (Flatpickr `Y-m-d`) |
+| To Date | `date_to` | `dispatch_date <=` |
+| Dealer | `dealer_id` | Via `order.dealer_id`; dropdown hidden for **dealer** role (`SalesScope::showDealerFilter()`) |
+| Order | `order_id` | Orders with ≥1 dispatch; options narrow when dealer selected |
+| Product | `product_id` | Products that appear in scoped dispatches |
+| **Reset** | — | Clears all filters + URL query string; redraws table |
+
+- Filter bar layout: `cls-cardhed-part` / `common-hed-form` (same pattern as Raw Material Orders list)
+- URL sync: `?date_from=&dealer_id=&order_id=&product_id=` preserved on refresh
+- Controller: `DispatchManagementController::applyDispatchIndexFilters()`
+- Dropdown data scoped with `SalesScope::scopeOrders` / `scopeDispatches`
+
+### Files updated
+- `resources/views/dispatch_management/index.blade.php`
+- `app/Http/Controllers/DispatchManagementController.php`
+- `app/Support/SalesScope.php` — `showDealerFilter()`
+
+---
+
 ## 📅 Changelog — 2 Jun 2026 (Sales module permissions)
 
 ### Summary
@@ -74,7 +243,14 @@ Centralized **who can see which orders/dispatches** by role. Works together with
 | `authorizeDispatchAccess($dispatch)` | Same via parent order |
 | `enforceOrderAssignment($validated)` | Force `broker_id` / `dealer_id` on store & update |
 | `authorizeDealerId($dealerId)` | Dealer role may only use own dealer id (AJAX) |
-| `showBrokerFilter()` | false for broker & dealer (hide list filter) |
+| `showBrokerFilter()` | false for broker & dealer (hide order list broker filter) |
+| `showBrandFilter()` | false for dealer (hide order list brand filter) |
+| `showDealerFilter()` | false for dealer (hide order + dispatch list dealer filter) |
+| `filterableBrands()` | Active brands for order list dropdown (role-scoped) |
+| `filterableDealers()` | Dealers with scoped orders (order + dispatch list dropdowns) |
+| `applyBrandFilter($query, $brandId)` | Safe brand filter on order queries |
+| `applyDealerFilter($query, $dealerId)` | Safe dealer filter on order queries |
+| `userCanFilterByBrand()` / `userCanFilterByDealer()` | Block tampered filter params |
 
 **Model scopes:** `OrderManagement::forUser()`, `DispatchManagement::forUser()` delegate to `SalesScope`.
 
@@ -87,7 +263,7 @@ Centralized **who can see which orders/dispatches** by role. Works together with
 | Order store / update | `enforceOrderAssignment()` + dealer id check |
 | Order bulk delete | scoped query |
 | Order create (dealer) | locked dealer field + server enforcement |
-| Dispatch list + filter dropdown | `scopeOrders` / `scopeDispatches` |
+| Dispatch list + filter dropdowns (dealer, order, product, date) | `scopeOrders` / `scopeDispatches` |
 | Dispatch history / store / update / destroy / form-data AJAX | `authorizeOrderAccess` / `authorizeDispatchAccess` |
 | Dashboard (`HomeController`) | `scopeOrders` / `scopeDispatches` |
 
@@ -108,10 +284,13 @@ Centralized **who can see which orders/dispatches** by role. Works together with
 
 | Permission | `type` (DB) | Used for |
 |---|---|---|
-| `add-order` | `soda-order` | Order list + create (`index`, `create`); route `order.store` |
+| `view-order` | `soda-order` | Order list (`index` / DataTables) |
+| `add-order` | `soda-order` | Create order (`create`); route `order.store` |
 | `edit-order` | `soda-order` | Edit order (`edit`); route `order.update` |
 | `delete-order` | `soda-order` | Delete + bulk delete; routes `order.destroy`, `order.bulkDelete` |
-| `add-dispatch` | `dispatch` | Add dispatch modal on history page; route `dispatch.store` |
+| `add-dealer` | `dealer` | Quick Add Dealer modal on order create (dealer module route) |
+| `view-dispatch` | `dispatch` | Dispatch list (`dispatch.index`); View History action in list |
+| `add-dispatch` | `dispatch` | Add dispatch modal on history page + dashboard; route `dispatch.store` |
 | `edit-dispatch` | `dispatch` | Edit dispatch modal on history page; route `dispatch.update` |
 | `delete-dispatch` | `dispatch` | Route `dispatch.destroy` (UI delete button commented out in history view) |
 | `view-dispatch-pending-payments` | `dispatch` | Delivery pending payments module (also seeded here) |
@@ -128,8 +307,8 @@ Centralized **who can see which orders/dispatches** by role. Works together with
 | Layer | Order module | Dispatch module |
 |---|---|---|
 | **Routes** | `order.store` → `permission:add-order`; `order.update` → `edit-order`; `order.destroy` / `order.bulkDelete` → `delete-order` | Resource (`index`, `create`, `show`, `edit`) → `role_or_permission:add-dispatch\|edit-dispatch\|delete-dispatch`; `dispatch.store` → `add-dispatch`; `dispatch.update` → `edit-dispatch`; `dispatch.destroy` → `delete-dispatch` |
-| **Controller constructor** | `add-order` → `index`, `create`; `edit-order` → `edit` | *(none — route middleware only)* |
-| **DataTables / UI** | Dispatch row action → `canAny(['add-dispatch','edit-dispatch','delete-dispatch'])`; Edit/Delete → `can('edit-order')` / `can('delete-order')` | List action column → `canAny([...])` |
+| **Controller constructor** | `view-order` → `index`; `add-order` → `create`; `edit-order` → `edit` | `view-dispatch` → `index` |
+| **DataTables / UI** | Dispatch row action → `canAny(['view-dispatch'])`; Edit/Delete → `can('edit-order')` / `can('delete-order')` | List action column → `can('view-dispatch')` |
 | **Blade** | Sidebar / index `@canany` | History: Add modal `@canany(['add-dispatch'])`; Edit `@can('edit-dispatch')` |
 
 ### `role_or_permission` vs `@canany`
@@ -143,9 +322,9 @@ These rely on `auth` + **`SalesScope`** in controllers (not permission middlewar
 - `dispatch.orderHistory`, `dispatch.orderFormData`, `dispatch.transporterTrucks`
 
 **Role behaviour (data scope — see `SalesScope`):**
-- **super admin / admin / staff:** All orders; broker filter on list; full create/edit.
-- **Broker:** Own orders only; broker filter hidden; broker fixed on forms; dispatch/history limited to own orders.
-- **Dealer:** Own dealer’s orders only; broker filter hidden; dealer fixed on create; dispatch/history limited to own orders.
+- **super admin / admin / staff:** All orders; broker + brand + dealer filters on list; full create/edit.
+- **Broker:** Own orders only; broker filter hidden; brand filter = own brands only; dealer filter = dealers with orders; broker fixed on forms.
+- **Dealer:** Own dealer’s orders only; broker/brand/dealer filters hidden; dealer fixed on create; dispatch/history limited to own orders.
 - **Transporter:** Not filtered by sales scope (assign permissions separately if they need dispatch UI).
 
 ---
@@ -199,6 +378,8 @@ These rely on `auth` + **`SalesScope`** in controllers (not permission middlewar
 | transport_id | BIGINT | — | FK → `users.id` (user with `transporter` role) |
 | truck_number | VARCHAR(100) | — | Selected from transporter's trucks (stored as string) |
 | driver_contact | VARCHAR(20) | — | Auto-filled from transporter phone; editable |
+| status | TINYINT UNSIGNED | `0` | **Dispatch payment:** `0` = Unpaid, `1` = Paid, `2` = Partial Payment |
+| partial_paid_amount | DECIMAL(20,2) | NULL | Required when `status = 2` |
 | created_at | TIMESTAMP | NULL | |
 | updated_at | TIMESTAMP | NULL | |
 | deleted_at | TIMESTAMP | NULL | Soft delete |
@@ -227,6 +408,18 @@ These rely on `auth` + **`SalesScope`** in controllers (not permission middlewar
 - Load dealers via AJAX: `GET /get-dealers?broker_id=X&brand_id=Y` (`route('get.dealers')`)
 - On dealer select: auto-fill **delivery address** from dealer record
 
+### Quick Add Dealer (Order create — `add-dealer` permission)
+- **“Add Dealer” link** below dealer field when broker **and** brand are both selected
+- Modal loads form via `GET dealer/quick-create-form?broker_id=&brand_id=`
+- Broker/brand locked in modal; POST `dealer.store` (JSON); new dealer auto-selected on order form
+- See changelog **11 Jun 2026 (Quick Add Dealer)**
+
+### Order list filters (role-aware)
+- **Brand:** `SalesScope::filterableBrands()` — all active (admin/staff) or broker’s brands; hidden for dealer
+- **Broker:** all brokers — hidden for broker/dealer
+- **Dealer:** `SalesScope::filterableDealers()` — hidden for dealer
+- **Reset:** clears search + all filters
+
 ### Last unit price hint (Order form)
 - On product select (when dealer is set): `GET /order-last-price?dealer_id=X&product_id=Y`
 - Returns last `unit_price` for that dealer + product from most recent `order_items` row
@@ -235,10 +428,16 @@ These rely on `auth` + **`SalesScope`** in controllers (not permission middlewar
 - Per line: `total_price = qty × unit_price`
 - Header: `total_order_amount` and `grand_total` = sum of line totals
 
-### Payment status
+### Payment status (order level — `order_management.payment_status`)
 - `unpaid` → red badge
 - `paid` → green badge
 - `partial` → yellow/warning badge; show `partial_paid_amount` field
+
+### Payment status (dispatch level — `dispatch_management.status`)
+- Tracked **per dispatch row**; independent of order-level payment status
+- `0` Unpaid → red badge; `1` Paid → green badge; `2` Partial Payment → warning badge + `partial_paid_amount`
+- Set on Add/Edit dispatch modals (history + dashboard)
+- Pending payments report treats Unpaid and Partial as outstanding
 
 ### Sequential dispatch (critical)
 - For a given **dealer**, orders must be dispatched in **creation order** (`order_management.id` ASC)
@@ -301,11 +500,13 @@ These rely on `auth` + **`SalesScope`** in controllers (not permission middlewar
 - *(Grand Total and Order Status columns exist in code but are commented out)*
 - **Search:** DataTables global search on `unique_order_id` (custom search input `#customSearch`)
 - **Filters:**
-  - Brand → dropdown (`#BrandId`, All / specific brand)
-  - Broker → dropdown (`#broker_id`, All / specific broker) — **hidden for broker role**
-- **Server-side:** Yajra DataTables AJAX to `order.index`
-- **Page-level action:** **Add Soda/Order** → `order.create` (requires `add-order` via controller middleware on `create`)
-- **List access:** `order.index` requires `add-order` (controller middleware)
+  - Brand → `#BrandId` (All / specific) — **hidden for dealer**; broker sees only own active brands; admin/staff see all active brands
+  - Broker → `#broker_id` (All / specific) — **hidden for broker & dealer**
+  - Dealer → `#dealerFilter` (All / specific) — **hidden for dealer**; dealers with scoped orders only
+  - **Reset** → `#resetOrderFilters` — clears search + all filters; redraws DataTable
+- **Server-side:** Yajra DataTables AJAX to `order.index`; params `brand_id`, `broker_id`, `dealer_id`
+- **Page-level action:** **Add Soda/Order** → `order.create` (requires `add-order`)
+- **List access:** `order.index` requires `view-order` (controller middleware)
 - **Row actions (⋮ dropdown):**
   - **Dispatch** — shown only if `canAny(['add-dispatch','edit-dispatch','delete-dispatch'])`; runs sequential dispatch check then navigates to `dispatch.orderHistory`
   - **Edit** — `order.edit` (permission `edit-order`)
@@ -327,6 +528,11 @@ These rely on `auth` + **`SalesScope`** in controllers (not permission middlewar
 | Dealer | Select | Yes | Loaded after broker + brand; disabled until then |
 | Order Date | Date (Flatpickr) | Yes | Default today |
 | Delivery Address | Textarea | Yes | Auto from dealer |
+
+**Quick Add Dealer** (below dealer field, `@can('add-dealer')`, not for locked dealer role):
+- Link **“Add Dealer”** — visible only when broker **and** brand are selected
+- Opens modal with full dealer form; broker/brand pre-filled and disabled
+- On success: toast + auto-select new dealer + delivery address fill
 
 **Card 2 — Product Items (dynamic rows)**
 
@@ -371,19 +577,28 @@ These rely on `auth` + **`SalesScope`** in controllers (not permission middlewar
 |---|---|
 | Global list | `resources/views/dispatch_management/index.blade.php` |
 | Per-order history | `resources/views/dispatch_management/history.blade.php` |
+| Dashboard dispatch modal | `resources/views/dispatch_management/partials/dashboard_dispatch_modal.blade.php` |
+| Payment status field | `resources/views/dispatch_management/partials/status-field.blade.php` |
+| Payment status JS | `resources/views/dispatch_management/partials/status-field-script.blade.php` |
 | Controller | `app/Http/Controllers/DispatchManagementController.php` |
 | Model | `app/Models/DispatchManagement.php` |
 
 ### 1. Dispatch List Page (`/dispatch`)
 
 - **Page title:** Dispatch Management (custom header with truck icon)
-- **Filter:** Order dropdown (Select2) — only orders that **have at least one dispatch** (`OrderManagement::has('dispatches')`)
+- **Filters** (Select2 + Flatpickr; server-side via AJAX params):
+  - **From Date** / **To Date** — `dispatch_date` range
+  - **Dealer** — scoped dealers with dispatches; hidden for dealer role
+  - **Order** — orders with ≥1 dispatch; options filter by selected dealer
+  - **Product** — products present in scoped dispatches
+  - **Reset** — clears all filters and URL query string
 - **Table columns:**
-  `Sr No` | `Order ID` | `Product` | `Bags / Ton` | `Dealer Name` | `Dispatch Date` | `Transport` | `Truck Number` | `Driver Contact` | `Action`
+  `Sr No` | `Order ID` | `Product` | `Bag / Ton / KG` | `Dealer Name` | `Dispatch Date` | `Transport` | `Truck Number` | `Driver Contact` | `Status` | `Action`
 - **Order ID column:** Link to order history; **Complete** chip when order fully dispatched
-- **Server-side:** Yajra DataTables
-- **Route access:** `dispatch.index` requires **any** of `add-dispatch`, `edit-dispatch`, `delete-dispatch` (`role_or_permission` on resource)
-- **Row action:** View History → `dispatch.orderHistory` (action dropdown hidden unless `canAny` dispatch permissions)
+- **Status column:** `statusBadge()` — Unpaid / Paid / Partial Payment
+- **Server-side:** Yajra DataTables; `applyDispatchIndexFilters()` on query
+- **Route access:** `dispatch.index` requires `view-dispatch` (controller middleware)
+- **Row action:** View History → `dispatch.orderHistory` (requires `view-dispatch`)
 - *(Edit from list is commented out)*
 
 ### 2. Dispatch History Page (`/dispatch/order/{order}`)
@@ -393,7 +608,7 @@ These rely on `auth` + **`SalesScope`** in controllers (not permission middlewar
 - **Blocked state:** Alert bar + pending item cards for **prior incomplete order**; CTA link to that order's history
 - **Pending summary:** Per order item — Pending / Dispatched / Total + progress bar
 - **Completion banner:** When all items 100% dispatched
-- **History table:** All dispatch rows grouped by order items (Sr, Product, Bags, Date, Transport, Truck, Driver, Action)
+- **History table:** All dispatch rows grouped by order items (Sr, Product, Bags, Date, Transport, Truck, Driver, **Status**, Action); partial rows show paid amount under badge
 - **Edit:** Inline button opens **Edit Dispatch** modal (`edit-dispatch`)
 - **Delete:** UI commented out; route `dispatch.destroy` still exists
 - **Back:** Link to `order.index`
@@ -410,13 +625,16 @@ These rely on `auth` + **`SalesScope`** in controllers (not permission middlewar
 | transport_id | Select | Yes | Transporters (users with transporter role) |
 | truck_number | Select | Yes | Loaded via AJAX after transporter |
 | driver_contact | Text | Yes | Auto from transporter phone |
+| status | Radio | Yes | Unpaid (default) / Paid / Partial Payment |
+| partial_paid_amount | Number | If partial | Shown only when Partial Payment selected |
 
 - Form POST → `dispatch.store` → redirect back to history with success flash
-- jQuery Validate on form
+- jQuery Validate on form (incl. `dispatchPartialAmount` custom rule)
+- Same fields on **dashboard** modal (`from_dashboard=1` on POST)
 
 ### 4. Edit Dispatch — Modal
 
-- Fields: `no_of_bags`, `dispatch_date`, `transport_id`, `truck_number`, `driver_contact`
+- Fields: `no_of_bags`, `dispatch_date`, `transport_id`, `truck_number`, `driver_contact`, `status`, `partial_paid_amount` (if partial)
 - Product name shown read-only
 - PUT `dispatch.update`
 - Over-dispatch guard uses effective pending including current row's bags
@@ -458,14 +676,18 @@ Before generating any Blade view:
 | Payment Unpaid | `bg-danger-light text-danger` |
 | Payment Paid | `bg-success-light text-success` |
 | Payment Partial | `bg-warning-light text-warning` |
+| Dispatch payment Unpaid | `bg-danger-light text-danger` |
+| Dispatch payment Paid | `bg-success-light text-success` |
+| Dispatch payment Partial | `bg-warning-light text-warning` (label: Partial Payment) |
 | Dispatch complete chip | `dispatch-complete-chip` with `ti-circle-check` |
 
 ### Sidebar menu
 
 Under **Sales** submenu (see `resources/views/layouts/sidebar.blade.php`):
 
-- **Soda / Order** → `route('order.index')` — permissions: `add-order`, `edit-order`, `delete-order`
-- **Dispatch** → `route('dispatch.index')` — permissions: `add-dispatch`, `edit-dispatch`, `delete-dispatch`
+- **Soda / Order** → `route('order.index')` — permissions: `view-order`, `add-order`, `edit-order`, `delete-order`
+- **Dispatch** → `route('dispatch.index')` — permissions: `view-dispatch`, `add-dispatch`, `edit-dispatch`, `delete-dispatch`
+- **Dispatch Pending Payments** → `route('delivery-pending-payments.index')` — permission: `view-dispatch-pending-payments`
 
 ---
 
@@ -512,6 +734,9 @@ DispatchManagement (dispatch_management)
   - belongsTo(OrderItem, order_item_id) → orderItem
   - belongsTo(Product, product_id) → product
   - belongsTo(User, transport_id) → transporter
+  - STATUS_UNPAID (0), STATUS_PAID (1), STATUS_PARTIAL (2)
+  - statusBadge(), pendingPaymentStatuses()
+  - scopeForUser() → SalesScope
 ```
 
 ### Routes (`routes/web.php`)
@@ -525,8 +750,12 @@ Route::get('order/{order}/dispatch-check', ...)->name('order.dispatchCheck');
 Route::get('order/{order}/delete-check', ...)->name('order.deleteCheck');
 Route::resource('order', OrderManagementController::class)->except(['store','update','destroy']);
 // OrderManagementController __construct:
-//   permission:add-order → index, create
+//   permission:view-order → index
+//   permission:add-order → create
 //   permission:edit-order → edit
+
+// Dealer quick-create (before dealer resource)
+Route::get('dealer/quick-create-form', ...)->name('dealer.quickCreateForm')->middleware('permission:add-dealer');
 Route::post('order', ...)->middleware('permission:add-order');
 Route::match(['put','patch'], 'order/{order}', ...)->middleware('permission:edit-order');
 Route::delete('order/{order}', ...)->middleware('permission:delete-order');
@@ -562,10 +791,29 @@ $middleware->alias([
 | File | Responsibility |
 |---|---|
 | `OrderManagementController` | index (DataTables), create, store, edit, update, destroy, bulkDelete, lastItemPrice, deleteCheck, checkDispatchEligibility, validateOrder(); constructor middleware; Dispatch action `canAny`; **SalesScope** on queries & mutations |
-| `DispatchManagementController` | index (DataTables), orderHistory, store, update, destroy, getOrderDispatchFormData, getTrucksByTransporter; **SalesScope** on list & authorize |
+| `DispatchManagementController` | index (DataTables + filters), orderHistory, store, update, destroy, getOrderDispatchFormData, getTrucksByTransporter; `applyDispatchIndexFilters()`; `normalizeDispatchPayment()`; **SalesScope** on list & authorize; `permission:view-dispatch` on index |
 | `SalesPermissionSeeder` | Seed order + dispatch permissions; assign to `admin` |
-| `SalesScope` | Central role-based row filtering for orders & dispatches |
+| `SalesScope` | Central role-based row filtering, filter dropdowns, and filter apply helpers |
+| `DealerManagementController` | `quickCreateForm()`, JSON `store()` for inline dealer create from order form |
+| `dealer/partials/quick-create-form.blade.php` | Modal dealer form partial |
 | `app/Http/Controllers/Controller.php` | Laravel base controller (required for middleware in constructors) |
+
+---
+
+## ⏳ Pending / Known gaps (as of 11 Jun 2026)
+
+| Item | Status | Notes |
+|---|---|---|
+| Order list bulk delete UI | Partial | `#bulk_delete_button` exists; row checkboxes **commented out** in `order_management/index.blade.php` |
+| Order list Grand Total column | Hidden | Column defined in controller but commented out in Blade |
+| Order list Order Status column | Hidden | Commented out in Blade |
+| Dispatch history — Delete button | UI off | `dispatch.destroy` route exists; delete button **commented out** in `history.blade.php` |
+| Dispatch list — Edit from row | UI off | Edit from global dispatch list commented out; edit via history page only |
+| Order item soft deletes | Not used | `order_items` has no `deleted_at`; removed rows hard-deleted on order update |
+| Broker on order create (broker role) | Gap | Broker `<select>` disabled but no hidden `broker_id` — rely on `SalesScope::enforceOrderAssignment()` server-side |
+| Quick Add Dealer on **edit** order | Not implemented | Only on **create** page |
+| Order list filter URL sync | Not implemented | Dispatch list syncs filters to URL query string; order list does **not** (reset only clears UI) |
+| `view-order` on other roles | Manual | Seeder assigns all sales permissions to `admin` only; broker/dealer/staff need role assignment via UI |
 
 ---
 
@@ -631,21 +879,24 @@ Sales tracks dealer orders placed by brokers (per brand) and physical dispatch o
 | transport_id | bigint | FK users (transporter) |
 | truck_number | string | from trucks table |
 | driver_contact | string | |
+| status | tinyint default 0 | 0=unpaid, 1=paid, 2=partial |
+| partial_paid_amount | decimal nullable | required if status=2 |
 | timestamps + soft deletes | | |
 
 ## What Exists — Match This Behaviour
 
 ### Sub-module A: Soda / Order
 
-**List** (order.index)
+**List** (order.index) — requires view-order
 - DataTable columns: Sr No, Order ID, Broker, Brand, Dealer, Order Date, Payment Status, Action
-- Filters: Brand, Broker (broker users only see own rows; no broker filter)
+- Filters: Brand (role-scoped), Broker (hidden for broker/dealer), Dealer (hidden for dealer), Reset button
 - Search on Order ID
 - Actions: Dispatch (with sequential check), Edit, Delete (with delete-check AJAX)
-- Add button → create page
+- Add button → create page (requires add-order)
 
 **Create/Edit**
 - Header: Order ID (readonly), Broker, Brand, Dealer (AJAX /get-dealers), Order Date, Delivery Address
+- Create only: "Add Dealer" link + modal when broker+brand selected (add-dealer permission); quick-create via dealer.quickCreateForm + JSON dealer.store
 - Dynamic product rows: product_id[], qty[], price[], optional item_id[] on edit
 - Last price AJAX: GET /order-last-price?dealer_id&product_id
 - Payment: radio unpaid/paid/partial + partial_paid_amount
@@ -661,9 +912,9 @@ Sales tracks dealer orders placed by brokers (per brand) and physical dispatch o
 ### Sub-module B: Dispatch
 
 **List** (dispatch.index)
-- Filter orders that have dispatches
-- Columns: Sr No, Order ID (link + Complete chip), Product, Bags/Ton, Dealer, Dispatch Date, Transport, Truck, Driver Contact, Action (View History)
-- Server-side DataTables
+- Filters: date range (from/to), dealer, order, product + Reset button; URL query sync
+- Columns: Sr No, Order ID (link + Complete chip), Product, Bag/Ton/KG, Dealer, Dispatch Date, Transport, Truck, Driver Contact, Status, Action (View History)
+- Server-side DataTables; requires view-dispatch
 
 **History** (dispatch.orderHistory)
 - Shows order + dealer header, pending summary cards per item, blocked banner if prior dealer order incomplete
@@ -672,7 +923,9 @@ Sales tracks dealer orders placed by brokers (per brand) and physical dispatch o
 
 **Add/Edit dispatch modal fields**
 - order_item_id (pending only), no_of_bags (<= pending), dispatch_date, transport_id, truck_number (AJAX trucks), driver_contact
+- status (0/1/2) + partial_paid_amount when partial — shared status-field partial
 - GET /dispatch/transporter-trucks/{transporter} → trucks + phone
+- Dashboard modal: same store route with from_dashboard=1
 
 ## Business Rules — MUST IMPLEMENT
 
@@ -684,7 +937,8 @@ Sales tracks dealer orders placed by brokers (per brand) and physical dispatch o
 6. isFullyDispatched(): every item sum(bags) >= qty
 
 ## Permissions
-add-order, edit-order, delete-order, add-dispatch, edit-dispatch, delete-dispatch, view-dispatch-pending-payments
+view-order, add-order, edit-order, delete-order, view-dispatch, add-dispatch, edit-dispatch, delete-dispatch, view-dispatch-pending-payments
+(add-dealer from dealer module — for Quick Add Dealer on order create)
 
 Seed via: `php artisan db:seed --class=Database\\Seeders\\SalesPermissionSeeder`
 
@@ -713,7 +967,8 @@ resources/views/layouts/main.blade.php
 - Same SweetAlert popups for dispatch-blocked and delete-blocked (dbp-*, od-* classes)
 - Same dispatch history UI (dh-*, pd-* sections, progress bars, completion banner)
 - Same payment badges on order list
-- Sidebar: Sales submenu with Soda/Order and Dispatch links (see layouts/sidebar.blade.php)
+- Sidebar: Sales submenu with Soda/Order, Dispatch, and Dispatch Pending Payments (see layouts/sidebar.blade.php)
+- Dispatch list filters: cls-cardhed-part bar with date range, dealer, order, product, Reset
 
 ### Step 4 — Controllers to mirror
 - app/Http/Controllers/OrderManagementController.php
@@ -730,7 +985,9 @@ resources/views/layouts/main.blade.php
 - Dispatch delete button in history view is commented out but backend destroy exists
 - Order item soft deletes are disabled — hard delete rows when removed on edit
 - Use permission middleware on POST/PUT/DELETE routes; use `role_or_permission` on dispatch GET resource routes
-- Order index/create: controller middleware `permission:add-order`; edit: `permission:edit-order`
+- Order index: `permission:view-order`; create: `permission:add-order`; edit: `permission:edit-order`
+- Order list filters: brand/broker/dealer + Reset; brand/dealer options via SalesScope::filterableBrands/Dealers
+- Quick Add Dealer: dealer.quickCreateForm + JSON dealer.store; partial resources/views/dealer/partials/quick-create-form.blade.php
 - UI: `canAny` for Dispatch buttons when any dispatch permission exists; `@can('add-dispatch')` for Add Dispatch modal only
 - Run `SalesPermissionSeeder` so `add-dispatch` exists in DB (was missing before Jun 2026 update)
 - Use `App\Support\SalesScope` for all order/dispatch queries and `authorizeOrderAccess` before single-record actions

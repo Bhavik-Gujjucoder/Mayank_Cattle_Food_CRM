@@ -190,7 +190,7 @@
                                         <li>
                                             <a href="{{ route('delivery-pending-payments.index') }}"
                                                 class="@if (request()->routeIs('delivery-pending-payments*')) active @endif">
-                                                <span>Dispatch Pending Payments</span>
+                                                <span>Payment Receivable</span>
                                             </a>
                                         </li>
                                     @endcan

@@ -145,6 +145,7 @@
                             <option value="">-- Select Unit --</option>
                             <option value="Bag">Bag</option>
                             <option value="Ton">Ton</option>
+                            <option value="KG">KG</option>
                         </select>
                         <span class="unit_error text-danger small"></span>
                     </div>

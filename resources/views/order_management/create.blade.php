@@ -72,6 +72,13 @@
                         <option value="">-- Select Dealer --</option>
                     </select>
                     <small class="dealer-address-hint text-muted">Select broker &amp; brand first to load dealers.</small>
+                    @can('add-dealer')
+                        <div id="addDealerLinkWrap" class="mt-1" style="display:none;">
+                            <a href="javascript:void(0)" id="addDealerLink" class="text-primary fw-semibold small">
+                                <i class="ti ti-plus me-1"></i>Add Dealer
+                            </a>
+                        </div>
+                    @endcan
                 @endif
                 <span class="text-danger small dealer_id_error">@error('dealer_id'){{ $message }}@enderror</span>
             </div>
@@ -329,6 +336,36 @@
 
 </form>
 
+@can('add-dealer')
+    @if (empty($locked_dealer))
+        <div class="modal fade" id="quickDealerModal" tabindex="-1" aria-labelledby="quickDealerModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="quickDealerModalLabel">
+                            <i class="ti ti-user-plus me-2"></i>Add Dealer
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="quickDealerModalBody">
+                        <div class="text-center text-muted py-5">
+                            <i class="ti ti-loader-2 ti-spin fs-3"></i>
+                            <p class="mb-0 mt-2">Loading form…</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="quickDealerSubmitBtn">
+                            <i class="ti ti-check me-1"></i>Create Dealer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+@endcan
+
 @endsection
 @section('script')
 <script>
@@ -352,10 +389,23 @@ $(document).ready(function () {
     /* ── Select2 on dropdowns ────────────────────────────────── */
     $('#broker_id, #brand_id, #priority').select2({ width: '100%' });
 
-    /* ── Dealer dropdown: load via AJAX when broker + brand chosen ─ */
-    function loadDealers() {
+    /* ── Show / hide "Add Dealer" link ───────────────────────── */
+    function updateAddDealerLink() {
         var brokerId = $('#broker_id').val();
         var brandId  = $('#brand_id').val();
+        if (brokerId && brandId) {
+            $('#addDealerLinkWrap').show();
+        } else {
+            $('#addDealerLinkWrap').hide();
+        }
+    }
+
+    /* ── Dealer dropdown: load via AJAX when broker + brand chosen ─ */
+    function loadDealers(selectDealerId) {
+        var brokerId = $('#broker_id').val();
+        var brandId  = $('#brand_id').val();
+
+        updateAddDealerLink();
 
         /* Reset dealer field and address */
         $('#dealer_id').val('').prop('disabled', true);
@@ -388,10 +438,151 @@ $(document).ready(function () {
 
             $select.prop('disabled', false);
             $('.dealer-address-hint').text('Select a dealer to auto-fill delivery address.');
+
+            if (selectDealerId) {
+                $select.val(String(selectDealerId)).trigger('change');
+            }
         }).fail(function () {
             $('.dealer-address-hint').text('Failed to load dealers. Please try again.');
         });
     }
+
+    function clearQuickDealerErrors() {
+        $('#quickDealerForm .is-invalid').removeClass('is-invalid');
+        $('#quickDealerForm .qd-field-error').text('');
+    }
+
+    function showQuickDealerErrors(errors) {
+        clearQuickDealerErrors();
+        $.each(errors, function (field, messages) {
+            var $field = $('#quickDealerForm [name="' + field + '"]');
+            $field.addClass('is-invalid');
+            $('#quickDealerForm .qd-field-error[data-field="' + field + '"]').text(messages[0]);
+        });
+    }
+
+    function initQuickDealerForm() {
+        var $form = $('#quickDealerForm');
+        if (! $form.length) return;
+
+        $form.find('.qd-profile-input').off('change.qd').on('change.qd', function (event) {
+            var file = event.target.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $('#qd_profilePreview').attr('src', e.target.result);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        $('#qd_stateDropdown').off('change.qd').on('change.qd', function () {
+            var stateID = $(this).val();
+            var $city   = $('#qd_cityDropdown');
+            $city.html('<option value="">Loading...</option>');
+            if (!stateID) {
+                $city.html('<option value="">Select city</option>');
+                return;
+            }
+            $.ajax({
+                url: "{{ route('get.cities') }}",
+                type: 'POST',
+                data: { state_id: stateID, _token: "{{ csrf_token() }}" },
+                success: function (data) {
+                    $city.empty().append('<option value="">Select city</option>');
+                    $.each(data, function (key, city) {
+                        $city.append('<option value="' + city.id + '">' + city.city_name + '</option>');
+                    });
+                },
+                error: function () {
+                    $city.html('<option value="">Failed to load cities</option>');
+                }
+            });
+        });
+
+        $('#quickDealerModal').off('click.qd', '.qd-toggle-pw').on('click.qd', '.qd-toggle-pw', function () {
+            var $input = $(this).siblings('input');
+            var $icon  = $(this).find('i');
+            if ($input.attr('type') === 'password') {
+                $input.attr('type', 'text');
+                $icon.removeClass('ti-eye-off').addClass('ti-eye');
+            } else {
+                $input.attr('type', 'password');
+                $icon.removeClass('ti-eye').addClass('ti-eye-off');
+            }
+        });
+    }
+
+    var quickDealerModalEl = document.getElementById('quickDealerModal');
+  @can('add-dealer')
+    @if (empty($locked_dealer))
+    if (quickDealerModalEl) {
+        var quickDealerModal = new bootstrap.Modal(quickDealerModalEl);
+
+        $('#addDealerLink').on('click', function () {
+            var brokerId = $('#broker_id').val();
+            var brandId  = $('#brand_id').val();
+            if (!brokerId || !brandId) return;
+
+            $('#quickDealerModalBody').html(
+                '<div class="text-center text-muted py-5">' +
+                '<i class="ti ti-loader-2 ti-spin fs-3"></i>' +
+                '<p class="mb-0 mt-2">Loading form…</p></div>'
+            );
+            quickDealerModal.show();
+
+            $.get("{{ route('dealer.quickCreateForm') }}", {
+                broker_id: brokerId,
+                brand_id: brandId
+            }).done(function (html) {
+                $('#quickDealerModalBody').html(html);
+                initQuickDealerForm();
+            }).fail(function (xhr) {
+                var msg = xhr.status === 403
+                    ? 'You are not allowed to add a dealer for this broker/brand.'
+                    : 'Failed to load dealer form. Please try again.';
+                $('#quickDealerModalBody').html('<div class="alert alert-danger mb-0">' + msg + '</div>');
+            });
+        });
+
+        $('#quickDealerSubmitBtn').on('click', function () {
+            var $form = $('#quickDealerForm');
+            if (! $form.length) return;
+
+            var $btn = $(this);
+            var formData = new FormData($form[0]);
+            $btn.prop('disabled', true);
+
+            $.ajax({
+                url: $form.attr('action'),
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                success: function (res) {
+                    quickDealerModal.hide();
+                    show_success(res.message || 'Dealer created successfully.');
+                    loadDealers(res.dealer.id);
+                },
+                error: function (xhr) {
+                    if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                        showQuickDealerErrors(xhr.responseJSON.errors);
+                        show_error('Please correct the highlighted fields.');
+                    } else {
+                        show_error('Failed to create dealer. Please try again.');
+                    }
+                },
+                complete: function () {
+                    $btn.prop('disabled', false);
+                }
+            });
+        });
+    }
+    @endif
+  @endcan
 
     $('#broker_id, #brand_id').on('change', function () {
         loadDealers();
@@ -592,6 +783,10 @@ $(document).ready(function () {
     calculateTotals();
     filterProductsByBrand();
     updateRowButtons();
+    updateAddDealerLink();
+    @if (!empty($locked_dealer))
+    loadDealers();
+    @endif
 
     /* ════════════════════════════════════════════════════════════
        FORM VALIDATION

@@ -66,6 +66,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ------------------------------------------------------------------ */
     /*  Dealer Management  (type: dealer)                                   */
     /* ------------------------------------------------------------------ */
+    Route::get('dealer/quick-create-form', [DealerManagementController::class, 'quickCreateForm'])
+        ->name('dealer.quickCreateForm')->middleware('permission:add-dealer');
     Route::resource('dealer', DealerManagementController::class)->except(['store', 'update', 'destroy']);
     Route::post('dealer', [DealerManagementController::class, 'store'])
         ->name('dealer.store')->middleware('permission:add-dealer');

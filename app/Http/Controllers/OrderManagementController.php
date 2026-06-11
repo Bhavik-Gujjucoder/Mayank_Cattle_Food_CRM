@@ -8,6 +8,7 @@ use App\Models\OrderManagement;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
+use App\Support\ProductUnit;
 use App\Support\SalesScope;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
@@ -29,17 +30,60 @@ class OrderManagementController extends Controller
         $data['page_title'] = 'Soda/Order Management';
         $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
         $data['brands']     = SalesScope::filterableBrands();
+        $data['dealers']    = SalesScope::filterableDealers();
         if ($request->ajax()) {
-            $query = OrderManagement::with(['broker', 'brand', 'dealer']);
+            $query = OrderManagement::with([
+                'broker', 'brand', 'dealer',
+                'items.product', 'items.dispatches',
+            ]);
             SalesScope::scopeOrders($query);
 
             SalesScope::applyBrandFilter($query, $request->input('brand_id'));
+            SalesScope::applyDealerFilter($query, $request->input('dealer_id'));
             // Broker filter (staff/admin only — scoped users cannot override)
             if (SalesScope::showBrokerFilter() && $request->has('broker_id') && $request->broker_id !== 'all') {
                 $query->where('broker_id', $request->broker_id);
             }
             return DataTables::of($query)
                 ->addIndexColumn()
+                ->addColumn('expand_control', function ($row) {
+                    return '<button type="button" class="btn btn-sm btn-light border-0 order-expand-btn" '
+                        . 'title="Hide product details" aria-expanded="true">'
+                        . '<i class="ti ti-chevron-up"></i></button>';
+                })
+                ->addColumn('amount_summary', function ($row) {
+                    $total = '₹ ' . number_format((float) $row->grand_total, 2);
+                    $avg   = $row->totalOrderedQty() > 0
+                        ? 'Avg ₹ ' . number_format($row->weightedAvgUnitPrice(), 2) . ' / bag'
+                        : '—';
+
+                    return '<div class="ol-amount-cell">'
+                        . '<div class="ol-amount-total fw-semibold">' . $total . '</div>'
+                        . '<div class="ol-amount-avg text-muted">' . e($avg) . '</div>'
+                        . '</div>';
+                })
+                ->addColumn('dispatch_summary', function ($row) {
+                    $pct           = $row->dispatchPercent();
+                    $productCount  = $row->items->count();
+                    $pendingCount  = $row->pendingLineItemCount();
+                    $barClass      = $pct >= 100 ? 'bg-success' : 'bg-primary';
+                    $pendingLabel  = $pendingCount > 0
+                        ? $pendingCount . ' pending'
+                        : '<span class="text-success">All done</span>';
+
+                    return '<div class="ol-dispatch-cell">'
+                        . '<div class="progress ol-dispatch-bar">'
+                        . '<div class="progress-bar ' . $barClass . '" style="width:' . $pct . '%"></div>'
+                        . '</div>'
+                        . '<div class="ol-dispatch-meta small">'
+                        . '<span class="fw-semibold">' . $pct . '%</span>'
+                        . '<span class="text-muted"> · ' . $productCount . ' product'
+                        . ($productCount !== 1 ? 's' : '') . ' · ' . $pendingLabel . '</span>'
+                        . '</div></div>';
+                })
+                ->addColumn('items_detail_html', function ($row) {
+                    return view('order_management.partials.list-items-detail', ['order' => $row])->render();
+                })
                 ->addColumn('checkbox', function ($row) {
                     return '<label class="checkboxs">
                                 <input type="checkbox" class="checkbox-item order_checkbox" data-id="' . $row->id . '">
@@ -50,7 +94,6 @@ class OrderManagementController extends Controller
                 ->addColumn('brand_name',  fn($row) => $row->brand?->name  ?? '—')
                 ->addColumn('dealer_name', fn($row) => $row->dealer?->user?->name ?? $row->dealer?->firm_shop_name ?? '—')
                 ->editColumn('order_date',  fn($row) => $row->order_date?->format('d M Y') ?? '—')
-                ->editColumn('grand_total', fn($row) => '₹ ' . number_format($row->grand_total, 2))
                 ->addColumn('payment_status', fn($row) => $row->paymentBadge())
                 // ->addColumn('order_status', fn($row) => '<span class="badge badge-pill badge-status bg-secondary">Pending</span>')
                 ->addColumn('action', function ($row) {
@@ -85,7 +128,10 @@ class OrderManagementController extends Controller
                     $btn .= '</div></div>';
                     return $btn;
                 })
-                ->rawColumns(['checkbox', 'payment_status', 'order_status', 'action'])
+                ->rawColumns([
+                    'expand_control', 'amount_summary', 'dispatch_summary',
+                    'items_detail_html', 'checkbox', 'payment_status', 'order_status', 'action',
+                ])
                 ->make(true);
         }
         return view('order_management.index', $data);
@@ -97,7 +143,7 @@ class OrderManagementController extends Controller
     public function create()
     {
         $data['page_title'] = 'Add - Soda/Order';
-        $data['brands']     = BrandManagement::where('status', 1)->orderBy('name')->get();
+        $data['brands']     = BrandManagement::activeForDropdown();
         $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
         $data['products']   = Product::where('status', 1)->orderBy('name')->get();
         $data['locked_dealer'] = SalesScope::isDealer()
@@ -169,7 +215,7 @@ class OrderManagementController extends Controller
 
         $data['page_title'] = 'Edit - Soda/Order';
         $data['order']      = $order->load('items.product', 'items.dispatches');
-        $data['brands']     = BrandManagement::where('status', 1)->orderBy('name')->get();
+        $data['brands']     = BrandManagement::activeForDropdown();
         $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
         $data['products']   = Product::where('status', 1)->orderBy('name')->get();
 
@@ -256,7 +302,7 @@ class OrderManagementController extends Controller
                     ->withErrors([
                         'product_id' => 'Product "' . ($item->product?->name ?? 'Unknown')
                             . '" cannot be removed — it has already been dispatched ('
-                            . $dispatched . ' bag(s)).',
+                            . $dispatched . ' ' . ProductUnit::dispatchedSuffix($item->product?->unit) . ').',
                     ]);
             }
         }
@@ -284,7 +330,7 @@ class OrderManagementController extends Controller
                     ->withErrors([
                         'qty' => 'Quantity for "' . ($item->product?->name ?? 'item')
                             . '" cannot be less than the already dispatched quantity ('
-                            . $dispatched . ' bag(s)).',
+                            . $dispatched . ' ' . ProductUnit::dispatchedSuffix($item->product?->unit) . ').',
                     ]);
             }
         }
