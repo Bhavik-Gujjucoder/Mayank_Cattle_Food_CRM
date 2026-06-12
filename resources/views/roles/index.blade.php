@@ -183,9 +183,7 @@
     });
 
     /*** Custom Search Box ***/
-    $('#customSearch').on('keyup', function() {
-        roles_table.search(this.value).draw();
-    });
+    bindDebouncedDataTableSearch('#customSearch', roles_table);
 
 
 

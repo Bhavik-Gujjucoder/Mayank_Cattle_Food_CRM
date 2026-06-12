@@ -10,10 +10,13 @@ use App\Http\Requests\StoreRawMaterialOrderRequest;
 use App\Http\Requests\UpdateRawMaterialOrderRequest;
 use App\Jobs\ExportRawMaterialFullPdfJob;
 use App\Models\RawMaterial;
+use App\Models\RawMaterialCategory;
 use App\Models\RawMaterialOrder;
 use App\Models\RawMaterialOrderItem;
 use App\Models\RawMaterialReceive;
 use App\Models\Supplier;
+use App\Models\SupplierBroker;
+use App\Support\RawMaterialOrderPriceBasis;
 use App\Services\RawMaterial\RawMaterialFilterService;
 use App\Services\RawMaterialIdGenerator;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -33,29 +36,38 @@ class RawMaterialOrderController extends Controller
         $data['suppliers']  = Supplier::where('status', 1)->orderBy('name')->get();
 
         if ($request->ajax()) {
+            $canView   = auth()->user()->can('view-raw-material-purchas-order');
+            $canEdit   = auth()->user()->can('edit-raw-material-purchas-order');
+            $canExport = auth()->user()->can('export-raw-material-purchas-order');
+            $canDelete = auth()->user()->can('delete-raw-material-purchas-order');
+
             $query = RawMaterialFilterService::orders($request);
 
             return DataTables::of($query)
+                ->skipAutoFilter()
                 ->addIndexColumn()
+                ->editColumn('supplier_order_id', fn ($row) => e($row->supplier_order_id ?: '—'))
+                ->addColumn('supplier_broker_name', fn ($row) => e($row->supplierBroker?->name ?? '—'))
                 ->addColumn('supplier_name', fn ($row) => e($row->supplier?->name ?? '—'))
+                ->editColumn('price_basis', fn ($row) => e($row->price_basis ?: '—'))
                 ->editColumn('order_date', fn ($row) => $row->order_date?->format('d M Y') ?? '—')
                 ->editColumn('total_qty', fn ($row) => number_format($row->total_qty) . ' tons')
                 ->editColumn('total_price', fn ($row) => '₹ ' . number_format($row->total_price, 2))
                 ->editColumn('total_freight', fn ($row) => '₹ ' . number_format($row->total_freight, 2))
                 ->editColumn('status', fn ($row) => $row->statusBadge())
-                ->addColumn('action', function ($row) {
-                    $view   = auth()->user()->can('view-raw-material-purchas-order')
+                ->addColumn('action', function ($row) use ($canView, $canEdit, $canExport, $canDelete) {
+                    $view   = $canView
                         ? '<a href="' . route('raw-material.order.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>'
                         : '';
-                    $edit   = ($row->isEditable() && auth()->user()->can('edit-raw-material-purchas-order'))
+                    $edit   = ($row->isEditable() && $canEdit)
                         ? '<a href="' . route('raw-material.order.edit', $row->id) . '" class="dropdown-item"><i class="ti ti-edit text-warning"></i> Edit</a>' : '';
-                    $cancel = (in_array((int) $row->status, [0, 1], true) && auth()->user()->can('edit-raw-material-purchas-order'))
+                    $cancel = (in_array((int) $row->status, [0, 1], true) && $canEdit)
                         ? '<a href="javascript:void(0)" class="dropdown-item cancel-order-btn" data-url="' . route('raw-material.order.cancel', $row->id) . '"><i class="ti ti-ban text-danger"></i> Cancel</a>' : '';
-                    $exportExcel = auth()->user()->can('export-raw-material-purchas-order')
+                    $exportExcel = $canExport
                         ? '<a href="' . route('raw-material.order.export-order-excel', $row->id) . '" class="dropdown-item"><i class="ti ti-file-spreadsheet text-success"></i> Export Excel</a>' : '';
-                    $exportPdf = auth()->user()->can('export-raw-material-purchas-order')
+                    $exportPdf = $canExport
                         ? '<a href="' . route('raw-material.order.export-order-pdf', $row->id) . '" class="dropdown-item"><i class="ti ti-file-type-pdf text-danger"></i> Export PDF</a>' : '';
-                    $delete = auth()->user()->can('delete-raw-material-purchas-order')
+                    $delete = $canDelete
                         ? '<a href="javascript:void(0)" class="dropdown-item delete-btn" data-id="' . $row->id . '"><i class="ti ti-trash text-danger"></i> Delete</a>
                            <form action="' . route('raw-material.order.destroy', $row->id) . '" method="POST" class="delete-form" id="delete-form-' . $row->id . '">' . csrf_field() . method_field('DELETE') . '</form>' : '';
 
@@ -70,10 +82,12 @@ class RawMaterialOrderController extends Controller
 
     public function create()
     {
-        $data['page_title']     = 'Add Raw Material Order';
-        $data['suppliers']      = Supplier::where('status', 1)->orderBy('name')->get();
-        $data['raw_materials']  = RawMaterial::where('status', 1)->orderBy('name')->get();
-        $data['order_unique_id'] = RawMaterialIdGenerator::nextOrderId();
+        $data = array_merge($this->orderFormSharedData(), [
+            'page_title'      => 'Add Raw Material Order',
+            'order_unique_id' => RawMaterialIdGenerator::nextOrderId(),
+            'order'           => null,
+            'old_rows'        => [],
+        ]);
 
         return view('raw_material_order.create', $data);
     }
@@ -82,9 +96,12 @@ class RawMaterialOrderController extends Controller
     {
         DB::transaction(function () use ($request) {
             $order = RawMaterialOrder::create([
-                'order_unique_id' => $request->order_unique_id,
-                'supplier_id'     => $request->supplier_id,
-                'order_date'      => $request->order_date,
+                'order_unique_id'    => $request->order_unique_id,
+                'supplier_broker_id' => $request->supplier_broker_id,
+                'supplier_id'        => $request->supplier_id,
+                'supplier_order_id'  => self::normalizeSupplierOrderId($request),
+                'order_date'         => $request->order_date,
+                'price_basis'        => $request->price_basis,
             ]);
 
             foreach ($request->raw_material_id as $i => $materialId) {
@@ -92,6 +109,7 @@ class RawMaterialOrderController extends Controller
                     'raw_material_id' => $materialId,
                     'total_qty'       => $request->total_qty[$i],
                     'price'           => $request->price[$i],
+                    'other_expense'   => $request->other_expense[$i] ?? 0,
                 ]);
             }
         });
@@ -102,7 +120,7 @@ class RawMaterialOrderController extends Controller
     public function show(RawMaterialOrder $raw_material_order)
     {
         $data['page_title'] = 'View Raw Material Order';
-        $data['order']      = $raw_material_order->load(['supplier', 'items.rawMaterial', 'receives.rawMaterial']);
+        $data['order']      = $raw_material_order->load(['supplier', 'supplierBroker', 'items.rawMaterial.category', 'receives.rawMaterial.category']);
 
         return view('raw_material_order.show', $data);
     }
@@ -114,10 +132,19 @@ class RawMaterialOrderController extends Controller
                 ->with('error', 'Only pending orders can be edited.');
         }
 
-        $data['page_title']    = 'Edit Raw Material Order';
-        $data['order']         = $raw_material_order->load('items');
-        $data['suppliers']     = Supplier::where('status', 1)->orderBy('name')->get();
-        $data['raw_materials'] = RawMaterial::where('status', 1)->orderBy('name')->get();
+        $raw_material_order->load(['items.rawMaterial']);
+
+        $data = array_merge($this->orderFormSharedData(), [
+            'page_title' => 'Edit Raw Material Order',
+            'order'      => $raw_material_order,
+            'old_rows'   => $raw_material_order->items->map(fn ($item) => [
+                'category_id'  => $item->rawMaterial?->raw_material_category_id,
+                'material_id'  => $item->raw_material_id,
+                'qty'          => $item->total_qty,
+                'price'        => number_format((float) $item->price, 2, '.', ''),
+                'other_expense'=> number_format((float) $item->other_expense, 2, '.', ''),
+            ])->values()->all(),
+        ]);
 
         return view('raw_material_order.edit', $data);
     }
@@ -130,8 +157,11 @@ class RawMaterialOrderController extends Controller
 
         DB::transaction(function () use ($request, $raw_material_order) {
             $raw_material_order->update([
-                'supplier_id' => $request->supplier_id,
-                'order_date'  => $request->order_date,
+                'supplier_broker_id' => $request->supplier_broker_id,
+                'supplier_id'        => $request->supplier_id,
+                'supplier_order_id'  => self::normalizeSupplierOrderId($request),
+                'order_date'         => $request->order_date,
+                'price_basis'        => $request->price_basis,
             ]);
 
             $raw_material_order->items()->forceDelete();
@@ -141,6 +171,7 @@ class RawMaterialOrderController extends Controller
                     'raw_material_id' => $materialId,
                     'total_qty'       => $request->total_qty[$i],
                     'price'           => $request->price[$i],
+                    'other_expense'   => $request->other_expense[$i] ?? 0,
                 ]);
             }
         });
@@ -176,7 +207,7 @@ class RawMaterialOrderController extends Controller
     public function orderItems(RawMaterialOrder $raw_material_order)
     {
         $items = $raw_material_order->items()
-            ->with('rawMaterial')
+            ->with('rawMaterial.category')
             ->whereIn('status', [0, 1])
             ->where('pending_qty', '>', 0)
             ->get()
@@ -209,7 +240,7 @@ class RawMaterialOrderController extends Controller
             return redirect()->back()->with('error', 'No records found to export for the current filters.');
         }
 
-        $orders   = $query->get();
+        $orders   = $query->with(['supplier', 'supplierBroker'])->get();
         $filename = 'raw-material-orders-' . now()->format('Y-m-d') . '.pdf';
 
         $pdf = Pdf::loadView('raw_material_order.pdf_orders_list', compact('orders'))
@@ -261,8 +292,8 @@ class RawMaterialOrderController extends Controller
     protected function fullExportData(): array
     {
         return [
-            'orders'   => RawMaterialOrder::with('supplier')->orderByDesc('id')->get(),
-            'items'    => RawMaterialOrderItem::with(['rawMaterial', 'order'])->orderByDesc('id')->get(),
+            'orders'   => RawMaterialOrder::with(['supplier', 'supplierBroker'])->orderByDesc('id')->get(),
+            'items'    => RawMaterialOrderItem::with(['rawMaterial.category', 'order'])->orderByDesc('id')->get(),
             'receives' => RawMaterialReceive::with(['rawMaterial', 'order'])->orderByDesc('id')->get(),
         ];
     }
@@ -297,7 +328,7 @@ class RawMaterialOrderController extends Controller
 
     public function exportPdf(RawMaterialOrder $raw_material_order)
     {
-        $order = $raw_material_order->load(['supplier', 'items.rawMaterial']);
+        $order = $raw_material_order->load(['supplier', 'supplierBroker', 'items.rawMaterial.category']);
 
         $filename = 'purchase-order-' . Str::slug($order->order_unique_id, '-') . '.pdf';
 
@@ -305,5 +336,44 @@ class RawMaterialOrderController extends Controller
             ->setPaper('a4', 'portrait');
 
         return $pdf->download($filename);
+    }
+
+    protected static function normalizeSupplierOrderId(Request $request): ?string
+    {
+        $value = trim((string) $request->input('supplier_order_id', ''));
+
+        return $value !== '' ? $value : null;
+    }
+
+    /** @return array<string, mixed> */
+    protected function orderFormSharedData(): array
+    {
+        $suppliers = Supplier::with('supplierBroker')->where('status', 1)->orderBy('name')->get();
+        $materials = RawMaterial::with('category')->where('status', 1)->orderBy('name')->get();
+        $categories = RawMaterialCategory::where('status', 1)->orderBy('name')->get();
+
+        return [
+            'supplier_brokers' => SupplierBroker::where('status', 1)->orderBy('name')->get(),
+            'suppliers'        => $suppliers,
+            'categories'       => $categories,
+            'price_basis_options' => RawMaterialOrderPriceBasis::options(),
+            'order_form_config' => [
+                'isEdit'     => false,
+                'categories' => $categories->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->values(),
+                'materials'  => $materials->map(fn ($m) => [
+                    'id'          => $m->id,
+                    'name'        => $m->name,
+                    'unit'        => $m->unit,
+                    'category_id' => $m->raw_material_category_id,
+                    'price'       => (float) $m->last_purchase_price,
+                ])->values(),
+                'suppliers' => $suppliers->map(fn ($s) => [
+                    'id'                 => $s->id,
+                    'name'               => $s->name,
+                    'supplier_broker_id' => $s->supplier_broker_id,
+                ])->values(),
+                'oldRows' => [],
+            ],
+        ];
     }
 }

@@ -19,7 +19,10 @@ class CityManagementController extends Controller
         $data['page_title'] = 'City Management';
         $data['states'] = StateManagement::where('status', 1)->get();
         if ($request->ajax()) {
-            $data = CityManagement::query();
+            $canEdit   = auth()->user()->can('edit-city');
+            $canDelete = auth()->user()->can('delete-city');
+
+            $data = CityManagement::with('state');
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('checkbox', function ($row) {
@@ -28,7 +31,7 @@ class CityManagementController extends Controller
                             <span class="checkmarks"></span>
                         </label>';
                 })
-                ->addColumn('action', function ($row) {
+                ->addColumn('action', function ($row) use ($canEdit, $canDelete) {
                     $edit_btn = '<a href="javascript:void(0)" class="dropdown-item edit-btn"  data-id="' . $row->id . '"
                     class="btn btn-outline-warning btn-sm edit-btn"><i class="ti ti-edit text-warning"></i>Edit</a>';
 
@@ -40,8 +43,8 @@ class CityManagementController extends Controller
                                              <a href="#" class="action-icon" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                              <div class="dropdown-menu dropdown-menu-right">';
 
-                    $action_btn .= auth()->user()->can('edit-city') ? $edit_btn : '';
-                    $action_btn .= auth()->user()->can('delete-city') ? $delete_btn : '';
+                    $action_btn .= $canEdit ? $edit_btn : '';
+                    $action_btn .= $canDelete ? $delete_btn : '';
 
                     return $action_btn . ' </div></div>';
                 })

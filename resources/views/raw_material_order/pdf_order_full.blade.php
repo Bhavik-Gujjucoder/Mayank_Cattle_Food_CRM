@@ -16,6 +16,7 @@
         table.items th { background: #e2e8f0; font-weight: bold; text-align: left; padding: 6px; border: 1px solid #cbd5e1; font-size: 10px; }
         table.items td { padding: 5px 6px; border: 1px solid #e2e8f0; font-size: 10px; }
         .text-right { text-align: right; }
+        .freight-sub { color: #64748b; font-size: 9px; }
         .empty { color: #94a3b8; font-style: italic; padding: 8px 0; }
     </style>
 </head>
@@ -36,18 +37,20 @@
         <tr>
             <td class="label">Supplier</td>
             <td>{{ $order->supplier?->name ?? '—' }}</td>
+            <td class="label">Supplier Order ID</td>
+            <td>{{ $order->supplier_order_id ?: '—' }}</td>
+        </tr>
+        <tr>
             <td class="label">Status</td>
             <td>{{ \App\Services\RawMaterial\RawMaterialFilterService::orderStatusLabel((int) $order->status) }}</td>
-        </tr>
-        <tr>
             <td class="label">Total Qty (tons)</td>
             <td>{{ $order->total_qty }}</td>
-            <td class="label">Total Price (₹)</td>
-            <td>{{ number_format($order->total_price, 2) }}</td>
         </tr>
         <tr>
+            <td class="label">Total Price (₹)</td>
+            <td>{{ number_format($order->total_price, 2) }}</td>
             <td class="label">Total Freight (₹)</td>
-            <td colspan="3">{{ number_format($order->total_freight, 2) }}</td>
+            <td>{{ number_format($order->total_freight, 2) }}</td>
         </tr>
     </table>
 
@@ -114,7 +117,7 @@
                         <td>{{ $index + 1 }}</td>
                         <td>{{ $receive->rawMaterial?->name ?? '—' }}</td>
                         <td class="text-right">{{ $receive->qty }}</td>
-                        <td class="text-right">{{ number_format($receive->freight, 2) }}</td>
+                        <td>{!! \App\Services\RawMaterialCacheService::receiveFreightPdfHtml($receive) !!}</td>
                         <td>{{ $receive->received_date?->format('d M Y') ?? '—' }}</td>
                         <td>{{ \App\Services\RawMaterial\RawMaterialFilterService::receiveStatusLabel((int) $receive->status) }}</td>
                     </tr>

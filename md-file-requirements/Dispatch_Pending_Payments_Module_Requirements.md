@@ -25,6 +25,8 @@
 
 **Module type:** Report only — **no CRUD**, no new master tables. Mark dispatch as Paid/Unpaid on existing Dispatch screens (`dispatch.orderHistory`, dashboard dispatch modal).
 
+**Brand filter dropdown:** Only **active** brands (`BrandManagement::activeForDropdown()`). Invalid or inactive `brand_id` in query string resets to `all`.
+
 **Implemented (reference):**
 
 | Layer | Path |
@@ -356,7 +358,7 @@ Icon suggestion: `ti ti-report-money` or `ti ti-clock-exclamation`
   - Title block: `col-12 col-sm-auto me-auto`
   - Filters / actions: `col-12 col-sm-6 col-lg-4` (full width on mobile, inline on `sm+`)
 - Optional filters (v1):
-  - **Brand** — All / specific brand (Select2, `w-100` on mobile)
+  - **Brand** — All / specific **active** brand only (`activeForDropdown`, Select2, `w-100` on mobile)
   - **City** — dependent on brand (optional v1.1)
   - **Broker** — All / specific (hidden for broker role if scoped)
 - **Export Excel** — downloads `.xlsx` for current brand filter (same data as on-screen report); see [Export Excel](#export-excel) below.

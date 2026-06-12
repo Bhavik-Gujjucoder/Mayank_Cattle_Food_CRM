@@ -48,6 +48,14 @@
                 <div class="fw-semibold">{{ $receive->order?->supplier?->name ?? '—' }}</div>
             </div>
             <div class="col-12 col-sm-6 col-md-4 mb-3">
+                <label class="col-form-label text-muted">Supplier Order ID</label>
+                <div class="fw-semibold">{{ $receive->order?->supplier_order_id ?: '—' }}</div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
+                <label class="col-form-label text-muted">Category</label>
+                <div class="fw-semibold">{{ $receive->rawMaterial?->category?->name ?? '—' }}</div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Material</label>
                 <div class="fw-semibold">{{ $receive->rawMaterial?->name ?? '—' }}</div>
             </div>
@@ -56,12 +64,8 @@
                 <div class="fw-semibold">{{ $receive->qty }} tons</div>
             </div>
             <div class="col-12 col-sm-6 col-md-4 mb-3">
-                <label class="col-form-label text-muted">Freight per ton</label>
-                <div class="fw-semibold">₹ {{ number_format($receive->freight, 2) }}</div>
-            </div>
-            <div class="col-12 col-sm-6 col-md-4 mb-3">
-                <label class="col-form-label text-muted">Line Freight (freight × qty)</label>
-                <div class="fw-semibold">₹ {{ number_format($receive->freight * $receive->qty, 2) }}</div>
+                <label class="col-form-label text-muted">Freight</label>
+                <div class="fw-semibold">@include('raw_material.partials.receive-freight-display', ['receive' => $receive])</div>
             </div>
             <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Received Date</label>

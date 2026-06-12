@@ -8,6 +8,7 @@ use App\Models\OrderManagement;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
+use App\Support\ActiveDropdownValidation;
 use App\Support\ProductUnit;
 use App\Support\SalesScope;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class OrderManagementController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:view-order')->only(['index']);
+        $this->middleware('permission:view-order')->only(['index', 'listItemsDetail']);
         $this->middleware('permission:add-order')->only(['create']);
         $this->middleware('permission:edit-order')->only(['edit']);
     }
@@ -28,12 +29,16 @@ class OrderManagementController extends Controller
     public function index(Request $request)
     {
         $data['page_title'] = 'Soda/Order Management';
-        $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
+        $data['brokers']    = User::activeBrokersForDropdown();
         $data['brands']     = SalesScope::filterableBrands();
         $data['dealers']    = SalesScope::filterableDealers();
         if ($request->ajax()) {
+            $canDispatch = auth()->user()->can('view-dispatch');
+            $canEdit     = auth()->user()->can('edit-order');
+            $canDelete   = auth()->user()->can('delete-order');
+
             $query = OrderManagement::with([
-                'broker', 'brand', 'dealer',
+                'broker', 'brand', 'dealer.user',
                 'items.product', 'items.dispatches',
             ]);
             SalesScope::scopeOrders($query);
@@ -42,14 +47,23 @@ class OrderManagementController extends Controller
             SalesScope::applyDealerFilter($query, $request->input('dealer_id'));
             // Broker filter (staff/admin only — scoped users cannot override)
             if (SalesScope::showBrokerFilter() && $request->has('broker_id') && $request->broker_id !== 'all') {
-                $query->where('broker_id', $request->broker_id);
+                $brokerId = (int) $request->broker_id;
+                if (User::isActiveBroker($brokerId)) {
+                    $query->where('broker_id', $brokerId);
+                }
+            }
+            if ($request->filled('date_from')) {
+                $query->where('order_date', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to')) {
+                $query->where('order_date', '<=', $request->date_to);
             }
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('expand_control', function ($row) {
                     return '<button type="button" class="btn btn-sm btn-light border-0 order-expand-btn" '
-                        . 'title="Hide product details" aria-expanded="true">'
-                        . '<i class="ti ti-chevron-up"></i></button>';
+                        . 'title="Show product details" aria-expanded="false">'
+                        . '<i class="ti ti-chevron-down"></i></button>';
                 })
                 ->addColumn('amount_summary', function ($row) {
                     $total = '₹ ' . number_format((float) $row->grand_total, 2);
@@ -81,9 +95,6 @@ class OrderManagementController extends Controller
                         . ($productCount !== 1 ? 's' : '') . ' · ' . $pendingLabel . '</span>'
                         . '</div></div>';
                 })
-                ->addColumn('items_detail_html', function ($row) {
-                    return view('order_management.partials.list-items-detail', ['order' => $row])->render();
-                })
                 ->addColumn('checkbox', function ($row) {
                     return '<label class="checkboxs">
                                 <input type="checkbox" class="checkbox-item order_checkbox" data-id="' . $row->id . '">
@@ -96,7 +107,7 @@ class OrderManagementController extends Controller
                 ->editColumn('order_date',  fn($row) => $row->order_date?->format('d M Y') ?? '—')
                 ->addColumn('payment_status', fn($row) => $row->paymentBadge())
                 // ->addColumn('order_status', fn($row) => '<span class="badge badge-pill badge-status bg-secondary">Pending</span>')
-                ->addColumn('action', function ($row) {
+                ->addColumn('action', function ($row) use ($canDispatch, $canEdit, $canDelete) {
                     $dispatch_btn = '<a href="javascript:void(0)"
                                         class="dropdown-item dispatch-check-btn"
                                         data-order-id="' . $row->id . '"
@@ -122,19 +133,31 @@ class OrderManagementController extends Controller
                                      <i class="fa fa-ellipsis-v"></i>
                                  </a>
                                  <div class="dropdown-menu dropdown-menu-right">';
-                    $btn .= auth()->user()->canAny(['view-dispatch']) ? $dispatch_btn : '';
-                    $btn .= auth()->user()->can('edit-order')   ? $edit_btn   : '';
-                    $btn .= auth()->user()->can('delete-order') ? $delete_btn : '';
+                    $btn .= $canDispatch ? $dispatch_btn : '';
+                    $btn .= $canEdit ? $edit_btn : '';
+                    $btn .= $canDelete ? $delete_btn : '';
                     $btn .= '</div></div>';
                     return $btn;
                 })
                 ->rawColumns([
                     'expand_control', 'amount_summary', 'dispatch_summary',
-                    'items_detail_html', 'checkbox', 'payment_status', 'order_status', 'action',
+                    'checkbox', 'payment_status', 'order_status', 'action',
                 ])
                 ->make(true);
         }
         return view('order_management.index', $data);
+    }
+
+    public function listItemsDetail(OrderManagement $order)
+    {
+        $query = OrderManagement::with(['items.product', 'items.dispatches'])
+            ->whereKey($order->id);
+        SalesScope::scopeOrders($query);
+        $order = $query->firstOrFail();
+
+        return response()->json([
+            'html' => view('order_management.partials.list-items-detail', ['order' => $order])->render(),
+        ]);
     }
 
     /* ------------------------------------------------------------------ */
@@ -144,7 +167,7 @@ class OrderManagementController extends Controller
     {
         $data['page_title'] = 'Add - Soda/Order';
         $data['brands']     = BrandManagement::activeForDropdown();
-        $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
+        $data['brokers']    = User::activeBrokersForDropdown();
         $data['products']   = Product::where('status', 1)->orderBy('name')->get();
         $data['locked_dealer'] = SalesScope::isDealer()
             ? DealerManagement::with('user')->where('user_id', auth()->id())->first()
@@ -216,7 +239,7 @@ class OrderManagementController extends Controller
         $data['page_title'] = 'Edit - Soda/Order';
         $data['order']      = $order->load('items.product', 'items.dispatches');
         $data['brands']     = BrandManagement::activeForDropdown();
-        $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
+        $data['brokers']    = User::activeBrokersForDropdown();
         $data['products']   = Product::where('status', 1)->orderBy('name')->get();
 
         /* Pre-load dealers for the order's broker + brand so the dropdown
@@ -585,8 +608,8 @@ class OrderManagementController extends Controller
 
         return $request->validate([
             'unique_order_id'     => $uniqueRule,
-            'broker_id'           => 'required|exists:users,id',
-            'brand_id'            => 'required|exists:brand_management,id',
+            'broker_id'           => ActiveDropdownValidation::brokerId(),
+            'brand_id'            => ActiveDropdownValidation::brandId(),
             'dealer_id'           => 'required|exists:dealer_management,id',
             'order_date'          => 'required|date',
             'delivery_address'    => 'required|string',

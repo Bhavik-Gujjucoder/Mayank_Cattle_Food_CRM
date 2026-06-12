@@ -36,7 +36,9 @@
         </tr>
         <tr>
             <td class="label">Supplier</td>
-            <td colspan="3">{{ $order->supplier?->name ?? '—' }}</td>
+            <td>{{ $order->supplier?->name ?? '—' }}</td>
+            <td class="label">Supplier Order ID</td>
+            <td>{{ $order->supplier_order_id ?: '—' }}</td>
         </tr>
         <tr>
             <td class="label">Status</td>

@@ -29,6 +29,10 @@
                 <div class="fw-semibold">{{ $raw_material->raw_material_unique_id }}</div>
             </div>
             <div class="col-12 col-sm-6 col-md-4 mb-3">
+                <label class="col-form-label text-muted">Category</label>
+                <div class="fw-semibold">{{ $raw_material->category?->name ?? '—' }}</div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Name</label>
                 <div class="fw-semibold">{{ $raw_material->name }}</div>
             </div>

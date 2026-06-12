@@ -300,6 +300,22 @@
                         <input type="text" class="form-control" id="customSearch" placeholder="Search Orders">
                     </div>
                 </div>
+                <div class="common-hed-form cls-form-select-input">
+                    <label class="col-form-label">From Date</label>
+                    <div class="icon-form">
+                        <span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+                        <input type="text" id="orderDateFrom" class="form-control flatpickr" placeholder="DD-MM-YYYY"
+                            autocomplete="off">
+                    </div>
+                </div>
+                <div class="common-hed-form cls-form-select-input">
+                    <label class="col-form-label">To Date</label>
+                    <div class="icon-form">
+                        <span class="form-icon"><i class="ti ti-calendar-check"></i></span>
+                        <input type="text" id="orderDateTo" class="form-control flatpickr" placeholder="DD-MM-YYYY"
+                            autocomplete="off">
+                    </div>
+                </div>
                 @if (\App\Support\SalesScope::showBrandFilter())
                     <div class="common-hed-form cls-form-select-input">
                         <label class="col-form-label">Brand </label>
@@ -420,7 +436,6 @@
                             </label>
                         </th> --}}
                         <th class="no-sort" style="width:40px;" scope="col"></th>
-                        <th hidden scope="col"></th>
                         <th class="no-sort" scope="col">Sr No</th>
                         <th scope="col">Order ID</th>
                         <th scope="col">Broker</th>
@@ -451,18 +466,12 @@
         const isShowAction = {{ auth()->user()->canAny(['edit-order', 'delete-order', 'view-dispatch'])? 'true': 'false' }};
         const isShowCheckbox = {{ auth()->user()->can('delete-order') ? 'true' : 'false' }};
 
-        /* Order IDs the user manually collapsed — others stay expanded on load/draw */
-        const collapsedOrderIds = new Set();
+        const expandedOrderIds = new Set();
+        const orderDetailHtmlCache = new Map();
+        const orderListItemsDetailUrl = @json(route('order.listItemsDetail', ['order' => '__ORDER__']));
 
-        function showOrderDetails(row) {
-            var data = row.data();
-            var tr   = $(row.node());
-
-            if (!data.items_detail_html) {
-                return;
-            }
-
-            row.child(data.items_detail_html).show();
+        function applyExpandedRowUi(row) {
+            var tr = $(row.node());
             tr.addClass('order-row-expanded');
             tr.next('tr.child').addClass('order-detail-row');
             tr.find('.order-expand-btn')
@@ -473,8 +482,39 @@
                 .addClass('ti-chevron-up');
         }
 
+        function showOrderDetails(row) {
+            var data = row.data();
+            var id   = data.id;
+            expandedOrderIds.add(id);
+
+            if (orderDetailHtmlCache.has(id)) {
+                row.child(orderDetailHtmlCache.get(id)).show();
+                applyExpandedRowUi(row);
+                return;
+            }
+
+            var url = orderListItemsDetailUrl.replace('__ORDER__', id);
+            $.getJSON(url)
+                .done(function(res) {
+                    if (!res.html) {
+                        return;
+                    }
+                    orderDetailHtmlCache.set(id, res.html);
+                    row.child(res.html).show();
+                    applyExpandedRowUi(row);
+                })
+                .fail(function() {
+                    expandedOrderIds.delete(id);
+                    if (typeof show_error === 'function') {
+                        show_error('Could not load order details. Please try again.');
+                    }
+                });
+        }
+
         function hideOrderDetails(row) {
             var tr = $(row.node());
+            var id = row.data().id;
+            expandedOrderIds.delete(id);
             if (!row.child.isShown()) {
                 return;
             }
@@ -489,19 +529,22 @@
                 .addClass('ti-chevron-down');
         }
 
-        function expandVisibleOrderRows() {
+        function restoreExpandedOrderRows() {
             order_table.rows({ page: 'current' }).every(function() {
                 var id = this.data().id;
-                if (!collapsedOrderIds.has(id)) {
-                    showOrderDetails(this);
+                if (expandedOrderIds.has(id) && orderDetailHtmlCache.has(id)) {
+                    if (!this.child.isShown()) {
+                        this.child(orderDetailHtmlCache.get(id)).show();
+                        applyExpandedRowUi(this);
+                    }
                 }
             });
         }
 
         /* Column indexes — must match DataTables columns[] order */
         var ORDER_COL = {
-            broker: 5,
-            brand: 6
+            broker: 4,
+            brand: 5
         };
 
         function adjustOrderTableLayout() {
@@ -533,7 +576,7 @@
 
         var order_table = $('#order_table').DataTable({
             pageLength: 10,
-            deferRender: false,
+            deferRender: true,
             processing: true,
             serverSide: true,
             responsive: false,
@@ -554,6 +597,8 @@
                     if ($('#dealerFilter').length) {
                         d.dealer_id = $('#dealerFilter').val() || 'all';
                     }
+                    d.date_from = $('#orderDateFrom').val() || '';
+                    d.date_to   = $('#orderDateTo').val() || '';
                 }
             },
             columns: [{
@@ -575,13 +620,6 @@
                     orderable: false,
                     searchable: false,
                     className: 'text-center'
-                },
-                {
-                    data: 'items_detail_html',
-                    name: 'items_detail_html',
-                    visible: false,
-                    searchable: false,
-                    orderable: false
                 },
                 {
                     data: 'DT_RowIndex',
@@ -651,7 +689,7 @@
                 adjustOrderTableLayout();
             },
             drawCallback: function() {
-                expandVisibleOrderRows();
+                restoreExpandedOrderRows();
                 order_table.columns.adjust();
             }
         });
@@ -677,12 +715,30 @@
             var id = row.data().id;
 
             if (tr.hasClass('order-row-expanded')) {
-                collapsedOrderIds.add(id);
                 hideOrderDetails(row);
             } else {
-                collapsedOrderIds.delete(id);
                 showOrderDetails(row);
             }
+        });
+
+        var orderDateFromPicker = flatpickr('#orderDateFrom', {
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'd-m-Y',
+            allowInput: true,
+            onChange: function() {
+                order_table.draw();
+            },
+        });
+
+        var orderDateToPicker = flatpickr('#orderDateTo', {
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'd-m-Y',
+            allowInput: true,
+            onChange: function() {
+                order_table.draw();
+            },
         });
 
         /* Broker / Brand / Dealer filters */
@@ -691,14 +747,14 @@
         });
 
         /* Custom search */
-        $('#customSearch').on('keyup', function() {
-            order_table.search(this.value).draw();
-        });
+        bindDebouncedDataTableSearch('#customSearch', order_table);
 
         /* Reset all list filters */
         $('#resetOrderFilters').on('click', function() {
             $('#customSearch').val('');
             order_table.search('');
+            orderDateFromPicker.clear();
+            orderDateToPicker.clear();
 
             if ($('#BrandId').length) {
                 $('#BrandId').val('all');

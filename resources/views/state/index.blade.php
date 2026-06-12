@@ -171,9 +171,7 @@
     });
 
     // Custom Search Box
-    $('#customSearch').on('keyup', function() {
-        state_table.search(this.value).draw();
-    });
+    bindDebouncedDataTableSearch('#customSearch', state_table);
 
     /* Add state */
     $('#openModal').click(function() {

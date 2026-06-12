@@ -15,9 +15,40 @@ class RawMaterialCacheService
         return round((float) $receive->freight * (int) $receive->qty, 3);
     }
 
+    public static function receiveFreightRateLabel(RawMaterialReceive $receive): string
+    {
+        return '₹ ' . number_format((float) $receive->freight, 2) . '/ton';
+    }
+
+    public static function receiveFreightLineLabel(RawMaterialReceive $receive): string
+    {
+        return 'Line: ₹ ' . number_format(self::receiveFreightAmount($receive), 2);
+    }
+
+    /** Two-line freight for list tables (rate/ton + line total). */
+    public static function receiveFreightHtml(RawMaterialReceive $receive): string
+    {
+        return self::receiveFreightRateLabel($receive)
+            . '<br><small class="text-muted">' . self::receiveFreightLineLabel($receive) . '</small>';
+    }
+
+    /** Two-line freight for PDF exports. */
+    public static function receiveFreightPdfHtml(RawMaterialReceive $receive): string
+    {
+        return self::receiveFreightRateLabel($receive)
+            . '<br><span class="freight-sub">' . self::receiveFreightLineLabel($receive) . '</span>';
+    }
+
+    /** Two-line freight for Excel exports (newline-separated). */
+    public static function receiveFreightPlain(RawMaterialReceive $receive): string
+    {
+        return self::receiveFreightRateLabel($receive) . "\n" . self::receiveFreightLineLabel($receive);
+    }
+
     public static function initializeOrderItem(RawMaterialOrderItem $item): void
     {
         $item->total_price    = round($item->total_qty * 1000 * (float) $item->price, 3);
+        $item->other_expense  = round((float) ($item->other_expense ?? 0), 3);
         $item->pending_qty    = $item->total_qty;
         $item->received_qty   = 0;
         $item->pending_price  = $item->total_price;
@@ -35,7 +66,9 @@ class RawMaterialCacheService
 
         $order->load('items');
         $order->total_qty     = (int) $order->items->sum('total_qty');
-        $order->total_price   = (float) $order->items->sum('total_price');
+        $order->total_price   = (float) $order->items->sum(
+            fn (RawMaterialOrderItem $item) => (float) $item->total_price + (float) $item->other_expense
+        );
         $order->total_freight = (float) $order->items->sum('total_freight');
 
         $statuses = $order->items->pluck('status')->unique();

@@ -27,6 +27,7 @@ class RawMaterialsExport implements FromCollection, WithHeadings, WithStyles
     {
         return $this->rows->map(fn (RawMaterial $row) => [
             $row->raw_material_unique_id,
+            $row->category?->name ?? '—',
             $row->name,
             $row->unit,
             number_format((float) $row->total_stock, 2),
@@ -41,6 +42,7 @@ class RawMaterialsExport implements FromCollection, WithHeadings, WithStyles
     {
         return [
             'Material ID',
+            'Category',
             'Name',
             'Unit',
             'Total Stock',

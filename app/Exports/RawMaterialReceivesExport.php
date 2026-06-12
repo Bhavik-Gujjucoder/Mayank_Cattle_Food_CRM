@@ -5,6 +5,7 @@ namespace App\Exports;
 use App\Exports\Concerns\StyledExportHeading;
 use App\Models\RawMaterialReceive;
 use App\Services\RawMaterial\RawMaterialFilterService;
+use App\Services\RawMaterialCacheService;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -29,9 +30,11 @@ class RawMaterialReceivesExport implements FromCollection, WithHeadings, WithSty
             return [
                 $index + 1,
                 $row->order?->order_unique_id ?? '—',
+                $row->order?->supplier_order_id ?? '—',
+                $row->rawMaterial?->category?->name ?? '—',
                 $row->rawMaterial?->name ?? '—',
                 $row->qty,
-                number_format((float) $row->freight, 2),
+                RawMaterialCacheService::receiveFreightPlain($row),
                 $row->received_date?->format('d-m-Y') ?? '—',
                 RawMaterialFilterService::receiveStatusLabel((int) $row->status),
             ];
@@ -43,6 +46,8 @@ class RawMaterialReceivesExport implements FromCollection, WithHeadings, WithSty
         return [
             'Sr No',
             'Order ID',
+            'Supplier Order ID',
+            'Category',
             'Material',
             'Qty (tons)',
             'Freight',

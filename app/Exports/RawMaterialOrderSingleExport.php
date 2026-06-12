@@ -19,7 +19,7 @@ class RawMaterialOrderSingleExport implements WithMultipleSheets
 
     public function sheets(): array
     {
-        $order = $this->order->load(['supplier', 'items.rawMaterial', 'receives.rawMaterial']);
+        $order = $this->order->load(['supplier', 'supplierBroker', 'items.rawMaterial.category', 'receives.rawMaterial.category']);
 
         return [
             new OrderDetailsSheet($order),

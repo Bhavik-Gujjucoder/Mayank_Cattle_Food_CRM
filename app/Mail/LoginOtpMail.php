@@ -1,26 +1,35 @@
 <?php
+
 namespace App\Mail;
 
+use App\Models\User;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class LoginOtpMail extends Mailable
+class LoginOtpMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public $otp;
-    public $user;
+    public function __construct(
+        public int $otp,
+        public User $user,
+    ) {}
 
-    public function __construct($otp, $user)
+    public function envelope(): Envelope
     {
-        $this->otp = $otp;
-        $this->user = $user;
+        return new Envelope(
+            subject: 'Your Login OTP',
+        );
     }
 
-    public function build()
+    public function content(): Content
     {
-        return $this->subject('Your Login OTP')
-                    ->view('emails.login_otp');
+        return new Content(
+            view: 'emails.login_otp',
+        );
     }
 }

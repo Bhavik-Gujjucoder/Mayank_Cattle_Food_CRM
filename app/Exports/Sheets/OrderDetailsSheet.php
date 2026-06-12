@@ -26,15 +26,18 @@ class OrderDetailsSheet implements FromCollection, WithHeadings, WithStyles, Wit
 
     public function headings(): array
     {
-        return ['Order ID', 'Supplier', 'Order Date', 'Total Qty (tons)', 'Total Price', 'Total Freight', 'Status'];
+        return ['Order ID', 'Supplier Broker', 'Supplier', 'Supplier Order ID', 'Order Date', 'Price Basis', 'Total Qty (tons)', 'Total Price', 'Total Freight', 'Status'];
     }
 
     public function collection(): Collection
     {
         return collect([[
             $this->order->order_unique_id,
+            $this->order->supplierBroker?->name ?? '—',
             $this->order->supplier?->name ?? '—',
+            $this->order->supplier_order_id ?? '—',
             $this->order->order_date?->format('d-m-Y') ?? '—',
+            $this->order->price_basis ?? '—',
             $this->order->total_qty,
             number_format((float) $this->order->total_price, 2),
             number_format((float) $this->order->total_freight, 2),

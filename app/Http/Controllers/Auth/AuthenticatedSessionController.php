@@ -4,13 +4,12 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Mail\LoginOtpMail;
 use App\Models\User;
+use App\Support\LoginOtpDelivery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -73,10 +72,12 @@ class AuthenticatedSessionController extends Controller
             'remember_me' => $request->boolean('remember'),
         ]);
 
-        Mail::to([$user->email, 'chandresh.gc@gmail.com', 'bhavikg.gc@gmail.com'])
-            ->send(new LoginOtpMail($otp, $user));
+        LoginOtpDelivery::queue($otp, $user);
 
-        return redirect()->route('verify.otp.form')->with('message', 'OTP sent to your email.');
+        return redirect()->route('verify.otp.form')->with(
+            'message',
+            'OTP is being sent to your email. It may take up to a minute to arrive.'
+        );
     }
 
     /* ------------------------------------------------------------------ */

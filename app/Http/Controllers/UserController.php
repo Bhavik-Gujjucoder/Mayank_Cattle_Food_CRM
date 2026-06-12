@@ -24,7 +24,7 @@ class UserController extends Controller
             default => 'Admin & Staff Management',
         };
         $data['type'] = $type;
-        $data['users'] = User::when($type, function ($query) use ($type) {
+        $data['users'] = User::with('roles')->when($type, function ($query) use ($type) {
             if ($type == 'broker') {
                 $query->whereHas('roles', function ($q) use ($type) {
                     $q->where('name', 'broker');
@@ -40,9 +40,9 @@ class UserController extends Controller
             }
         });
         if ($request->ajax()) {
-            /* $data = User::whereHas('roles', function ($q) {
-                $q->where('name', '!=', 'sales');
-            });*/
+            $canEdit   = auth()->user()->can('edit-' . $type);
+            $canDelete = auth()->user()->can('delete-' . $type);
+
             return DataTables::of($data['users'])
                 ->addIndexColumn()
                 ->addColumn('checkbox', function ($row) {
@@ -51,7 +51,7 @@ class UserController extends Controller
                             <span class="checkmarks"></span>
                         </label>';
                 })
-                ->addColumn('action', function ($row) use ($type) {
+                ->addColumn('action', function ($row) use ($type, $canEdit, $canDelete) {
                     $show_btn = '<a href="' . route('users.show', ['type' => $type, 'id' => $row->id]) . '"
                         class="btn btn-outline-info btn-sm">
                         <i class="bi bi-eye-fill"></i> ' . __('Show') . '
@@ -77,8 +77,8 @@ class UserController extends Controller
                     $action_btn = '<div class="dropdown table-action">
                                              <a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                              <div class="dropdown-menu dropdown-menu-right">';
-                    $action_btn .= auth()->user()->can('edit-' . $type) ? $edit_btn : '';
-                    $action_btn .= auth()->user()->can('delete-' . $type) ? $delete_btn : '';
+                    $action_btn .= $canEdit ? $edit_btn : '';
+                    $action_btn .= $canDelete ? $delete_btn : '';
                     return $action_btn . ' </div></div>';
                 })
                 // ->editColumn('name', function ($row) {
@@ -142,6 +142,14 @@ class UserController extends Controller
     }
 
     /* ------------------------------------------------------------------ */
+    /*  QUICK CREATE FORM (modal from Soda/Order)                         */
+    /* ------------------------------------------------------------------ */
+    public function brokerQuickCreateForm()
+    {
+        return view('users.partials.quick-create-broker-form');
+    }
+
+    /* ------------------------------------------------------------------ */
     /*  CREATE                                                            */
     /* ------------------------------------------------------------------ */
     public function create($type = 'user')
@@ -171,7 +179,7 @@ class UserController extends Controller
             ],
             'phone_no' => 'required|digits_between:10,11|unique:users,phone_no,NULL,id,deleted_at,NULL',
             'password' => 'required|min:6|confirmed',
-            'status'   => 'required|in:1,0'
+            'status'   => 'nullable|in:1,0'
         ], [
             'profile_picture.image' => 'The profile picture must be an image.',
             'profile_picture.mimes' => 'The profile picture must be a file of type: JPG, JPEG, PNG, or GIF.',
@@ -185,7 +193,7 @@ class UserController extends Controller
             'email'    => $request->email ?? null,
             'phone_no' => $request->phone_no,
             'password' => Hash::make($request->password),
-            'status'   => $request->status,
+            'status'   => $request->input('status', 1),
         ]);
 
         /* Handle profile picture upload */
@@ -215,6 +223,17 @@ class UserController extends Controller
          if ($request->email) {
              Mail::send('email.user_email.create', ['data' => $data], fn($message) => $message->to($user->email)->subject('User Account Created'));
          }*/
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => ucfirst($type) . ' created successfully.',
+                'broker'  => [
+                    'id'   => $user->id,
+                    'name' => $user->name,
+                ],
+            ]);
+        }
 
         return redirect()->route('users.index', $type)->with('success', ucfirst($type) . ' created successfully.');
     }

@@ -4,9 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
-use App\Mail\LoginOtpMail;
+use App\Support\LoginOtpDelivery;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 
 class OtpController extends Controller
 {
@@ -54,8 +53,11 @@ class OtpController extends Controller
             'otp_expires_at' => now()->addMinutes(5),
         ]);
 
-        Mail::to([$user->email, 'chandresh.gc@gmail.com', 'bhavikg.gc@gmail.com'])->send(new LoginOtpMail($otp, $user));
+        LoginOtpDelivery::queue($otp, $user);
 
-        return redirect()->route('verify.otp.form')->with('message', 'OTP resent to your email.');
+        return redirect()->route('verify.otp.form')->with(
+            'message',
+            'OTP is being resent to your email. It may take up to a minute to arrive.'
+        );
     }
 }

@@ -32,12 +32,24 @@
                 <div class="fw-semibold">{{ $order->order_unique_id }}</div>
             </div>
             <div class="col-12 col-sm-6 col-md-3 mb-3">
+                <label class="col-form-label text-muted">Supplier Broker</label>
+                <div class="fw-semibold">{{ $order->supplierBroker?->name ?? '—' }}</div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Supplier</label>
                 <div class="fw-semibold">{{ $order->supplier?->name ?? '—' }}</div>
             </div>
             <div class="col-12 col-sm-6 col-md-3 mb-3">
+                <label class="col-form-label text-muted">Supplier Order ID</label>
+                <div class="fw-semibold">{{ $order->supplier_order_id ?: '—' }}</div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Order Date</label>
                 <div class="fw-semibold">{{ $order->order_date?->format('d M Y') ?? '—' }}</div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3 mb-3">
+                <label class="col-form-label text-muted">Price Basis</label>
+                <div class="fw-semibold">{{ $order->price_basis ?: '—' }}</div>
             </div>
             <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Status</label>
@@ -67,6 +79,7 @@
                 <thead class="thead-light">
                     <tr>
                         <th>Sr No</th>
+                        <th>Category</th>
                         <th>Material</th>
                         <th>Total Qty (tons)</th>
                         <th>Pending Qty</th>
@@ -74,6 +87,7 @@
                         <th>Price/kg</th>
                         <th>Avg Price/kg</th>
                         <th>Total Price</th>
+                        <th>Other Expense</th>
                         <th>Pending Price</th>
                         <th>Received Price</th>
                         <th>Freight</th>
@@ -84,6 +98,7 @@
                     @forelse ($order->items as $index => $item)
                         <tr>
                             <td>{{ $index + 1 }}</td>
+                            <td>{{ $item->rawMaterial?->category?->name ?? '—' }}</td>
                             <td>{{ $item->rawMaterial?->name ?? '—' }}</td>
                             <td>{{ $item->total_qty }}</td>
                             <td>{{ $item->pending_qty }}</td>
@@ -91,6 +106,7 @@
                             <td>₹ {{ number_format($item->price, 2) }}</td>
                             <td>₹ {{ number_format($item->price_avg, 2) }}</td>
                             <td>₹ {{ number_format($item->total_price, 2) }}</td>
+                            <td>₹ {{ number_format($item->other_expense, 2) }}</td>
                             <td>₹ {{ number_format($item->pending_price, 2) }}</td>
                             <td>₹ {{ number_format($item->received_price, 2) }}</td>
                             <td>₹ {{ number_format($item->total_freight, 2) }}</td>
@@ -98,7 +114,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="12" class="text-center text-muted py-4">No items found.</td>
+                            <td colspan="14" class="text-center text-muted py-4">No items found.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -129,8 +145,7 @@
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $receive->rawMaterial?->name ?? '—' }}</td>
                             <td>{{ $receive->qty }}</td>
-                            <td>₹ {{ number_format($receive->freight, 2) }}/ton<br>
-                                <small class="text-muted">Line: ₹ {{ number_format($receive->freight * $receive->qty, 2) }}</small></td>
+                            <td>@include('raw_material.partials.receive-freight-display', ['receive' => $receive])</td>
                             <td>{{ $receive->received_date?->format('d M Y') ?? '—' }}</td>
                             <td>{!! $receive->statusBadge() !!}</td>
                             <td>

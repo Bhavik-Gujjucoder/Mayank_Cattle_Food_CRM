@@ -3,8 +3,7 @@
 namespace App\Exports\Sheets;
 
 use App\Exports\Concerns\StyledExportHeading;
-use App\Models\RawMaterialOrder;
-use App\Services\RawMaterial\RawMaterialFilterService;
+use App\Support\RawMaterialOrderListExport;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -26,19 +25,13 @@ class AllOrdersSheet implements FromCollection, WithHeadings, WithStyles, WithTi
 
     public function headings(): array
     {
-        return ['Order ID', 'Supplier', 'Order Date', 'Total Qty', 'Total Price', 'Total Freight', 'Status'];
+        return RawMaterialOrderListExport::headings();
     }
 
     public function collection(): Collection
     {
-        return $this->orders->map(fn (RawMaterialOrder $row) => [
-            $row->order_unique_id,
-            $row->supplier?->name ?? '—',
-            $row->order_date?->format('d-m-Y') ?? '—',
-            $row->total_qty,
-            number_format((float) $row->total_price, 2),
-            number_format((float) $row->total_freight, 2),
-            RawMaterialFilterService::orderStatusLabel((int) $row->status),
-        ]);
+        return $this->orders->values()->map(
+            fn ($row, int $index) => RawMaterialOrderListExport::row($row, $index + 1)
+        );
     }
 }

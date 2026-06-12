@@ -7,6 +7,7 @@ use App\Models\CityManagement;
 use App\Models\DealerManagement;
 use App\Models\StateManagement;
 use App\Models\User;
+use App\Support\ActiveDropdownValidation;
 use App\Support\SalesScope;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -24,8 +25,8 @@ class DealerManagementController extends Controller
     {
         return [
             'profile_picture'   => 'nullable|mimes:jpg,jpeg,png,gif|max:2048',
-            'broker_id'         => 'required|exists:users,id',
-            'brand_id'          => 'required|exists:brand_management,id',
+            'broker_id'         => ActiveDropdownValidation::brokerId(),
+            'brand_id'          => ActiveDropdownValidation::brandId(),
             'code_no'           => 'required|string|max:20|unique:dealer_management,code_no,' . $ignoreId,
             'applicant_name'    => 'required|string|max:255',
             'firm_shop_name'    => 'required|string|max:255',
@@ -50,8 +51,8 @@ class DealerManagementController extends Controller
     {
         return [
             'profile_picture'   => 'nullable|mimes:jpg,jpeg,png,gif|max:2048',
-            'broker_id'         => 'required|exists:users,id',
-            'brand_id'          => 'required|exists:brand_management,id',
+            'broker_id'         => ActiveDropdownValidation::brokerId(),
+            'brand_id'          => ActiveDropdownValidation::brandId(),
             'code_no'           => 'required|string|max:20|unique:dealer_management,code_no,' . $dealerId,
             'applicant_name'    => 'required|string|max:255',
             'firm_shop_name'    => 'required|string|max:255',
@@ -113,24 +114,33 @@ class DealerManagementController extends Controller
     public function index(Request $request)
     {
         $data['page_title'] = 'Dealers';
-        $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
+        $data['brokers']    = User::activeBrokersForDropdown();
         $data['brands']     = BrandManagement::activeForDropdown();
         if ($request->ajax()) {
-            $query = DealerManagement::with('user', 'broker', 'brand', 'city')
-                ->when($request->broker_id && $request->broker_id != 'all',  fn($q) => $q->where('broker_id', $request->broker_id))
-                ->when($request->brand_id && $request->brand_id != 'all',  fn($q) => $q->where('brand_id', $request->brand_id))
+            $canEdit   = auth()->user()->can('edit-dealer');
+            $canDelete = auth()->user()->can('delete-dealer');
+
+            $query = DealerManagement::with(['user.roles', 'broker', 'brand', 'city'])
+                ->when(
+                    $request->broker_id && $request->broker_id != 'all' && User::isActiveBroker((int) $request->broker_id),
+                    fn ($q) => $q->where('broker_id', $request->broker_id)
+                )
+                ->when(
+                    $request->brand_id && $request->brand_id != 'all' && BrandManagement::isActive((int) $request->brand_id),
+                    fn ($q) => $q->where('brand_id', $request->brand_id)
+                )
                 ->when($request->start_date, fn($q) => $q->whereDate('created_at', '>=', Carbon::parse($request->start_date)->format('Y-m-d')))
                 ->when($request->end_date,   fn($q) => $q->whereDate('created_at', '<=', Carbon::parse($request->end_date)->format('Y-m-d')));
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->addColumn('action', function ($row) {
+                ->addColumn('action', function ($row) use ($canEdit, $canDelete) {
                     $edit_btn = '<a href="' . route('dealer.edit', $row->id) . '"class="dropdown-item"><i class="ti ti-edit text-warning"></i> Edit</a>';
                     $delete_btn = '<a href="javascript:void(0)"class="dropdown-item delete-dealer-btn"data-id="' . $row->id . '"><i class="ti ti-trash text-danger"></i> Delete</a><form action="' . route('dealer.destroy', $row->id) . '" method="POST" class="delete-form" id="delete-dealer-form-' . $row->id . '" style="display:none;">' . csrf_field() . '' . method_field('DELETE') . '</form>';
 
                     $action_btn = '<div class="dropdown table-action"><a href="#" class="action-icon" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right">';
 
-                    $action_btn .= auth()->user()->can('edit-dealer') ? $edit_btn : '';
-                    $action_btn .= auth()->user()->can('delete-dealer') ? $delete_btn : '';
+                    $action_btn .= $canEdit ? $edit_btn : '';
+                    $action_btn .= $canDelete ? $delete_btn : '';
 
                     $action_btn .= '</div></div>';
                     return $action_btn;
@@ -200,8 +210,8 @@ class DealerManagementController extends Controller
     public function quickCreateForm(Request $request)
     {
         $request->validate([
-            'broker_id' => 'required|exists:users,id',
-            'brand_id'  => 'required|exists:brand_management,id',
+            'broker_id' => ActiveDropdownValidation::brokerId(),
+            'brand_id'  => ActiveDropdownValidation::brandId(),
         ]);
 
         $brokerId = (int) $request->broker_id;
@@ -211,7 +221,9 @@ class DealerManagementController extends Controller
             abort(403, 'You can only add dealers for your own broker account.');
         }
 
-        $broker = User::whereHas('roles', fn ($q) => $q->where('name', 'broker'))
+        $broker = User::query()
+            ->brokers()
+            ->active()
             ->findOrFail($brokerId);
 
         $brand = BrandManagement::query()
@@ -244,7 +256,7 @@ class DealerManagementController extends Controller
     public function create()
     {
         $data['page_title'] = 'Add Dealer';
-        $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
+        $data['brokers']    = User::activeBrokersForDropdown();
         $data['brands']     = BrandManagement::activeForDropdown();
         $data['states']     = StateManagement::where('status', 1)->get()->all();
         $nextId             = (DealerManagement::max('id') ?? 0) + 1;
@@ -331,7 +343,7 @@ class DealerManagementController extends Controller
     {
         $data['page_title'] = 'Edit Dealer';
         $data['dealer']     = $dealer->load('user');
-        $data['brokers']    = User::whereHas('roles', fn($q) => $q->where('name', 'broker'))->get();
+        $data['brokers']    = User::activeBrokersForDropdown();
         $data['brands']     = BrandManagement::activeForDropdown();
         $data['states']     = StateManagement::where('status', 1)->get()->all();
         $data['cities']     = CityManagement::where('state_id', $dealer->state_id)->where('status', 1)->get();
@@ -418,9 +430,18 @@ class DealerManagementController extends Controller
     /* ------------------------------------------------------------------ */
     public function getDealersByBrokerBrand(Request $request)
     {
+        $brokerId = (int) $request->broker_id;
+        $brandId  = (int) $request->brand_id;
+
+        if (! $brokerId || ! $brandId
+            || ! User::isActiveBroker($brokerId)
+            || ! BrandManagement::isActive($brandId)) {
+            return response()->json([]);
+        }
+
         $dealers = DealerManagement::with('user')
-            ->when($request->broker_id, fn($q) => $q->where('broker_id', $request->broker_id))
-            ->when($request->brand_id,  fn($q) => $q->where('brand_id',  $request->brand_id))
+            ->where('broker_id', $brokerId)
+            ->where('brand_id', $brandId)
             ->get()
             ->map(fn($d) => [
                 'id'                => $d->id,

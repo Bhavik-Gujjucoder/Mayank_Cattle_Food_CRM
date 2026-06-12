@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\RawMaterial;
+use App\Models\RawMaterialCategory;
 use App\Models\RawMaterialOrder;
 
 class RawMaterialIdGenerator
@@ -12,6 +13,13 @@ class RawMaterialIdGenerator
         $count = RawMaterial::withTrashed()->count() + 1;
 
         return 'Raw-' . str_pad((string) $count, 4, '0', STR_PAD_LEFT);
+    }
+
+    public static function nextCategoryId(): string
+    {
+        $count = RawMaterialCategory::withTrashed()->count() + 1;
+
+        return 'RMC-' . str_pad((string) $count, 4, '0', STR_PAD_LEFT);
     }
 
     public static function financialYear(?\DateTimeInterface $date = null): string

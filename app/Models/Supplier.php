@@ -14,6 +14,11 @@ class Supplier extends Model
     protected $table = 'suppliers';
     protected $guarded = [];
 
+    public function supplierBroker(): BelongsTo
+    {
+        return $this->belongsTo(SupplierBroker::class, 'supplier_broker_id');
+    }
+
     public function state(): BelongsTo
     {
         return $this->belongsTo(StateManagement::class, 'state_id');

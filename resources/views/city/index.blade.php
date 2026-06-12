@@ -174,9 +174,7 @@
     });
 
     // Custom Search Box
-    $('#customSearch').on('keyup', function() {
-        city_table.search(this.value).draw();
-    });
+    bindDebouncedDataTableSearch('#customSearch', city_table);
 
     /* Add state */
     $('#openModal').click(function() {

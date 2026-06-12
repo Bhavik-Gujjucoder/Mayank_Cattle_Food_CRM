@@ -50,6 +50,11 @@
                         <input type="text" id="dateTo" class="form-control flatpickr" placeholder="DD-MM-YYYY" autocomplete="off">
                     </div>
                 </div>
+                <div class="common-hed-form cls-form-select-input d-flex align-items-end">
+                    <button type="button" class="btn btn-light" id="resetOrderFilters">
+                        <i class="ti ti-refresh me-1"></i>Reset
+                    </button>
+                </div>
             </div>
             <div class="cls-form-right">
                 <div class="comm-header-right-btn">
@@ -106,7 +111,10 @@
                         <th hidden>ID</th>
                         <th class="no-sort" scope="col">Sr No</th>
                         <th scope="col">Order ID</th>
+                        <th scope="col">Supplier Broker</th>
                         <th scope="col">Supplier</th>
+                        <th scope="col">Supplier Order ID</th>
+                        <th scope="col">Price Basis</th>
                         <th scope="col">Order Date</th>
                         <th scope="col">Total Qty</th>
                         <th scope="col">Total Price</th>
@@ -166,7 +174,10 @@ $(document).ready(function () {
             { data: 'id', name: 'id', visible: false, searchable: false },
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
             { data: 'order_unique_id', name: 'order_unique_id', searchable: true },
+            { data: 'supplier_broker_name', name: 'supplier_broker_name', orderable: false, searchable: false },
             { data: 'supplier_name', name: 'supplier_name', orderable: false, searchable: false },
+            { data: 'supplier_order_id', name: 'supplier_order_id', searchable: true },
+            { data: 'price_basis', name: 'price_basis', searchable: false },
             { data: 'order_date', name: 'order_date', searchable: false },
             { data: 'total_qty', name: 'total_qty', searchable: false },
             { data: 'total_price', name: 'total_price', searchable: false },
@@ -187,9 +198,7 @@ $(document).ready(function () {
         raw_material_order_table.draw();
     });
 
-    $('#customSearch').on('keyup', function () {
-        raw_material_order_table.search(this.value).draw();
-    });
+    bindDebouncedDataTableSearch('#customSearch', raw_material_order_table);
 
     function buildFilterQueryString() {
         const params = new URLSearchParams();
@@ -208,7 +217,7 @@ $(document).ready(function () {
         window.location.href = $(this).data('export-url') + (qs ? ('?' + qs) : '');
     });
 
-    flatpickr('.flatpickr', {
+    var dateFromPicker = flatpickr('#dateFrom', {
         dateFormat: 'Y-m-d',
         altInput: true,
         altFormat: 'd-m-Y',
@@ -217,6 +226,28 @@ $(document).ready(function () {
             syncFilterUrl();
             raw_material_order_table.draw();
         }
+    });
+
+    var dateToPicker = flatpickr('#dateTo', {
+        dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'd-m-Y',
+        allowInput: true,
+        onChange: function () {
+            syncFilterUrl();
+            raw_material_order_table.draw();
+        }
+    });
+
+    $('#resetOrderFilters').on('click', function () {
+        $('#customSearch').val('');
+        raw_material_order_table.search('');
+        dateFromPicker.clear();
+        dateToPicker.clear();
+        $('#statusFilter, #supplierFilter').val('all');
+        $('.search-dropdown').trigger('change.select2');
+        syncFilterUrl();
+        raw_material_order_table.draw();
     });
 
     $(document).on('click', '.delete-btn', function (e) {

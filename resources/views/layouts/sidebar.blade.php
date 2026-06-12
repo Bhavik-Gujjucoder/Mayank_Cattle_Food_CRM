@@ -67,6 +67,8 @@
                         /*  Raw Material submenu (inventory + purchase order)
                         /* ------------------------------------------------------------------ --}}
                         @canany([
+                            'view-raw-material-category', 'export-raw-material-category',
+                            'add-raw-material-category', 'edit-raw-material-category', 'delete-raw-material-category',
                             'view-raw-material-inventory', 'export-raw-material-inventory',
                             'add-raw-material-inventory', 'edit-raw-material-inventory', 'delete-raw-material-inventory',
                             'view-raw-material-purchas-order', 'export-raw-material-purchas-order',
@@ -82,6 +84,18 @@
                                     <span class="menu-arrow"></span>
                                 </a>
                                 <ul style="display: @if (request()->routeIs('raw-material.*')) block @else none @endif;">
+
+                                    @canany([
+                                        'view-raw-material-category', 'export-raw-material-category',
+                                        'add-raw-material-category', 'edit-raw-material-category', 'delete-raw-material-category',
+                                    ])
+                                        <li>
+                                            <a href="{{ route('raw-material.category.index') }}"
+                                                class="@if (request()->routeIs('raw-material.category.*')) active @endif">
+                                                <span>Category</span>
+                                            </a>
+                                        </li>
+                                    @endcanany
 
                                     @canany([
                                         'view-raw-material-inventory', 'export-raw-material-inventory',
@@ -245,14 +259,16 @@
                         {{-- ------------------------------------------------------------------ */
                         /*  Users & Permissions submenu
                         /* ------------------------------------------------------------------ --}}
-                        @canany(['add-supplier', 'edit-supplier', 'delete-supplier', 'add-broker', 'edit-broker',
+                        @canany(['view-brand', 'add-brand', 'edit-brand', 'delete-brand', 'view-supplier-broker', 'add-supplier-broker', 'edit-supplier-broker', 'delete-supplier-broker', 'add-supplier', 'edit-supplier', 'delete-supplier', 'add-broker', 'edit-broker',
                             'delete-broker', 'add-dealer', 'edit-dealer', 'delete-dealer', 'add-transporter',
                             'edit-transporter', 'delete-transporter', 'add-truck', 'edit-truck', 'delete-truck', 'add-user',
                             'edit-user', 'delete-user'])
                             <li class="submenu">
                                 <a href="javascript:void(0);"
-                                    class="@if (request()->routeIs('users*') ||
-                                            request()->routeIs('supplier*') ||
+                                    class="@if (request()->routeIs('brand*') ||
+                                            request()->routeIs('users*') ||
+                                            request()->routeIs('supplier-broker*') ||
+                                            request()->routeIs('supplier.*') ||
                                             request()->routeIs('dealer*') ||
                                             request()->routeIs('truck*') ||
                                             request()->routeIs('roles*')) active  
@@ -261,11 +277,27 @@
                                     <span>Users & Permissions</span>
                                     <span class="menu-arrow"></span>
                                 </a>
-                                <ul style="display: @if (request()->routeIs('users*') ||
-                                        request()->routeIs('supplier*') ||
+                                <ul style="display: @if (request()->routeIs('brand*') ||
+                                        request()->routeIs('users*') ||
+                                        request()->routeIs('supplier-broker*') ||
+                                        request()->routeIs('supplier.*') ||
                                         request()->routeIs('dealer*') ||
                                         request()->routeIs('truck*') ||
                                         request()->routeIs('roles*')) block @else none @endif;">
+
+                                    {{-- ------------------------------------------------------------------ */
+                                /*  Brand Management (type: brand)
+                                /* ------------------------------------------------------------------ --}}
+                                    @canany(['view-brand', 'add-brand', 'edit-brand', 'delete-brand'])
+                                        <li><a href="{{ route('brand.index') }}">Brand</a></li>
+                                    @endcanany
+
+                                    {{-- ------------------------------------------------------------------ */
+                                /*  Supplier Broker (type: supplier-broker)
+                                /* ------------------------------------------------------------------ --}}
+                                    @canany(['view-supplier-broker', 'add-supplier-broker', 'edit-supplier-broker', 'delete-supplier-broker'])
+                                        <li><a href="{{ route('supplier-broker.index') }}">Supplier Broker</a></li>
+                                    @endcanany
 
                                     {{-- ------------------------------------------------------------------ */
                                 /*  Supplier (type: supplier)
@@ -278,7 +310,7 @@
                                 /*  Broker (type: broker → UserController)
                                 /* ------------------------------------------------------------------ --}}
                                     @canany(['add-broker', 'edit-broker', 'delete-broker'])
-                                        <li><a href="{{ route('users.index', 'broker') }}">Broker</a></li>
+                                        <li><a href="{{ route('users.index', 'broker') }}">Sales Broker</a></li>
                                     @endcanany
 
                                     {{-- ------------------------------------------------------------------ */

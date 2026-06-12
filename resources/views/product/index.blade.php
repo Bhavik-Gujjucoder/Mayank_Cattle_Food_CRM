@@ -270,9 +270,7 @@
     });
 
     // Custom Search Box
-    $('#customSearch').on('keyup', function() {
-        product_table.search(this.value).draw();
-    });
+    bindDebouncedDataTableSearch('#customSearch', product_table);
 
     // Initialise Select2 inside the modal
     function initModalSelect2() {

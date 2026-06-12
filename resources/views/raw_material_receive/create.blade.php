@@ -19,10 +19,7 @@
                         <option value="">-- Select Order --</option>
                         @foreach ($orders as $order)
                             <option value="{{ $order->id }}" {{ old('raw_material_order_id') == $order->id ? 'selected' : '' }}>
-                                {{ $order->order_unique_id }}
-                                @if ($order->supplier)
-                                    — {{ $order->supplier->name }}
-                                @endif
+                                @include('raw_material.partials.order-select-label', ['order' => $order])
                             </option>
                         @endforeach
                     </select>

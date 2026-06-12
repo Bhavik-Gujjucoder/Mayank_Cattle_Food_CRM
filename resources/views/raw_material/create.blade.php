@@ -19,6 +19,18 @@
                            class="form-control fw-semibold" readonly>
                 </div>
                 <div class="col-12 col-md-4 mb-3">
+                    <label class="col-form-label">Category <span class="text-danger">*</span></label>
+                    <select name="raw_material_category_id" id="raw_material_category_id" class="form-select search-select">
+                        <option value="">-- Select Category --</option>
+                        @foreach ($categories as $category)
+                            <option value="{{ $category->id }}" {{ old('raw_material_category_id') == $category->id ? 'selected' : '' }}>
+                                {{ $category->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <span class="text-danger small raw_material_category_id_error">@error('raw_material_category_id'){{ $message }}@enderror</span>
+                </div>
+                <div class="col-12 col-md-4 mb-3">
                     <label class="col-form-label">Name <span class="text-danger">*</span></label>
                     <input type="text" name="name" id="name" value="{{ old('name') }}"
                            class="form-control" placeholder="Material name" maxlength="255">
@@ -63,12 +75,13 @@
 @include('raw_material.partials.form-validation-script')
 <script>
 $(document).ready(function () {
-    $('#unit').select2({ width: '100%' });
+    $('#unit, #raw_material_category_id').select2({ width: '100%' });
 
     function clearFieldErrors() {
-        $('.name_error, .unit_error, .status_error').text('');
+        $('.name_error, .unit_error, .status_error, .raw_material_category_id_error').text('');
         rmSetInvalid($('#name'), false);
         rmSetInvalid($('#unit'), false);
+        rmSetInvalid($('#raw_material_category_id'), false);
     }
 
     $('#name').on('input', function () {
@@ -92,6 +105,12 @@ $(document).ready(function () {
         if (!$.trim($('#name').val())) {
             $('.name_error').text('Please enter material name.');
             rmSetInvalid($('#name'), true);
+            isValid = false;
+        }
+
+        if (!$('#raw_material_category_id').val()) {
+            $('.raw_material_category_id_error').text('Please select a category.');
+            rmSetInvalid($('#raw_material_category_id'), true);
             isValid = false;
         }
 

@@ -178,10 +178,13 @@
     </div>
 @endsection
 @section('script')
-    {{-- jquery.dataTables is already loaded by the main layout with Bootstrap5 integration.
-         Loading it again from CDN here would wipe that integration and break Bootstrap pagination.
-         Only the Buttons extension (for Excel export) is loaded here. --}}
-    
+    {{-- Core DataTables is loaded by main layout. Buttons + JSZip (local) only for Excel export. --}}
+    @can('export-dealer')
+        <script src="{{ asset('assets/js/dataTables.buttons.min.js') }}"></script>
+        <script src="{{ asset('assets/js/jszip.min.js') }}"></script>
+        <script src="{{ asset('assets/js/buttons.html5.min.js') }}"></script>
+    @endcan
+
     <script>
         $(document).ready(function() {
             $('.search-dropdown').select2({
@@ -274,9 +277,7 @@
         });
 
         /* Custom search */
-        $('#customSearch').on('keyup', function() {
-            dealerTable.search(this.value).draw();
-        });
+        bindDebouncedDataTableSearch('#customSearch', dealerTable);
 
         /* Broker / date filters */
         $('#broker_id, #startDate, #endDate, #BrandId').on('change', function() {

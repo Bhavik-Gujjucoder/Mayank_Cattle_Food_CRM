@@ -15,6 +15,33 @@ class RawMaterialPermissionSeeder extends Seeder
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $permissions = collect([
+            // Category
+            [
+                'name' => 'view-raw-material-category',
+                'type' => 'raw-material-category',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'add-raw-material-category',
+                'type' => 'raw-material-category',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'edit-raw-material-category',
+                'type' => 'raw-material-category',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'delete-raw-material-category',
+                'type' => 'raw-material-category',
+                'guard_name' => 'web',
+            ],
+            [
+                'name' => 'export-raw-material-category',
+                'type' => 'raw-material-category',
+                'guard_name' => 'web',
+            ],
+
             // Inventory (materials)
             [
                 'name' => 'view-raw-material-inventory',

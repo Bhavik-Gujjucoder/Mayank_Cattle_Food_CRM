@@ -113,9 +113,7 @@
 
 
     /*** Custom Search Box ***/
-    $('#customSearch').on('keyup', function() {
-        permission_table.search(this.value).draw();
-    });
+    bindDebouncedDataTableSearch('#customSearch', permission_table);
 
 
     /***  Open Modal for Adding a New Permission ***/

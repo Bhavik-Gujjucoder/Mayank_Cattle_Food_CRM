@@ -40,7 +40,7 @@
                     <select class="form-select select search-dropdown" id="orderFilter">
                         <option value="all">All Orders</option>
                         @foreach ($orders as $order)
-                            <option value="{{ $order->id }}">{{ $order->order_unique_id }}</option>
+                            <option value="{{ $order->id }}">@include('raw_material.partials.order-select-label', ['order' => $order])</option>
                         @endforeach
                     </select>
                 </div>
@@ -58,13 +58,32 @@
                         <input type="text" id="dateTo" class="form-control flatpickr" placeholder="DD-MM-YYYY" autocomplete="off">
                     </div>
                 </div>
+                <div class="common-hed-form cls-form-select-input d-flex align-items-end">
+                    <button type="button" class="btn btn-light" id="resetReceiveFilters">
+                        <i class="ti ti-refresh me-1"></i>Reset
+                    </button>
+                </div>
             </div>
             <div class="cls-form-right">
                 <div class="comm-header-right-btn">
                     @can('export-raw-material-receive')
-                        <a href="#" id="exportBtn" class="btn btn-outline-primary me-2" data-export-url="{{ route('raw-material.receive.export') }}">
-                            <i class="ti ti-file-export me-2"></i>Export (0)
-                        </a>
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="exportReceivesBtn">
+                                <i class="ti ti-file-export me-2"></i>Export (0)
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('raw-material.receive.export') }}">
+                                        <i class="ti ti-file-spreadsheet me-2"></i>Export Excel
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('raw-material.receive.export-list-pdf') }}">
+                                        <i class="ti ti-file-type-pdf me-2"></i>Export PDF
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     @endcan
                     @can('add-raw-material-receive')
                         <a href="{{ route('raw-material.receive.create') }}" class="btn btn-primary">
@@ -83,6 +102,8 @@
                         <th hidden>ID</th>
                         <th class="no-sort" scope="col">Sr No</th>
                         <th scope="col">Order ID</th>
+                        <th scope="col">Supplier Order ID</th>
+                        <th scope="col">Category</th>
                         <th scope="col">Material</th>
                         <th scope="col">Qty (tons)</th>
                         <th scope="col">Freight</th>
@@ -143,6 +164,8 @@ $(document).ready(function () {
             { data: 'id', name: 'id', visible: false, searchable: false },
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
             { data: 'order_unique_id', name: 'order_unique_id', orderable: false, searchable: false },
+            { data: 'supplier_order_id', name: 'supplier_order_id', orderable: false, searchable: false },
+            { data: 'category_name', name: 'category_name', orderable: false, searchable: false },
             { data: 'material_name', name: 'material_name', orderable: false, searchable: false },
             { data: 'qty', name: 'qty', searchable: false },
             { data: 'freight', name: 'freight', searchable: false },
@@ -152,13 +175,13 @@ $(document).ready(function () {
         ],
         drawCallback: function () {
             var n = raw_material_receive_table.page.info().recordsDisplay;
-            if ($('#exportBtn').length) {
-                $('#exportBtn').html('<i class="ti ti-file-export me-2"></i>Export (' + n + ')');
+            if ($('#exportReceivesBtn').length) {
+                $('#exportReceivesBtn').html('<i class="ti ti-file-export me-2"></i>Export (' + n + ')');
             }
         }
     });
 
-    flatpickr('.flatpickr', {
+    var dateFromPicker = flatpickr('#dateFrom', {
         dateFormat: 'Y-m-d',
         altInput: true,
         altFormat: 'd-m-Y',
@@ -169,17 +192,36 @@ $(document).ready(function () {
         }
     });
 
+    var dateToPicker = flatpickr('#dateTo', {
+        dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'd-m-Y',
+        allowInput: true,
+        onChange: function () {
+            syncFilterUrl();
+            raw_material_receive_table.draw();
+        }
+    });
+
+    $('#resetReceiveFilters').on('click', function () {
+        $('#customSearch').val('');
+        raw_material_receive_table.search('');
+        dateFromPicker.clear();
+        dateToPicker.clear();
+        $('#statusFilter, #materialFilter, #orderFilter').val('all');
+        $('.search-dropdown').trigger('change.select2');
+        syncFilterUrl();
+        raw_material_receive_table.draw();
+    });
+
     $('#statusFilter, #materialFilter, #orderFilter').on('change', function () {
         syncFilterUrl();
         raw_material_receive_table.draw();
     });
 
-    $('#customSearch').on('keyup', function () {
-        raw_material_receive_table.search(this.value).draw();
-    });
+    bindDebouncedDataTableSearch('#customSearch', raw_material_receive_table);
 
-    $('#exportBtn').on('click', function (e) {
-        e.preventDefault();
+    function buildFilterQueryString() {
         const params = new URLSearchParams();
         Object.entries(filterParams).forEach(function ([key, selector]) {
             const v = $(selector).val();
@@ -187,7 +229,12 @@ $(document).ready(function () {
         });
         const search = raw_material_receive_table.search();
         if (search) params.set('search', search);
-        const qs = params.toString();
+        return params.toString();
+    }
+
+    $(document).on('click', '.export-filtered-link', function (e) {
+        e.preventDefault();
+        const qs = buildFilterQueryString();
         window.location.href = $(this).data('export-url') + (qs ? ('?' + qs) : '');
     });
 

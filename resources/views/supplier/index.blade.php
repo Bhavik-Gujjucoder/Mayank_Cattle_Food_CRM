@@ -14,6 +14,17 @@
                         </div>
                     </div>
 
+                    {{-- Supplier Broker filter --}}
+                    <div class="common-hed-form cls-form-select-input">
+                        <label class="col-form-label">Supplier Broker</label>
+                        <select class="form-select select search-dropdown" id="filterSupplierBroker">
+                            <option value="all">All</option>
+                            @foreach ($supplier_brokers as $supplierBroker)
+                                <option value="{{ $supplierBroker->id }}">{{ $supplierBroker->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     {{-- Status filter --}}
                     <div class="common-hed-form cls-form-select-input">
                         <label class="col-form-label">Status</label>
@@ -41,6 +52,12 @@
                         <select class="form-select select search-dropdown" id="filterCity" disabled>
                             <option value="all">All Cities</option>
                         </select>
+                    </div>
+
+                    <div class="common-hed-form cls-form-select-input d-flex align-items-end">
+                        <button type="button" class="btn btn-light" id="resetSupplierFilters">
+                            <i class="ti ti-refresh me-1"></i>Reset
+                        </button>
                     </div>
                 </div>
                 <div class="cls-form-right">
@@ -88,6 +105,7 @@
                                 </label>
                             </th>
                             <th class="no-sort">Sr No</th>
+                            <th>Supplier Broker</th>
                             <th>Name</th>
                             <th>Mobile</th>
                             <th>Email</th>
@@ -124,6 +142,18 @@
 
                     <div class="modal-body">
                         <div class="row">
+
+                            {{-- Supplier Broker --}}
+                            <div class="col-md-6 mb-3">
+                                <label class="col-form-label">Supplier Broker <span class="text-dangers">*</span></label>
+                                <select name="supplier_broker_id" id="supplier_broker_id" class="form-select">
+                                    <option value="">-- Select Supplier Broker --</option>
+                                    @foreach ($supplier_brokers as $supplierBroker)
+                                        <option value="{{ $supplierBroker->id }}">{{ $supplierBroker->name }}</option>
+                                    @endforeach
+                                </select>
+                                <span class="supplier_broker_id_error text-danger small"></span>
+                            </div>
 
                             {{-- Name --}}
                             <div class="col-md-6 mb-3">
@@ -237,6 +267,7 @@
             ajax: {
                 url: "{{ route('supplier.index') }}",
                 data: function(d) {
+                    d.supplier_broker_id = $('#filterSupplierBroker').val();
                     d.status = $('#filterStatus').val();
                     d.state_id = $('#filterState').val();
                     d.city_id = $('#filterCity').val();
@@ -260,6 +291,11 @@
                     name: 'DT_RowIndex',
                     orderable: false,
                     searchable: false
+                },
+                {
+                    data: 'supplier_broker_name',
+                    name: 'supplier_broker_name',
+                    orderable: false
                 },
                 {
                     data: 'name',
@@ -298,12 +334,10 @@
         });
 
         /* Custom search */
-        $('#customSearch').on('keyup', function() {
-            supplier_table.search(this.value).draw();
-        });
+        bindDebouncedDataTableSearch('#customSearch', supplier_table);
 
         /* Filter change handlers */
-        $('#filterStatus, #filterCity').on('change', function() {
+        $('#filterSupplierBroker, #filterStatus, #filterCity').on('change', function() {
             supplier_table.draw();
         });
 
@@ -374,6 +408,15 @@
             supplier_table.draw();
         });
 
+        $('#resetSupplierFilters').on('click', function() {
+            $('#customSearch').val('');
+            supplier_table.search('');
+            $('#filterSupplierBroker, #filterStatus, #filterState').val('all');
+            $('#filterCity').prop('disabled', true).html('<option value="all">All Cities</option>');
+            $('.search-dropdown').trigger('change.select2');
+            supplier_table.draw();
+        });
+
         function resetSupplierLocationFields() {
             $('#supplier_state_id').val('');
             $('#supplier_city_id').prop('disabled', true)
@@ -389,6 +432,7 @@
             clearSupplierErrors();
             $('input[name="status"][value="1"]').prop('checked', true);
             resetSupplierLocationFields();
+            $('#supplier_broker_id').val('');
             $('#supplierModal').modal('show');
         });
 
@@ -401,6 +445,7 @@
                 $('#supplierModalTitle').text('Edit Supplier');
                 $('#supplierSubmitBtn').text('Update');
                 $('input[name="supplier_id"]').val(data.id);
+                $('#supplier_broker_id').val(data.supplier_broker_id);
                 $('input[name="name"]').val(data.name);
                 $('input[name="mobile"]').val(data.mobile);
                 $('input[name="email"]').val(data.email);

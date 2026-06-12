@@ -12,6 +12,7 @@ use App\Models\RawMaterialOrderItem;
 use App\Models\RawMaterialReceive;
 use App\Services\RawMaterial\RawMaterialFilterService;
 use App\Services\RawMaterialCacheService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
@@ -23,33 +24,36 @@ class RawMaterialReceiveController extends Controller
     {
         $data['page_title']    = 'Raw Material — Received';
         $data['raw_materials'] = RawMaterial::where('status', 1)->orderBy('name')->get();
-        $data['orders']        = RawMaterialOrder::whereIn('status', [0, 1, 2])->orderByDesc('id')->get();
+        $data['orders']        = RawMaterialOrder::with('supplier')->whereIn('status', [0, 1, 2])->orderByDesc('id')->get();
 
         if ($request->ajax()) {
+            $canView   = auth()->user()->can('view-raw-material-receive');
+            $canEdit   = auth()->user()->can('edit-raw-material-receive');
+            $canDelete = auth()->user()->can('delete-raw-material-receive');
+
             $query = RawMaterialFilterService::receives($request);
 
             return DataTables::of($query)
+                ->skipAutoFilter()
                 ->addIndexColumn()
                 ->addColumn('order_unique_id', fn ($row) => e($row->order?->order_unique_id ?? '—'))
+                ->addColumn('supplier_order_id', fn ($row) => e($row->order?->supplier_order_id ?: '—'))
+                ->addColumn('category_name', fn ($row) => e($row->rawMaterial?->category?->name ?? '—'))
                 ->addColumn('material_name', fn ($row) => e($row->rawMaterial?->name ?? '—'))
-                ->editColumn('freight', function ($row) {
-                    $line = RawMaterialCacheService::receiveFreightAmount($row);
-
-                    return '₹ ' . number_format($row->freight, 2) . '/ton<br><small class="text-muted">Line: ₹ ' . number_format($line, 2) . '</small>';
-                })
+                ->editColumn('freight', fn ($row) => RawMaterialCacheService::receiveFreightHtml($row))
                 ->editColumn('received_date', fn ($row) => $row->received_date?->format('d M Y') ?? '—')
                 ->editColumn('status', fn ($row) => $row->statusBadge())
-                ->addColumn('action', function ($row) {
-                    $view   = auth()->user()->can('view-raw-material-receive')
+                ->addColumn('action', function ($row) use ($canView, $canEdit, $canDelete) {
+                    $view   = $canView
                         ? '<a href="' . route('raw-material.receive.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>'
                         : '';
-                    $edit   = ($row->isEditable() && auth()->user()->can('edit-raw-material-receive'))
+                    $edit   = ($row->isEditable() && $canEdit)
                         ? '<a href="' . route('raw-material.receive.edit', $row->id) . '" class="dropdown-item"><i class="ti ti-edit text-warning"></i> Edit</a>' : '';
-                    $mark   = ($row->isEditable() && auth()->user()->can('edit-raw-material-receive'))
+                    $mark   = ($row->isEditable() && $canEdit)
                         ? '<a href="javascript:void(0)" class="dropdown-item mark-received-btn" data-url="' . route('raw-material.receive.markReceived', $row->id) . '"><i class="ti ti-check text-success"></i> Mark Received</a>' : '';
-                    $cancel = ($row->isEditable() && auth()->user()->can('edit-raw-material-receive'))
+                    $cancel = ($row->isEditable() && $canEdit)
                         ? '<a href="javascript:void(0)" class="dropdown-item cancel-receive-btn" data-url="' . route('raw-material.receive.cancel', $row->id) . '"><i class="ti ti-ban text-danger"></i> Cancel</a>' : '';
-                    $delete = auth()->user()->can('delete-raw-material-receive')
+                    $delete = $canDelete
                         ? '<a href="javascript:void(0)" class="dropdown-item delete-btn" data-id="' . $row->id . '"><i class="ti ti-trash text-danger"></i> Delete</a>
                            <form action="' . route('raw-material.receive.destroy', $row->id) . '" method="POST" class="delete-form" id="delete-form-' . $row->id . '">' . csrf_field() . method_field('DELETE') . '</form>' : '';
 
@@ -65,7 +69,7 @@ class RawMaterialReceiveController extends Controller
     public function create()
     {
         $data['page_title'] = 'Add Received Entry';
-        $data['orders']     = RawMaterialOrder::whereIn('status', [0, 1])
+        $data['orders']     = RawMaterialOrder::with('supplier')->whereIn('status', [0, 1])
             ->orderByDesc('id')->get();
 
         return view('raw_material_receive.create', $data);
@@ -91,7 +95,7 @@ class RawMaterialReceiveController extends Controller
     public function show(RawMaterialReceive $raw_material_receive)
     {
         $data['page_title'] = 'View Received Entry';
-        $data['receive']    = $raw_material_receive->load(['order.supplier', 'rawMaterial', 'orderItem']);
+        $data['receive']    = $raw_material_receive->load(['order.supplier', 'rawMaterial.category', 'orderItem']);
 
         return view('raw_material_receive.show', $data);
     }
@@ -105,7 +109,7 @@ class RawMaterialReceiveController extends Controller
 
         $data['page_title'] = 'Edit Received Entry';
         $data['receive']    = $raw_material_receive;
-        $data['orders']     = RawMaterialOrder::whereIn('status', [0, 1])->orderByDesc('id')->get();
+        $data['orders']     = RawMaterialOrder::with('supplier')->whereIn('status', [0, 1])->orderByDesc('id')->get();
         $data['order_items'] = RawMaterialOrderItem::with('rawMaterial')
             ->where('raw_material_order_id', $raw_material_receive->raw_material_order_id)
             ->whereIn('status', [0, 1])
@@ -176,5 +180,23 @@ class RawMaterialReceiveController extends Controller
             RawMaterialReceivesExport::class,
             'raw-material-receives'
         );
+    }
+
+    public function exportListPdf(Request $request)
+    {
+        $query = RawMaterialFilterService::receives($request);
+        $count = (clone $query)->count();
+
+        if ($count === 0) {
+            return redirect()->back()->with('error', 'No records found to export for the current filters.');
+        }
+
+        $receives = $query->get();
+        $filename = 'raw-material-receives-' . now()->format('Y-m-d') . '.pdf';
+
+        $pdf = Pdf::loadView('raw_material_receive.pdf_receives_list', compact('receives'))
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download($filename);
     }
 }

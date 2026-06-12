@@ -103,7 +103,7 @@
                         @endif
 
                         <div class="loginform">
-                            <h6 class="mb-3">Please enter the OTP sent your registered email.</h6>
+                            <h6 class="mb-3">Please enter the OTP sent to your registered email. If you do not see it yet, wait a moment or use Resend.</h6>
                             <div class="">
                                 <form method="POST" action="{{ route('verify.otp') }}" id="otpForm">
                                     @csrf

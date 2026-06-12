@@ -18,7 +18,9 @@ class StateManagementController extends Controller
         $data['page_title'] = 'State Management';
 
         if ($request->ajax()) {
-            // $data = StateManagement::withCount('cities');
+            $canEdit   = auth()->user()->can('edit-state');
+            $canDelete = auth()->user()->can('delete-state');
+
             $data = StateManagement::withCount([
                 'cities as active_cities_count' => function ($query) {
                     $query->where('status', 1);
@@ -32,7 +34,7 @@ class StateManagementController extends Controller
                             <span class="checkmarks"></span>
                         </label>';
                 })
-                ->addColumn('action', function ($row) {
+                ->addColumn('action', function ($row) use ($canEdit, $canDelete) {
                     $edit_btn = '<a href="javascript:void(0)" class="dropdown-item edit-btn"  data-id="' . $row->id . '"
                     class="btn btn-outline-warning btn-sm edit-btn"><i class="ti ti-edit text-warning"></i>Edit</a>';
 
@@ -44,8 +46,8 @@ class StateManagementController extends Controller
                                              <a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                              <div class="dropdown-menu dropdown-menu-right">';
 
-                    $action_btn .= auth()->user()->can('edit-state') ? $edit_btn : '';
-                    $action_btn .= auth()->user()->can('delete-state') ? $delete_btn : '';
+                    $action_btn .= $canEdit ? $edit_btn : '';
+                    $action_btn .= $canDelete ? $delete_btn : '';
                     return $action_btn . ' </div></div>';
                 })
 

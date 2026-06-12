@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CityManagement;
 use App\Models\StateManagement;
 use App\Models\Supplier;
+use App\Models\SupplierBroker;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -17,14 +18,22 @@ class SupplierController extends Controller
     /* ------------------------------------------------------------------ */
     public function index(Request $request)
     {
-        $data['page_title'] = 'Supplier Management';
-        $data['states']     = StateManagement::where('status', 1)->orderBy('state_name')->get();
+        $data['page_title']       = 'Supplier Management';
+        $data['states']           = StateManagement::where('status', 1)->orderBy('state_name')->get();
+        $data['supplier_brokers'] = SupplierBroker::where('status', 1)->orderBy('name')->get();
 
         if ($request->ajax()) {
-            $query = Supplier::with(['city', 'state']);
+            $canEdit   = auth()->user()->can('edit-supplier');
+            $canDelete = auth()->user()->can('delete-supplier');
+
+            $query = Supplier::with(['city', 'state', 'supplierBroker']);
 
             if ($request->filled('status') && $request->status !== 'all') {
                 $query->where('status', $request->status);
+            }
+
+            if ($request->filled('supplier_broker_id') && $request->supplier_broker_id !== 'all') {
+                $query->where('supplier_broker_id', $request->supplier_broker_id);
             }
 
             if ($request->filled('state_id') && $request->state_id !== 'all') {
@@ -43,7 +52,7 @@ class SupplierController extends Controller
                                 <span class="checkmarks"></span>
                             </label>';
                 })
-                ->addColumn('action', function ($row) {
+                ->addColumn('action', function ($row) use ($canEdit, $canDelete) {
                     $edit_btn = '<a href="javascript:void(0)" class="dropdown-item edit-supplier-btn" data-id="' . $row->id . '">
                                     <i class="ti ti-edit text-warning"></i> Edit
                                 </a>';
@@ -56,8 +65,8 @@ class SupplierController extends Controller
                                     ' . csrf_field() . method_field('DELETE') . '
                                 </form>';
 
-                    $action_btn = auth()->user()->can('edit-supplier') ? $edit_btn : '';
-                    $action_btn .= auth()->user()->can('delete-supplier') ? $delete_btn : '';
+                    $action_btn = $canEdit ? $edit_btn : '';
+                    $action_btn .= $canDelete ? $delete_btn : '';
 
                     return '<div class="dropdown table-action">
                                 <a href="#" class="action-icon" data-bs-toggle="dropdown" aria-expanded="false">
@@ -68,7 +77,13 @@ class SupplierController extends Controller
                                 '</div>
                             </div>';
                 })
+                ->addColumn('supplier_broker_name', fn ($row) => e($row->supplierBroker?->name ?? '—'))
                 ->addColumn('city_name', fn ($row) => e($row->city?->city_name ?? '—'))
+                ->filterColumn('supplier_broker_name', function ($query, $keyword) {
+                    $query->whereHas('supplierBroker', function ($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
                 ->editColumn('mobile', fn ($row) => $row->mobile ?? '-')
                 ->editColumn('email', fn ($row) => $row->email ?? '-')
                 ->editColumn('address', function ($row) {
@@ -111,7 +126,7 @@ class SupplierController extends Controller
     /* ------------------------------------------------------------------ */
     public function edit(Supplier $supplier)
     {
-        return response()->json($supplier->load(['state', 'city']));
+        return response()->json($supplier->load(['state', 'city', 'supplierBroker']));
     }
 
     /* ------------------------------------------------------------------ */
@@ -160,8 +175,9 @@ class SupplierController extends Controller
     private function validationRules(?int $supplierId = null): array
     {
         return [
-            'name'            => 'required|string|max:255',
-            'mobile'          => 'nullable|string|max:20',
+            'supplier_broker_id' => 'required|exists:supplier_brokers,id',
+            'name'               => 'required|string|max:255',
+            'mobile'             => 'nullable|string|max:20',
             'email'           => [
                 'nullable',
                 'email',
@@ -179,8 +195,9 @@ class SupplierController extends Controller
     private function prepareSupplierData(array $validated): array
     {
         return [
-            'name'            => $validated['name'],
-            'mobile'          => filled($validated['mobile'] ?? null) ? $validated['mobile'] : null,
+            'supplier_broker_id' => $validated['supplier_broker_id'],
+            'name'               => $validated['name'],
+            'mobile'             => filled($validated['mobile'] ?? null) ? $validated['mobile'] : null,
             'email'           => filled($validated['email'] ?? null) ? $validated['email'] : null,
             'address'         => filled($validated['address'] ?? null) ? $validated['address'] : null,
             'opening_balance' => $validated['opening_balance'] ?? 0,
@@ -207,7 +224,9 @@ class SupplierController extends Controller
     private function validationMessages(): array
     {
         return [
-            'name.required'     => 'Supplier name is required.',
+            'supplier_broker_id.required' => 'Please select a supplier broker.',
+            'supplier_broker_id.exists'   => 'Selected supplier broker is invalid.',
+            'name.required'               => 'Supplier name is required.',
             'email.email'       => 'Please enter a valid email address.',
             'email.unique'      => 'Email address already exists.',
             'state_id.required' => 'State is required.',

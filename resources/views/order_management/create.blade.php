@@ -41,6 +41,15 @@
                                 }}>{{ $broker->name }}</option>
                     @endforeach
                 </select>
+                @can('add-broker')
+                    @unless(auth()->user()->hasRole('broker'))
+                        <div class="mt-1">
+                            <a href="javascript:void(0)" id="addBrokerLink" class="text-primary fw-semibold small">
+                                <i class="ti ti-plus me-1"></i>Add Broker
+                            </a>
+                        </div>
+                    @endunless
+                @endcan
                 <span class="text-danger small broker_id_error">@error('broker_id'){{ $message }}@enderror</span>
             </div>
 
@@ -56,6 +65,13 @@
                         </option>
                     @endforeach
                 </select>
+                @can('add-brand')
+                    <div id="addBrandLinkWrap" class="mt-1" style="display:none;">
+                        <a href="javascript:void(0)" id="addBrandLink" class="text-primary fw-semibold small">
+                            <i class="ti ti-plus me-1"></i>Add Brand
+                        </a>
+                    </div>
+                @endcan
                 <span class="text-danger small brand_id_error">@error('brand_id'){{ $message }}@enderror</span>
             </div>
 
@@ -336,6 +352,64 @@
 
 </form>
 
+@can('add-broker')
+    @unless(auth()->user()->hasRole('broker'))
+        <div class="modal fade" id="quickBrokerModal" tabindex="-1" aria-labelledby="quickBrokerModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="quickBrokerModalLabel">
+                            <i class="ti ti-user-plus me-2"></i>Add Broker
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="quickBrokerModalBody">
+                        <div class="text-center text-muted py-5">
+                            <i class="ti ti-loader-2 ti-spin fs-3"></i>
+                            <p class="mb-0 mt-2">Loading form…</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="quickBrokerSubmitBtn">
+                            <i class="ti ti-check me-1"></i>Create Broker
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endunless
+@endcan
+
+@can('add-brand')
+    <div class="modal fade" id="quickBrandModal" tabindex="-1" aria-labelledby="quickBrandModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="quickBrandModalLabel">
+                        <i class="ti ti-tag-plus me-2"></i>Add Brand
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="quickBrandModalBody">
+                    <div class="text-center text-muted py-5">
+                        <i class="ti ti-loader-2 ti-spin fs-3"></i>
+                        <p class="mb-0 mt-2">Loading form…</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="quickBrandSubmitBtn">
+                        <i class="ti ti-check me-1"></i>Create Brand
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+@endcan
+
 @can('add-dealer')
     @if (empty($locked_dealer))
         <div class="modal fade" id="quickDealerModal" tabindex="-1" aria-labelledby="quickDealerModalLabel"
@@ -389,7 +463,16 @@ $(document).ready(function () {
     /* ── Select2 on dropdowns ────────────────────────────────── */
     $('#broker_id, #brand_id, #priority').select2({ width: '100%' });
 
-    /* ── Show / hide "Add Dealer" link ───────────────────────── */
+    /* ── Show / hide quick-add links ─────────────────────────── */
+    function updateAddBrandLink() {
+        var brokerId = $('#broker_id').val();
+        if (brokerId) {
+            $('#addBrandLinkWrap').show();
+        } else {
+            $('#addBrandLinkWrap').hide();
+        }
+    }
+
     function updateAddDealerLink() {
         var brokerId = $('#broker_id').val();
         var brandId  = $('#brand_id').val();
@@ -405,6 +488,7 @@ $(document).ready(function () {
         var brokerId = $('#broker_id').val();
         var brandId  = $('#brand_id').val();
 
+        updateAddBrandLink();
         updateAddDealerLink();
 
         /* Reset dealer field and address */
@@ -512,6 +596,201 @@ $(document).ready(function () {
         });
     }
 
+    function clearQuickBrokerErrors() {
+        $('#quickBrokerForm .is-invalid').removeClass('is-invalid');
+        $('#quickBrokerForm .qb-field-error').text('');
+    }
+
+    function showQuickBrokerErrors(errors) {
+        clearQuickBrokerErrors();
+        $.each(errors, function (field, messages) {
+            $('#quickBrokerForm [name="' + field + '"]').addClass('is-invalid');
+            $('#quickBrokerForm .qb-field-error[data-field="' + field + '"]').text(messages[0]);
+        });
+    }
+
+    function initQuickBrokerForm() {
+        var $form = $('#quickBrokerForm');
+        if (! $form.length) return;
+
+        $form.find('.qb-profile-input').off('change.qb').on('change.qb', function (event) {
+            var file = event.target.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $('#qb_profilePreview').attr('src', e.target.result);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        $('#quickBrokerModal').off('click.qb', '.qb-toggle-pw').on('click.qb', '.qb-toggle-pw', function () {
+            var $input = $(this).siblings('input');
+            var $icon  = $(this).find('i');
+            if ($input.attr('type') === 'password') {
+                $input.attr('type', 'text');
+                $icon.removeClass('ti-eye-off').addClass('ti-eye');
+            } else {
+                $input.attr('type', 'password');
+                $icon.removeClass('ti-eye').addClass('ti-eye-off');
+            }
+        });
+    }
+
+    function clearQuickBrandErrors() {
+        $('#quickBrandForm .is-invalid').removeClass('is-invalid');
+        $('#quickBrandForm .qb-brand-field-error').text('');
+    }
+
+    function showQuickBrandErrors(errors) {
+        clearQuickBrandErrors();
+        $.each(errors, function (field, messages) {
+            $('#quickBrandForm [name="' + field + '"]').addClass('is-invalid');
+            $('#quickBrandForm .qb-brand-field-error[data-field="' + field + '"]').text(messages[0]);
+        });
+    }
+
+    var quickBrokerModalEl = document.getElementById('quickBrokerModal');
+  @can('add-broker')
+    @unless(auth()->user()->hasRole('broker'))
+    if (quickBrokerModalEl) {
+        var quickBrokerModal = new bootstrap.Modal(quickBrokerModalEl);
+
+        $('#addBrokerLink').on('click', function () {
+            $('#quickBrokerModalBody').html(
+                '<div class="text-center text-muted py-5">' +
+                '<i class="ti ti-loader-2 ti-spin fs-3"></i>' +
+                '<p class="mb-0 mt-2">Loading form…</p></div>'
+            );
+            quickBrokerModal.show();
+
+            $.get("{{ route('users.broker.quickCreateForm') }}")
+                .done(function (html) {
+                    $('#quickBrokerModalBody').html(html);
+                    initQuickBrokerForm();
+                })
+                .fail(function () {
+                    $('#quickBrokerModalBody').html(
+                        '<div class="alert alert-danger mb-0">Failed to load broker form. Please try again.</div>'
+                    );
+                });
+        });
+
+        $('#quickBrokerSubmitBtn').on('click', function () {
+            var $form = $('#quickBrokerForm');
+            if (! $form.length) return;
+
+            var $btn = $(this);
+            var formData = new FormData($form[0]);
+            $btn.prop('disabled', true);
+
+            $.ajax({
+                url: $form.attr('action'),
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                success: function (res) {
+                    quickBrokerModal.hide();
+                    show_success(res.message || 'Broker created successfully.');
+
+                    var broker = res.broker;
+                    if (broker && ! $('#broker_id option[value="' + broker.id + '"]').length) {
+                        $('#broker_id').append(
+                            $('<option>', { value: broker.id, text: broker.name })
+                        );
+                    }
+                    $('#broker_id').val(String(broker.id)).trigger('change');
+                },
+                error: function (xhr) {
+                    if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                        showQuickBrokerErrors(xhr.responseJSON.errors);
+                        show_error('Please correct the highlighted fields.');
+                    } else {
+                        show_error('Failed to create broker. Please try again.');
+                    }
+                },
+                complete: function () {
+                    $btn.prop('disabled', false);
+                }
+            });
+        });
+    }
+    @endunless
+  @endcan
+
+    var quickBrandModalEl = document.getElementById('quickBrandModal');
+  @can('add-brand')
+    if (quickBrandModalEl) {
+        var quickBrandModal = new bootstrap.Modal(quickBrandModalEl);
+
+        $('#addBrandLink').on('click', function () {
+            if (! $('#broker_id').val()) return;
+
+            $('#quickBrandModalBody').html(
+                '<div class="text-center text-muted py-5">' +
+                '<i class="ti ti-loader-2 ti-spin fs-3"></i>' +
+                '<p class="mb-0 mt-2">Loading form…</p></div>'
+            );
+            quickBrandModal.show();
+
+            $.get("{{ route('brand.quickCreateForm') }}")
+                .done(function (html) {
+                    $('#quickBrandModalBody').html(html);
+                })
+                .fail(function () {
+                    $('#quickBrandModalBody').html(
+                        '<div class="alert alert-danger mb-0">Failed to load brand form. Please try again.</div>'
+                    );
+                });
+        });
+
+        $('#quickBrandSubmitBtn').on('click', function () {
+            var $form = $('#quickBrandForm');
+            if (! $form.length) return;
+
+            var $btn = $(this);
+            $btn.prop('disabled', true);
+
+            $.ajax({
+                url: $form.attr('action'),
+                method: 'POST',
+                data: $form.serialize(),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                success: function (res) {
+                    quickBrandModal.hide();
+                    show_success(res.message || 'Brand created successfully.');
+
+                    var brand = res.brand;
+                    if (brand && ! $('#brand_id option[value="' + brand.id + '"]').length) {
+                        $('#brand_id').append(
+                            $('<option>', { value: brand.id, text: brand.name })
+                        );
+                    }
+                    $('#brand_id').val(String(brand.id)).trigger('change');
+                },
+                error: function (xhr) {
+                    if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                        showQuickBrandErrors(xhr.responseJSON.errors);
+                        show_error('Please correct the highlighted fields.');
+                    } else {
+                        show_error('Failed to create brand. Please try again.');
+                    }
+                },
+                complete: function () {
+                    $btn.prop('disabled', false);
+                }
+            });
+        });
+    }
+  @endcan
+
     var quickDealerModalEl = document.getElementById('quickDealerModal');
   @can('add-dealer')
     @if (empty($locked_dealer))
@@ -584,10 +863,19 @@ $(document).ready(function () {
     @endif
   @endcan
 
-    $('#broker_id, #brand_id').on('change', function () {
+    $('#broker_id').on('change', function () {
+        updateAddBrandLink();
         loadDealers();
-        filterProductsByBrand(); /* no argument = filter all rows */
+        filterProductsByBrand();
     });
+
+    $('#brand_id').on('change', function () {
+        updateAddDealerLink();
+        loadDealers();
+        filterProductsByBrand();
+    });
+
+    updateAddBrandLink();
 
     /* ── Auto-fill delivery address when dealer is selected ──── */
     $(document).on('change', '#dealer_id', function () {

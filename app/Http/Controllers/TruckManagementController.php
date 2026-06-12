@@ -21,6 +21,9 @@ class TruckManagementController extends Controller
             ->get();
 
         if ($request->ajax()) {
+            $canEdit   = auth()->user()->can('edit-truck');
+            $canDelete = auth()->user()->can('delete-truck');
+
             $query = Truck::with('transporter');
 
             if ($request->filled('transporter_id') && $request->transporter_id !== 'all') {
@@ -37,14 +40,14 @@ class TruckManagementController extends Controller
                 })
                 ->addColumn('transporter_name', fn($row) => $row->transporter?->name ?? '—')
                 ->editColumn('status', fn($row) => $row->statusBadge())
-                ->addColumn('action', function ($row) {
-                    $edit_btn = auth()->user()->can('edit-truck')
+                ->addColumn('action', function ($row) use ($canEdit, $canDelete) {
+                    $edit_btn = $canEdit
                         ? '<a href="javascript:void(0)" class="dropdown-item edit-truck-btn" data-id="' . $row->id . '">
                                <i class="ti ti-edit text-warning"></i> Edit
                            </a>'
                         : '';
 
-                    $delete_btn = auth()->user()->can('delete-truck')
+                    $delete_btn = $canDelete
                         ? '<a href="javascript:void(0)" class="dropdown-item deleteTruck" data-id="' . $row->id . '">
                                <i class="ti ti-trash text-danger"></i> Delete
                            </a>

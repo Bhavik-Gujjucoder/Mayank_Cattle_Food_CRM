@@ -14,9 +14,10 @@ class StoreRawMaterialRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'   => 'required|string|max:255|unique:raw_materials,name,NULL,id,deleted_at,NULL',
-            'unit'   => 'required|string|max:50',
-            'status' => 'required|in:0,1',
+            'name'                     => 'required|string|max:255|unique:raw_materials,name,NULL,id,deleted_at,NULL',
+            'raw_material_category_id' => 'required|exists:raw_material_categories,id',
+            'unit'                     => 'required|string|max:50',
+            'status'                   => 'required|in:0,1',
         ];
     }
 }

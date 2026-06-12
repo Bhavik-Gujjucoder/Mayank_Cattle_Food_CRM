@@ -14,9 +14,9 @@ class RawMaterialFullExport implements WithMultipleSheets
 {
     public function sheets(): array
     {
-        $orders = RawMaterialOrder::with('supplier')->orderByDesc('id')->get();
-        $items  = RawMaterialOrderItem::with(['rawMaterial', 'order'])->orderByDesc('id')->get();
-        $receives = RawMaterialReceive::with(['rawMaterial', 'order'])->orderByDesc('id')->get();
+        $orders = RawMaterialOrder::with(['supplier', 'supplierBroker'])->orderByDesc('id')->get();
+        $items  = RawMaterialOrderItem::with(['rawMaterial.category', 'order'])->orderByDesc('id')->get();
+        $receives = RawMaterialReceive::with(['rawMaterial.category', 'order'])->orderByDesc('id')->get();
 
         return [
             new AllOrdersSheet($orders),

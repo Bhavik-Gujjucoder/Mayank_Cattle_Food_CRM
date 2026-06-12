@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BrandManagement;
 use App\Models\Product;
+use App\Support\ActiveDropdownValidation;
 use App\Support\ProductUnit;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
@@ -22,8 +23,11 @@ class ProductController extends Controller
         $data['brands']     = BrandManagement::activeForDropdown();
 
         if ($request->ajax()) {
+            $canEdit   = auth()->user()->can('edit-product');
+            $canDelete = auth()->user()->can('delete-product');
+
             $query = Product::with('brand');
-            if ($request->has('brand_id') && $request->brand_id !== 'all') {
+            if ($request->has('brand_id') && $request->brand_id !== 'all' && BrandManagement::isActive((int) $request->brand_id)) {
                 $query->where('brand_id', $request->brand_id);
             }
 
@@ -40,7 +44,7 @@ class ProductController extends Controller
                 })
                 // ->editColumn('price', fn($row) => '₹ ' . number_format($row->price, 2))
                 ->editColumn('status', fn($row) => $row->statusBadge())
-                ->addColumn('action', function ($row) {
+                ->addColumn('action', function ($row) use ($canEdit, $canDelete) {
                     $edit_btn = '<a href="javascript:void(0)" class="dropdown-item edit-btn" data-id="' . $row->id . '">
                                     <i class="ti ti-edit text-warning"></i> Edit
                                 </a>';
@@ -58,8 +62,8 @@ class ProductController extends Controller
                                             <i class="fa fa-ellipsis-v"></i>
                                         </a>
                                         <div class="dropdown-menu dropdown-menu-right">';
-                    $action_btn .= auth()->user()->can('edit-product')   ? $edit_btn   : '';
-                    $action_btn .= auth()->user()->can('delete-product')  ? $delete_btn : '';
+                    $action_btn .= $canEdit ? $edit_btn : '';
+                    $action_btn .= $canDelete ? $delete_btn : '';
                     $action_btn .= '</div></div>';
 
                     return $action_btn;
@@ -78,7 +82,7 @@ class ProductController extends Controller
     {
         $request->validate([
             'name'     => 'required|string|max:255|unique:products,name,NULL,id,deleted_at,NULL',
-            'brand_id' => 'required|exists:brand_management,id',
+            'brand_id' => ActiveDropdownValidation::brandId(),
             'unit'     => 'required|in:' . implode(',', self::UNITS),
             'price'    => 'nullable|numeric|min:0',
             'status'   => 'required|in:0,1',
@@ -121,7 +125,7 @@ class ProductController extends Controller
     {
         $request->validate([
             'name'     => 'required|string|max:255|unique:products,name,' . $product->id . ',id,deleted_at,NULL',
-            'brand_id' => 'required|exists:brand_management,id',
+            'brand_id' => ActiveDropdownValidation::brandId(),
             'unit'     => 'required|in:' . implode(',', self::UNITS),
             'price'    => 'nullable|numeric|min:0',
             'status'   => 'required|in:0,1',

@@ -249,9 +249,7 @@
     let userType = "{{ $type }}"; // 'user' or 'broker'
 
     // Custom Search Box
-    $('#customSearch').on('keyup', function() {
-        users_table.search(this.value).draw();
-    });
+    bindDebouncedDataTableSearch('#customSearch', users_table);
 
     // Open Modal for Adding a New Admin
     // $('#openModal').click(function() {

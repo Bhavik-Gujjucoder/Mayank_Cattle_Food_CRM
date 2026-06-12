@@ -13,6 +13,7 @@
         th { background: #e2e8f0; font-weight: bold; text-align: left; padding: 5px 4px; border: 1px solid #cbd5e1; font-size: 9px; }
         td { padding: 4px; border: 1px solid #e2e8f0; font-size: 9px; vertical-align: top; }
         .text-right { text-align: right; }
+        .freight-sub { color: #64748b; font-size: 9px; }
         .empty { color: #94a3b8; font-style: italic; padding: 6px 0; }
         .section { page-break-inside: avoid; margin-bottom: 12px; }
     </style>
@@ -28,32 +29,7 @@
         @if ($orders->isEmpty())
             <div class="empty">No orders.</div>
         @else
-            <table>
-                <thead>
-                    <tr>
-                        <th>Order ID</th>
-                        <th>Supplier</th>
-                        <th>Order Date</th>
-                        <th class="text-right">Total Qty</th>
-                        <th class="text-right">Total Price (₹)</th>
-                        <th class="text-right">Total Freight (₹)</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($orders as $order)
-                        <tr>
-                            <td>{{ $order->order_unique_id }}</td>
-                            <td>{{ $order->supplier?->name ?? '—' }}</td>
-                            <td>{{ $order->order_date?->format('d M Y') ?? '—' }}</td>
-                            <td class="text-right">{{ $order->total_qty }}</td>
-                            <td class="text-right">{{ number_format($order->total_price, 2) }}</td>
-                            <td class="text-right">{{ number_format($order->total_freight, 2) }}</td>
-                            <td>{{ \App\Services\RawMaterial\RawMaterialFilterService::orderStatusLabel((int) $order->status) }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+            @include('raw_material_order.partials.orders-list-table', ['orders' => $orders])
         @endif
     </div>
 
@@ -110,6 +86,7 @@
                 <thead>
                     <tr>
                         <th>Order ID</th>
+                        <th>Supplier Order ID</th>
                         <th>Material</th>
                         <th class="text-right">Qty (tons)</th>
                         <th class="text-right">Freight</th>
@@ -121,9 +98,10 @@
                     @foreach ($receives as $receive)
                         <tr>
                             <td>{{ $receive->order?->order_unique_id ?? '—' }}</td>
+                            <td>{{ $receive->order?->supplier_order_id ?: '—' }}</td>
                             <td>{{ $receive->rawMaterial?->name ?? '—' }}</td>
                             <td class="text-right">{{ $receive->qty }}</td>
-                            <td class="text-right">{{ number_format($receive->freight, 2) }}</td>
+                            <td>{!! \App\Services\RawMaterialCacheService::receiveFreightPdfHtml($receive) !!}</td>
                             <td>{{ $receive->received_date?->format('d M Y') ?? '—' }}</td>
                             <td>{{ \App\Services\RawMaterial\RawMaterialFilterService::receiveStatusLabel((int) $receive->status) }}</td>
                         </tr>

@@ -18,6 +18,10 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
 
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->in('Unit');
+
 /*
 |--------------------------------------------------------------------------
 | Expectations
@@ -44,7 +48,18 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function grantPermissions(\App\Models\User $user, array $permissionNames): \App\Models\User
 {
-    // ..
+    app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+    foreach ($permissionNames as $name) {
+        \Spatie\Permission\Models\Permission::firstOrCreate(
+            ['name' => $name, 'guard_name' => 'web'],
+            ['type' => 'test']
+        );
+    }
+
+    $user->givePermissionTo($permissionNames);
+
+    return $user;
 }

@@ -5,6 +5,7 @@ namespace App\Exports\Sheets;
 use App\Exports\Concerns\StyledExportHeading;
 use App\Models\RawMaterialReceive;
 use App\Services\RawMaterial\RawMaterialFilterService;
+use App\Services\RawMaterialCacheService;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -33,6 +34,7 @@ class OrderReceivesSheet implements FromCollection, WithHeadings, WithStyles, Wi
         $headings = [];
         if ($this->includeOrderId) {
             $headings[] = 'Order ID';
+            $headings[] = 'Supplier Order ID';
         }
         if ($this->includeSrNo) {
             $headings[] = 'Sr No';
@@ -53,6 +55,7 @@ class OrderReceivesSheet implements FromCollection, WithHeadings, WithStyles, Wi
             $row = [];
             if ($this->includeOrderId) {
                 $row[] = $receive->order?->order_unique_id ?? '—';
+                $row[] = $receive->order?->supplier_order_id ?? '—';
             }
             if ($this->includeSrNo) {
                 $row[] = $index + 1;
@@ -60,7 +63,7 @@ class OrderReceivesSheet implements FromCollection, WithHeadings, WithStyles, Wi
             $row = array_merge($row, [
                 $receive->rawMaterial?->name ?? '—',
                 $receive->qty,
-                number_format((float) $receive->freight, 2),
+                RawMaterialCacheService::receiveFreightPlain($receive),
                 $receive->received_date?->format('d-m-Y') ?? '—',
                 RawMaterialFilterService::receiveStatusLabel((int) $receive->status),
             ]);

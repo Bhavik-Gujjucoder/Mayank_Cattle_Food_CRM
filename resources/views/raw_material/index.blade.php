@@ -25,13 +25,32 @@
                         <option value="0">Inactive</option>
                     </select>
                 </div>
+                <div class="common-hed-form cls-form-select-input d-flex align-items-end">
+                    <button type="button" class="btn btn-light" id="resetMaterialFilters">
+                        <i class="ti ti-refresh me-1"></i>Reset
+                    </button>
+                </div>
             </div>
             <div class="cls-form-right">
                 <div class="comm-header-right-btn">
                     @can('export-raw-material-inventory')
-                        <a href="#" id="exportBtn" class="btn btn-outline-primary me-2" data-export-url="{{ route('raw-material.export') }}">
-                            <i class="ti ti-file-export me-2"></i>Export (0)
-                        </a>
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="exportMaterialsBtn">
+                                <i class="ti ti-file-export me-2"></i>Export (0)
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('raw-material.export') }}">
+                                        <i class="ti ti-file-spreadsheet me-2"></i>Export Excel
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('raw-material.export-list-pdf') }}">
+                                        <i class="ti ti-file-type-pdf me-2"></i>Export PDF
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     @endcan
                     @can('add-raw-material-inventory')
                         <a href="{{ route('raw-material.create') }}" class="btn btn-primary">
@@ -50,6 +69,7 @@
                         <th hidden>ID</th>
                         <th class="no-sort" scope="col">Sr No</th>
                         <th scope="col">Material ID</th>
+                        <th scope="col">Category</th>
                         <th scope="col">Name</th>
                         <th scope="col">Unit</th>
                         <th scope="col">Total Stock</th>
@@ -95,6 +115,7 @@ $(document).ready(function () {
             { data: 'id', name: 'id', visible: false, searchable: false },
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
             { data: 'raw_material_unique_id', name: 'raw_material_unique_id', searchable: true },
+            { data: 'category_name', name: 'category_name', orderable: false, searchable: false },
             { data: 'name', name: 'name', searchable: true },
             { data: 'unit', name: 'unit', searchable: false },
             { data: 'total_stock', name: 'total_stock', searchable: false },
@@ -106,8 +127,8 @@ $(document).ready(function () {
         ],
         drawCallback: function () {
             var n = raw_material_table.page.info().recordsDisplay;
-            if ($('#exportBtn').length) {
-                $('#exportBtn').html('<i class="ti ti-file-export me-2"></i>Export (' + n + ')');
+            if ($('#exportMaterialsBtn').length) {
+                $('#exportMaterialsBtn').html('<i class="ti ti-file-export me-2"></i>Export (' + n + ')');
             }
         }
     });
@@ -121,18 +142,28 @@ $(document).ready(function () {
         raw_material_table.draw();
     });
 
-    $('#customSearch').on('keyup', function () {
-        raw_material_table.search(this.value).draw();
+    bindDebouncedDataTableSearch('#customSearch', raw_material_table);
+
+    $('#resetMaterialFilters').on('click', function () {
+        $('#customSearch').val('');
+        raw_material_table.search('');
+        $('#statusFilter').val('all').trigger('change.select2');
+        window.history.replaceState({}, '', window.location.pathname);
+        raw_material_table.draw();
     });
 
-    $('#exportBtn').on('click', function (e) {
-        e.preventDefault();
+    function buildFilterQueryString() {
         const params = new URLSearchParams();
         const status = $('#statusFilter').val();
         if (status && status !== 'all') params.set('status', status);
         const search = raw_material_table.search();
         if (search) params.set('search', search);
-        const qs = params.toString();
+        return params.toString();
+    }
+
+    $(document).on('click', '.export-filtered-link', function (e) {
+        e.preventDefault();
+        const qs = buildFilterQueryString();
         window.location.href = $(this).data('export-url') + (qs ? ('?' + qs) : '');
     });
 

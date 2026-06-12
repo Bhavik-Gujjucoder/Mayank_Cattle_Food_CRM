@@ -3,6 +3,7 @@
 namespace App\Services\RawMaterial;
 
 use App\Models\RawMaterial;
+use App\Models\RawMaterialCategory;
 use App\Models\RawMaterialOrder;
 use App\Models\RawMaterialReceive;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,14 +27,39 @@ class RawMaterialFilterService
 
     public static function materials(Request $request): Builder
     {
-        $query = RawMaterial::query();
+        $query = RawMaterial::with('category');
+
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('raw_material_category_id') && $request->raw_material_category_id !== 'all') {
+            $query->where('raw_material_category_id', $request->raw_material_category_id);
+        }
+
+        if ($term = self::searchTerm($request)) {
+            $query->where(function ($sub) use ($term) {
+                $sub->where('name', 'like', '%' . $term . '%')
+                    ->orWhere('raw_material_unique_id', 'like', '%' . $term . '%')
+                    ->orWhereHas('category', fn ($c) => $c->where('name', 'like', '%' . $term . '%'));
+            });
+        }
+
+        return $query->orderByDesc('id');
+    }
+
+    public static function categories(Request $request): Builder
+    {
+        $query = RawMaterialCategory::query();
 
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
         }
 
         if ($term = self::searchTerm($request)) {
-            $query->where('name', 'like', '%' . $term . '%');
+            $query->where(function ($sub) use ($term) {
+                $sub->where('name', 'like', '%' . $term . '%')
+                    ->orWhere('category_unique_id', 'like', '%' . $term . '%');
+            });
         }
 
         return $query->orderByDesc('id');
@@ -41,7 +67,7 @@ class RawMaterialFilterService
 
     public static function orders(Request $request): Builder
     {
-        $query = RawMaterialOrder::with('supplier');
+        $query = RawMaterialOrder::with(['supplier', 'supplierBroker']);
 
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
@@ -50,15 +76,18 @@ class RawMaterialFilterService
             $query->where('supplier_id', $request->supplier_id);
         }
         if ($request->filled('date_from')) {
-            $query->whereDate('order_date', '>=', $request->date_from);
+            $query->where('order_date', '>=', $request->date_from);
         }
         if ($request->filled('date_to')) {
-            $query->whereDate('order_date', '<=', $request->date_to);
+            $query->where('order_date', '<=', $request->date_to);
         }
         if ($term = self::searchTerm($request)) {
             $query->where(function ($sub) use ($term) {
                 $sub->where('order_unique_id', 'like', "%{$term}%")
-                    ->orWhereHas('supplier', fn ($s) => $s->where('name', 'like', "%{$term}%"));
+                    ->orWhere('supplier_order_id', 'like', "%{$term}%")
+                    ->orWhere('price_basis', 'like', "%{$term}%")
+                    ->orWhereHas('supplier', fn ($s) => $s->where('name', 'like', "%{$term}%"))
+                    ->orWhereHas('supplierBroker', fn ($b) => $b->where('name', 'like', "%{$term}%"));
             });
         }
 
@@ -67,7 +96,7 @@ class RawMaterialFilterService
 
     public static function receives(Request $request): Builder
     {
-        $query = RawMaterialReceive::with(['order', 'rawMaterial']);
+        $query = RawMaterialReceive::with(['order', 'rawMaterial.category']);
 
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
@@ -79,15 +108,19 @@ class RawMaterialFilterService
             $query->where('raw_material_order_id', $request->raw_material_order_id);
         }
         if ($request->filled('date_from')) {
-            $query->whereDate('received_date', '>=', $request->date_from);
+            $query->where('received_date', '>=', $request->date_from);
         }
         if ($request->filled('date_to')) {
-            $query->whereDate('received_date', '<=', $request->date_to);
+            $query->where('received_date', '<=', $request->date_to);
         }
         if ($term = self::searchTerm($request)) {
             $query->where(function ($sub) use ($term) {
-                $sub->whereHas('order', fn ($o) => $o->where('order_unique_id', 'like', "%{$term}%"))
-                    ->orWhereHas('rawMaterial', fn ($m) => $m->where('name', 'like', "%{$term}%"));
+                $sub->whereHas('order', function ($o) use ($term) {
+                    $o->where('order_unique_id', 'like', "%{$term}%")
+                        ->orWhere('supplier_order_id', 'like', "%{$term}%");
+                })
+                    ->orWhereHas('rawMaterial', fn ($m) => $m->where('name', 'like', "%{$term}%"))
+                    ->orWhereHas('rawMaterial.category', fn ($c) => $c->where('name', 'like', "%{$term}%"));
             });
         }
 

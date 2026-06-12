@@ -39,6 +39,7 @@ class OrderItemsSheet implements FromCollection, WithHeadings, WithStyles, WithT
         }
 
         return array_merge($headings, [
+            'Category',
             'Material',
             'Total Qty (tons)',
             'Pending Qty',
@@ -46,6 +47,7 @@ class OrderItemsSheet implements FromCollection, WithHeadings, WithStyles, WithT
             'Price/kg',
             'Avg Price/kg',
             'Total Price',
+            'Other Expense',
             'Pending Price',
             'Received Price',
             'Freight',
@@ -64,6 +66,7 @@ class OrderItemsSheet implements FromCollection, WithHeadings, WithStyles, WithT
                 $row[] = $index + 1;
             }
             $row = array_merge($row, [
+                $item->rawMaterial?->category?->name ?? '—',
                 $item->rawMaterial?->name ?? '—',
                 $item->total_qty,
                 $item->pending_qty,
@@ -71,6 +74,7 @@ class OrderItemsSheet implements FromCollection, WithHeadings, WithStyles, WithT
                 number_format((float) $item->price, 2),
                 number_format((float) $item->price_avg, 2),
                 number_format((float) $item->total_price, 2),
+                number_format((float) $item->other_expense, 2),
                 number_format((float) $item->pending_price, 2),
                 number_format((float) $item->received_price, 2),
                 number_format((float) $item->total_freight, 2),

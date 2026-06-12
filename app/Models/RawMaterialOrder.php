@@ -20,6 +20,11 @@ class RawMaterialOrder extends Model
         return $this->belongsTo(Supplier::class);
     }
 
+    public function supplierBroker(): BelongsTo
+    {
+        return $this->belongsTo(SupplierBroker::class, 'supplier_broker_id');
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(RawMaterialOrderItem::class);

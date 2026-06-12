@@ -182,7 +182,7 @@
 
     /* ── Filters ────────────────────────────────────────────────── */
     $('#filterTransporter').on('change', function() { truck_table.draw(); });
-    $('#customSearch').on('keyup', function() { truck_table.search(this.value).draw(); });
+    bindDebouncedDataTableSearch('#customSearch', truck_table);
 
     /* ── Select2 inside modal ───────────────────────────────────── */
     function initTruckModalSelect2() {

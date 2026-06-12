@@ -49,10 +49,13 @@ class DispatchManagementController extends Controller
         $data['dealers'] = SalesScope::filterableDealers();
 
         if ($request->ajax()) {
+            $canViewDispatch = auth()->user()->can('view-dispatch');
+
             $query = SalesScope::scopeDispatches(
                 DispatchManagement::with([
                     'order.items.dispatches',   /* needed for is_complete check */
                     'orderItem.product',
+                    'orderItem.order.dealer.user',
                     'transporter',
                 ])
             )->latest();
@@ -108,7 +111,7 @@ class DispatchManagementController extends Controller
                 })
 
                 /* Action dropdown */
-                ->addColumn('action', function ($row) {
+                ->addColumn('action', function ($row) use ($canViewDispatch) {
                     $historyUrl = route('dispatch.orderHistory', $row->order_id);
                     // $editUrl    = $historyUrl . '?edit=' . $row->id;
 
@@ -127,8 +130,7 @@ class DispatchManagementController extends Controller
                     // }
                     $btn .= '</div></div>';
                     
-                    $btn = auth()->user()->canAny(['view-dispatch']) ? $btn : '';
-                    return $btn;
+                    return $canViewDispatch ? $btn : '';
                 })
 
                 ->rawColumns(['unique_order_id', 'action', 'is_complete', 'status'])

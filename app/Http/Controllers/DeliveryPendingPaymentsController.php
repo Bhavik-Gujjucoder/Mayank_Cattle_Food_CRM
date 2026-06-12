@@ -20,6 +20,9 @@ class DeliveryPendingPaymentsController extends Controller
     public function index(Request $request): View
     {
         $brandFilter = $request->query('brand_id', 'all');
+        if ($brandFilter !== 'all' && ! BrandManagement::isActive((int) $brandFilter)) {
+            $brandFilter = 'all';
+        }
 
         $brands = BrandManagement::activeForDropdown(['id', 'name']);
 

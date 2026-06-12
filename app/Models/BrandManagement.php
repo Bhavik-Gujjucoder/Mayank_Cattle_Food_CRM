@@ -25,4 +25,19 @@ class BrandManagement extends Model
             ->ordered()
             ->get($columns);
     }
+
+    public function statusBadge(): string
+    {
+        return $this->status == 1
+            ? '<span class="badge badge-pill badge-status bg-success">Active</span>'
+            : '<span class="badge badge-pill badge-status bg-danger">Inactive</span>';
+    }
+
+    public static function isActive(int $id): bool
+    {
+        return static::query()
+            ->where('status', 1)
+            ->whereKey($id)
+            ->exists();
+    }
 }

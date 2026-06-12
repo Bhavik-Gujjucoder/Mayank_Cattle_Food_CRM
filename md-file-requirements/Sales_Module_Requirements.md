@@ -20,6 +20,165 @@
 
 ---
 
+## 📅 Changelog — 01 Jun 2026 (Active broker & brand dropdowns — status = 1)
+
+### Summary
+All **broker** and **brand** dropdowns across the application show only **active** records (`status = 1`). Inactive brokers/brands remain visible on their **admin list pages** but cannot be selected on forms or filters.
+
+### Broker dropdowns
+- Helper: `User::activeBrokersForDropdown()` — broker role + `users.status = 1`, ordered by `id`
+- Validator: `User::isActiveBroker($id)`
+- Used in: Soda/Order list/create/edit, Dealer list/create/edit/quick-create
+
+### Brand dropdowns
+- Helper: `BrandManagement::activeForDropdown()` — `brand_management.status = 1` (existing)
+- Validator: `BrandManagement::isActive($id)`
+- Used in: Soda/Order, Dealer, Product, Dispatch Pending Payments, `SalesScope::filterableBrands()`
+
+### Form validation
+- `App\Support\ActiveDropdownValidation::brokerId()` / `::brandId()` — closure rules reject inactive IDs
+- Applied in: `OrderManagementController`, `DealerManagementController`, `ProductController`
+
+### AJAX / list filters
+- `GET /get-dealers` — returns `[]` if broker or brand is missing or inactive
+- Order / Dealer / Product list filters — ignore tampered inactive `broker_id` / `brand_id` params
+- Dispatch Pending Payments — invalid inactive `brand_id` query resets to `all`
+
+### Files added / updated
+- `app/Models/User.php` — `scopeBrokers()`, `scopeActive()`, `activeBrokersForDropdown()`, `isActiveBroker()`
+- `app/Models/BrandManagement.php` — `isActive()`
+- `app/Support/ActiveDropdownValidation.php` (new)
+- `OrderManagementController`, `DealerManagementController`, `ProductController`, `DeliveryPendingPaymentsController`
+
+---
+
+## 📅 Changelog — 01 Jun 2026 (Quick Add — broker/brand status hidden, default Active)
+
+### Summary
+Quick-add modals on **Add Soda/Order** do **not** show a Status field. New brokers and brands are stored with **`status = 1`** (Active) by default.
+
+| Modal | Status UI | Stored value |
+|---|---|---|
+| Quick Add Broker | Hidden | `users.status = 1` via `UserController@store` default |
+| Quick Add Brand | Hidden | `brand_management.status = 1` via `BrandManagementController@store` default |
+
+- Full Broker / Brand module create screens **still show** Status (unchanged).
+- `store()` validation: `status` is `nullable|in:0,1`; omitted → defaults to `1`.
+
+---
+
+## 📅 Changelog — 01 Jun 2026 (Order list — order date range filter)
+
+### Summary
+Soda/Order list (`/order`) filter bar extended with **From Date** / **To Date** for `order_date` (same Flatpickr pattern as Dispatch list).
+
+### Filters (server-side via DataTables AJAX)
+
+| Filter | Element | Request param | Notes |
+|---|---|---|---|
+| From Date | `#orderDateFrom` | `date_from` | `order_date >=` (Flatpickr `Y-m-d`) |
+| To Date | `#orderDateTo` | `date_to` | `order_date <=` |
+| **Reset** | `#resetOrderFilters` | — | Also clears date pickers |
+
+### Implementation
+- `OrderManagementController@index` — `whereDate('order_date', '>=', date_from)` / `<= date_to` when filled
+- `resources/views/order_management/index.blade.php` — Flatpickr init, AJAX `data`, reset handler
+
+---
+
+## 📅 Changelog — 01 Jun 2026 (Quick Add Broker from order create)
+
+### Summary
+On **Add Soda/Order** (`/order/create`), users with `add-broker` can create a broker inline without leaving the order form.
+
+### UI behaviour
+1. **“Add Broker” link** below broker dropdown
+2. Hidden for **broker role** (broker field locked to self) and users without `add-broker`
+3. Click opens **Bootstrap modal** (`#quickBrokerModal`, `modal-lg`) with broker form (no Status field — defaults Active)
+4. Same **server validation** as broker module (`UserController@store` with `$type = broker`)
+5. On success: toast, new broker appended to `#broker_id` and **auto-selected**; triggers brand/dealer reload
+
+### Routes & endpoints
+| Method | Route | Name | Permission |
+|---|---|---|---|
+| GET | `users/broker/quick-create-form` | `users.broker.quickCreateForm` | `add-broker` |
+| POST | `users/broker` (JSON) | `users.store` | `add-broker` |
+
+- Route registered **before** `users/{type}` to avoid conflict
+- `store()` returns JSON when `expectsJson()`: `{ success, message, broker: { id, name } }`
+
+### Files added / updated
+- `resources/views/users/partials/quick-create-broker-form.blade.php` (new)
+- `resources/views/order_management/create.blade.php` — link, modal, JS
+- `app/Http/Controllers/UserController.php` — `brokerQuickCreateForm()`, JSON `store()` response
+- `routes/web.php` — `users.broker.quickCreateForm`
+
+---
+
+## 📅 Changelog — 01 Jun 2026 (Quick Add Brand from order create)
+
+### Summary
+On **Add Soda/Order** (`/order/create`), users with `add-brand` can create a brand inline without leaving the order form.
+
+### UI behaviour
+1. **“Add Brand” link** below brand dropdown — visible only when **broker is selected**
+2. Not shown for users without `add-brand`
+3. Click opens **Bootstrap modal** (`#quickBrandModal`) with brand form (name only — no Status; defaults Active)
+4. Same **server validation** as brand module (`BrandManagementController@store`)
+5. On success: toast, new brand appended to `#brand_id` and **auto-selected**; triggers dealer/product reload
+
+### Routes & endpoints
+| Method | Route | Name | Permission |
+|---|---|---|---|
+| GET | `brand/quick-create-form` | `brand.quickCreateForm` | `add-brand` |
+| POST | `brand` (JSON) | `brand.store` | `add-brand` |
+
+- Route registered **before** `Route::resource('brand', …)` to avoid conflict
+- `store()` returns `{ success, message, brand: { id, name, status } }`
+
+### Files added / updated
+- `resources/views/brand/partials/quick-create-form.blade.php` (new)
+- `resources/views/order_management/create.blade.php` — link, modal, JS
+- `app/Http/Controllers/BrandManagementController.php` — `quickCreateForm()`, enriched JSON `store()` response
+- `routes/web.php` — `brand.quickCreateForm`
+
+---
+
+## 📅 Changelog — 01 Jun 2026 (Order list — expandable rows + responsive layout)
+
+### Summary
+Order list shows **Amount** and **Dispatch** summary columns with **expandable product line-item panels** (expanded by default, collapsible per row). Visual grouping separates each order block. Table is **responsive** via horizontal scroll + adaptive column hiding on small screens.
+
+### List columns (main row)
+| Column | Notes |
+|---|---|
+| Expand control | Chevron toggles child row |
+| Sr No, Order ID, Broker, Brand, Dealer, Order Date | Standard |
+| Amount | Grand total + weighted avg / bag |
+| Dispatch | Progress bar + product/pending counts |
+| Payment Status, Action | Unchanged |
+
+### Child row
+- Partial: `order_management/partials/list-items-detail.blade.php`
+- Per-product: unit price, ordered, dispatched, pending, line total, progress %
+
+### Responsive
+- Wrapper: `.order-table-scroll` with touch scroll
+- **&lt; 768px:** hide Broker column
+- **&lt; 576px:** hide Brand column
+- Detail panel: nested table horizontal scroll
+
+### Model helpers (`OrderManagement`)
+- `totalOrderedQty()`, `totalDispatchedQty()`, `dispatchPercent()`, `weightedAvgUnitPrice()`, `pendingLineItemCount()`
+
+### Files updated
+- `resources/views/order_management/index.blade.php`
+- `resources/views/order_management/partials/list-items-detail.blade.php` (new)
+- `app/Http/Controllers/OrderManagementController.php` — `expand_control`, `amount_summary`, `dispatch_summary`, `items_detail_html`
+- `app/Models/OrderManagement.php` — summary helpers
+
+---
+
 ## 📅 Changelog — 11 Jun 2026 (Order list — dealer filter + reset)
 
 ### Summary
@@ -289,6 +448,8 @@ Centralized **who can see which orders/dispatches** by role. Works together with
 | `edit-order` | `soda-order` | Edit order (`edit`); route `order.update` |
 | `delete-order` | `soda-order` | Delete + bulk delete; routes `order.destroy`, `order.bulkDelete` |
 | `add-dealer` | `dealer` | Quick Add Dealer modal on order create (dealer module route) |
+| `add-broker` | `broker` | Quick Add Broker modal on order create (users module route) |
+| `add-brand` | `brand` | Quick Add Brand modal on order create (brand module route) |
 | `view-dispatch` | `dispatch` | Dispatch list (`dispatch.index`); View History action in list |
 | `add-dispatch` | `dispatch` | Add dispatch modal on history page + dashboard; route `dispatch.store` |
 | `edit-dispatch` | `dispatch` | Edit dispatch modal on history page; route `dispatch.update` |
@@ -408,6 +569,27 @@ These rely on `auth` + **`SalesScope`** in controllers (not permission middlewar
 - Load dealers via AJAX: `GET /get-dealers?broker_id=X&brand_id=Y` (`route('get.dealers')`)
 - On dealer select: auto-fill **delivery address** from dealer record
 
+### Active broker & brand dropdowns (application-wide)
+- **Brokers:** `User::activeBrokersForDropdown()` — only users with broker role and `status = 1`
+- **Brands:** `BrandManagement::activeForDropdown()` — only `brand_management.status = 1`
+- **Form validation:** `ActiveDropdownValidation::brokerId()` / `::brandId()` on order, dealer, product forms
+- Admin list pages (Broker Management, Brand Management) still show **all** statuses for maintenance
+- See changelog **01 Jun 2026 (Active broker & brand dropdowns)**
+
+### Quick Add Broker (Order create — `add-broker` permission)
+- **“Add Broker” link** below broker field (hidden for broker role)
+- Modal loads form via `GET users/broker/quick-create-form`
+- POST `users.store` with type `broker` (JSON); new broker auto-selected on order form
+- **No Status field** in modal — saved as Active (`status = 1`)
+- See changelogs **01 Jun 2026 (Quick Add Broker)** and **Quick Add — status hidden**
+
+### Quick Add Brand (Order create — `add-brand` permission)
+- **“Add Brand” link** below brand field when **broker is selected**
+- Modal loads form via `GET brand/quick-create-form`
+- POST `brand.store` (JSON); new brand auto-selected on order form
+- **No Status field** in modal — saved as Active (`status = 1`)
+- See changelogs **01 Jun 2026 (Quick Add Brand)** and **Quick Add — status hidden**
+
 ### Quick Add Dealer (Order create — `add-dealer` permission)
 - **“Add Dealer” link** below dealer field when broker **and** brand are both selected
 - Modal loads form via `GET dealer/quick-create-form?broker_id=&brand_id=`
@@ -415,10 +597,11 @@ These rely on `auth` + **`SalesScope`** in controllers (not permission middlewar
 - See changelog **11 Jun 2026 (Quick Add Dealer)**
 
 ### Order list filters (role-aware)
+- **From / To Date:** `order_date` range (`date_from`, `date_to`) — Flatpickr
 - **Brand:** `SalesScope::filterableBrands()` — all active (admin/staff) or broker’s brands; hidden for dealer
-- **Broker:** all brokers — hidden for broker/dealer
+- **Broker:** active brokers only (`User::activeBrokersForDropdown()`) — hidden for broker/dealer
 - **Dealer:** `SalesScope::filterableDealers()` — hidden for dealer
-- **Reset:** clears search + all filters
+- **Reset:** clears search, date range, and all dropdown filters
 
 ### Last unit price hint (Order form)
 - On product select (when dealer is set): `GET /order-last-price?dealer_id=X&product_id=Y`
@@ -526,6 +709,14 @@ These rely on `auth` + **`SalesScope`** in controllers (not permission middlewar
 | Broker | Select (Select2) | Yes | Disabled/pre-selected for broker role |
 | Brand | Select | Yes | |
 | Dealer | Select | Yes | Loaded after broker + brand; disabled until then |
+
+**Quick Add Broker** (below broker field, `@can('add-broker')`, hidden for broker role):
+- Link **“Add Broker”** — opens modal with broker user form (same validation as broker module)
+- On success: toast + append/select new broker in dropdown
+
+**Quick Add Brand** (below brand field, `@can('add-brand')`):
+- Link **“Add Brand”** — visible only when broker is selected
+- Opens modal with brand form (name only; status defaults Active); on success: toast + append/select new brand
 | Order Date | Date (Flatpickr) | Yes | Default today |
 | Delivery Address | Textarea | Yes | Auto from dealer |
 
@@ -754,6 +945,12 @@ Route::resource('order', OrderManagementController::class)->except(['store','upd
 //   permission:add-order → create
 //   permission:edit-order → edit
 
+// Broker quick-create (before users/{type})
+Route::get('users/broker/quick-create-form', ...)->name('users.broker.quickCreateForm')->middleware('permission:add-broker');
+
+// Brand quick-create (before brand resource)
+Route::get('brand/quick-create-form', ...)->name('brand.quickCreateForm')->middleware('permission:add-brand');
+
 // Dealer quick-create (before dealer resource)
 Route::get('dealer/quick-create-form', ...)->name('dealer.quickCreateForm')->middleware('permission:add-dealer');
 Route::post('order', ...)->middleware('permission:add-order');
@@ -796,24 +993,32 @@ $middleware->alias([
 | `SalesScope` | Central role-based row filtering, filter dropdowns, and filter apply helpers |
 | `DealerManagementController` | `quickCreateForm()`, JSON `store()` for inline dealer create from order form |
 | `dealer/partials/quick-create-form.blade.php` | Modal dealer form partial |
+| `UserController` | `brokerQuickCreateForm()`, JSON `store()` for inline broker create from order form |
+| `users/partials/quick-create-broker-form.blade.php` | Modal broker form partial |
+| `BrandManagementController` | `quickCreateForm()`, JSON `store()` for inline brand create from order form |
+| `brand/partials/quick-create-form.blade.php` | Modal brand form partial |
+| `order_management/partials/list-items-detail.blade.php` | Expandable order line-item panel on list |
+| `ActiveDropdownValidation` | Shared `broker_id` / `brand_id` validation (active status only) |
+| `User` model | `activeBrokersForDropdown()`, `isActiveBroker()` |
+| `BrandManagement` model | `activeForDropdown()`, `isActive()` |
 | `app/Http/Controllers/Controller.php` | Laravel base controller (required for middleware in constructors) |
 
 ---
 
-## ⏳ Pending / Known gaps (as of 11 Jun 2026)
+## ⏳ Pending / Known gaps (as of 01 Jun 2026)
 
 | Item | Status | Notes |
 |---|---|---|
 | Order list bulk delete UI | Partial | `#bulk_delete_button` exists; row checkboxes **commented out** in `order_management/index.blade.php` |
-| Order list Grand Total column | Hidden | Column defined in controller but commented out in Blade |
 | Order list Order Status column | Hidden | Commented out in Blade |
 | Dispatch history — Delete button | UI off | `dispatch.destroy` route exists; delete button **commented out** in `history.blade.php` |
 | Dispatch list — Edit from row | UI off | Edit from global dispatch list commented out; edit via history page only |
 | Order item soft deletes | Not used | `order_items` has no `deleted_at`; removed rows hard-deleted on order update |
 | Broker on order create (broker role) | Gap | Broker `<select>` disabled but no hidden `broker_id` — rely on `SalesScope::enforceOrderAssignment()` server-side |
-| Quick Add Dealer on **edit** order | Not implemented | Only on **create** page |
+| Quick Add Broker / Brand / Dealer on **edit** order | Not implemented | Only on **create** page |
 | Order list filter URL sync | Not implemented | Dispatch list syncs filters to URL query string; order list does **not** (reset only clears UI) |
 | `view-order` on other roles | Manual | Seeder assigns all sales permissions to `admin` only; broker/dealer/staff need role assignment via UI |
+| Order list DataTables Responsive plugin | Not used | Uses horizontal scroll + column hiding (child rows incompatible with Responsive collapse) |
 
 ---
 
@@ -888,15 +1093,20 @@ Sales tracks dealer orders placed by brokers (per brand) and physical dispatch o
 ### Sub-module A: Soda / Order
 
 **List** (order.index) — requires view-order
-- DataTable columns: Sr No, Order ID, Broker, Brand, Dealer, Order Date, Payment Status, Action
-- Filters: Brand (role-scoped), Broker (hidden for broker/dealer), Dealer (hidden for dealer), Reset button
+- DataTable columns: Expand, Sr No, Order ID, Broker, Brand, Dealer, Order Date, Amount, Dispatch, Payment Status, Action
+- Expandable child rows: product line items (expanded by default)
+- Filters: Order date range (From/To), Brand (role-scoped), Broker (hidden for broker/dealer), Dealer (hidden for dealer), Reset button
 - Search on Order ID
+- Responsive: horizontal scroll; Broker/Brand columns hidden on small breakpoints
 - Actions: Dispatch (with sequential check), Edit, Delete (with delete-check AJAX)
 - Add button → create page (requires add-order)
 
 **Create/Edit**
 - Header: Order ID (readonly), Broker, Brand, Dealer (AJAX /get-dealers), Order Date, Delivery Address
-- Create only: "Add Dealer" link + modal when broker+brand selected (add-dealer permission); quick-create via dealer.quickCreateForm + JSON dealer.store
+- Create only — quick-add links + modals:
+  - **Add Broker** (`add-broker`) — below broker field; `users.broker.quickCreateForm` + JSON `users.store`
+  - **Add Brand** (`add-brand`) — below brand when broker selected; `brand.quickCreateForm` + JSON `brand.store`
+  - **Add Dealer** (`add-dealer`) — below dealer when broker+brand selected; `dealer.quickCreateForm` + JSON `dealer.store`
 - Dynamic product rows: product_id[], qty[], price[], optional item_id[] on edit
 - Last price AJAX: GET /order-last-price?dealer_id&product_id
 - Payment: radio unpaid/paid/partial + partial_paid_amount
@@ -938,7 +1148,7 @@ Sales tracks dealer orders placed by brokers (per brand) and physical dispatch o
 
 ## Permissions
 view-order, add-order, edit-order, delete-order, view-dispatch, add-dispatch, edit-dispatch, delete-dispatch, view-dispatch-pending-payments
-(add-dealer from dealer module — for Quick Add Dealer on order create)
+(add-dealer / add-broker / add-brand from respective modules — for Quick Add modals on order create)
 
 Seed via: `php artisan db:seed --class=Database\\Seeders\\SalesPermissionSeeder`
 
@@ -986,8 +1196,12 @@ resources/views/layouts/main.blade.php
 - Order item soft deletes are disabled — hard delete rows when removed on edit
 - Use permission middleware on POST/PUT/DELETE routes; use `role_or_permission` on dispatch GET resource routes
 - Order index: `permission:view-order`; create: `permission:add-order`; edit: `permission:edit-order`
-- Order list filters: brand/broker/dealer + Reset; brand/dealer options via SalesScope::filterableBrands/Dealers
-- Quick Add Dealer: dealer.quickCreateForm + JSON dealer.store; partial resources/views/dealer/partials/quick-create-form.blade.php
+- Order list filters: order date range (date_from/date_to), brand/broker/dealer + Reset; options via SalesScope
+- Quick Add Broker: users.broker.quickCreateForm + JSON users.store (type broker); partial users/partials/quick-create-broker-form.blade.php; status hidden, defaults 1
+- Quick Add Brand: brand.quickCreateForm + JSON brand.store; partial brand/partials/quick-create-form.blade.php; status hidden, defaults 1
+- Quick Add Dealer: dealer.quickCreateForm + JSON dealer.store; partial dealer/partials/quick-create-form.blade.php
+- Broker/brand dropdowns: User::activeBrokersForDropdown(), BrandManagement::activeForDropdown(); ActiveDropdownValidation on forms
+- Order list expandable rows: list-items-detail partial; Amount + Dispatch summary columns
 - UI: `canAny` for Dispatch buttons when any dispatch permission exists; `@can('add-dispatch')` for Add Dispatch modal only
 - Run `SalesPermissionSeeder` so `add-dispatch` exists in DB (was missing before Jun 2026 update)
 - Use `App\Support\SalesScope` for all order/dispatch queries and `authorizeOrderAccess` before single-record actions
