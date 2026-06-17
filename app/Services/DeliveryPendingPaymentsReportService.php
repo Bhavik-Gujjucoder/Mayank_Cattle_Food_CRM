@@ -7,6 +7,10 @@ use Illuminate\Support\Collection;
 
 class DeliveryPendingPaymentsReportService
 {
+    public function __construct(
+        protected PaymentReceivableService $receivableService
+    ) {}
+
     /**
      * Build brand-grouped report sections for unpaid/partial dispatch payments.
      *
@@ -25,6 +29,7 @@ class DeliveryPendingPaymentsReportService
                 'order.dealer:id,city_id,user_id,firm_shop_name',
                 'order.dealer.city:id,city_name',
                 'order.dealer.user:id,name',
+                'orderItem:id,unit_price',
             ])
             ->get();
 
@@ -39,11 +44,17 @@ class DeliveryPendingPaymentsReportService
                 $pendingDaysItems = $dispatches
                     ->filter(fn ($d) => $d->dispatch_date !== null)
                     ->map(function ($d) use ($today) {
-                        $dispatchDay = $d->dispatch_date->copy()->startOfDay();
+                        $summary = $this->receivableService->summarizeDispatch($d, $today);
 
                         return [
-                            'days'          => max(0, (int) $dispatchDay->diffInDays($today)),
-                            'dispatch_date' => $d->dispatch_date->format('d M Y'),
+                            'dispatch_id'      => (int) $d->id,
+                            'days'             => $summary['days_since_dispatch'],
+                            'dispatch_date'    => $d->dispatch_date->format('d M Y'),
+                            'overdue_days'     => $summary['overdue_days'],
+                            'base_amount'      => $summary['base_amount'],
+                            'accrued_late_fee' => $summary['accrued_late_fee'],
+                            'total_receivable' => $summary['total_receivable'],
+                            'balance_due'      => $summary['balance_due'],
                         ];
                     })
                     ->sortByDesc('days')
@@ -68,6 +79,8 @@ class DeliveryPendingPaymentsReportService
                     'pending_days_label'    => self::formatPendingDaysLabel($pendingDaysItems->all()),
                     'max_pending_days'      => $maxDays,
                     'days_emphasis_class'   => $this->daysEmphasisClass($maxDays),
+                    'total_late_fee'        => round($pendingDaysItems->sum('accrued_late_fee'), 2),
+                    'total_balance_due'     => round($pendingDaysItems->sum('balance_due'), 2),
                 ];
             })
             ->filter()
@@ -129,6 +142,8 @@ class DeliveryPendingPaymentsReportService
         $row['pending_days_label']   = self::formatPendingDaysLabel($items);
         $row['max_pending_days']     = $maxDays;
         $row['days_emphasis_class']  = $this->daysEmphasisClass($maxDays);
+        $row['total_late_fee']       = round(collect($items)->sum('accrued_late_fee'), 2);
+        $row['total_balance_due']    = round(collect($items)->sum('balance_due'), 2);
 
         return $row;
     }
@@ -162,7 +177,7 @@ class DeliveryPendingPaymentsReportService
     /** Bootstrap text class from max days (row summary / mobile badge). */
     protected function daysEmphasisClass(int $maxDays): string
     {
-        return match (self::dayAgingLevel($maxDays)) {
+        return match ($this->dayAgingLevel($maxDays)) {
             'low'  => 'text-success',
             'mid'  => 'text-warning',
             default => 'text-danger',
@@ -170,20 +185,23 @@ class DeliveryPendingPaymentsReportService
     }
 
     /**
-     * Aging band for per-dispatch styling: low ≤7, mid 8–15, high 16+.
+     * Aging band for per-dispatch styling based on general settings payment_due_days.
      *
      * @return 'low'|'mid'|'high'
      */
-    public static function dayAgingLevel(int $days): string
+    public function dayAgingLevel(int $days): string
     {
-        if ($days <= 7) {
-            return 'low';
-        }
-        if ($days <= 15) {
-            return 'mid';
-        }
+        return $this->receivableService->dayAgingLevel($days);
+    }
 
-        return 'high';
+    /**
+     * Static helper for Blade views (resolves service from container).
+     *
+     * @return 'low'|'mid'|'high'
+     */
+    public static function dayAgingLevelFor(int $days): string
+    {
+        return app(self::class)->dayAgingLevel($days);
     }
 
     /**
@@ -213,5 +231,10 @@ class DeliveryPendingPaymentsReportService
                 'date'   => '64748B',
             ],
         };
+    }
+
+    public function paymentDueDays(): int
+    {
+        return $this->receivableService->paymentDueDays();
     }
 }

@@ -1,5 +1,6 @@
 @php
     use App\Services\DeliveryPendingPaymentsReportService;
+    use App\Services\PaymentReceivableService;
 
     $rows = $section['rows'] ?? [];
     $brandTitle = DeliveryPendingPaymentsReportService::formatBrandSectionTitle($section['brand_name'] ?? '');
@@ -19,6 +20,8 @@
                     <th class="dpp-col-city">City</th>
                     <th class="dpp-col-dealer">Dealer</th>
                     <th class="dpp-col-order">Order</th>
+                    <th class="dpp-col-amount text-end">Late Fee</th>
+                    <th class="dpp-col-amount text-end">Balance Due</th>
                     <th class="dpp-col-days">Pending Payment Days</th>
                 </tr>
             </thead>
@@ -35,8 +38,17 @@
                                 {{ $row['order_label'] }}
                             @endif
                         </td>
+                        <td class="text-end text-nowrap">
+                            {{ PaymentReceivableService::formatMoney((float) ($row['total_late_fee'] ?? 0)) }}
+                        </td>
+                        <td class="text-end text-nowrap fw-medium">
+                            {{ PaymentReceivableService::formatMoney((float) ($row['total_balance_due'] ?? 0)) }}
+                        </td>
                         <td class="dpp-days-col">
-                            @include('delivery_pending_payments.partials.pending-days-cell', ['row' => $row])
+                            @include('delivery_pending_payments.partials.pending-days-cell', [
+                                'row' => $row,
+                                'canUpdateDispatchPayment' => $canUpdateDispatchPayment ?? false,
+                            ])
                         </td>
                     </tr>
                 @endforeach
@@ -49,6 +61,7 @@
             @include('delivery_pending_payments.partials.mobile-order-card', [
                 'row' => $row,
                 'canLinkOrder' => $canLinkOrder,
+                'canUpdateDispatchPayment' => $canUpdateDispatchPayment ?? false,
             ])
         @endforeach
     </div>

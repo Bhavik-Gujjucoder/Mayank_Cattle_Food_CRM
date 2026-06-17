@@ -444,6 +444,7 @@
                         <th scope="col">Order Date</th>
                         <th scope="col" class="no-sort">Amount</th>
                         <th scope="col" class="no-sort">Dispatch</th>
+                        <th scope="col" class="no-sort">Due Charges</th>
                         <th scope="col">Payment Status</th>
                         {{-- <th scope="col">Order Status</th> --}}
                         <th scope="col" @unless(auth()->user()->canAny(['edit-order', 'delete-order', 'view-dispatch'])) hidden @endunless>Action</th>
@@ -666,6 +667,13 @@
                     name: 'dispatch_summary',
                     orderable: false,
                     searchable: false
+                },
+                {
+                    data: 'receivable_summary',
+                    name: 'receivable_summary',
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-end'
                 },
                 {
                     data: 'payment_status',

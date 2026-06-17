@@ -6,10 +6,11 @@
     <span class="dpp-days-screen">
         @foreach ($items as $index => $item)
             @php
-                $level = \App\Services\DeliveryPendingPaymentsReportService::dayAgingLevel((int) $item['days']);
+                $level = \App\Services\DeliveryPendingPaymentsReportService::dayAgingLevelFor((int) $item['days']);
             @endphp
             @if ($index > 0)<span class="dpp-days-sep"> - </span>@endif
             <span class="dpp-day-pill dpp-day-pill--{{ $level }}"
+                @if (!empty($canUpdateDispatchPayment)) data-dispatch-id="{{ $item['dispatch_id'] ?? '' }}" @endif
                 data-bs-toggle="tooltip"
                 data-bs-placement="top"
                 data-bs-title="Dispatch date: {{ $item['dispatch_date'] }}"

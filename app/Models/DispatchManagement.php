@@ -20,9 +20,11 @@ class DispatchManagement extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'dispatch_date'       => 'date',
-        'status'              => 'integer',
-        'partial_paid_amount' => 'decimal:2',
+        'dispatch_date'           => 'date',
+        'status'                  => 'integer',
+        'partial_paid_amount'     => 'decimal:2',
+        'accrued_late_fee'        => 'decimal:2',
+        'late_fee_last_accrued_on' => 'date',
     ];
 
     /** @return list<int> */
@@ -68,5 +70,10 @@ class DispatchManagement extends Model
     public function transporter()
     {
         return $this->belongsTo(User::class, 'transport_id');
+    }
+
+    public function lateFeeLogs()
+    {
+        return $this->hasMany(DispatchLateFeeLog::class, 'dispatch_management_id');
     }
 }

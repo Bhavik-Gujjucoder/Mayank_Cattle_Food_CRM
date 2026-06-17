@@ -96,6 +96,8 @@
                         <th>Transport</th>
                         <th>Truck Number</th>
                         <th>Driver Contact</th>
+                        <th class="text-end" style="width:110px;">Late Fee</th>
+                        <th class="text-end" style="width:120px;">Balance Due</th>
                         <th style="width:100px;">Status</th>
                         <th class="text-center no-sort" style="width:80px;">Action</th>
                     </tr>
@@ -201,6 +203,8 @@ $(document).ready(function () {
             { data: 'transporter_name',name: 'transporter_name',                 orderable: false, searchable: false },
             { data: 'truck_number',    name: 'truck_number',                     orderable: false,  searchable: false },
             { data: 'driver_contact',  name: 'driver_contact',                   orderable: false,  searchable: false },
+            { data: 'late_fee',        name: 'late_fee',        className: 'text-end', orderable: false, searchable: false },
+            { data: 'balance_due',     name: 'balance_due',     className: 'text-end', orderable: false, searchable: false },
             { data: 'status',          name: 'status',                           orderable: false,  searchable: false },
             { data: 'action',          name: 'action',          className: 'text-center',
                                                                                  orderable: false, searchable: false },

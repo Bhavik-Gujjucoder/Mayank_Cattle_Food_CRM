@@ -141,6 +141,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dispatch/transporter-trucks/{transporter}', [DispatchManagementController::class, 'getTrucksByTransporter'])
         ->name('dispatch.transporterTrucks');
 
+    /* AJAX: update dispatch payment status from pending payments report */
+    Route::get('dispatch/{dispatch}/payment-popup-data', [DispatchManagementController::class, 'paymentPopupData'])
+        ->name('dispatch.paymentPopupData')->middleware('permission:edit-dispatch');
+    Route::match(['put', 'patch'], 'dispatch/{dispatch}/payment-status', [DispatchManagementController::class, 'updatePaymentStatus'])
+        ->name('dispatch.updatePaymentStatus')->middleware('permission:edit-dispatch');
+
     Route::resource('dispatch', DispatchManagementController::class)->except(['store', 'update', 'destroy']);
     Route::post('dispatch', [DispatchManagementController::class, 'store'])
         ->name('dispatch.store')->middleware('permission:add-dispatch');

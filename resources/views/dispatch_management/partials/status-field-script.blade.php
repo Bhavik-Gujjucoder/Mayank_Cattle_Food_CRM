@@ -9,19 +9,23 @@
     }
 
     function toggleDispatchPartialWrap($form) {
-        $form.find('.dispatch-payment-status-radio').each(function () {
-            var prefix = $(this).data('prefix');
-            if (!prefix) {
-                return;
-            }
+        var $radios = $form.find('.dispatch-payment-status-radio');
+        if (!$radios.length) {
+            return;
+        }
 
-            var isPartial = $(this).is(':checked') && $(this).val() === '2';
-            $('#' + prefix + '_partial_amount_wrap').toggle(isPartial);
+        var prefix = $radios.first().data('prefix');
+        if (!prefix) {
+            return;
+        }
 
-            if (!isPartial) {
-                $('#' + prefix + '_partial_paid_amount').val('');
-            }
-        });
+        var isPartial = $form.find('input[name="status"]:checked').val() === '2';
+
+        $('#' + prefix + '_partial_amount_wrap').toggle(isPartial);
+
+        if (!isPartial) {
+            $('#' + prefix + '_partial_paid_amount').val('');
+        }
     }
 
     $.validator.addMethod('dispatchPartialAmount', function (value, element) {
@@ -50,7 +54,7 @@
                 return;
             }
 
-            $form.find('input[name="status"][id^="' + prefix + '_"]').prop('checked', false);
+            $form.find('input[name="status"]').prop('checked', false);
             $('#' + prefix + '_status_' + window.dispatchPaymentStatusHelpers.statusKey(status)).prop('checked', true);
             $('#' + prefix + '_partial_paid_amount').val(partialPaidAmount || '');
             toggleDispatchPartialWrap($form);

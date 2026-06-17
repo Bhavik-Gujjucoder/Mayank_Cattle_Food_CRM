@@ -43,7 +43,7 @@
         <div class="input-group" style="max-width:260px;">
             <span class="input-group-text">₹</span>
             <input type="number" name="partial_paid_amount" id="{{ $statusIdPrefix }}_partial_paid_amount"
-                value="{{ $partialAmount }}" class="form-control" placeholder="0.00" min="0" step="0.01">
+                value="{{ $partialAmount }}" class="form-control dispatch-partial-paid-field" placeholder="0.00" min="0" step="0.01">
         </div>
         <span class="field-error" id="{{ $statusIdPrefix }}_partial_paid_amount-error"></span>
     </div>

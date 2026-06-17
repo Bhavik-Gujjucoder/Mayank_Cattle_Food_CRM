@@ -46,4 +46,16 @@ class OrderItem extends Model
     {
         return max(0, (int) $this->qty - $this->dispatchedQty());
     }
+
+    /** Max bags allowed when editing an existing dispatch (includes its current qty). */
+    public function maxBagsWhenEditing(DispatchManagement $dispatch): int
+    {
+        $otherBags = (int) $this->dispatches()
+            ->where('id', '!=', $dispatch->id)
+            ->sum('no_of_bags');
+
+        $maxFromOrder = max(0, (int) $this->qty - $otherBags);
+
+        return max($maxFromOrder, (int) $dispatch->no_of_bags);
+    }
 }

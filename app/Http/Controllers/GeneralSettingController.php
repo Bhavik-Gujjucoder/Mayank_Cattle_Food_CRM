@@ -36,6 +36,11 @@ class GeneralSettingController extends Controller
                 'login_page_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 'copyright_msg'    => 'required',
             ]);
+        } elseif ($request->form_type == 'sales') {
+            $request->validate([
+                'payment_due_days'   => 'nullable|integer|min:0',
+                'payment_due_amount' => 'nullable|numeric|min:0',
+            ]);
         } else {
             //
         }
@@ -48,6 +53,13 @@ class GeneralSettingController extends Controller
             return redirect()->back()->with('error', 'Request data is empty.');
         } else {
             $data = $request->except(['_token', 'company_logo', 'login_page_image', 'form_type']);
+
+            /* Sales defaults */
+            if ($request->form_type === 'sales') {
+                $data['payment_due_days'] = ($data['payment_due_days'] ?? '') === '' ? 0 : $data['payment_due_days'];
+                $data['payment_due_amount'] = ($data['payment_due_amount'] ?? '') === '' ? 0 : $data['payment_due_amount'];
+            }
+
             foreach ($data as $key => $value) {
                 GeneralSetting::updateOrCreate(
                     ['key' => $key],         /* Search by key */

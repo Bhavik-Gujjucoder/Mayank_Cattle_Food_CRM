@@ -285,10 +285,12 @@
     </div>
     @endif --}}
 
-        {{-- ══════════════════════════════════════════════════════════════
-         DISPATCH HISTORY TABLE
-    ══════════════════════════════════════════════════════════════ --}}
         <div class="card-body">
+@php
+    use App\Services\PaymentReceivableService;
+
+    $receivableService = app(PaymentReceivableService::class);
+@endphp
             <div class="table-responsive">
                 <table class="table table-bordered table-hover">
                     <thead class="thead-light">
@@ -301,6 +303,8 @@
                             <th>Truck number</th>
                             <th>Driver contact</th>
                             <th class="dh-col-status">Status</th>
+                            <th class="text-end">Late Fee</th>
+                            <th class="text-end">Balance Due</th>
                             <th class="text-center dh-col-action">Action</th>
                         </tr>
                     </thead>
@@ -308,7 +312,10 @@
                         @php $hasRows = false; @endphp
                         @foreach ($order->items as $itemIndex => $item)
                             @foreach ($item->dispatches as $dispatch)
-                                @php $hasRows = true; @endphp
+                                @php
+                                    $hasRows = true;
+                                    $recv = $receivableService->summarizeDispatch($dispatch);
+                                @endphp
                                 <tr>
                                     <td class="text-center">{{ $itemIndex + 1 }}</td>
                                     <td>{{ $item->product?->name ?? '—' }}</td>
@@ -322,6 +329,12 @@
                                         @if ((int) $dispatch->status === \App\Models\DispatchManagement::STATUS_PARTIAL && $dispatch->partial_paid_amount !== null)
                                             <small class="d-block text-muted mt-1">₹{{ number_format((float) $dispatch->partial_paid_amount, 2) }}</small>
                                         @endif
+                                    </td>
+                                    <td class="text-end text-nowrap">
+                                        {{ PaymentReceivableService::formatMoney($recv['accrued_late_fee']) }}
+                                    </td>
+                                    <td class="text-end text-nowrap fw-medium">
+                                        {{ $receivableService->formatBalanceDueDisplay($dispatch) }}
                                     </td>
                                     <td class="text-center">
                                         <div class="dh-action-btns">
@@ -338,7 +351,7 @@
                                                     data-partial-paid-amount="{{ $dispatch->partial_paid_amount }}"
                                                     data-product-name="{{ $item->product?->name ?? '' }}"
                                                     data-product-unit="{{ $item->product?->unit ?? '' }}"
-                                                    data-effective-pending="{{ $item->pendingQty() + $dispatch->no_of_bags }}"
+                                                    data-effective-pending="{{ $item->maxBagsWhenEditing($dispatch) }}"
                                                     data-update-url="{{ route('dispatch.update', $dispatch->id) }}">
                                                     <i class="ti ti-edit"></i>
                                                 </button>
@@ -366,7 +379,7 @@
 
                         @if (!$hasRows)
                             <tr>
-                                <td colspan="9" class="text-center text-muted py-4">
+                                <td colspan="11" class="text-center text-muted py-4">
                                     No dispatch entries found for this order.
                                 </td>
                             </tr>
@@ -618,6 +631,14 @@
                                     'value'    => '0',
                                 ])
 
+                                <div class="col-12">
+                                    <hr class="my-2">
+                                </div>
+
+                                @include('dispatch_management.partials.receivable-summary-fields', [
+                                    'idPrefix' => 'edit_recv',
+                                ])
+
                             </div>
                         </div>
 
@@ -636,11 +657,18 @@
         </div>
     @endcan
 
+    @if (!empty($editModalReopenPayload))
+        <script type="application/json" id="dispatchEditReopenPayload">@json($editModalReopenPayload)</script>
+    @endif
+
+    @if (!empty($addDispatchOldInput))
+        <script type="application/json" id="dispatchAddOldInput">@json($addDispatchOldInput)</script>
+    @endif
+
 @endsection
 @section('script')
-    {{-- jQuery Validate plugin --}}
-    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
     @include('dispatch_management.partials.status-field-script')
+    @include('dispatch_management.partials.receivable-summary-script')
 
     <script>
         $(document).ready(function() {
@@ -670,7 +698,7 @@
                    autoFillContact : if true, fill contact from transporter phone
                }
             ════════════════════════════════════════════════════════════ */
-            var TRUCKS_URL = '{{ route('dispatch.transporterTrucks', ':id') }}';
+            var TRUCKS_URL = @json(route('dispatch.transporterTrucks', ':id'));
 
             function loadTrucksForTransporter(transporterId, $truckSelect, $contactInput, opts) {
                 opts = opts || {};
@@ -789,7 +817,17 @@
 
             /* ── Validate — Add form ───────────────────────────────────── */
             $('#dispatchForm').validate({
-                ignore: ':hidden:not(#dispatchDate)',
+                ignore: function (element) {
+                    if ($(element).attr('id') === 'dispatchDate') {
+                        return false;
+                    }
+
+                    if ($(element).hasClass('dispatch-partial-paid-field')) {
+                        return !$('#dispatch_partial_amount_wrap').is(':visible');
+                    }
+
+                    return $(element).is(':hidden');
+                },
                 rules: {
                     order_item_id:  { required: true },
                     no_of_bags:     { required: true, number: true, min: 1, maxPending: true },
@@ -827,30 +865,38 @@
                 },
                 highlight:   function(el) { var $e = $(el); $e.attr('id') === 'dispatchDate' ? $e.next('.flatpickr-input').addClass('is-invalid') : $e.addClass('is-invalid'); },
                 unhighlight: function(el) { var $e = $(el); $e.attr('id') === 'dispatchDate' ? $e.next('.flatpickr-input').removeClass('is-invalid') : $e.removeClass('is-invalid'); },
-                submitHandler: function(form) { form.submit(); },
+                submitHandler: function (form) {
+                    $(form).find('select:disabled, input:disabled, textarea:disabled').prop('disabled', false);
+                    HTMLFormElement.prototype.submit.call(form);
+                },
             });
 
             /* ── Re-open Add modal on server validation failure ─────────── */
-            @if (!session('edit_dispatch_id') && $errors->any())
-                (function() {
-                    /* Restore transporter + trucks + contact when re-opening */
-                    var savedTransporter = '{{ old('transport_id') }}';
-                    var savedTruck       = '{{ old('truck_number') }}';
-                    var savedContact     = '{{ old('driver_contact') }}';
+            (function () {
+                var addOldNode = document.getElementById('dispatchAddOldInput');
+                if (!addOldNode) {
+                    return;
+                }
 
-                    if (savedTransporter) {
-                        $('#dispatchTransport').val(savedTransporter);
+                try {
+                    var addOld = JSON.parse(addOldNode.textContent);
+                    if (addOld.transport_id) {
+                        $('#dispatchTransport').val(addOld.transport_id);
                         loadTrucksForTransporter(
-                            savedTransporter,
+                            addOld.transport_id,
                             $('#dispatchTruckNumber'),
                             $('#dispatchDriverContact'),
-                            { setTruckNumber: savedTruck, setDriverContact: savedContact || null }
+                            {
+                                setTruckNumber: addOld.truck_number || null,
+                                setDriverContact: addOld.driver_contact || null,
+                            }
                         );
                     }
-
                     (new bootstrap.Modal(document.getElementById('addDispatchModal'))).show();
-                })();
-            @endif
+                } catch (e) {
+                    console.error('Failed to restore add dispatch modal', e);
+                }
+            })();
 
 
             /* ════════════════════════════════════════════════════════════
@@ -871,15 +917,37 @@
 
             /* Maximum bags allowed for the dispatch being edited */
             var editEffectivePending = 0;
+            var editOriginalNoOfBags = 0;
+            var editMaxAllowedBags = 0;
 
             /* ── Custom rule: bags ≤ effective pending (Edit form) ──────── */
             $.validator.addMethod('maxEditPending', function(value) {
-                return parseInt(value) <= editEffectivePending;
+                var qty = parseInt(value, 10);
+                if (isNaN(qty)) {
+                    return false;
+                }
+
+                /* Payment-only updates keep the same bag qty — always allow */
+                if (qty === editOriginalNoOfBags) {
+                    return true;
+                }
+
+                return qty <= editMaxAllowedBags;
             }, 'The entered quantity cannot exceed the pending quantity.');
 
             /* ── Validate — Edit form ──────────────────────────────────── */
             $('#editDispatchForm').validate({
-                ignore: ':hidden:not(#editDispatchDate)',
+                ignore: function (element) {
+                    if ($(element).attr('id') === 'editDispatchDate') {
+                        return false;
+                    }
+
+                    if ($(element).hasClass('dispatch-partial-paid-field')) {
+                        return !$('#edit_partial_amount_wrap').is(':visible');
+                    }
+
+                    return $(element).is(':hidden');
+                },
                 rules: {
                     no_of_bags:     { required: true, number: true, min: 1, maxEditPending: true },
                     dispatch_date:  { required: true },
@@ -900,6 +968,10 @@
                 errorElement: 'span',
                 errorClass: 'text-danger small d-block mt-1',
                 errorPlacement: function(error, element) {
+                    if (element.attr('name') === 'partial_paid_amount') {
+                        error.appendTo('#edit_partial_paid_amount-error');
+                        return;
+                    }
                     var $target = $('#edit_' + element.attr('name') + '-error');
                     if ($target.length) {
                         $target.html(error);
@@ -911,7 +983,38 @@
                 },
                 highlight:   function(el) { var $e = $(el); $e.attr('id') === 'editDispatchDate' ? $e.next('.flatpickr-input').addClass('is-invalid') : $e.addClass('is-invalid'); },
                 unhighlight: function(el) { var $e = $(el); $e.attr('id') === 'editDispatchDate' ? $e.next('.flatpickr-input').removeClass('is-invalid') : $e.removeClass('is-invalid'); },
-                submitHandler: function(form) { form.submit(); },
+                invalidHandler: function (_event, validator) {
+                    var firstError = validator.errorList[0];
+                    if (firstError && firstError.message) {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Please fix the form',
+                                text: firstError.message,
+                                confirmButtonText: 'OK',
+                            });
+                        }
+                    }
+                },
+                submitHandler: function (form) {
+                    var $form = $(form);
+                    var action = $form.attr('action');
+
+                    if (!action) {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Update failed',
+                                text: 'Dispatch update URL is missing. Please close and reopen the edit dialog.',
+                            });
+                        }
+                        return;
+                    }
+
+                    /* Disabled fields (e.g. truck dropdown while loading) are omitted from POST */
+                    $form.find('select:disabled, input:disabled, textarea:disabled').prop('disabled', false);
+                    HTMLFormElement.prototype.submit.call(form);
+                },
             });
 
             /* ── Transporter change in Edit form — reload trucks ─────────── */
@@ -926,10 +1029,44 @@
                 );
             });
 
+            /* ── Clear stale server/client errors while editing ─────────── */
+            $('#editDispatchForm').on('input change', 'input, select, textarea', function () {
+                var $field = $(this);
+                var name = $field.attr('name');
+
+                $field.removeClass('is-invalid');
+                if ($field.attr('id') === 'editDispatchDate') {
+                    $field.next('.flatpickr-input').removeClass('is-invalid');
+                }
+
+                if (name === 'partial_paid_amount') {
+                    $('#edit_partial_paid_amount-error').empty();
+                    return;
+                }
+
+                if (name) {
+                    $('#edit_' + name + '-error').empty();
+                }
+            });
+
+            /* ── Helper: clear validation UI without resetting field values ── */
+            function clearDispatchFormValidation($form) {
+                var validator = $form.data('validator');
+                if (validator) {
+                    validator.hideErrors();
+                }
+                $form.find('.is-invalid').removeClass('is-invalid');
+                $form.find('.field-error').empty();
+                $form.find('#editDispatchDate').next('.flatpickr-input').removeClass('is-invalid');
+            }
+
             /* ── Helper: populate edit modal fields ─────────────────────── */
-            function populateEditModal(transportId, truckNumber, driverContact, status, partialPaidAmount, noBags, dispatchDate, productName, effectivePending, updateUrl, productUnit) {
-                editEffectivePending = effectivePending;
-                $('#editDispatchForm').attr('action', updateUrl);
+            function populateEditModal(dispatchId, transportId, truckNumber, driverContact, status, partialPaidAmount, noBags, dispatchDate, productName, effectivePending, updateUrl, productUnit, validationErrors) {
+                editOriginalNoOfBags = parseInt(noBags, 10) || 0;
+                editEffectivePending = parseInt(effectivePending, 10) || 0;
+                editMaxAllowedBags = Math.max(editEffectivePending, editOriginalNoOfBags);
+                clearDispatchFormValidation($('#editDispatchForm'));
+                $('#editDispatchForm').attr('action', updateUrl || '');
                 $('#editProductName').text(productName || '—');
                 $('#editNoBags').val(noBags);
                 $('#editDriverContact').val(driverContact);
@@ -937,6 +1074,12 @@
                 editDatePicker.setDate(dispatchDate, false);
                 $('#editDispatchQtyLabel').text(quantityFieldLabel(productUnit || ''));
                 $('#editPendingHint').text(maxAllowedHint(effectivePending, productUnit || ''));
+
+                window.dispatchReceivableHelpers.loadForDispatch(
+                    'edit_recv',
+                    dispatchId,
+                    @json(route('dispatch.paymentPopupData', ':id'))
+                );
 
                 /* Set transporter — then load its trucks and pre-select the saved truck */
                 $('#editTransport').val(transportId);
@@ -950,12 +1093,31 @@
                     }
                 );
 
-                /* Reset previous validation state */
-                var v = $('#editDispatchForm').validate();
-                v.resetForm();
-                $('#editDispatchForm .is-invalid').removeClass('is-invalid');
-                $('#editDispatchDate').next('.flatpickr-input').removeClass('is-invalid');
-                $('#editDispatchForm .field-error').empty();
+                if (validationErrors && typeof validationErrors === 'object') {
+                    Object.keys(validationErrors).forEach(function (field) {
+                        var messages = validationErrors[field];
+                        if (!messages || !messages.length) {
+                            return;
+                        }
+
+                        var message = messages[0];
+                        if (field === 'partial_paid_amount') {
+                            $('#edit_partial_paid_amount-error').text(message);
+                            $('#edit_partial_paid_amount').addClass('is-invalid');
+                            return;
+                        }
+
+                        var $target = $('#edit_' + field + '-error');
+                        if ($target.length) {
+                            $target.text(message);
+                        }
+
+                        var $input = $('#editDispatchForm').find('[name="' + field + '"]');
+                        if ($input.length) {
+                            $input.addClass('is-invalid');
+                        }
+                    });
+                }
 
                 (new bootstrap.Modal(document.getElementById('editDispatchModal'))).show();
             }
@@ -964,93 +1126,48 @@
             $(document).on('click', '.edit-dispatch-btn', function() {
                 var $btn = $(this);
                 populateEditModal(
+                    $btn.data('id'),
                     $btn.data('transport-id'),
-                    $btn.data('truck-number'),
-                    $btn.data('driver-contact'),
-                    $btn.data('status'),
-                    $btn.data('partial-paid-amount'),
+                    $btn.attr('data-truck-number'),
+                    $btn.attr('data-driver-contact'),
+                    $btn.attr('data-status'),
+                    $btn.attr('data-partial-paid-amount') || '',
                     $btn.data('no-of-bags'),
-                    $btn.data('dispatch-date'),
-                    $btn.data('product-name'),
-                    parseInt($btn.data('effective-pending')) || 0,
-                    $btn.data('update-url'),
-                    $btn.data('product-unit')
+                    $btn.attr('data-dispatch-date'),
+                    $btn.attr('data-product-name'),
+                    parseInt($btn.attr('data-effective-pending'), 10) || 0,
+                    $btn.attr('data-update-url'),
+                    $btn.attr('data-product-unit')
                 );
             });
 
-            /* ── Re-open Edit modal on server validation failure ─────────── */
-            @if (session('edit_dispatch_id'))
-                @php
-                    $reopenId = session('edit_dispatch_id');
-                    $reopenDispatch = null;
-                    $reopenItem = null;
-                    foreach ($order->items as $_item) {
-                        foreach ($_item->dispatches as $_d) {
-                            if ($_d->id == $reopenId) {
-                                $reopenDispatch = $_d;
-                                $reopenItem = $_item;
-                                break 2;
-                            }
-                        }
-                    }
-                    if ($reopenDispatch && $reopenItem) {
-                        $reopenOtherBags = (int) $reopenItem->dispatches->where('id', '!=', $reopenDispatch->id)->sum('no_of_bags');
-                        $reopenEffectivePending = max(0, (int) $reopenItem->qty - $reopenOtherBags);
-                    }
-                @endphp
-                @if ($reopenDispatch && $reopenItem)
-                    populateEditModal(
-                        {{ json_encode(old('transport_id', (string) $reopenDispatch->transport_id)) }},
-                        {{ json_encode(old('truck_number', $reopenDispatch->truck_number)) }},
-                        {{ json_encode(old('driver_contact', $reopenDispatch->driver_contact)) }},
-                        {{ json_encode(old('status', (string) $reopenDispatch->status)) }},
-                        {{ json_encode(old('partial_paid_amount', $reopenDispatch->partial_paid_amount)) }},
-                        {{ json_encode(old('no_of_bags', $reopenDispatch->no_of_bags)) }},
-                        {{ json_encode(old('dispatch_date', $reopenDispatch->dispatch_date?->format('Y-m-d'))) }},
-                        {{ json_encode($reopenItem->product?->name ?? '—') }},
-                        {{ $reopenEffectivePending }},
-                        '{{ route('dispatch.update', $reopenDispatch->id) }}',
-                        {{ json_encode($reopenItem->product?->unit ?? '') }}
-                    );
-                @endif
-            @endif
+            (function () {
+                var reopenNode = document.getElementById('dispatchEditReopenPayload');
+                if (!reopenNode) {
+                    return;
+                }
 
-            /* ── Auto-open edit modal from index listing ─ */
-            @if (!session('edit_dispatch_id') && request()->query('edit'))
-                @php
-                    $autoEditId = (int) request()->query('edit');
-                    $autoDispatch = null;
-                    $autoItem = null;
-                    foreach ($order->items as $_item) {
-                        foreach ($_item->dispatches as $_d) {
-                            if ($_d->id === $autoEditId) {
-                                $autoDispatch = $_d;
-                                $autoItem = $_item;
-                                break 2;
-                            }
-                        }
-                    }
-                    if ($autoDispatch && $autoItem) {
-                        $autoOtherBags = (int) $autoItem->dispatches->where('id', '!=', $autoDispatch->id)->sum('no_of_bags');
-                        $autoEffectivePending = max(0, (int) $autoItem->qty - $autoOtherBags);
-                    }
-                @endphp
-                @if ($autoDispatch && $autoItem)
+                try {
+                    var payload = JSON.parse(reopenNode.textContent);
                     populateEditModal(
-                        {{ $autoDispatch->transport_id }},
-                        {{ json_encode($autoDispatch->truck_number) }},
-                        {{ json_encode($autoDispatch->driver_contact) }},
-                        {{ $autoDispatch->status }},
-                        {{ json_encode($autoDispatch->partial_paid_amount) }},
-                        {{ $autoDispatch->no_of_bags }},
-                        {{ json_encode($autoDispatch->dispatch_date?->format('Y-m-d')) }},
-                        {{ json_encode($autoItem->product?->name ?? '—') }},
-                        {{ $autoEffectivePending }},
-                        '{{ route('dispatch.update', $autoDispatch->id) }}',
-                        {{ json_encode($autoItem->product?->unit ?? '') }}
+                        payload.dispatchId,
+                        payload.transportId,
+                        payload.truckNumber,
+                        payload.driverContact,
+                        payload.status,
+                        payload.partialPaidAmount || '',
+                        payload.noOfBags,
+                        payload.dispatchDate,
+                        payload.productName,
+                        payload.effectivePending,
+                        payload.updateUrl,
+                        payload.productUnit,
+                        payload.validationErrors || null
                     );
-                @endif
-            @endif
+                } catch (e) {
+                    console.error('Failed to reopen edit dispatch modal', e);
+                }
+            })();
 
 
             /* ════════════════════════════════════════════════════════════

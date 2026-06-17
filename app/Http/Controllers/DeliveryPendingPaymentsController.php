@@ -32,6 +32,7 @@ class DeliveryPendingPaymentsController extends Controller
         $canLinkOrder = $user->can('add-dispatch')
             || $user->can('edit-dispatch')
             || $user->can('delete-dispatch');
+        $canUpdateDispatchPayment = $user->can('edit-dispatch');
 
         return view('delivery_pending_payments.index', [
             'page_title'     => 'Sales — Dispatch Pending Payments',
@@ -39,6 +40,8 @@ class DeliveryPendingPaymentsController extends Controller
             'brandFilter'    => $brandFilter,
             'brandSections'  => $brandSections,
             'canLinkOrder'   => $canLinkOrder,
+            'canUpdateDispatchPayment' => $canUpdateDispatchPayment,
+            'paymentDueDays' => $this->reportService->paymentDueDays(),
         ]);
     }
 

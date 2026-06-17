@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\PaymentReceivableService;
 use App\Support\SalesScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -129,5 +130,13 @@ class OrderManagement extends Model
             'partial' => '<span class="badge bg-warning-light text-warning">Partial</span>',
             default   => '<span class="badge bg-danger-light text-danger">Unpaid</span>',
         };
+    }
+
+    /**
+     * Sync parent order payment status from dispatch payment rows.
+     */
+    public function syncPaymentStatusFromDispatches(): void
+    {
+        app(PaymentReceivableService::class)->syncOrderPaymentStatus($this);
     }
 }

@@ -28,7 +28,9 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
 
     protected int $maxChips = 1;
 
-    protected string $lastColLetter = 'D';
+    protected string $lastColLetter = 'F';
+
+    protected int $chipStartColumn = 6;
 
     public function __construct(
         protected Collection $brandSections
@@ -68,7 +70,7 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
             ], $line++, 'brand');
 
             $this->pushRow(
-                ['City', 'Dealer', 'Order', 'Pending Payment Days'],
+                ['City', 'Dealer', 'Order', 'Late Fee', 'Balance Due', 'Pending Payment Days'],
                 $line++,
                 'header'
             );
@@ -80,6 +82,8 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
                     $row['city_name'],
                     $row['dealer_name'],
                     $row['order_label'],
+                    number_format((float) ($row['total_late_fee'] ?? 0), 2),
+                    number_format((float) ($row['total_balance_due'] ?? 0), 2),
                     '',
                 ], $line++, 'data');
             }
@@ -90,7 +94,11 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
         $this->pushSpacer($line, 'spacer-lg');
 
         $this->pushRow([
-            'Pending Payment Days: Days count from dispatch date to current day (per unpaid or partial dispatch). Green ≤7, amber 8–15, red 16+.',
+            'Pending Payment Days: Days from dispatch date to today. Aging uses payment due days from General Settings.',
+        ], $line++, 'footnote');
+
+        $this->pushRow([
+            'Late Fee: Daily accrued charge after due period (rate × qty per dispatch). Balance Due = base + late fee − partial payment.',
         ], $line++, 'footnote');
 
         $this->pushRow([
@@ -111,7 +119,7 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
         }
 
         $this->maxChips = max(1, $this->maxChips);
-        $this->lastColLetter = Coordinate::stringFromColumnIndex(3 + ($this->maxChips * 2));
+        $this->lastColLetter = Coordinate::stringFromColumnIndex(5 + ($this->maxChips * 2));
     }
 
     protected function fullRowRange(int $row): string
@@ -121,7 +129,9 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
 
     protected function pendingDaysHeaderRange(int $row): string
     {
-        return 'D' . $row . ':' . $this->lastColLetter . $row;
+        $start = Coordinate::stringFromColumnIndex($this->chipStartColumn);
+
+        return $start . $row . ':' . $this->lastColLetter . $row;
     }
 
     /**
@@ -129,7 +139,7 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
      */
     protected function pushRow(array $cells, int $rowNum, string $type): void
     {
-        $this->rows[] = array_pad($cells, 4, '');
+        $this->rows[] = array_pad($cells, 6, '');
         $this->styleMap[] = ['row' => $rowNum, 'type' => $type];
     }
 
@@ -233,8 +243,10 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
                 $sheet->getColumnDimension('A')->setWidth(14);
                 $sheet->getColumnDimension('B')->setWidth(22);
                 $sheet->getColumnDimension('C')->setWidth(22);
+                $sheet->getColumnDimension('D')->setWidth(12);
+                $sheet->getColumnDimension('E')->setWidth(14);
 
-                for ($col = 4; $col <= 3 + ($this->maxChips * 2); $col++) {
+                for ($col = $this->chipStartColumn; $col <= 5 + ($this->maxChips * 2); $col++) {
                     $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($col))->setWidth(6.5);
                 }
 
@@ -255,20 +267,20 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
     protected function applyPendingDaysChips(Worksheet $sheet, int $row, array $items): void
     {
         if ($items === []) {
-            $sheet->getCell('D' . $row)->setValue('—');
+            $sheet->getCell(Coordinate::stringFromColumnIndex($this->chipStartColumn) . $row)->setValue('—');
 
             return;
         }
 
         foreach ($items as $index => $item) {
-            $startCol = 4 + ($index * 2);
+            $startCol = $this->chipStartColumn + ($index * 2);
             $startLetter = Coordinate::stringFromColumnIndex($startCol);
             $endLetter = Coordinate::stringFromColumnIndex($startCol + 1);
             $range = $startLetter . $row . ':' . $endLetter . $row;
 
             $sheet->mergeCells($range);
 
-            $level = DeliveryPendingPaymentsReportService::dayAgingLevel((int) $item['days']);
+            $level = DeliveryPendingPaymentsReportService::dayAgingLevelFor((int) $item['days']);
             $colors = DeliveryPendingPaymentsReportService::dayAgingColors($level);
 
             $rich = new RichText();

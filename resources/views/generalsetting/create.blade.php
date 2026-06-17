@@ -21,6 +21,11 @@
                     data-bs-toggle="tab" href="#company-details" role="tab" aria-controls="company-details"
                     aria-selected="{{ $activeTab == 'company-detail' ? 'true' : 'false' }}">Company Details</a>
             </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link {{ $activeTab == 'sales' ? 'active' : '' }}" id="SalesTab" data-bs-toggle="tab"
+                    href="#sales" role="tab" aria-controls="sales"
+                    aria-selected="{{ $activeTab == 'sales' ? 'true' : 'false' }}">Sales</a>
+            </li>
         </ul>
 
         <div class="tab-content mt-3" id="myTabContent">
@@ -148,8 +153,50 @@
                     </div>
                 </form>
             </div>
+            <!--S A L E S   T A B-->
+            <div class="tab-pane fade {{ $activeTab == 'sales' ? 'show active' : '' }}" id="sales" role="tabpanel"
+                aria-labelledby="SalesTab">
+                <form action="{{ route('generalsetting.store') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="form_type" value="sales">
 
+                    <div class="row">
+                        <div class="col-12">
+                            <h5 class="mb-3">Payment Receivable Options</h5>
+                        </div>
 
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="col-form-label">Payment Due Days</label>
+                                <input type="number" min="0"
+                                    class="form-control @error('payment_due_days') is-invalid @enderror"
+                                    name="payment_due_days"
+                                    value="{{ old('payment_due_days', getSetting('payment_due_days') !== '' ? getSetting('payment_due_days') : 0) }}">
+                                @error('payment_due_days')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="col-form-label">Payment Due Amount (Per Bag / Ton / KG)</label>
+                                <input type="number" min="0" step="0.01"
+                                    class="form-control @error('payment_due_amount') is-invalid @enderror"
+                                    name="payment_due_amount"
+                                    value="{{ old('payment_due_amount', getSetting('payment_due_amount') !== '' ? getSetting('payment_due_amount') : 0) }}">
+                                @error('payment_due_amount')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-end mt-3">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
 
         </div>
     </div>

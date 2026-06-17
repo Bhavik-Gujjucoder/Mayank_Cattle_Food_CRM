@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Support\ActiveDropdownValidation;
 use App\Support\ProductUnit;
 use App\Support\SalesScope;
+use App\Services\PaymentReceivableService;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
@@ -40,8 +41,11 @@ class OrderManagementController extends Controller
             $query = OrderManagement::with([
                 'broker', 'brand', 'dealer.user',
                 'items.product', 'items.dispatches',
+                'dispatches.orderItem',
             ]);
             SalesScope::scopeOrders($query);
+
+            $receivableService = app(PaymentReceivableService::class);
 
             SalesScope::applyBrandFilter($query, $request->input('brand_id'));
             SalesScope::applyDealerFilter($query, $request->input('dealer_id'));
@@ -95,6 +99,14 @@ class OrderManagementController extends Controller
                         . ($productCount !== 1 ? 's' : '') . ' · ' . $pendingLabel . '</span>'
                         . '</div></div>';
                 })
+                ->addColumn('receivable_summary', function ($row) use ($receivableService) {
+                    $summary = $receivableService->summarizeOrderPendingDispatches($row->dispatches);
+
+                    return $receivableService->formatReceivableCell(
+                        $summary['total_late_fee'],
+                        $summary['total_balance_due']
+                    );
+                })
                 ->addColumn('checkbox', function ($row) {
                     return '<label class="checkboxs">
                                 <input type="checkbox" class="checkbox-item order_checkbox" data-id="' . $row->id . '">
@@ -140,7 +152,7 @@ class OrderManagementController extends Controller
                     return $btn;
                 })
                 ->rawColumns([
-                    'expand_control', 'amount_summary', 'dispatch_summary',
+                    'expand_control', 'amount_summary', 'dispatch_summary', 'receivable_summary',
                     'checkbox', 'payment_status', 'order_status', 'action',
                 ])
                 ->make(true);

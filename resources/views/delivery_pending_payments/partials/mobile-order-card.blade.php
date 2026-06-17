@@ -1,5 +1,6 @@
 @php
     use App\Services\DeliveryPendingPaymentsReportService;
+    use App\Services\PaymentReceivableService;
 
     $items = $row['pending_days_items'] ?? [];
     $maxDays = (int) ($row['max_pending_days'] ?? 0);
@@ -29,14 +30,20 @@
     </div>
 
     @if (count($items) > 0)
+        <div class="dpp-mobile-order-amounts small text-muted mb-2">
+            <span>Late fee: <strong class="text-dark">{{ PaymentReceivableService::formatMoney((float) ($row['total_late_fee'] ?? 0)) }}</strong></span>
+            <span class="mx-1" aria-hidden="true">·</span>
+            <span>Balance: <strong class="text-dark">{{ PaymentReceivableService::formatMoney((float) ($row['total_balance_due'] ?? 0)) }}</strong></span>
+        </div>
         <div class="dpp-mobile-order-days">
             <div class="dpp-mobile-days-title">Pending payment days</div>
             <div class="dpp-day-chips dpp-day-chips--mobile" role="list">
                 @foreach ($items as $item)
                     @php
-                        $level = DeliveryPendingPaymentsReportService::dayAgingLevel((int) $item['days']);
+                        $level = DeliveryPendingPaymentsReportService::dayAgingLevelFor((int) $item['days']);
                     @endphp
                     <span class="dpp-day-chip dpp-day-chip--{{ $level }}" role="listitem"
+                        @if (!empty($canUpdateDispatchPayment)) data-dispatch-id="{{ $item['dispatch_id'] ?? '' }}" @endif
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
                         data-bs-title="Dispatch date: {{ $item['dispatch_date'] }}"

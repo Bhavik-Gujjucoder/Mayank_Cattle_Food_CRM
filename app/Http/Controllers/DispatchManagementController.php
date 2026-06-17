@@ -11,8 +11,10 @@ use App\Models\Truck;
 use App\Models\User;
 use App\Support\ProductUnit;
 use App\Support\SalesScope;
+use App\Services\PaymentReceivableService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\DataTables;
 
 class DispatchManagementController extends Controller
@@ -62,6 +64,8 @@ class DispatchManagementController extends Controller
 
             $query = $this->applyDispatchIndexFilters($query, $request);
 
+            $receivableService = app(PaymentReceivableService::class);
+
             return DataTables::of($query)
                 ->addIndexColumn()
 
@@ -100,6 +104,14 @@ class DispatchManagementController extends Controller
                 ->addColumn('transporter_name',fn($row) => $row->transporter?->name ?? '—')
                 ->editColumn('dispatch_date',  fn($row) => $row->dispatch_date?->format('d M Y') ?? '—')
                 ->addColumn('dealer_name',    fn($row) => $row->orderItem?->order?->dealer?->user?->name ?? '—')
+                ->addColumn('late_fee', function ($row) use ($receivableService) {
+                    $summary = $receivableService->summarizeDispatch($row);
+
+                    return PaymentReceivableService::formatMoney($summary['accrued_late_fee']);
+                })
+                ->addColumn('balance_due', function ($row) use ($receivableService) {
+                    return $receivableService->formatBalanceDueDisplay($row);
+                })
                 ->addColumn('status',         fn($row) => $row->statusBadge())
 
                 /* 1/0 flag — used by DataTables createdRow to highlight complete rows */
@@ -143,7 +155,7 @@ class DispatchManagementController extends Controller
     /* ------------------------------------------------------------------ */
     /*  ORDER HISTORY  — dispatch history for one specific order          */
     /* ------------------------------------------------------------------ */
-    public function orderHistory(OrderManagement $order)
+    public function orderHistory(Request $request, OrderManagement $order)
     {
         SalesScope::authorizeOrderAccess($order);
 
@@ -172,6 +184,29 @@ class DispatchManagementController extends Controller
 
         $data['dispatchBlocked'] = $blockingOrder !== null;
         $data['blockingOrder']   = $blockingOrder;
+
+        $reopenDispatchId = session('edit_dispatch_id');
+        if ($reopenDispatchId) {
+            $data['editModalReopenPayload'] = $this->buildEditModalPayload($order, (int) $reopenDispatchId, true);
+            if ($data['editModalReopenPayload'] && $request->session()->has('errors')) {
+                $data['editModalReopenPayload']['validationErrors'] = $request->session()
+                    ->get('errors')
+                    ->getBag('default')
+                    ->toArray();
+            }
+        } elseif (request()->filled('edit')) {
+            $data['editModalReopenPayload'] = $this->buildEditModalPayload($order, (int) request()->query('edit'), false);
+        } else {
+            $data['editModalReopenPayload'] = null;
+        }
+
+        $data['addDispatchOldInput'] = (! $reopenDispatchId && $request->session()->has('errors'))
+            ? [
+                'transport_id'   => old('transport_id'),
+                'truck_number'   => old('truck_number'),
+                'driver_contact' => old('driver_contact'),
+            ]
+            : null;
 
         return view('dispatch_management.history', $data);
     }
@@ -244,7 +279,10 @@ class DispatchManagementController extends Controller
             ]);
         }
 
-        DispatchManagement::create($validated);
+        $dispatch = DispatchManagement::create($validated);
+
+        $dispatch->refresh();
+        $this->syncOrderPaymentFromDispatches($dispatch);
 
         return redirect()
             ->route('dispatch.orderHistory', $validated['order_id'])
@@ -261,19 +299,129 @@ class DispatchManagementController extends Controller
         $orderId = $dispatch->order_id;
         $dispatch->delete();
 
+        $order = OrderManagement::with(['items.dispatches'])->find($orderId);
+        if ($order) {
+            $order->syncPaymentStatusFromDispatches();
+        }
+
         return redirect()
             ->route('dispatch.orderHistory', $orderId)
             ->with('success', 'Dispatch entry deleted successfully.');
     }
 
     /* ------------------------------------------------------------------ */
-    /*  UPDATE                                                            */
+    /*  AJAX — payment popup data (Dispatch Pending Payments report)      */
     /* ------------------------------------------------------------------ */
-    public function update(Request $request, DispatchManagement $dispatch)
+    public function paymentPopupData(DispatchManagement $dispatch, PaymentReceivableService $receivableService)
+    {
+        SalesScope::authorizeDispatchAccess($dispatch);
+
+        $dispatch->loadMissing([
+            'order:id,unique_order_id,brand_id,dealer_id',
+            'order.brand:id,name',
+            'order.dealer:id,user_id,firm_shop_name',
+            'order.dealer.user:id,name',
+            'product:id,name,unit',
+            'orderItem:id,unit_price',
+            'transporter:id,name,phone_no',
+        ]);
+
+        $summary = $receivableService->summarizeDispatch($dispatch);
+
+        return response()->json([
+            'success' => true,
+            'dispatch' => [
+                'id'                 => (int) $dispatch->id,
+                'no_of_bags'          => (int) $dispatch->no_of_bags,
+                'dispatch_date'       => $dispatch->dispatch_date?->format('d M Y') ?? '—',
+                'transport_id'        => (int) $dispatch->transport_id,
+                'transporter_name'    => $dispatch->transporter?->name ?? '—',
+                'truck_number'        => $dispatch->truck_number ?? '—',
+                'driver_contact'      => $dispatch->driver_contact ?? '—',
+                'status'              => (int) $dispatch->status,
+                'partial_paid_amount' => (string) ($dispatch->partial_paid_amount ?? ''),
+            ],
+            'receivable' => [
+                'base_amount'      => $summary['base_amount'],
+                'accrued_late_fee' => $summary['accrued_late_fee'],
+                'total_receivable' => $summary['total_receivable'],
+                'amount_paid'      => $summary['amount_paid'],
+                'balance_due'      => $summary['balance_due'],
+                'overdue_days'     => $summary['overdue_days'],
+                'payment_due_days' => $receivableService->paymentDueDays(),
+            ],
+            'order' => [
+                'id'            => (int) ($dispatch->order?->id ?? 0),
+                'unique_order_id' => $dispatch->order?->unique_order_id ?? '—',
+                'brand_name'    => $dispatch->order?->brand?->name ?? '—',
+                'dealer_name'   => $dispatch->order?->dealer?->user?->name ?? $dispatch->order?->dealer?->firm_shop_name ?? '—',
+            ],
+            'product' => [
+                'name' => $dispatch->product?->name ?? '—',
+                'unit' => $dispatch->product?->unit ?? '',
+            ],
+        ]);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  AJAX — update payment status only                                 */
+    /* ------------------------------------------------------------------ */
+    public function updatePaymentStatus(Request $request, DispatchManagement $dispatch, PaymentReceivableService $receivableService)
     {
         SalesScope::authorizeDispatchAccess($dispatch);
 
         $validated = $request->validate([
+            'status'              => 'required|in:0,1,2',
+            'partial_paid_amount' => 'nullable|numeric|min:0|required_if:status,2',
+        ], [
+            'status.required'                 => 'Please select a payment status.',
+            'status.in'                       => 'Invalid payment status selected.',
+            'partial_paid_amount.required_if' => 'Please enter the paid amount.',
+            'partial_paid_amount.numeric'     => 'Please enter a valid paid amount.',
+            'partial_paid_amount.min'         => 'Paid amount cannot be negative.',
+        ]);
+
+        $validated = $this->normalizeDispatchPayment($validated);
+
+        if ((int) $validated['status'] === DispatchManagement::STATUS_PARTIAL) {
+            $totalReceivable = $receivableService->totalReceivable($dispatch);
+            $partialPaid = (float) $validated['partial_paid_amount'];
+
+            if ($partialPaid > $totalReceivable) {
+                return response()->json([
+                    'message' => 'The given data was invalid.',
+                    'errors'  => [
+                        'partial_paid_amount' => [
+                            'Paid amount cannot exceed total receivable of '
+                            . PaymentReceivableService::formatMoney($totalReceivable) . '.',
+                        ],
+                    ],
+                ], 422);
+            }
+        }
+
+        $dispatch->update([
+            'status'              => (int) $validated['status'],
+            'partial_paid_amount' => $validated['partial_paid_amount'] ?? null,
+        ]);
+
+        $dispatch->refresh();
+        $this->syncOrderPaymentFromDispatches($dispatch);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dispatch payment status updated successfully.',
+        ]);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  UPDATE                                                            */
+    /* ------------------------------------------------------------------ */
+    public function update(Request $request, DispatchManagement $dispatch, PaymentReceivableService $receivableService)
+    {
+        SalesScope::authorizeDispatchAccess($dispatch);
+
+        $validator = Validator::make($request->all(), [
             'no_of_bags'     => 'required|integer|min:1',
             'dispatch_date'  => 'required|date',
             'transport_id'   => 'required|exists:users,id',
@@ -296,27 +444,60 @@ class DispatchManagementController extends Controller
             'partial_paid_amount.min'         => 'Paid amount cannot be negative.',
         ]);
 
-        $validated = $this->normalizeDispatchPayment($validated);
+        if ($validator->fails()) {
+            return redirect()
+                ->route('dispatch.orderHistory', $dispatch->order_id)
+                ->withInput()
+                ->withErrors($validator)
+                ->with('edit_dispatch_id', $dispatch->id);
+        }
+
+        $validated = $this->normalizeDispatchPayment($validator->validated());
+
+        if ((int) $validated['status'] === DispatchManagement::STATUS_PARTIAL) {
+            $totalReceivable = $receivableService->totalReceivable($dispatch);
+            $partialPaid = (float) $validated['partial_paid_amount'];
+
+            if ($partialPaid > $totalReceivable) {
+                return redirect()
+                    ->route('dispatch.orderHistory', $dispatch->order_id)
+                    ->withInput()
+                    ->withErrors([
+                        'partial_paid_amount' => 'Paid amount cannot exceed total receivable of '
+                            . PaymentReceivableService::formatMoney($totalReceivable) . '.',
+                    ])
+                    ->with('edit_dispatch_id', $dispatch->id);
+            }
+        }
 
         /*
-         * Over-dispatch guard:
-         * Sum every OTHER dispatch for this order item (exclude the one being
-         * edited), then ensure the new bag count fits within what's left.
+         * Over-dispatch guard — only when bag count is being changed.
+         * Payment-only updates (same bag qty) must not be blocked.
          */
-        $orderItem        = $dispatch->orderItem;
-        $otherDispatched  = (int) $orderItem->dispatches()
-                                ->where('id', '!=', $dispatch->id)
-                                ->sum('no_of_bags');
-        $effectivePending = max(0, (int) $orderItem->qty - $otherDispatched);
+        $orderItem = $dispatch->orderItem;
+        $maxAllowedBags = $orderItem->maxBagsWhenEditing($dispatch);
 
-        if ((int) $validated['no_of_bags'] > $effectivePending) {
-            return back()
+        if ((int) $validated['no_of_bags'] !== (int) $dispatch->no_of_bags
+            && (int) $validated['no_of_bags'] > $maxAllowedBags) {
+            return redirect()
+                ->route('dispatch.orderHistory', $dispatch->order_id)
                 ->withInput()
                 ->withErrors(['no_of_bags' => 'The entered quantity cannot exceed the pending quantity.'])
                 ->with('edit_dispatch_id', $dispatch->id);
         }
 
-        $dispatch->update($validated);
+        $dispatch->update([
+            'no_of_bags'          => (int) $validated['no_of_bags'],
+            'dispatch_date'       => $validated['dispatch_date'],
+            'transport_id'        => (int) $validated['transport_id'],
+            'truck_number'        => $validated['truck_number'],
+            'driver_contact'      => $validated['driver_contact'],
+            'status'              => (int) $validated['status'],
+            'partial_paid_amount' => $validated['partial_paid_amount'],
+        ]);
+
+        $dispatch->refresh();
+        $this->syncOrderPaymentFromDispatches($dispatch);
 
         return redirect()
             ->route('dispatch.orderHistory', $dispatch->order_id)
@@ -424,6 +605,50 @@ class DispatchManagementController extends Controller
             : null;
 
         return $validated;
+    }
+
+    private function syncOrderPaymentFromDispatches(DispatchManagement $dispatch): void
+    {
+        $order = OrderManagement::with(['items.dispatches'])->find($dispatch->order_id);
+
+        if ($order) {
+            $order->syncPaymentStatusFromDispatches();
+        }
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function buildEditModalPayload(OrderManagement $order, int $dispatchId, bool $useOldInput): ?array
+    {
+        $order->loadMissing(['items.dispatches', 'items.product']);
+
+        foreach ($order->items as $item) {
+            foreach ($item->dispatches as $dispatch) {
+                if ((int) $dispatch->id !== $dispatchId) {
+                    continue;
+                }
+
+                $effectivePending = $item->maxBagsWhenEditing($dispatch);
+
+                return [
+                    'dispatchId'        => (int) $dispatch->id,
+                    'transportId'       => (string) ($useOldInput ? old('transport_id', (string) $dispatch->transport_id) : $dispatch->transport_id),
+                    'truckNumber'       => (string) ($useOldInput ? old('truck_number', $dispatch->truck_number) : $dispatch->truck_number),
+                    'driverContact'     => (string) ($useOldInput ? old('driver_contact', $dispatch->driver_contact) : $dispatch->driver_contact),
+                    'status'            => (string) ($useOldInput ? old('status', (string) $dispatch->status) : $dispatch->status),
+                    'partialPaidAmount' => (string) ($useOldInput ? old('partial_paid_amount', $dispatch->partial_paid_amount ?? '') : ($dispatch->partial_paid_amount ?? '')),
+                    'noOfBags'          => (int) ($useOldInput ? old('no_of_bags', $dispatch->no_of_bags) : $dispatch->no_of_bags),
+                    'dispatchDate'      => (string) ($useOldInput ? old('dispatch_date', $dispatch->dispatch_date?->format('Y-m-d')) : ($dispatch->dispatch_date?->format('Y-m-d') ?? '')),
+                    'productName'       => (string) ($item->product?->name ?? ''),
+                    'effectivePending'  => $effectivePending,
+                    'updateUrl'         => route('dispatch.update', $dispatch->id),
+                    'productUnit'       => (string) ($item->product?->unit ?? ''),
+                ];
+            }
+        }
+
+        return null;
     }
 
     /**

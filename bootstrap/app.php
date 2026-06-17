@@ -27,6 +27,11 @@ return Application::configure(basePath: dirname(__DIR__))
             ->everyMinute()
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/queue.log'));
+
+        $schedule->command('payment:accrue-late-fees')
+            ->dailyAt('00:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/payment-late-fees.log'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
