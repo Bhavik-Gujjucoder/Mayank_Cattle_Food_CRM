@@ -29,7 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ->appendOutputTo(storage_path('logs/queue.log'));
 
         $schedule->command('payment:accrue-late-fees')
-            ->dailyAt('00:00')
+            ->dailyAt('16:30')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/payment-late-fees.log'));
     })
