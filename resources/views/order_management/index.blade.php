@@ -352,7 +352,7 @@
                     </div>
                 @endif
                 <div class="common-hed-form cls-form-select-input d-flex align-items-end">
-                    <button type="button" class="btn btn-light" id="resetOrderFilters">
+                    <button type="button" class="btn btn-danger" id="resetOrderFilters">
                         <i class="ti ti-refresh me-1"></i>Reset
                     </button>
                 </div>

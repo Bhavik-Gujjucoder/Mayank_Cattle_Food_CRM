@@ -75,7 +75,7 @@
                                 </div>
                             </div>
                             <div class="common-hed-form cls-form-select-input d-flex align-items-end">
-                                <a href="{{ route('dashboard') }}" class="btn btn-light" id="rmResetSummaryFilters">
+                                <a href="{{ route('dashboard') }}" class="btn btn-danger" id="rmResetSummaryFilters">
                                     <i class="ti ti-refresh me-1"></i>Reset
                                 </a>
                             </div>

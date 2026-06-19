@@ -73,7 +73,7 @@
                     </select>
                 </div>
                 <div class="common-hed-form cls-form-select-input d-flex align-items-end">
-                    <button type="button" class="btn btn-light" id="resetDispatchFilters">
+                    <button type="button" class="btn btn-danger" id="resetDispatchFilters">
                         <i class="ti ti-refresh me-1"></i>Reset
                     </button>
                 </div>
