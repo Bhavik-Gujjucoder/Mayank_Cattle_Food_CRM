@@ -45,6 +45,9 @@ Route::middleware(['auth', 'role:super admin|admin'])->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', [HomeController::class, 'dashboard'])->name('dashboard');
+    Route::get('dashboard/raw-material-daily-summary/export', [HomeController::class, 'exportRawMaterialDailySummary'])
+        ->name('dashboard.raw-material-daily-summary.export')
+        ->middleware('permission:export-raw-material-purchas-order');
 
     /* ------------------------------------------------------------------ */
     /*  My Profile                                                        */

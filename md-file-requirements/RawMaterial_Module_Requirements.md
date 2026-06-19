@@ -19,6 +19,23 @@
 - `raw-material-purchas-order` → Orders (note spelling: `purchas`, not `purchase`)
 - `raw-material-receive` → Received
 
+**Dashboard widget:** Daily Raw Material Summary on main dashboard — see `md-file-requirements/Dashboard_Module_Requirements.md` (permission `raw-material-daily-summary`, service `RawMaterialDailySummaryService`).
+
+---
+
+## 📅 Changelog — 18 Jun 2026 (Daily Raw Material Summary dashboard widget)
+
+### Summary
+Added dashboard widget for open raw material purchase pipeline: per order-item snapshot with On Road / Unloading / Pending qty, rate, landed average, and PENDING vs RECEIVED footer totals. Material filter + Excel export from dashboard.
+
+### Highlights
+| Area | Change |
+|---|---|
+| **Service** | `app/Services/RawMaterial/RawMaterialDailySummaryService.php` |
+| **Dashboard** | `resources/views/dashboard/partials/rm_daily_summary_widget.blade.php` |
+| **Export** | `app/Exports/RawMaterialDailySummaryExport.php`, route `dashboard.raw-material-daily-summary.export` |
+| **Permission** | `raw-material-daily-summary` (`is_dashboard = 1`) in `RawMaterialPermissionSeeder` |
+
 ---
 
 ## 📅 Changelog — 2 Jun 2026 (permissions, routes, display, exports)

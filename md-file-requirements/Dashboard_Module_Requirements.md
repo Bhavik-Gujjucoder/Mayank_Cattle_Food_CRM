@@ -36,6 +36,7 @@ Dashboard widgets are shown/hidden with `@can('permission-name')` in the Blade v
 | `recent-dealers` | Recent Dealers list (max 5) |
 | `recent-orders` | Recent Soda/Orders list (max 5) |
 | `recent-dispatch-request` | Recent Dispatch Request list (max 5) |
+| `raw-material-daily-summary` | Daily Raw Material Summary widget (open purchase pipeline) |
 
 **Commented / disabled in current UI (preserve in code for future enablement):**
 
@@ -61,6 +62,10 @@ The Dashboard does **not** own database tables. It reads from:
 | `OrderManagement` | `order_management` | Recent orders, total soda/order count |
 | `DispatchManagement` | `dispatch_management` | Recent dispatch requests, total dispatch count |
 | `CityManagement` | `city_management` | Dealer city label (`city_name`) |
+| `RawMaterialOrderItem` | `raw_material_order_items` | Daily Raw Material Summary rows |
+| `RawMaterialReceive` | `raw_material_receives` | On Road qty per order item |
+| `RawMaterial` | `raw_materials` | Material filter dropdown |
+| `Supplier` | `suppliers` | Party name column |
 
 **Dealer filter for list data:** Only dealers whose linked `users.status = 1` (active user).
 
@@ -115,6 +120,30 @@ Four optional stat cards in a responsive grid (`col-xl-3 col-sm-6`). Each card i
 | Total Dispatch request | `total-dispatch-request` | `$total_dispatch_order` | Total Dispatch request | `ti ti-businessplan` |
 
 **Card CSS classes (for theming):** `total-dealers`, `total-broker`, `total-soda-order`, `total-dispatch-request`.
+
+#### 2b. Daily Raw Material Summary — `@can('raw-material-daily-summary')`
+
+Full-width widget (`col-12`) placed **below KPI cards** and **above** recent-activity lists.
+
+| Item | Value |
+|---|---|
+| Partial | `resources/views/dashboard/partials/rm_daily_summary_widget.blade.php` |
+| Service | `App\Services\RawMaterial\RawMaterialDailySummaryService` |
+| Title | **Daily Raw Material Summary** |
+| Subtitle | Open purchase pipeline — today's date |
+| Filter | `rm_material_id` (All / material), `rm_date_from`, `rm_date_to` on **order date** |
+| Export | `route('dashboard.raw-material-daily-summary.export')` — permission `export-raw-material-purchas-order` (passes active filters) |
+| View All | `route('raw-material.order.index')` when `view-raw-material-purchas-order` |
+
+**Row grain:** One row per open `raw_material_order_items` record (`status` pending or partially received; order not cancelled).
+
+**Columns:** Sr | Date | Supplier Broker | Party Name (supplier + city) | Material | Total Qty (tons) | On Road | Unloading | Pending | Rate/kg | Avg/kg | Pending Amt | Received Amt | Freight
+
+**Display rules:** Party name = `{supplier name} - {city}` when city exists. Avg/kg = Rate when freight is zero; otherwise landed `price_avg`.
+
+**Footer:** PENDING / RECEIVED (without GST) / TOTAL — qty, weighted avg ₹/kg, amounts.
+
+**Seeder:** `raw-material-daily-summary` in `RawMaterialPermissionSeeder` (`is_dashboard = 1` when column exists). Assign to admin / super admin.
 
 #### 3. Charts Row (disabled)
 
@@ -217,6 +246,11 @@ OrderManagement::whereHas('dealer', fn ($q) => $q->where('user_id', $loginUser->
 | `total_soda_order` | Role-scoped full count |
 | `dispatch_order` | Recent dispatches (role-scoped, max 5) |
 | `total_dispatch_order` | See business rules — should be full count |
+| `rm_daily_summary` | Raw material daily summary payload (`rows`, `totals`, `summary_date`) or `null` |
+| `rm_summary_materials` | Active materials for filter dropdown |
+| `rm_material_filter` | Current `rm_material_id` filter (`all` or material id string) |
+| `rm_date_from` | Order date filter from (`Y-m-d` or null) |
+| `rm_date_to` | Order date filter to (`Y-m-d` or null) |
 
 ### Routes
 
@@ -406,7 +440,7 @@ recent-dealers, recent-orders, recent-dispatch-request
 
 ## Additional Notes
 
-- **Email login flow:** Password validated → OTP sent → after `OtpController@verify`, redirect to dashboard.
+- **Email login flow:** Password validated → OTP sent via `LoginOtpDelivery` → `EmailDelivery::queue()` → after `OtpController@verify`, redirect to dashboard. See `md-file-requirements/Email_Module_Requirements.md`.
 - **Mobile login:** Only users with role `dealer`; uses `phone_no` + `Hash::check` (not `Auth::validate`, because dealer email may be null).
 - **Tests:** Feature auth tests assert redirect to `route('dashboard')`.
 - **Legacy files:** `resources/views/1dashboard.blade.php`, `public/dashboard.html` — not used by the Laravel route; safe to ignore for module behaviour.

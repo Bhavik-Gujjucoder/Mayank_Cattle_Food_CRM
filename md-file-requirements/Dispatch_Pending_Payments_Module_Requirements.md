@@ -11,11 +11,13 @@
 **UI:** Bootstrap 5 (mobile-first responsive grid), jQuery, Tabler Icons (`ti ti-*`), project custom CSS (`public/assets/css/style.css`)
 **Layout:** `resources/views/layouts/main.blade.php`
 
-**Purpose:** Read-only **exception / aging report** for **dispatched goods whose dispatch-level payment is still unpaid**. Used by sales/admin teams for **collection follow-up** after delivery — not for scheduling new dispatches.
+**Purpose:** Read-only **exception / aging report** for **dispatched goods whose dispatch-level payment is still outstanding** (Unpaid or Partial Payment). Used by sales/admin teams for **collection follow-up** after delivery — not for scheduling new dispatches.
+
+**Late-fee accrual & reminders:** Daily late fees accrue via `payment:accrue-late-fees`; when a new fee posts, dealer + company receive payment-pending reminder email. See `md-file-requirements/Email_Module_Requirements.md`.
 
 **Relationship to Sales module:**
 - Depends on existing **Soda / Order** and **Dispatch** sub-modules (`Sales_Module_Requirements.md`).
-- Payment tracked **per dispatch row** on `dispatch_management.status` (`0` = Unpaid, `1` = Paid).
+- Payment tracked **per dispatch row** on `dispatch_management.status` (`0` = Unpaid, `1` = Paid, `2` = Partial Payment).
 - Order-level `order_management.payment_status` (`unpaid` / `paid` / `partial`) is **separate**; this report uses **dispatch-level** unpaid rows only.
 
 **Sidebar:** Nested under **Sales** → **Dispatch Pending Payments** (new link, alongside Soda / Order and Dispatch).
@@ -38,10 +40,53 @@
 | Seeder | `database/seeders/DeliveryPendingPaymentsPermissionSeeder.php` |
 | Routes | `delivery-pending-payments.index`, `delivery-pending-payments.export` |
 | Dashboard | `HomeController@index`, `resources/views/dashboard.blade.php`, `resources/views/dashboard/partials/delivery_pending_payments_widget.blade.php` |
+| Receivable / late fees | `app/Services/PaymentReceivableService.php` |
+| Late-fee accrual command | `app/Console/Commands/AccrueDispatchLateFeesCommand.php` (`payment:accrue-late-fees`) |
 
 **Display vs internal naming:**
 - **UI labels (user-facing):** **Dispatch Pending Payments** (sidebar, report page, Excel title, dashboard widget).
 - **Internal identifiers (unchanged):** routes `delivery-pending-payments.*`, permission `view-dispatch-pending-payments`, view folder `delivery_pending_payments/`, CSS root `.delivery-pending-payments-module`, PHP classes `DeliveryPendingPayments*`.
+
+---
+
+## 📅 Changelog — 17 Jun 2026 (Late-fee accrual + payment-pending reminder emails)
+
+### Summary
+Unpaid/partial dispatches past the configured grace period accrue daily late fees. When the nightly job posts a new charge, a reminder email goes to the dealer (**To**) and `company_email` from General Settings (**CC**).
+
+### Settings (`general_settings`)
+| Key | Purpose |
+|---|---|
+| `payment_due_days` | Grace days after `dispatch_date` before late fees start |
+| `payment_due_amount` | Daily rate per bag (`rate × no_of_bags`) |
+| `company_email` | CC recipient on payment-pending reminder |
+
+Late fees disabled when `payment_due_days` or `payment_due_amount` is zero.
+
+### Accrual
+- Command: `php artisan payment:accrue-late-fees`
+- Scheduler: `bootstrap/app.php` — daily at `00:00`
+- Service: `PaymentReceivableService::accrueAll()` / `accrueDispatch()`
+- Log table: `dispatch_late_fee_logs` (one row per charge date per dispatch)
+- Dispatch columns: `accrued_late_fee`, `late_fee_last_accrued_on`
+
+### Email trigger
+- Only when `days_accrued > 0` in the current run (not for dispatches with nothing new to post)
+- `DispatchEmailDelivery::queuePaymentPendingReminder()` via `EmailDelivery::queue()`
+- Does **not** use `DispatchManagementObserver` (observer ignores late-fee-only updates)
+
+### Receivable formula (dispatch modal + report)
+```text
+base_amount       = order_item.unit_price × dispatch.no_of_bags
+total_receivable  = base_amount + accrued_late_fee
+balance_due       = total_receivable − partial_paid_amount (if unpaid/partial)
+```
+
+### UI
+- Dispatch history add/edit modals: receivable summary fields (`receivable-summary-fields.blade.php`, `receivable-summary-script.blade.php`)
+- Report / dashboard: late fee columns via `DeliveryPendingPaymentsReportService`
+
+**Full email reference:** `md-file-requirements/Email_Module_Requirements.md`
 
 ---
 
@@ -77,9 +122,12 @@ This module does **not** create database tables. It aggregates:
 | Value | Constant | Meaning |
 |---|---|---|
 | `0` | `DispatchManagement::STATUS_UNPAID` | Unpaid — **included** in this report |
-| `1` | `DispatchManagement::STATUS_PAID` | Paid — **excluded** from day-count list |
+| `1` | `DispatchManagement::STATUS_PAID` | Paid — **excluded** |
+| `2` | `DispatchManagement::STATUS_PARTIAL` | Partial Payment — **included** via `pendingPaymentStatuses()` |
 
 Migration: `database/migrations/2026_06_01_000002_add_status_to_dispatch_management_table.php`
+
+**Late-fee columns** (`accrued_late_fee`, `late_fee_last_accrued_on`): `database/migrations/2026_06_17_000001_add_late_fee_columns_to_dispatch_management_table.php`
 
 **UI for editing status:** `resources/views/dispatch_management/partials/status-field.blade.php` (radio Unpaid / Paid on add/edit dispatch modals).
 
@@ -127,7 +175,7 @@ An **order** is included in the report if and only if:
 ```text
 EXISTS at least one dispatch_management row WHERE:
   order_id = order.id
-  AND status = 0 (Unpaid)
+  AND status IN (0, 2)  -- Unpaid or Partial Payment (pendingPaymentStatuses())
   AND deleted_at IS NULL
 ```
 
@@ -763,6 +811,7 @@ Brands appear in **separate stacked sections** (Ajay Brand, Mahakal Brand, Mayan
 | Dependency | Document / path |
 |---|---|
 | Sales module (orders, dispatch) | `md-file-requirements/Sales_Module_Requirements.md` |
+| Email (dispatch + late-fee reminders) | `md-file-requirements/Email_Module_Requirements.md` |
 | Dispatch payment status field | `resources/views/dispatch_management/partials/status-field.blade.php` |
 | Dispatch model constants | `app/Models/DispatchManagement.php` |
 | Mark payment on dispatch | `DispatchManagementController@store` / `@update` |

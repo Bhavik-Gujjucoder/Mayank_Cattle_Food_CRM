@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Models\Role;
@@ -95,6 +96,11 @@ class RawMaterialPermissionSeeder extends Seeder
                 'type' => 'raw-material-purchas-order',
                 'guard_name' => 'web',
             ],
+            [
+                'name' => 'raw-material-daily-summary',
+                'type' => 'raw-material-purchas-order',
+                'guard_name' => 'web',
+            ],
 
             // Received
             [
@@ -143,10 +149,22 @@ class RawMaterialPermissionSeeder extends Seeder
         Permission::insert($permissions);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
+        if (Schema::hasColumn('permissions', 'is_dashboard')) {
+            Permission::query()
+                ->where('name', 'raw-material-daily-summary')
+                ->where('guard_name', 'web')
+                ->update(['is_dashboard' => 1]);
+        }
+
         // Assign to admin role by default (same as other modules)
         $adminRole = Role::where('name', 'admin')->first();
         if ($adminRole) {
             $adminRole->givePermissionTo($permissionNames->all());
+        }
+
+        $superAdminRole = Role::where('name', 'super admin')->first();
+        if ($superAdminRole) {
+            $superAdminRole->givePermissionTo($permissionNames->all());
         }
     }
 }

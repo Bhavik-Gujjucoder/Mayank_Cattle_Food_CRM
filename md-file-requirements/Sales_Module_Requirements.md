@@ -14,9 +14,38 @@
 1. **Soda / Order** — Create and manage dealer sales orders with line items (products, qty, unit price, payment status)
 2. **Dispatch** — Record bag/ton dispatches against order line items; view global dispatch list and per-order dispatch history
 
+**Email notifications:** Dispatch create and payment-status changes email the dealer automatically. Late-fee accrual sends payment-pending reminders. See `md-file-requirements/Email_Module_Requirements.md`.
+
 **Type identifiers (used in routes/comments):**
 - `soda-order` → Order routes (`order.*`)
 - `dispatch` → Dispatch routes (`dispatch.*`)
+
+---
+
+## 📅 Changelog — 17 Jun 2026 (Dispatch dealer emails + common EmailDelivery)
+
+### Summary
+Automated dealer emails on dispatch create and payment status / partial amount changes. All outbound mail uses central `EmailDelivery` gateway. Late-fee accrual sends separate payment-pending reminders (see Email module doc).
+
+### Dispatch emails (observer-driven)
+- `DispatchManagementObserver` registered in `AppServiceProvider`
+- **Created** → `DispatchEmailDelivery::queueCreated()` → `DispatchCreatedMail`
+- **Updated** (`status` or `partial_paid_amount` only) → `queuePaymentChanged()` → `DispatchPaymentStatusChangedMail`
+- Recipient: `order.dealer.user.email` — skipped if empty
+- Payload: `DispatchEmailPresenter` — order, linked line item only, dispatch, receivable summary
+- Late-fee-only updates (`accrued_late_fee`, `late_fee_last_accrued_on`) do **not** trigger payment-changed email
+
+### Common email gateway
+- `app/Support/EmailDelivery.php` — `queue()` and `send()`; sole `Mail` facade usage
+- `LoginOtpDelivery`, `DispatchEmailDelivery` refactored to use it
+
+### Files
+- `app/Observers/DispatchManagementObserver.php`
+- `app/Support/DispatchEmailDelivery.php`, `DispatchEmailPresenter.php`, `EmailDelivery.php`, `EmailBrandTheme.php`
+- `app/Mail/DispatchCreatedMail.php`, `DispatchPaymentStatusChangedMail.php`, `DispatchPaymentPendingReminderMail.php`
+- `resources/views/emails/dispatch/` (+ partials)
+
+**Full reference:** `md-file-requirements/Email_Module_Requirements.md`
 
 ---
 
@@ -1189,6 +1218,7 @@ resources/views/layouts/main.blade.php
 - users (broker, transporter roles)
 - brand_management, dealer_management, products, trucks
 - DealerManagementController::getDealersByBrokerBrand for /get-dealers
+- Email notifications: `md-file-requirements/Email_Module_Requirements.md`
 
 ## Additional Notes
 - Order list Grand Total column is intentionally hidden in current UI

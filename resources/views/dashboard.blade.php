@@ -105,6 +105,12 @@
     @endcan
 </div>
 
+@can('raw-material-daily-summary')
+    @if ($rm_daily_summary)
+        @include('dashboard.partials.rm_daily_summary_widget')
+    @endif
+@endcan
+
 <div class="row">
     <div class="col-lg-6 d-flex">
         <!--col-xxl-3 -->

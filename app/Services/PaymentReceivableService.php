@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\DispatchLateFeeLog;
 use App\Models\DispatchManagement;
 use App\Models\OrderManagement;
+use App\Support\DispatchEmailDelivery;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -307,10 +308,17 @@ class PaymentReceivableService
             }
         });
 
-        return [
+        $result = [
             'days_accrued'  => $daysAccrued,
             'amount_added'  => round($amountAdded, 2),
         ];
+
+        if ($result['days_accrued'] > 0) {
+            $dispatch->refresh();
+            DispatchEmailDelivery::queuePaymentPendingReminder($dispatch, $result['amount_added']);
+        }
+
+        return $result;
     }
 
     /**
