@@ -183,7 +183,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     /* ------------------------------------------------------------------ */
-    /*  State Management  (type: state)                                     */
+    /*  State Management  (type: state)                                   */
     /* ------------------------------------------------------------------ */
     Route::resource('state', StateManagementController::class)->except(['store', 'update', 'destroy']);
     Route::post('state', [StateManagementController::class, 'store'])

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\DispatchManagement;
+use App\Support\SalesScope;
 use Illuminate\Support\Collection;
 
 class DeliveryPendingPaymentsReportService
@@ -20,7 +21,7 @@ class DeliveryPendingPaymentsReportService
     {
         $today = now()->startOfDay();
 
-        $unpaidDispatches = DispatchManagement::query()
+        $unpaidDispatches = SalesScope::scopeDispatches(DispatchManagement::query())
             ->whereIn('status', DispatchManagement::pendingPaymentStatuses())
             ->whereHas('order', fn ($q) => $q->whereNull('deleted_at'))
             ->with([

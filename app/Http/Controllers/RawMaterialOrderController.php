@@ -46,15 +46,15 @@ class RawMaterialOrderController extends Controller
             return DataTables::of($query)
                 ->skipAutoFilter()
                 ->addIndexColumn()
-                ->editColumn('supplier_order_id', fn ($row) => e($row->supplier_order_id ?: '—'))
-                ->addColumn('supplier_broker_name', fn ($row) => e($row->supplierBroker?->name ?? '—'))
-                ->addColumn('supplier_name', fn ($row) => e($row->supplier?->name ?? '—'))
-                ->editColumn('price_basis', fn ($row) => e($row->price_basis ?: '—'))
-                ->editColumn('order_date', fn ($row) => $row->order_date?->format('d M Y') ?? '—')
-                ->editColumn('total_qty', fn ($row) => number_format($row->total_qty) . ' tons')
-                ->editColumn('total_price', fn ($row) => '₹ ' . number_format($row->total_price, 2))
-                ->editColumn('total_freight', fn ($row) => '₹ ' . number_format($row->total_freight, 2))
-                ->editColumn('status', fn ($row) => $row->statusBadge())
+                ->editColumn('supplier_order_id', fn($row) => e($row->supplier_order_id ?: '—'))
+                ->addColumn('supplier_broker_name', fn($row) => e($row->supplierBroker?->name ?? '—'))
+                ->addColumn('supplier_name', fn($row) => e($row->supplier?->name ?? '—'))
+                ->editColumn('price_basis', fn($row) => e($row->price_basis ?: '—'))
+                ->editColumn('order_date', fn($row) => $row->order_date?->format('d M Y') ?? '—')
+                ->editColumn('total_qty', fn($row) => number_format($row->total_qty) . ' tons')
+                ->editColumn('total_price', fn($row) => '₹ ' . number_format($row->total_price, 2))
+                ->editColumn('total_freight', fn($row) => '₹ ' . number_format($row->total_freight, 2))
+                ->editColumn('status', fn($row) => $row->statusBadge())
                 ->addColumn('action', function ($row) use ($canView, $canEdit, $canExport, $canDelete) {
                     $view   = $canView
                         ? '<a href="' . route('raw-material.order.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>'
@@ -137,12 +137,12 @@ class RawMaterialOrderController extends Controller
         $data = array_merge($this->orderFormSharedData(), [
             'page_title' => 'Edit Raw Material Order',
             'order'      => $raw_material_order,
-            'old_rows'   => $raw_material_order->items->map(fn ($item) => [
+            'old_rows'   => $raw_material_order->items->map(fn($item) => [
                 'category_id'  => $item->rawMaterial?->raw_material_category_id,
                 'material_id'  => $item->raw_material_id,
                 'qty'          => $item->total_qty,
                 'price'        => number_format((float) $item->price, 2, '.', ''),
-                'other_expense'=> number_format((float) $item->other_expense, 2, '.', ''),
+                'other_expense' => number_format((float) $item->other_expense, 2, '.', ''),
             ])->values()->all(),
         ]);
 
@@ -211,7 +211,7 @@ class RawMaterialOrderController extends Controller
             ->whereIn('status', [0, 1])
             ->where('pending_qty', '>', 0)
             ->get()
-            ->map(fn ($item) => [
+            ->map(fn($item) => [
                 'id'           => $item->id,
                 'label'        => ($item->rawMaterial?->name ?? '—') . ' (Pending: ' . $item->pending_qty . ' tons)',
                 'raw_material_id' => $item->raw_material_id,
@@ -359,15 +359,15 @@ class RawMaterialOrderController extends Controller
             'price_basis_options' => RawMaterialOrderPriceBasis::options(),
             'order_form_config' => [
                 'isEdit'     => false,
-                'categories' => $categories->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->values(),
-                'materials'  => $materials->map(fn ($m) => [
+                'categories' => $categories->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->values(),
+                'materials'  => $materials->map(fn($m) => [
                     'id'          => $m->id,
                     'name'        => $m->name,
                     'unit'        => $m->unit,
                     'category_id' => $m->raw_material_category_id,
                     'price'       => (float) $m->last_purchase_price,
                 ])->values(),
-                'suppliers' => $suppliers->map(fn ($s) => [
+                'suppliers' => $suppliers->map(fn($s) => [
                     'id'                 => $s->id,
                     'name'               => $s->name,
                     'supplier_broker_id' => $s->supplier_broker_id,

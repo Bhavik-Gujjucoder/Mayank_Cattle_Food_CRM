@@ -363,8 +363,11 @@ class UserController extends Controller
         // if (!$user->hasRole('super admin')) {
         //     $user->syncRoles([$request->role]); /* Update role */
         // }
-        if ($type === 'user' && !auth()->user()->hasRole('super admin')) {
-            $user->syncRoles([$request->role]);
+        if ($type === 'user') {
+            /* Super admin role is permanent — never allow it to be changed */
+            if (!$user->hasRole('super admin')) {
+                $user->syncRoles([$request->role]);
+            }
         } elseif ($type == 'broker') {
             $user->syncRoles(['broker']);
         } elseif ($type == 'transporter') {
