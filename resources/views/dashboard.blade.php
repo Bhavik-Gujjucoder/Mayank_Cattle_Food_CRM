@@ -126,7 +126,7 @@
     @endcan
 
     <!------------ Total Raw Material Orders ---------------->
-    @can('total-raw-materials-orders')
+    @can('total-raw-material-orders')
         <div class="col-xl-3 col-sm-6 d-flex">
             <div class="card flex-fill total-raw-material-orders">
                 <div class="card-body">
@@ -146,8 +146,8 @@
         </div>
     @endcan
 </div>
-
-@can('daily-raw-materials-summary')
+{{-- {{dd(Auth::user()->getPermissionsViaRoles())}} --}}
+@can('daily-raw-material-summary')
     @if ($rm_daily_summary)
         @include('dashboard.partials.rm_daily_summary_widget')
     @endif
@@ -222,9 +222,13 @@
                                 </a>
                                 <div class="ms-2 flex-fill">
                                     <h6 class="fs-medium text-truncate mb-1">
-                                        <a href="{{ route('dealer.edit', $d->id) }}">
+                                        @can('edit-dealer')
+                                            <a href="{{ route('dealer.edit', $d->id) }}">
+                                                {{ $d->user->name }}
+                                            </a>
+                                        @else
                                             {{ $d->user->name }}
-                                        </a>
+                                        @endcan
                                     </h6>
                                     <p class="fs-13">{{ $d->city->city_name }}</p>
                                 </div>
@@ -256,14 +260,22 @@
                                     </a> --}}
                                     <div class="ms-2 flex-fill">
                                         <h6 class="fs-medium text-truncate mb-1">
-                                            <a href="{{ route('order.edit', $order->id) }}">
+                                            @can('edit-order')
+                                                <a href="{{ route('order.edit', $order->id) }}">
+                                                    {{ $order->dealer->user->name ?? '—' }}
+                                                </a>
+                                            @else
                                                 {{ $order->dealer->user->name ?? '—' }}
-                                            </a>
-                                        </h6>
+                                            @endcan
+                                        </h6>   
                                         <p class="fs-13 d-inline-flex align-items-center">
+                                            @can('edit-order')
                                             <a href="{{ route('order.edit', $order->id) }}">
+                                                    <span class="text-info">{{ $order->unique_order_id ?? '—' }}</span>
+                                                </a>
+                                            @else
                                                 <span class="text-info">{{ $order->unique_order_id ?? '—' }}</span>
-                                            </a>
+                                            @endcan
                                             <i class="ti ti-circle-filled fs-4 text-primary mx-1"></i>
                                             {{ $order->order_date->format('d M Y') }}
                                         </p>
@@ -303,19 +315,32 @@
                                     </a> --}}
                                         <div class="ms-2 flex-fill">
                                             <h6 class="fs-medium text-truncate mb-1">
+                                                @can('edit-dispatch')
                                                 <a href="{{ route('dispatch.orderHistory', $dispatch_order->order_id) }}">
                                                     {{ $dispatch_order->product->name }}
                                                     <span class="text-info">
                                                         <small>({{ \App\Support\ProductUnit::formatWithUnit($dispatch_order->no_of_bags, $dispatch_order->product?->unit) }})</small>
                                                     </span>
                                                 </a>
+                                                @else
+                                                    {{ $dispatch_order->product->name }}
+                                                    <span class="text-info">
+                                                        <small>({{ \App\Support\ProductUnit::formatWithUnit($dispatch_order->no_of_bags, $dispatch_order->product?->unit) }})</small>
+                                                    </span>
+                                                @endcan
                                             </h6>
                                             <p class="fs-13">
+                                                @can('edit-dispatch')
                                                 <a href="{{ route('dispatch.orderHistory', $dispatch_order->order_id) }}">
                                                     <span class="text-info">
                                                         {{ $dispatch_order->order->unique_order_id }}
                                                     </span>
                                                 </a>
+                                                @else
+                                                    <span class="text-info">
+                                                        {{ $dispatch_order->order->unique_order_id }}
+                                                    </span>
+                                                @endcan
                                                 <i class="ti ti-circle-filled fs-4 text-primary mx-1"></i>
                                                 {{ $dispatch_order->dispatch_date->format('d M Y') }}
                                             </p>
@@ -465,7 +490,7 @@
     @endcan --}}
 
     <!------------ Raw Material Orders ----------->
-    @can('raw-materials-orders')
+    @can('raw-material-orders')
         <div class="col-xxl-12 col-xl-12 d-flex">
             <div class="card flex-fill recent-cards">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
@@ -516,8 +541,9 @@
     @endcan
 
 
-    <!------------ Raw Material Received OnRoad----------->
-    @can('raw-materials-received-onroad')
+    <!------------ Raw Material Received OnRoad ----------->
+    {{-- {{dd(Auth::user()->getPermissionsViaRoles())}} --}}
+    @can('raw-material-received-onroad')
         <div class="col-xxl-12 col-xl-12 d-flex">
             <div class="card flex-fill recent-cards">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
