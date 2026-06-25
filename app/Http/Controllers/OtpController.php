@@ -29,8 +29,7 @@ class OtpController extends Controller
 
         session()->forget(['otp_user_id', 'remember_me']);
 
-        // return redirect()->route('dashboard');
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->route('dashboard');
     }
 
     public function resendOtp(Request $request)

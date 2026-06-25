@@ -21,6 +21,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StateManagementController;
 use App\Http\Controllers\SupplierBrokerController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SystemBackupController;
 use App\Http\Controllers\TruckManagementController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Artisan;
@@ -389,6 +390,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('general-setting')->name('generalsetting')->group(function () {
         Route::get('/create', [GeneralSettingController::class, 'create'])->name('.create');
         Route::post('/store', [GeneralSettingController::class, 'store'])->name('.store');
+    });
+
+    /* ------------------------------------------------------------------ */
+    /*  System Backup — super admin only                                  */
+    /* ------------------------------------------------------------------ */
+    Route::middleware('role:super admin')->prefix('system/backup')->name('system.backup.')->group(function () {
+        Route::get('/', [SystemBackupController::class, 'index'])->name('index');
+        Route::get('/list', [SystemBackupController::class, 'list'])->name('list');
+        Route::post('/initialize', [SystemBackupController::class, 'initialize'])->name('initialize');
+        Route::post('/create', [SystemBackupController::class, 'create'])->name('create');
+        Route::post('/restore', [SystemBackupController::class, 'restore'])->name('restore');
+        Route::get('/download/{filename}', [SystemBackupController::class, 'download'])->name('download');
     });
 
 

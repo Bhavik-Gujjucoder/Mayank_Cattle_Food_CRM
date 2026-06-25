@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="author" content="Mayank Cattle Food PVT. LTD. " />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="shortcut icon" href="{{ asset('assets/images/favicon.png') }}" />
 
     <!-- Title -->
@@ -499,8 +500,8 @@
     @if (session('success'))
         <script>
             Toastify({
-                text: "{{ session('success') }}",
-                duration: 3000,
+                text: @json(session('success')),
+                duration: 5000,
                 close: true,
                 gravity: "top",
                 position: "right",
@@ -512,8 +513,8 @@
     @if (session('error'))
         <script>
             Toastify({
-                text: "{{ session('error') }}",
-                duration: 3000,
+                text: @json(session('error')),
+                duration: 6000,
                 close: true,
                 gravity: "top",
                 position: "right",

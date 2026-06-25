@@ -362,12 +362,12 @@
                         @canany(['add-state', 'edit-state', 'delete-state', 'add-city', 'edit-city', 'delete-city'])
                             <li class="submenu">
                                 <a href="javascript:void(0);"
-                                    class="@if (request()->routeIs('state*') || request()->routeIs('city*') || request()->routeIs('generalsetting*')) active subdrop @endif">
+                                    class="@if (request()->routeIs('state*') || request()->routeIs('city*') || request()->routeIs('generalsetting*') || request()->routeIs('system.backup*')) active subdrop @endif">
                                     <i class="ti ti-settings"></i>
                                     <span>General</span>
                                     <span class="menu-arrow"></span>
                                 </a>
-                                <ul style="display: @if (request()->routeIs('state*') || request()->routeIs('city*') || request()->routeIs('generalsetting*')) block @else none @endif;">
+                                <ul style="display: @if (request()->routeIs('state*') || request()->routeIs('city*') || request()->routeIs('generalsetting*') || request()->routeIs('system.backup*')) block @else none @endif;">
 
                                     {{-- ------------------------------------------------------------------ */
                                 /*  State (type: state)
@@ -389,6 +389,10 @@
                                     @hasanyrole('super admin|admin')
                                         <li><a href="{{ route('generalsetting.create') }}">Settings</a></li>
                                     @endhasanyrole
+
+                                    @role('super admin')
+                                        <li><a href="{{ route('system.backup.index') }}">System Backup</a></li>
+                                    @endrole
                                 </ul>
                             </li>
                         @endcanany
