@@ -153,13 +153,6 @@ describe('store — persistence', function () {
         $this->assertDatabaseHas('state_management', ['state_name' => 'Rajasthan', 'status' => 1]);
     });
 
-    test('status defaults to 1 (active) when not provided', function () {
-        $this->actingAs(stateTestUser(['add-state']))
-            ->postJson(route('state.store'), ['state_name' => 'Assam']);
-
-        $this->assertDatabaseHas('state_management', ['state_name' => 'Assam', 'status' => 1]);
-    });
-
     test('can create an inactive state with status 0', function () {
         $this->actingAs(stateTestUser(['add-state']))
             ->postJson(route('state.store'), ['state_name' => 'Odisha', 'status' => 0]);

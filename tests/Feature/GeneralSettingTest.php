@@ -5,6 +5,12 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\assertDatabaseHas;
+use function Pest\Laravel\assertDatabaseMissing;
+use function Pest\Laravel\get;
+use function Pest\Laravel\post;
+
 /* ─────────────────────────────────────────────────────────────────────────
  |  Helper — verified factory user (email_verified_at is set by default in
  |  UserFactory, so plain create() already produces a verified user).
@@ -20,19 +26,19 @@ function settingsUser(): User
 describe('access control', function () {
 
     test('guest is redirected to login from the settings page', function () {
-        $this->get(route('generalsetting.create'))
+        get(route('generalsetting.create'))
             ->assertRedirect(route('login'));
     });
 
     test('guest cannot post to the store endpoint', function () {
-        $this->post(route('generalsetting.store'), [
+        post(route('generalsetting.store'), [
             'form_type'     => 'general-setting',
             'copyright_msg' => 'Test',
         ])->assertRedirect(route('login'));
     });
 
     test('authenticated verified user can view the settings page', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->get(route('generalsetting.create'))
             ->assertOk()
             ->assertSee('General Setting')
@@ -45,7 +51,7 @@ describe('access control', function () {
         // is a no-op. Unverified users are treated the same as verified ones.
         $unverified = User::factory()->unverified()->create();
 
-        $this->actingAs($unverified)
+        actingAs($unverified)
             ->get(route('generalsetting.create'))
             ->assertOk();
     });
@@ -53,7 +59,7 @@ describe('access control', function () {
     test('unverified user can post to the store endpoint (MustVerifyEmail not enforced)', function () {
         $unverified = User::factory()->unverified()->create();
 
-        $this->actingAs($unverified)
+        actingAs($unverified)
             ->post(route('generalsetting.store'), [
                 'form_type'     => 'general-setting',
                 'copyright_msg' => 'Test',
@@ -68,7 +74,7 @@ describe('access control', function () {
 describe('general setting tab — validation', function () {
 
     test('copyright_msg is required', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'     => 'general-setting',
                 'copyright_msg' => '',
@@ -77,7 +83,7 @@ describe('general setting tab — validation', function () {
     });
 
     test('copyright_msg missing from payload is a validation error', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type' => 'general-setting',
                 // copyright_msg omitted entirely
@@ -88,7 +94,7 @@ describe('general setting tab — validation', function () {
     test('login_page_image must be an image file', function () {
         Storage::fake('public');
 
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'        => 'general-setting',
                 'copyright_msg'    => 'Test',
@@ -100,7 +106,7 @@ describe('general setting tab — validation', function () {
     test('login_page_image rejects files larger than 2MB', function () {
         Storage::fake('public');
 
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'        => 'general-setting',
                 'copyright_msg'    => 'Test',
@@ -112,7 +118,7 @@ describe('general setting tab — validation', function () {
     test('login_page_image rejects disallowed mime type (webp)', function () {
         Storage::fake('public');
 
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'        => 'general-setting',
                 'copyright_msg'    => 'Test',
@@ -122,7 +128,7 @@ describe('general setting tab — validation', function () {
     });
 
     test('login_page_image is optional — omitting it passes validation', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'     => 'general-setting',
                 'copyright_msg' => 'Valid copyright',
@@ -140,14 +146,14 @@ describe('general setting tab — validation', function () {
         // getimagesize() which does not support SVG, so SVG will always be rejected by
         // the `image` rule regardless of file content. This is a known Laravel limitation.
         foreach (['jpg', 'jpeg', 'png', 'gif'] as $ext) {
-            $response = $this->actingAs($user)
+            $response = actingAs($user)
                 ->post(route('generalsetting.store'), [
                     'form_type'        => 'general-setting',
                     'copyright_msg'    => 'Test',
                     'login_page_image' => UploadedFile::fake()->image("login.{$ext}"),
                 ]);
 
-            $response->assertSessionHasNoErrors("Extension [{$ext}] should pass validation");
+            $response->assertSessionHasNoErrors();
         }
     });
 
@@ -159,13 +165,13 @@ describe('general setting tab — validation', function () {
 describe('general setting tab — persistence', function () {
 
     test('copyright_msg is persisted to the database', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'     => 'general-setting',
                 'copyright_msg' => '© 2025 Cattle Food CRM. All rights reserved.',
             ]);
 
-        $this->assertDatabaseHas('general_settings', [
+        assertDatabaseHas('general_settings', [
             'key'   => 'copyright_msg',
             'value' => '© 2025 Cattle Food CRM. All rights reserved.',
         ]);
@@ -174,13 +180,13 @@ describe('general setting tab — persistence', function () {
     test('copyright_msg is updated when a record already exists', function () {
         GeneralSetting::create(['key' => 'copyright_msg', 'value' => 'Old message']);
 
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'     => 'general-setting',
                 'copyright_msg' => 'New updated message',
             ]);
 
-        $this->assertDatabaseHas('general_settings', [
+        assertDatabaseHas('general_settings', [
             'key'   => 'copyright_msg',
             'value' => 'New updated message',
         ]);
@@ -188,19 +194,19 @@ describe('general setting tab — persistence', function () {
     });
 
     test('form_type is not stored as a setting key', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'     => 'general-setting',
                 'copyright_msg' => 'Test',
             ]);
 
-        $this->assertDatabaseMissing('general_settings', ['key' => 'form_type']);
+        assertDatabaseMissing('general_settings', ['key' => 'form_type']);
     });
 
     test('login_page_image file is uploaded and filename stored in database', function () {
         Storage::fake('public');
 
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'        => 'general-setting',
                 'copyright_msg'    => 'Test',
@@ -210,20 +216,20 @@ describe('general setting tab — persistence', function () {
         $setting = GeneralSetting::where('key', 'login_page_image')->first();
 
         expect($setting)->not->toBeNull();
-        Storage::disk('public')->assertExists('login_page_image/' . $setting->value);
+        expect(Storage::disk('public')->exists('login_page_image/' . $setting->value))->toBeTrue();
     });
 
     test('login_page_image replaces previous file record on second upload', function () {
         Storage::fake('public');
         $user = settingsUser();
 
-        $this->actingAs($user)->post(route('generalsetting.store'), [
+        actingAs($user)->post(route('generalsetting.store'), [
             'form_type'        => 'general-setting',
             'copyright_msg'    => 'First',
             'login_page_image' => UploadedFile::fake()->image('first.png'),
         ]);
 
-        $this->actingAs($user)->post(route('generalsetting.store'), [
+        actingAs($user)->post(route('generalsetting.store'), [
             'form_type'        => 'general-setting',
             'copyright_msg'    => 'Second',
             'login_page_image' => UploadedFile::fake()->image('second.png'),
@@ -233,7 +239,7 @@ describe('general setting tab — persistence', function () {
     });
 
     test('store redirects back after saving general settings', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'     => 'general-setting',
                 'copyright_msg' => 'Test',
@@ -251,7 +257,7 @@ describe('company details tab — validation', function () {
     /* -- Required fields -- */
 
     test('company_email is required', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'       => 'company-detail',
                 'company_email'   => '',
@@ -262,7 +268,7 @@ describe('company details tab — validation', function () {
     });
 
     test('company_phone is required', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'       => 'company-detail',
                 'company_email'   => 'info@cattle.com',
@@ -273,7 +279,7 @@ describe('company details tab — validation', function () {
     });
 
     test('company_address is required', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'       => 'company-detail',
                 'company_email'   => 'info@cattle.com',
@@ -286,7 +292,7 @@ describe('company details tab — validation', function () {
     /* -- Email format -- */
 
     test('company_email must be a valid email address', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'       => 'company-detail',
                 'company_email'   => 'not-an-email',
@@ -297,7 +303,7 @@ describe('company details tab — validation', function () {
     });
 
     test('company_email rejects email without domain', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'       => 'company-detail',
                 'company_email'   => 'user@',
@@ -308,7 +314,7 @@ describe('company details tab — validation', function () {
     });
 
     test('company_email accepts a valid email format', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'       => 'company-detail',
                 'company_email'   => 'contact@cattle-food.co.in',
@@ -323,7 +329,7 @@ describe('company details tab — validation', function () {
     test('company_logo must be an image file', function () {
         Storage::fake('public');
 
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'       => 'company-detail',
                 'company_email'   => 'info@cattle.com',
@@ -337,7 +343,7 @@ describe('company details tab — validation', function () {
     test('company_logo rejects files larger than 2MB', function () {
         Storage::fake('public');
 
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'       => 'company-detail',
                 'company_email'   => 'info@cattle.com',
@@ -349,7 +355,7 @@ describe('company details tab — validation', function () {
     });
 
     test('company_logo is optional — submitting without it passes validation', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'       => 'company-detail',
                 'company_email'   => 'info@cattle.com',
@@ -360,7 +366,7 @@ describe('company details tab — validation', function () {
     });
 
     test('all three required fields missing produces three distinct errors', function () {
-        $response = $this->actingAs(settingsUser())
+        $response = actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type' => 'company-detail',
             ]);
@@ -376,7 +382,7 @@ describe('company details tab — validation', function () {
 describe('company details tab — persistence', function () {
 
     test('all three company detail fields are persisted', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'       => 'company-detail',
                 'company_email'   => 'info@cattle.com',
@@ -384,15 +390,15 @@ describe('company details tab — persistence', function () {
                 'company_address' => '123 Farm Road, Ahmedabad, Gujarat 380001',
             ]);
 
-        $this->assertDatabaseHas('general_settings', ['key' => 'company_email',   'value' => 'info@cattle.com']);
-        $this->assertDatabaseHas('general_settings', ['key' => 'company_phone',   'value' => '9876543210']);
-        $this->assertDatabaseHas('general_settings', ['key' => 'company_address', 'value' => '123 Farm Road, Ahmedabad, Gujarat 380001']);
+        assertDatabaseHas('general_settings', ['key' => 'company_email',   'value' => 'info@cattle.com']);
+        assertDatabaseHas('general_settings', ['key' => 'company_phone',   'value' => '9876543210']);
+        assertDatabaseHas('general_settings', ['key' => 'company_address', 'value' => '123 Farm Road, Ahmedabad, Gujarat 380001']);
     });
 
     test('existing company email record is updated without duplicating', function () {
         GeneralSetting::create(['key' => 'company_email', 'value' => 'old@example.com']);
 
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'       => 'company-detail',
                 'company_email'   => 'new@cattle.com',
@@ -400,14 +406,14 @@ describe('company details tab — persistence', function () {
                 'company_address' => 'Farm Road',
             ]);
 
-        $this->assertDatabaseHas('general_settings', ['key' => 'company_email', 'value' => 'new@cattle.com']);
+        assertDatabaseHas('general_settings', ['key' => 'company_email', 'value' => 'new@cattle.com']);
         expect(GeneralSetting::where('key', 'company_email')->count())->toBe(1);
     });
 
     test('company_logo file is uploaded and filename stored in database', function () {
         Storage::fake('public');
 
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'       => 'company-detail',
                 'company_email'   => 'info@cattle.com',
@@ -419,14 +425,14 @@ describe('company details tab — persistence', function () {
         $setting = GeneralSetting::where('key', 'company_logo')->first();
 
         expect($setting)->not->toBeNull();
-        Storage::disk('public')->assertExists('company_logo/' . $setting->value);
+        expect(Storage::disk('public')->exists('company_logo/' . $setting->value))->toBeTrue();
     });
 
     test('company_logo replaces previous file record on second upload', function () {
         Storage::fake('public');
         $user = settingsUser();
 
-        $this->actingAs($user)->post(route('generalsetting.store'), [
+        actingAs($user)->post(route('generalsetting.store'), [
             'form_type'       => 'company-detail',
             'company_email'   => 'info@cattle.com',
             'company_phone'   => '9876543210',
@@ -434,7 +440,7 @@ describe('company details tab — persistence', function () {
             'company_logo'    => UploadedFile::fake()->image('logo-v1.png'),
         ]);
 
-        $this->actingAs($user)->post(route('generalsetting.store'), [
+        actingAs($user)->post(route('generalsetting.store'), [
             'form_type'       => 'company-detail',
             'company_email'   => 'info@cattle.com',
             'company_phone'   => '9876543210',
@@ -448,7 +454,7 @@ describe('company details tab — persistence', function () {
     test('company logo filename stored contains original file name', function () {
         Storage::fake('public');
 
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'       => 'company-detail',
                 'company_email'   => 'info@cattle.com',
@@ -462,7 +468,7 @@ describe('company details tab — persistence', function () {
     });
 
     test('store redirects back after saving company details', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'       => 'company-detail',
                 'company_email'   => 'info@cattle.com',
@@ -480,7 +486,7 @@ describe('company details tab — persistence', function () {
 describe('sales tab — validation', function () {
 
     test('payment_due_days must be an integer — decimal fails', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
                 'payment_due_days'   => 1.5,
@@ -490,7 +496,7 @@ describe('sales tab — validation', function () {
     });
 
     test('payment_due_days must not be negative', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
                 'payment_due_days'   => -1,
@@ -500,7 +506,7 @@ describe('sales tab — validation', function () {
     });
 
     test('payment_due_amount must be numeric — string fails', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
                 'payment_due_days'   => 30,
@@ -510,7 +516,7 @@ describe('sales tab — validation', function () {
     });
 
     test('payment_due_amount must not be negative', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
                 'payment_due_days'   => 30,
@@ -520,7 +526,7 @@ describe('sales tab — validation', function () {
     });
 
     test('zero is valid for payment_due_days (min:0 boundary)', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
                 'payment_due_days'   => 0,
@@ -530,7 +536,7 @@ describe('sales tab — validation', function () {
     });
 
     test('both fields are optional — omitting them passes validation', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type' => 'sales',
             ])
@@ -538,7 +544,7 @@ describe('sales tab — validation', function () {
     });
 
     test('decimal payment_due_amount passes validation', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
                 'payment_due_days'   => 7,
@@ -548,7 +554,7 @@ describe('sales tab — validation', function () {
     });
 
     test('large integer payment_due_days passes validation', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
                 'payment_due_days'   => 365,
@@ -565,70 +571,70 @@ describe('sales tab — validation', function () {
 describe('sales tab — persistence', function () {
 
     test('payment_due_days and payment_due_amount are persisted', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
                 'payment_due_days'   => 30,
                 'payment_due_amount' => 500,
             ]);
 
-        $this->assertDatabaseHas('general_settings', ['key' => 'payment_due_days',   'value' => '30']);
-        $this->assertDatabaseHas('general_settings', ['key' => 'payment_due_amount', 'value' => '500']);
+        assertDatabaseHas('general_settings', ['key' => 'payment_due_days',   'value' => '30']);
+        assertDatabaseHas('general_settings', ['key' => 'payment_due_amount', 'value' => '500']);
     });
 
     test('existing sales settings are updated without duplicating rows', function () {
         GeneralSetting::create(['key' => 'payment_due_days',   'value' => '10']);
         GeneralSetting::create(['key' => 'payment_due_amount', 'value' => '100']);
 
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
                 'payment_due_days'   => 45,
                 'payment_due_amount' => 750,
             ]);
 
-        $this->assertDatabaseHas('general_settings', ['key' => 'payment_due_days',   'value' => '45']);
-        $this->assertDatabaseHas('general_settings', ['key' => 'payment_due_amount', 'value' => '750']);
+        assertDatabaseHas('general_settings', ['key' => 'payment_due_days',   'value' => '45']);
+        assertDatabaseHas('general_settings', ['key' => 'payment_due_amount', 'value' => '750']);
         expect(GeneralSetting::where('key', 'payment_due_days')->count())->toBe(1);
         expect(GeneralSetting::where('key', 'payment_due_amount')->count())->toBe(1);
     });
 
     test('empty payment_due_days defaults to 0 in the database', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
                 'payment_due_days'   => '',
                 'payment_due_amount' => 200,
             ]);
 
-        $this->assertDatabaseHas('general_settings', ['key' => 'payment_due_days', 'value' => '0']);
+        assertDatabaseHas('general_settings', ['key' => 'payment_due_days', 'value' => '0']);
     });
 
     test('empty payment_due_amount defaults to 0 in the database', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
                 'payment_due_days'   => 15,
                 'payment_due_amount' => '',
             ]);
 
-        $this->assertDatabaseHas('general_settings', ['key' => 'payment_due_amount', 'value' => '0']);
+        assertDatabaseHas('general_settings', ['key' => 'payment_due_amount', 'value' => '0']);
     });
 
     test('both fields empty both default to 0', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
                 'payment_due_days'   => '',
                 'payment_due_amount' => '',
             ]);
 
-        $this->assertDatabaseHas('general_settings', ['key' => 'payment_due_days',   'value' => '0']);
-        $this->assertDatabaseHas('general_settings', ['key' => 'payment_due_amount', 'value' => '0']);
+        assertDatabaseHas('general_settings', ['key' => 'payment_due_days',   'value' => '0']);
+        assertDatabaseHas('general_settings', ['key' => 'payment_due_amount', 'value' => '0']);
     });
 
     test('decimal payment_due_amount is stored correctly', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
                 'payment_due_days'   => 7,
@@ -640,7 +646,7 @@ describe('sales tab — persistence', function () {
     });
 
     test('store redirects back after saving sales settings', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
                 'payment_due_days'   => 30,
@@ -699,54 +705,54 @@ describe('edge cases and cross-tab behaviour', function () {
     test('second save for the same tab updates records without creating duplicates', function () {
         $user = settingsUser();
 
-        $this->actingAs($user)->post(route('generalsetting.store'), [
+        actingAs($user)->post(route('generalsetting.store'), [
             'form_type'     => 'general-setting',
             'copyright_msg' => 'First version',
         ]);
 
-        $this->actingAs($user)->post(route('generalsetting.store'), [
+        actingAs($user)->post(route('generalsetting.store'), [
             'form_type'     => 'general-setting',
             'copyright_msg' => 'Second version',
         ]);
 
         expect(GeneralSetting::where('key', 'copyright_msg')->count())->toBe(1);
-        $this->assertDatabaseHas('general_settings', ['key' => 'copyright_msg', 'value' => 'Second version']);
+        assertDatabaseHas('general_settings', ['key' => 'copyright_msg', 'value' => 'Second version']);
     });
 
     test('settings from different tabs coexist in the database independently', function () {
         $user = settingsUser();
 
-        $this->actingAs($user)->post(route('generalsetting.store'), [
+        actingAs($user)->post(route('generalsetting.store'), [
             'form_type'     => 'general-setting',
             'copyright_msg' => 'CRM Copyright',
         ]);
 
-        $this->actingAs($user)->post(route('generalsetting.store'), [
+        actingAs($user)->post(route('generalsetting.store'), [
             'form_type'       => 'company-detail',
             'company_email'   => 'info@cattle.com',
             'company_phone'   => '9876543210',
             'company_address' => 'Farm Road, Gujarat',
         ]);
 
-        $this->actingAs($user)->post(route('generalsetting.store'), [
+        actingAs($user)->post(route('generalsetting.store'), [
             'form_type'          => 'sales',
             'payment_due_days'   => 30,
             'payment_due_amount' => 500,
         ]);
 
-        $this->assertDatabaseHas('general_settings', ['key' => 'copyright_msg']);
-        $this->assertDatabaseHas('general_settings', ['key' => 'company_email']);
-        $this->assertDatabaseHas('general_settings', ['key' => 'company_phone']);
-        $this->assertDatabaseHas('general_settings', ['key' => 'company_address']);
-        $this->assertDatabaseHas('general_settings', ['key' => 'payment_due_days']);
-        $this->assertDatabaseHas('general_settings', ['key' => 'payment_due_amount']);
+        assertDatabaseHas('general_settings', ['key' => 'copyright_msg']);
+        assertDatabaseHas('general_settings', ['key' => 'company_email']);
+        assertDatabaseHas('general_settings', ['key' => 'company_phone']);
+        assertDatabaseHas('general_settings', ['key' => 'company_address']);
+        assertDatabaseHas('general_settings', ['key' => 'payment_due_days']);
+        assertDatabaseHas('general_settings', ['key' => 'payment_due_amount']);
     });
 
     test('form_type field is never persisted as a setting', function () {
         $user = settingsUser();
 
         foreach (['general-setting', 'company-detail', 'sales'] as $type) {
-            $this->actingAs($user)->post(route('generalsetting.store'), [
+            actingAs($user)->post(route('generalsetting.store'), [
                 'form_type'       => $type,
                 'copyright_msg'   => 'Test',        // general-setting
                 'company_email'   => 'x@x.com',     // company-detail
@@ -755,11 +761,11 @@ describe('edge cases and cross-tab behaviour', function () {
             ]);
         }
 
-        $this->assertDatabaseMissing('general_settings', ['key' => 'form_type']);
+        assertDatabaseMissing('general_settings', ['key' => 'form_type']);
     });
 
     test('unknown form_type still persists submitted fields without validation errors', function () {
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'  => 'unknown-tab',
                 'custom_key' => 'custom_value',
@@ -767,7 +773,7 @@ describe('edge cases and cross-tab behaviour', function () {
             ->assertRedirect()
             ->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('general_settings', [
+        assertDatabaseHas('general_settings', [
             'key'   => 'custom_key',
             'value' => 'custom_value',
         ]);
@@ -778,7 +784,7 @@ describe('edge cases and cross-tab behaviour', function () {
         // 'CRM System Copyright' = 20 chars × 105 = 2100 chars, ends with 't'.
         $longMsg = str_repeat('CRM System Copyright', 105);
 
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'     => 'general-setting',
                 'copyright_msg' => $longMsg,
@@ -795,7 +801,7 @@ describe('edge cases and cross-tab behaviour', function () {
     test('multi-line company address is stored correctly', function () {
         $address = "Plot 12, GIDC Industrial Area\nAnkleshwar, Bharuch\nGujarat - 393002";
 
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'       => 'company-detail',
                 'company_email'   => 'info@cattle.com',
@@ -803,7 +809,7 @@ describe('edge cases and cross-tab behaviour', function () {
                 'company_address' => $address,
             ]);
 
-        $this->assertDatabaseHas('general_settings', [
+        assertDatabaseHas('general_settings', [
             'key'   => 'company_address',
             'value' => $address,
         ]);
@@ -812,7 +818,7 @@ describe('edge cases and cross-tab behaviour', function () {
     test('settings page renders existing saved values for display', function () {
         GeneralSetting::create(['key' => 'copyright_msg', 'value' => '© Cattle Food CRM']);
 
-        $this->actingAs(settingsUser())
+        actingAs(settingsUser())
             ->get(route('generalsetting.create'))
             ->assertOk()
             ->assertSee('© Cattle Food CRM');

@@ -147,7 +147,7 @@
     @endcan
 </div>
 {{-- {{dd(Auth::user()->getPermissionsViaRoles())}} --}}
-@can('daily-raw-material-summary')
+@can('raw-material-daily-summary')
     @if ($rm_daily_summary)
         @include('dashboard.partials.rm_daily_summary_widget')
     @endif
