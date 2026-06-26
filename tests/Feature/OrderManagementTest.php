@@ -146,6 +146,23 @@ describe('access-control', function () {
         $this->delete(route('order.destroy', $order))->assertRedirect(route('login'));
     });
 
+    it('redirects unauthenticated user from order show', function () {
+        $brand  = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $order  = mkOrder($broker->id, $brand->id, $dealer->id);
+        $this->get(route('order.show', $order))->assertRedirect(route('login'));
+    });
+
+    it('returns 403 when user lacks view-order on show', function () {
+        $brand  = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $order  = mkOrder($broker->id, $brand->id, $dealer->id);
+        $actor  = User::factory()->create(['status' => 1]);
+        $this->actingAs($actor)->get(route('order.show', $order))->assertForbidden();
+    });
+
     it('returns 403 when user lacks view-order on index', function () {
         $actor = User::factory()->create(['status' => 1]);
         $this->actingAs($actor)->get(route('order.index'))->assertForbidden();
@@ -669,6 +686,57 @@ describe('store-persistence', function () {
         $this->actingAs($actor)
             ->post(route('order.store'), ordPayload($broker->id, $brand->id, $dealer->id, $product->id))
             ->assertRedirect(route('order.index'));
+    });
+});
+
+// ─────────────────────────────────────────────
+
+describe('show', function () {
+    it('returns show view with order details', function () {
+        $brand   = mkOrdBrand();
+        $broker  = mkOrdBroker();
+        $dealer  = mkOrdDealer($broker->id, $brand->id);
+        $product = mkOrdProduct($brand->id);
+        $order   = mkOrder($broker->id, $brand->id, $dealer->id);
+        mkOrderItem($order->id, $product->id);
+        $actor   = ordActor(['view-order']);
+
+        $this->actingAs($actor)
+            ->get(route('order.show', $order))
+            ->assertOk()
+            ->assertViewIs('order_management.show')
+            ->assertViewHas('order', fn ($o) => $o->id === $order->id);
+    });
+
+    it('returns 403 when broker tries to view another broker\'s order', function () {
+        $brand   = mkOrdBrand();
+        $broker1 = mkOrdBroker();
+        $broker2 = mkOrdBroker();
+        $dealer  = mkOrdDealer($broker1->id, $brand->id);
+        $order   = mkOrder($broker1->id, $brand->id, $dealer->id);
+        grantPermissions($broker2, ['view-order']);
+
+        $this->actingAs($broker2)
+            ->get(route('order.show', $order))
+            ->assertForbidden();
+    });
+
+    it('eager loads broker, brand, dealer, and items on show', function () {
+        $brand   = mkOrdBrand();
+        $broker  = mkOrdBroker();
+        $dealer  = mkOrdDealer($broker->id, $brand->id);
+        $product = mkOrdProduct($brand->id);
+        $order   = mkOrder($broker->id, $brand->id, $dealer->id);
+        mkOrderItem($order->id, $product->id);
+
+        $response = $this->actingAs(ordActor(['view-order']))
+            ->get(route('order.show', $order));
+
+        $loaded = $response->viewData('order');
+        expect($loaded->relationLoaded('broker'))->toBeTrue()
+            ->and($loaded->relationLoaded('brand'))->toBeTrue()
+            ->and($loaded->relationLoaded('dealer'))->toBeTrue()
+            ->and($loaded->relationLoaded('items'))->toBeTrue();
     });
 });
 

@@ -19,7 +19,7 @@ class OrderManagementController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:view-order')->only(['index', 'listItemsDetail']);
+        $this->middleware('permission:view-order')->only(['index', 'listItemsDetail', 'show']);
         $this->middleware('permission:add-order')->only(['create']);
         $this->middleware('permission:edit-order')->only(['edit']);
     }
@@ -170,6 +170,25 @@ class OrderManagementController extends Controller
         return response()->json([
             'html' => view('order_management.partials.list-items-detail', ['order' => $order])->render(),
         ]);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  SHOW                                                                */
+    /* ------------------------------------------------------------------ */
+    public function show(OrderManagement $order)
+    {
+        SalesScope::authorizeOrderAccess($order);
+
+        $data['page_title'] = 'View - Soda/Order';
+        $data['order']      = $order->load([
+            'items.product',
+            'items.dispatches',
+            'broker',
+            'brand',
+            'dealer.user',
+        ]);
+
+        return view('order_management.show', $data);
     }
 
     /* ------------------------------------------------------------------ */

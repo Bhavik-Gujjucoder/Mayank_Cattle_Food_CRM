@@ -63,6 +63,13 @@ describe('access control', function () {
             ->assertRedirect(route('login'));
     });
 
+    test('guest cannot access show', function () {
+        $role = makeTestRole();
+
+        $this->get(route('roles.show', $role))
+            ->assertRedirect(route('login'));
+    });
+
     test('guest cannot PUT to update', function () {
         $role = makeTestRole();
 
@@ -425,6 +432,42 @@ describe('store — persistence', function () {
         $this->assertDatabaseHas('roles', ['name' => 'temp-role']);
     });
 
+});
+
+/* ═══════════════════════════════════════════════════════════════════════
+ |  SHOW
+ ══════════════════════════════════════════════════════════════════════ */
+describe('show', function () {
+
+    test('admin can view role details page', function () {
+        $perm = makeRolePerm('view-dashboard');
+        $role = makeTestRole('viewer-role');
+        $role->givePermissionTo($perm);
+
+        $this->actingAs(roleTestUser(['admin']))
+            ->get(route('roles.show', $role))
+            ->assertOk()
+            ->assertViewIs('roles.show')
+            ->assertViewHas('role', fn ($r) => $r->id === $role->id);
+    });
+
+    test('show page lists assigned permissions', function () {
+        $perm = makeRolePerm('export-dealer');
+        $role = makeTestRole('export-role');
+        $role->givePermissionTo($perm);
+
+        $this->actingAs(roleTestUser(['admin']))
+            ->get(route('roles.show', $role))
+            ->assertSee('Export Dealer');
+    });
+
+    test('non-admin user is denied access to show — 403', function () {
+        $role = makeTestRole();
+
+        $this->actingAs(roleTestUser(['staff']))
+            ->get(route('roles.show', $role))
+            ->assertForbidden();
+    });
 });
 
 /* ═══════════════════════════════════════════════════════════════════════

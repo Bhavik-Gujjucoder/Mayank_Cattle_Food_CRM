@@ -52,9 +52,9 @@ class UserController extends Controller
                         </label>';
                 })
                 ->addColumn('action', function ($row) use ($type, $canEdit, $canDelete) {
-                    $show_btn = '<a href="' . route('users.show', ['type' => $type, 'id' => $row->id]) . '"
-                        class="btn btn-outline-info btn-sm">
-                        <i class="bi bi-eye-fill"></i> ' . __('Show') . '
+                    $show_btn = '<a href="' . route('users.show', ['id' => $row->id, 'type' => $type]) . '"
+                        class="dropdown-item">
+                        <i class="ti ti-eye text-info"></i> View
                     </a>';
                     $edit_btn = '<a href="' . route('users.edit', ['type' => $type, 'id' => $row->id]) . '"
                         class="dropdown-item edit-btn" data-id="' . $row->id . '">
@@ -77,6 +77,7 @@ class UserController extends Controller
                     $action_btn = '<div class="dropdown table-action">
                                              <a href="#" class="action-icon " data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                              <div class="dropdown-menu dropdown-menu-right">';
+                    $action_btn .= $show_btn;
                     $action_btn .= $canEdit ? $edit_btn : '';
                     $action_btn .= $canDelete ? $delete_btn : '';
                     return $action_btn . ' </div></div>';
@@ -236,6 +237,25 @@ class UserController extends Controller
         }
 
         return redirect()->route('users.index', $type)->with('success', ucfirst($type) . ' created successfully.');
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  SHOW                                                              */
+    /* ------------------------------------------------------------------ */
+    public function show($id)
+    {
+        $user = User::with('roles')->findOrFail($id);
+        $type = request('type', 'user');
+
+        $data['page_title'] = match ($type) {
+            'broker'      => 'View Broker',
+            'transporter' => 'View Transporter',
+            default       => 'View User',
+        };
+        $data['user'] = $user;
+        $data['type'] = $type;
+
+        return view('users.show', $data);
     }
 
     /* ------------------------------------------------------------------ */

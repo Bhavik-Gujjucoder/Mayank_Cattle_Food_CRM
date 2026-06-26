@@ -68,6 +68,11 @@ describe('access-control', function () {
         $this->delete(route('users.destroy', ['type' => 'broker', 'id' => 1]))->assertRedirect();
     });
 
+    it('redirects guest from show', function () {
+        $target = userCtrlTarget();
+        $this->get(route('users.show', ['id' => $target->id, 'type' => 'broker']))->assertRedirect();
+    });
+
     it('redirects guest from bulk-delete', function () {
         $this->post(route('user.bulkDelete', 'broker'), [])->assertRedirect();
     });
@@ -229,6 +234,21 @@ describe('index', function () {
 
         $actions = collect($json['data'])->pluck('action')->implode(' ');
         expect($actions)->toContain('deleteUser');
+    });
+
+    it('action column contains view link in dropdown', function () {
+        $brokerRole = userCtrlRole('broker');
+        $target     = userCtrlTarget(['name' => 'BrokerForView']);
+        $target->assignRole($brokerRole);
+
+        $actor = userCtrlActor();
+        $json  = $this->actingAs($actor)
+            ->get(route('users.index', 'broker'), ['X-Requested-With' => 'XMLHttpRequest'])
+            ->json();
+
+        $actions = collect($json['data'])->pluck('action')->implode(' ');
+        expect($actions)->toContain('users/' . $target->id . '/show')
+            ->and($actions)->toContain('View');
     });
 
     it('action column omits edit and delete buttons without permissions', function () {
@@ -733,6 +753,44 @@ describe('store-persistence', function () {
                 'password_confirmation' => 'secret123',
             ])
             ->assertRedirect(route('users.index', 'broker'));
+    });
+});
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  SHOW                                                      */
+/* ═══════════════════════════════════════════════════════════ */
+describe('show', function () {
+    it('returns show view for an existing user', function () {
+        $brokerRole = userCtrlRole('broker');
+        $target     = userCtrlTarget(['name' => 'ShowTarget Broker']);
+        $target->assignRole($brokerRole);
+
+        $actor = userCtrlActor();
+        $this->actingAs($actor)
+            ->get(route('users.show', ['id' => $target->id, 'type' => 'broker']))
+            ->assertOk()
+            ->assertViewIs('users.show')
+            ->assertViewHas('user', fn ($u) => $u->id === $target->id)
+            ->assertViewHas('type', 'broker');
+    });
+
+    it('returns 404 for non-existent user on show', function () {
+        $actor = userCtrlActor();
+        $this->actingAs($actor)
+            ->get(route('users.show', ['id' => 99999, 'type' => 'broker']))
+            ->assertNotFound();
+    });
+
+    it('show view displays user role and status', function () {
+        $brokerRole = userCtrlRole('broker');
+        $target     = userCtrlTarget(['name' => 'ShowDetails Broker', 'status' => 1]);
+        $target->assignRole($brokerRole);
+
+        $response = $this->actingAs(userCtrlActor())
+            ->get(route('users.show', ['id' => $target->id, 'type' => 'broker']));
+
+        $response->assertSee('ShowDetails Broker')
+            ->assertSee('broker');
     });
 });
 

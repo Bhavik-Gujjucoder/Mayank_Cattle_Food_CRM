@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\DealersExport;
+use App\Http\Controllers\Concerns\ExportsExcel;
 use App\Models\BrandManagement;
 use App\Models\CityManagement;
 use App\Models\DealerManagement;
@@ -18,6 +20,8 @@ use Yajra\DataTables\DataTables;
 
 class DealerManagementController extends Controller
 {
+    use ExportsExcel;
+
     /* ------------------------------------------------------------------ */
     /*  Shared validation rules                                           */
     /* ------------------------------------------------------------------ */
@@ -451,5 +455,26 @@ class DealerManagementController extends Controller
             ]);
 
         return response()->json($dealers);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  EXPORT                                                            */
+    /* ------------------------------------------------------------------ */
+    public function export(Request $request)
+    {
+        $query = DealerManagement::with(['user', 'broker', 'brand', 'city', 'state'])
+            ->when(
+                $request->broker_id && $request->broker_id != 'all' && User::isActiveBroker((int) $request->broker_id),
+                fn ($q) => $q->where('broker_id', $request->broker_id)
+            )
+            ->when(
+                $request->brand_id && $request->brand_id != 'all' && BrandManagement::isActive((int) $request->brand_id),
+                fn ($q) => $q->where('brand_id', $request->brand_id)
+            )
+            ->when($request->start_date, fn ($q) => $q->whereDate('created_at', '>=', Carbon::parse($request->start_date)->format('Y-m-d')))
+            ->when($request->end_date, fn ($q) => $q->whereDate('created_at', '<=', Carbon::parse($request->end_date)->format('Y-m-d')))
+            ->orderByDesc('id');
+
+        return $this->downloadExcel($request, $query, DealersExport::class, 'dealers');
     }
 }

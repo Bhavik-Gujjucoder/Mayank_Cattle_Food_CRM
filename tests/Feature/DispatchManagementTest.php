@@ -912,3 +912,63 @@ describe('model-methods', function () {
         expect(DispatchManagement::withTrashed()->find($d->id))->not->toBeNull();
     });
 });
+
+// ─────────────────────────────────────────────
+
+describe('resource-routes', function () {
+    it('redirects unauthenticated user from dispatch create', function () {
+        $this->get(route('dispatch.create'))->assertRedirect(route('login'));
+    });
+
+    it('redirects unauthenticated user from dispatch show', function () {
+        $s = disSetup();
+        $d = mkDis($s['order']->id, $s['orderItem']->id, $s['product']->id, $s['transporter']->id);
+        $this->get(route('dispatch.show', $d))->assertRedirect(route('login'));
+    });
+
+    it('redirects unauthenticated user from dispatch edit', function () {
+        $s = disSetup();
+        $d = mkDis($s['order']->id, $s['orderItem']->id, $s['product']->id, $s['transporter']->id);
+        $this->get(route('dispatch.edit', $d))->assertRedirect(route('login'));
+    });
+
+    it('redirects create to dispatch index with info message', function () {
+        $this->actingAs(disActor(['add-dispatch']))
+            ->get(route('dispatch.create'))
+            ->assertRedirect(route('dispatch.index'))
+            ->assertSessionHas('info');
+    });
+
+    it('redirects show to order dispatch history', function () {
+        $s = disSetup();
+        $d = mkDis($s['order']->id, $s['orderItem']->id, $s['product']->id, $s['transporter']->id);
+
+        $this->actingAs(disActor(['view-dispatch']))
+            ->get(route('dispatch.show', $d))
+            ->assertRedirect(route('dispatch.orderHistory', $s['order']->id));
+    });
+
+    it('redirects edit to order dispatch history', function () {
+        $s = disSetup();
+        $d = mkDis($s['order']->id, $s['orderItem']->id, $s['product']->id, $s['transporter']->id);
+
+        $this->actingAs(disActor(['edit-dispatch']))
+            ->get(route('dispatch.edit', $d))
+            ->assertRedirect(route('dispatch.orderHistory', $s['order']->id));
+    });
+
+    it('returns 403 on show without view-dispatch permission', function () {
+        $s = disSetup();
+        $d = mkDis($s['order']->id, $s['orderItem']->id, $s['product']->id, $s['transporter']->id);
+
+        $this->actingAs(disActor())
+            ->get(route('dispatch.show', $d))
+            ->assertForbidden();
+    });
+
+    it('returns 403 on create without add-dispatch permission', function () {
+        $this->actingAs(disActor(['view-dispatch']))
+            ->get(route('dispatch.create'))
+            ->assertForbidden();
+    });
+});

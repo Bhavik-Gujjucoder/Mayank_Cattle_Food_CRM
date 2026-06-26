@@ -1360,6 +1360,47 @@ describe('getDealersByBrokerBrand', function () {
 
 // ─────────────────────────────────────────────
 
+describe('export', function () {
+    it('returns 403 without export-dealer permission', function () {
+        $actor = dealerActor();
+        $this->actingAs($actor)
+            ->get(route('dealer.export'))
+            ->assertForbidden();
+    });
+
+    it('returns excel download with export-dealer permission', function () {
+        $state  = makeDealerState();
+        $city   = makeDealerCity($state->id);
+        $broker = makeBroker();
+        $brand  = makeDealerBrand();
+        makeDealer($broker->id, $brand->id, $state->id, $city->id);
+
+        $actor = dealerActor(['export-dealer']);
+        $this->actingAs($actor)
+            ->get(route('dealer.export'))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    });
+
+    it('redirects with error when no dealers match export filters', function () {
+        $state   = makeDealerState();
+        $city    = makeDealerCity($state->id);
+        $broker  = makeBroker();
+        $brandA  = makeDealerBrand();
+        $brandB  = makeDealerBrand();
+        makeDealer($broker->id, $brandA->id, $state->id, $city->id);
+
+        $actor = dealerActor(['export-dealer']);
+        $this->actingAs($actor)
+            ->from(route('dealer.index'))
+            ->get(route('dealer.export', ['brand_id' => $brandB->id]))
+            ->assertRedirect(route('dealer.index'))
+            ->assertSessionHas('error');
+    });
+});
+
+// ─────────────────────────────────────────────
+
 describe('model-relationships', function () {
     it('broker() returns the associated broker User', function () {
         $state  = makeDealerState();
