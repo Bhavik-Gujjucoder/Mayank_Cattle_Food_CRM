@@ -718,6 +718,75 @@ describe('export', function () {
             ->get(route('raw-material.order.export-order-excel', $s['order']))
             ->assertForbidden();
     });
+
+    it('returns PDF order list download with permission and records', function () {
+        rmoSetup();
+
+        actingAs(rmoActor(['export-raw-material-purchas-order']))
+            ->get(route('raw-material.order.export-list-pdf'))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    });
+
+    it('redirects with error when no orders exist for PDF list export', function () {
+        actingAs(rmoActor(['export-raw-material-purchas-order']))
+            ->get(route('raw-material.order.export-list-pdf'))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    });
+
+    it('returns 403 for PDF list export without permission', function () {
+        actingAs(rmoActor())
+            ->get(route('raw-material.order.export-list-pdf'))
+            ->assertForbidden();
+    });
+
+    it('returns full Excel download with permission', function () {
+        rmoSetup();
+
+        actingAs(rmoActor(['export-raw-material-purchas-order']))
+            ->get(route('raw-material.order.export-full'))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    });
+
+    it('returns 403 for full export without permission', function () {
+        actingAs(rmoActor())
+            ->get(route('raw-material.order.export-full'))
+            ->assertForbidden();
+    });
+
+    it('returns full PDF download with permission', function () {
+        rmoSetup();
+
+        actingAs(rmoActor(['export-raw-material-purchas-order']))
+            ->get(route('raw-material.order.export-full-pdf'))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    });
+
+    it('returns 403 for full PDF export without permission', function () {
+        actingAs(rmoActor())
+            ->get(route('raw-material.order.export-full-pdf'))
+            ->assertForbidden();
+    });
+
+    it('returns single-order full PDF download with permission', function () {
+        $s = rmoSetup();
+
+        actingAs(rmoActor(['export-raw-material-purchas-order']))
+            ->get(route('raw-material.order.export-order-pdf', $s['order']))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    });
+
+    it('returns 403 for single-order PDF export without permission', function () {
+        $s = rmoSetup();
+
+        actingAs(rmoActor())
+            ->get(route('raw-material.order.export-order-pdf', $s['order']))
+            ->assertForbidden();
+    });
 });
 
 // ─────────────────────────────────────────────
