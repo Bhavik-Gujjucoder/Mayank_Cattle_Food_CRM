@@ -790,6 +790,34 @@ describe('export', function () {
             ->assertForbidden();
     });
 
+    it('redirects with success when full Excel export is queued (count > 1000)', function () {
+        \Illuminate\Support\Facades\Queue::fake();
+
+        $broker   = SupplierBroker::create(['name' => 'SB-EXQ-' . uniqid(), 'status' => 1]);
+        $supplier = Supplier::create([
+            'supplier_broker_id' => $broker->id,
+            'name'               => 'Sup-EXQ-' . uniqid(),
+            'email'              => uniqid() . '@exq.test',
+            'status'             => 1,
+        ]);
+
+        $rows = array_map(fn ($i) => [
+            'order_unique_id' => 'RMO-EXQ-' . str_pad((string) $i, 5, '0', STR_PAD_LEFT),
+            'supplier_id'     => $supplier->id,
+            'order_date'      => '2026-01-01',
+            'status'          => 0,
+            'created_at'      => now(),
+            'updated_at'      => now(),
+        ], range(1, 1001));
+
+        DB::table('raw_material_orders')->insert($rows);
+
+        actingAs(rmoActor(['export-raw-material-purchas-order']))
+            ->get(route('raw-material.order.export-full'))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+    });
+
     it('queues ExportRawMaterialFullPdfJob when order count exceeds 1000', function () {
         Bus::fake();
 
