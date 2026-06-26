@@ -40,6 +40,15 @@ describe('my-profile (GET)', function () {
         $this->get(route('my_profile', $user->id))
             ->assertRedirect(route('login'));
     });
+
+    it('returns 403 when viewing another users profile', function () {
+        $user  = profActor();
+        $other = profActor(['email' => 'other-profile@example.com', 'phone_no' => '9000000098']);
+
+        $this->actingAs($user)
+            ->get(route('my_profile', $other->id))
+            ->assertForbidden();
+    });
 });
 
 // ─────────────────────────────────────────────
@@ -172,5 +181,85 @@ describe('my-profile-update (PUT)', function () {
                 'status'   => 1,
             ])
             ->assertSessionHasErrors('phone_no');
+    });
+
+    it('returns 403 when updating another users profile', function () {
+        $user  = profActor();
+        $other = profActor(['email' => 'other-update@example.com', 'phone_no' => '9000000097']);
+
+        $this->actingAs($user)
+            ->put(route('my_profile.update', $other->id), [
+                'name'     => 'Hacked Name',
+                'email'    => $other->email,
+                'phone_no' => '9000000097',
+                'status'   => 1,
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('users', ['id' => $other->id, 'name' => 'Hacked Name']);
+    });
+});
+
+describe('breeze profile routes', function () {
+    it('renders breeze profile edit page', function () {
+        $user = profActor();
+
+        $this->actingAs($user)
+            ->get(route('profile.edit'))
+            ->assertOk()
+            ->assertViewIs('profile.edit');
+    });
+
+    it('updates breeze profile name and email', function () {
+        $user = profActor();
+
+        $this->actingAs($user)
+            ->patch(route('profile.update'), [
+                'name'  => 'Breeze Updated',
+                'email' => 'breeze-updated@example.com',
+            ])
+            ->assertRedirect(route('profile.edit'))
+            ->assertSessionHas('status', 'profile-updated');
+
+        $this->assertDatabaseHas('users', [
+            'id'    => $user->id,
+            'name'  => 'Breeze Updated',
+            'email' => 'breeze-updated@example.com',
+        ]);
+    });
+
+    it('redirects guest from breeze profile edit', function () {
+        $this->get(route('profile.edit'))->assertRedirect(route('login'));
+    });
+});
+
+describe('breeze profile destroy', function () {
+    it('deletes account when password is correct', function () {
+        $user = profActor(['password' => Hash::make('correct-password')]);
+
+        $this->actingAs($user)
+            ->delete(route('profile.destroy'), ['password' => 'correct-password'])
+            ->assertRedirect('/');
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+    });
+
+    it('rejects account deletion with wrong password', function () {
+        $user = profActor(['password' => Hash::make('correct-password')]);
+
+        $this->actingAs($user)
+            ->from(route('profile.edit'))
+            ->delete(route('profile.destroy'), ['password' => 'wrong-password'])
+            ->assertRedirect(route('profile.edit'))
+            ->assertSessionHasErrorsIn('userDeletion', 'password');
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertDatabaseHas('users', ['id' => $user->id]);
+    });
+
+    it('redirects guest from profile destroy', function () {
+        $this->delete(route('profile.destroy'), ['password' => 'password'])
+            ->assertRedirect(route('login'));
     });
 });

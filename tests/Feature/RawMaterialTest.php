@@ -530,6 +530,15 @@ describe('export', function () {
             ->assertOk()
             ->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     });
+
+    it('returns pdf download with export permission', function () {
+        $cat = mkRmCategory();
+        mkRm($cat->id);
+        actingAs(rmActor(['export-raw-material-inventory']))
+            ->get(route('raw-material.export-list-pdf'))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    });
 });
 
 // ─────────────────────────────────────────────

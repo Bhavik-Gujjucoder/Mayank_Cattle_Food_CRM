@@ -158,6 +158,18 @@ describe('access-control', function () {
         $this->get(route('dealer.quickCreateForm'))->assertRedirect(route('login'));
     });
 
+    it('redirects unauthenticated user from export', function () {
+        $this->get(route('dealer.export'))->assertRedirect(route('login'));
+    });
+
+    it('redirects unauthenticated user from getCitiesByState', function () {
+        $this->post(route('get.cities'), ['state_id' => 1])->assertRedirect(route('login'));
+    });
+
+    it('redirects unauthenticated user from getDealersByBrokerBrand', function () {
+        $this->get(route('get.dealers') . '?broker_id=1&brand_id=1')->assertRedirect(route('login'));
+    });
+
     it('returns 403 when authenticated user lacks add-dealer for store', function () {
         $actor = dealerActor(); // no permissions
         $this->actingAs($actor)->post(route('dealer.store'))->assertForbidden();
@@ -438,6 +450,38 @@ describe('quickCreateForm', function () {
         $this->actingAs($actor)
             ->get(route('dealer.quickCreateForm') . "?broker_id={$otherBroker->id}&brand_id={$brand->id}")
             ->assertForbidden();
+    });
+});
+
+describe('store broker scoping', function () {
+    it('returns 403 when broker user tries to create dealer for another broker', function () {
+        $state       = makeDealerState();
+        $city        = makeDealerCity($state->id);
+        $otherBroker = makeBroker();
+        $brand       = makeDealerBrand();
+        $actor       = makeBroker();
+        grantPermissions($actor, ['add-dealer']);
+
+        $this->actingAs($actor)
+            ->postJson(route('dealer.store'), dealerPayload($otherBroker->id, $brand->id, $state->id, $city->id))
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('dealer_management', ['broker_id' => $otherBroker->id]);
+    });
+
+    it('allows broker user to create dealer for their own broker account', function () {
+        $state = makeDealerState();
+        $city  = makeDealerCity($state->id);
+        $brand = makeDealerBrand();
+        $actor = makeBroker();
+        grantPermissions($actor, ['add-dealer']);
+
+        $this->actingAs($actor)
+            ->postJson(route('dealer.store'), dealerPayload($actor->id, $brand->id, $state->id, $city->id))
+            ->assertOk()
+            ->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('dealer_management', ['broker_id' => $actor->id]);
     });
 });
 

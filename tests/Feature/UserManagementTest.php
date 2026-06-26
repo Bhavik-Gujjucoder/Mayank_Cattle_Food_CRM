@@ -97,6 +97,37 @@ describe('access-control', function () {
             ->get(route('users.index', 'user'))
             ->assertOk();
     });
+
+    it('allows authenticated user to store broker without explicit add-broker permission', function () {
+        $actor = userCtrlActor();
+        $role  = userCtrlRole('broker');
+
+        $this->actingAs($actor)
+            ->post(route('users.store', 'broker'), [
+                'name'                  => 'OpenAccess Broker',
+                'email'                 => 'openaccess-broker@example.com',
+                'phone_no'              => '9876543299',
+                'password'              => 'secret123',
+                'password_confirmation' => 'secret123',
+                'role'                  => $role->id,
+            ])
+            ->assertRedirect(route('users.index', 'broker'));
+
+        $this->assertDatabaseHas('users', ['email' => 'openaccess-broker@example.com']);
+    });
+
+    it('allows authenticated user to destroy broker without explicit delete-broker permission', function () {
+        $brokerRole = userCtrlRole('broker');
+        $target     = userCtrlTarget(['name' => 'DeleteOpen Broker']);
+        $target->assignRole($brokerRole);
+        $actor = userCtrlActor();
+
+        $this->actingAs($actor)
+            ->delete(route('users.destroy', ['type' => 'broker', 'id' => $target->id]))
+            ->assertRedirect(route('users.index', 'broker'));
+
+        $this->assertDatabaseMissing('users', ['id' => $target->id]);
+    });
 });
 
 /* ═══════════════════════════════════════════════════════════ */

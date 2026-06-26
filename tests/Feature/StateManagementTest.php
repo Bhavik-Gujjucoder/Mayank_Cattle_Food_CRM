@@ -86,6 +86,25 @@ describe('access control', function () {
             ->assertRedirect(route('login'));
     });
 
+    test('guest is redirected from store endpoint', function () {
+        $this->postJson(route('state.store'), ['state_name' => 'Rajasthan', 'status' => 1])
+            ->assertUnauthorized();
+    });
+
+    test('guest is redirected from destroy endpoint', function () {
+        $state = makeStateRecord();
+
+        $this->delete(route('state.destroy', $state))
+            ->assertRedirect(route('login'));
+    });
+
+    test('guest is redirected from bulk delete endpoint', function () {
+        $state = makeStateRecord();
+
+        $this->postJson(route('state.bulkDelete'), ['ids' => [$state->id]])
+            ->assertUnauthorized();
+    });
+
 });
 
 /* ═══════════════════════════════════════════════════════════════════════

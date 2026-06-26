@@ -280,8 +280,12 @@ class UserController extends Controller
 
     public function my_profile($id)
     {
+        if ((int) auth()->id() !== (int) $id) {
+            abort(403);
+        }
+
+        $user = User::findOrFail($id);
         $data['page_title'] = 'Profile Update';
-        $user = User::find($id);
         $data['my_profile'] = 'my_profile';
         $data['user']  = $user;
         $data['roles'] = Role::whereIn('name', ['admin', 'staff'])->pluck('name', 'id');
@@ -291,10 +295,11 @@ class UserController extends Controller
 
     public function my_profile_update(Request $request, $id = null)
     {
-        $user = User::find($id);
-        if ($user->id != $id) {
+        if ((int) auth()->id() !== (int) $id) {
             abort(403);
         }
+
+        $user = User::findOrFail($id);
         $request->validate([
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'name'            => 'required|string|max:255|unique:users,name,' . $user->id . ',id,deleted_at,NULL',
@@ -310,7 +315,7 @@ class UserController extends Controller
             'name'     => $request->name,
             'email'    => $request->email,
             'phone_no' => $request->phone_no,
-            'status'   => $request->status,
+            'status'   => $request->status ?? 1,
         ]);
 
         // Update password if provided

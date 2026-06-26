@@ -37,6 +37,16 @@ describe('access control', function () {
         ])->assertRedirect(route('login'));
     });
 
+    test('any authenticated verified user can access settings without admin role', function () {
+        $user = User::factory()->create(['status' => 1]);
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'dealer', 'guard_name' => 'web']);
+        $user->assignRole('dealer');
+
+        actingAs($user)
+            ->get(route('generalsetting.create'))
+            ->assertOk();
+    });
+
     test('authenticated verified user can view the settings page', function () {
         actingAs(settingsUser())
             ->get(route('generalsetting.create'))

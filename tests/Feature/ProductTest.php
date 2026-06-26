@@ -86,6 +86,30 @@ describe('access-control', function () {
             ->assertForbidden();
     });
 
+    it('returns 403 on bulkDelete without delete-product permission', function () {
+        $brand   = mkProdBrand();
+        $product = mkProd($brand->id);
+        $this->actingAs(prodActor())
+            ->postJson(route('product.bulkDelete'), ['ids' => [$product->id]])
+            ->assertForbidden();
+    });
+
+    it('redirects guest from product update', function () {
+        $brand   = mkProdBrand();
+        $product = mkProd($brand->id);
+        $this->put(route('product.update', $product))->assertRedirect(route('login'));
+    });
+
+    it('redirects guest from product destroy', function () {
+        $brand   = mkProdBrand();
+        $product = mkProd($brand->id);
+        $this->delete(route('product.destroy', $product))->assertRedirect(route('login'));
+    });
+
+    it('redirects guest from product bulkDelete', function () {
+        $this->post(route('product.bulkDelete'))->assertRedirect(route('login'));
+    });
+
     it('returns 200 on index for authenticated user', function () {
         $this->actingAs(prodActor())->get(route('product.index'))->assertOk();
     });

@@ -9,6 +9,8 @@ use App\Models\Supplier;
 use App\Models\SupplierBroker;
 use App\Models\User;
 use App\Support\RawMaterialOrderPriceBasis;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
@@ -786,6 +788,36 @@ describe('export', function () {
         actingAs(rmoActor())
             ->get(route('raw-material.order.export-order-pdf', $s['order']))
             ->assertForbidden();
+    });
+
+    it('queues ExportRawMaterialFullPdfJob when order count exceeds 1000', function () {
+        Bus::fake();
+
+        $broker   = SupplierBroker::create(['name' => 'SB-BULK-' . uniqid(), 'status' => 1]);
+        $supplier = Supplier::create([
+            'supplier_broker_id' => $broker->id,
+            'name'               => 'Sup-BULK-' . uniqid(),
+            'email'              => uniqid() . '@bulk.test',
+            'status'             => 1,
+        ]);
+
+        $rows = array_map(fn ($i) => [
+            'order_unique_id' => 'RMO-BULK-' . str_pad((string) $i, 5, '0', STR_PAD_LEFT),
+            'supplier_id'     => $supplier->id,
+            'order_date'      => '2026-01-01',
+            'status'          => 0,
+            'created_at'      => now(),
+            'updated_at'      => now(),
+        ], range(1, 1001));
+
+        DB::table('raw_material_orders')->insert($rows);
+
+        actingAs(rmoActor(['export-raw-material-purchas-order']))
+            ->get(route('raw-material.order.export-full-pdf'))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        Bus::assertDispatched(\App\Jobs\ExportRawMaterialFullPdfJob::class);
     });
 });
 

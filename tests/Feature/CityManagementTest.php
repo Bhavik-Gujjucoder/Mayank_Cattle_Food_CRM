@@ -108,6 +108,32 @@ describe('access control', function () {
             ->assertRedirect(route('login'));
     });
 
+    test('guest is redirected from store endpoint', function () {
+        $state = makeCityState();
+
+        $this->postJson(route('city.store'), [
+            'state_id'  => $state->id,
+            'city_name' => 'Surat',
+            'status'    => 1,
+        ])->assertUnauthorized();
+    });
+
+    test('guest is redirected from destroy endpoint', function () {
+        $state = makeCityState();
+        $city  = makeCityRecord($state);
+
+        $this->delete(route('city.destroy', $city))
+            ->assertRedirect(route('login'));
+    });
+
+    test('guest is redirected from bulk delete endpoint', function () {
+        $state = makeCityState();
+        $city  = makeCityRecord($state);
+
+        $this->postJson(route('city.bulkDelete'), ['ids' => [$city->id]])
+            ->assertUnauthorized();
+    });
+
 });
 
 /* ═══════════════════════════════════════════════════════════════════════

@@ -217,6 +217,42 @@ describe('access-control', function () {
         $this->actingAs($actor)->delete(route('dispatch.destroy', $d))->assertForbidden();
     });
 
+    it('returns 403 when user lacks edit-dispatch on update', function () {
+        $s = disSetup();
+        $d = mkDis($s['order']->id, $s['orderItem']->id, $s['product']->id, $s['transporter']->id);
+        $actor = disActor(['view-dispatch']);
+
+        $this->actingAs($actor)
+            ->put(route('dispatch.update', $d), disPayload(
+                $s['order']->id,
+                $s['orderItem']->id,
+                $s['product']->id,
+                $s['transporter']->id
+            ))
+            ->assertForbidden();
+    });
+
+    it('redirects unauthenticated user from dispatch update', function () {
+        $s = disSetup();
+        $d = mkDis($s['order']->id, $s['orderItem']->id, $s['product']->id, $s['transporter']->id);
+        $this->put(route('dispatch.update', $d))->assertRedirect(route('login'));
+    });
+
+    it('redirects unauthenticated user from dispatch orderHistory', function () {
+        $s = disSetup();
+        $this->get(route('dispatch.orderHistory', $s['order']))->assertRedirect(route('login'));
+    });
+
+    it('redirects unauthenticated user from dispatch orderFormData', function () {
+        $s = disSetup();
+        $this->get(route('dispatch.orderFormData', $s['order']))->assertRedirect(route('login'));
+    });
+
+    it('redirects unauthenticated user from dispatch transporterTrucks', function () {
+        $s = disSetup();
+        $this->get(route('dispatch.transporterTrucks', $s['transporter']))->assertRedirect(route('login'));
+    });
+
     it('orderHistory accessible to any authenticated user who can access the order', function () {
         $s    = disSetup();
         $actor = disActor(['view-order']);

@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 use function Pest\Laravel\assertAuthenticated;
 use function Pest\Laravel\assertGuest;
@@ -40,6 +41,15 @@ describe('otp second factor on email login', function () {
 
         assertGuest();
         get(route('dashboard'))->assertRedirect(route('login'));
+    });
+
+    it('queues LoginOtpMail when email password authentication succeeds', function () {
+        Mail::fake();
+        $user = authUser();
+
+        loginEmailStep($user);
+
+        Mail::assertQueued(\App\Mail\LoginOtpMail::class);
     });
 
     it('skips OTP for dealer mobile login (single-factor flow)', function () {
@@ -217,6 +227,17 @@ describe('resend otp', function () {
         $newOtp = $user->fresh()->otp_code;
         expect($newOtp)->not->toBe($oldOtp)
             ->and($user->fresh()->otp_expires_at->isFuture())->toBeTrue();
+    });
+
+    it('queues LoginOtpMail when OTP resend is requested', function () {
+        $user = authUser();
+        loginEmailStep($user); // initial OTP (not faked here)
+
+        Mail::fake(); // capture only the resend mail
+
+        post(route('resend.otp'));
+
+        Mail::assertQueued(\App\Mail\LoginOtpMail::class);
     });
 
     it('allows login with regenerated OTP after resend', function () {

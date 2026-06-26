@@ -251,3 +251,18 @@ describe('payment:accrue-late-fees', function () {
         expect((float) $dispatch->accrued_late_fee)->toBeGreaterThan(0);
     });
 });
+
+describe('utility routes', function () {
+    it('redirects guest from cache clear route', function () {
+        $this->get('/clear')->assertRedirect(route('login'));
+    });
+
+    it('allows authenticated user to clear caches', function () {
+        $user = authUser();
+
+        $this->actingAs($user)
+            ->get('/clear')
+            ->assertOk()
+            ->assertSee('All cache cleared successfully');
+    });
+});

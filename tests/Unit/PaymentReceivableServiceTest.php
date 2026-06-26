@@ -392,6 +392,7 @@ describe('accrue-dispatch', function () {
         expect((float) $dispatch->accrued_late_fee)->toBe(150.0);
         expect($dispatch->late_fee_last_accrued_on->toDateString())->toBe('2026-01-07');
         expect(DispatchLateFeeLog::where('dispatch_management_id', $dispatch->id)->count())->toBe(3);
+        Mail::assertQueued(\App\Mail\DispatchPaymentPendingReminderMail::class);
     });
 
     it('returns zero when dispatch is not eligible', function () {
@@ -448,6 +449,142 @@ describe('accrue-dispatch', function () {
 
         expect($stats['processed'])->toBe(0);
         expect($stats['accrued'])->toBe(0);
+    });
+});
+
+// ─────────────────────────────────────────────
+
+describe('summarize-order-pending-dispatches', function () {
+    it('returns zero totals and has_pending false when no dispatches', function () {
+        $service = new PaymentReceivableService();
+        $result  = $service->summarizeOrderPendingDispatches([]);
+
+        expect($result['total_late_fee'])->toBe(0.0)
+            ->and($result['total_balance_due'])->toBe(0.0)
+            ->and($result['has_pending'])->toBeFalse();
+    });
+
+    it('returns zero totals when all dispatches are paid', function () {
+        $dispatch = prsMakeDispatch(['no_of_bags' => 5, 'accrued_late_fee' => 0, 'status' => DispatchManagement::STATUS_PAID]);
+        $service  = new PaymentReceivableService();
+
+        $result = $service->summarizeOrderPendingDispatches([$dispatch]);
+
+        expect($result['total_late_fee'])->toBe(0.0)
+            ->and($result['total_balance_due'])->toBe(0.0)
+            ->and($result['has_pending'])->toBeFalse();
+    });
+
+    it('returns correct totals for unpaid dispatch', function () {
+        $dispatch = prsMakeDispatch(['no_of_bags' => 5, 'accrued_late_fee' => 50.0, 'status' => DispatchManagement::STATUS_UNPAID]);
+        $service  = new PaymentReceivableService();
+
+        $result = $service->summarizeOrderPendingDispatches([$dispatch]);
+
+        // base=500, late_fee=50 → total=550, paid=0, balance=550
+        expect($result['total_late_fee'])->toBe(50.0)
+            ->and($result['total_balance_due'])->toBe(550.0)
+            ->and($result['has_pending'])->toBeTrue();
+    });
+
+    it('sums totals across multiple pending dispatches', function () {
+        $d1 = prsMakeDispatch(['no_of_bags' => 5, 'accrued_late_fee' => 20.0, 'status' => DispatchManagement::STATUS_UNPAID]);
+        $d2 = prsMakeDispatch(['no_of_bags' => 5, 'accrued_late_fee' => 30.0, 'status' => DispatchManagement::STATUS_PARTIAL, 'partial_paid_amount' => 100.0]);
+        $service = new PaymentReceivableService();
+
+        $result = $service->summarizeOrderPendingDispatches([$d1, $d2]);
+
+        // d1: base=500, late=20, total=520, paid=0, balance=520
+        // d2: base=500, late=30, total=530, paid=100, balance=430
+        expect($result['total_late_fee'])->toBe(50.0)
+            ->and($result['total_balance_due'])->toBe(950.0)
+            ->and($result['has_pending'])->toBeTrue();
+    });
+});
+
+// ─────────────────────────────────────────────
+
+describe('format-receivable-cell', function () {
+    it('returns dash span when both values are zero', function () {
+        $html = (new PaymentReceivableService())->formatReceivableCell(0, 0);
+        expect($html)->toContain('text-muted')
+            ->and($html)->toContain('—');
+    });
+
+    it('returns late fee div when late fee is positive', function () {
+        $html = (new PaymentReceivableService())->formatReceivableCell(100.0, 0);
+        expect($html)->toContain('text-warning')
+            ->and($html)->toContain('Late:')
+            ->and($html)->toContain('100.00');
+    });
+
+    it('returns balance due div when balance due is positive', function () {
+        $html = (new PaymentReceivableService())->formatReceivableCell(0, 200.0);
+        expect($html)->toContain('fw-medium')
+            ->and($html)->toContain('Due:')
+            ->and($html)->toContain('200.00');
+    });
+
+    it('returns both divs when both values are positive', function () {
+        $html = (new PaymentReceivableService())->formatReceivableCell(50.0, 300.0);
+        expect($html)->toContain('Late:')
+            ->and($html)->toContain('50.00')
+            ->and($html)->toContain('Due:')
+            ->and($html)->toContain('300.00');
+    });
+});
+
+// ─────────────────────────────────────────────
+
+describe('sync-order-payment-status', function () {
+    it('does nothing when order has no dispatches', function () {
+        $dispatch = prsMakeDispatch(['status' => DispatchManagement::STATUS_UNPAID]);
+        $order    = $dispatch->order;
+        $order->update(['payment_status' => 'unpaid']);
+
+        // Delete the dispatch so order has no dispatches
+        $dispatch->forceDelete();
+
+        (new PaymentReceivableService())->syncOrderPaymentStatus($order->fresh());
+
+        $order->refresh();
+        expect($order->payment_status)->toBe('unpaid'); // unchanged
+    });
+
+    it('sets payment_status to unpaid when all dispatches are unpaid', function () {
+        $dispatch = prsMakeDispatch(['no_of_bags' => 5, 'status' => DispatchManagement::STATUS_UNPAID]);
+        $order    = $dispatch->order;
+        $order->update(['payment_status' => 'partial']); // set to something else first
+
+        (new PaymentReceivableService())->syncOrderPaymentStatus($order->fresh());
+
+        $order->refresh();
+        expect($order->payment_status)->toBe('unpaid');
+    });
+
+    it('sets payment_status to partial when dispatch has partial payment', function () {
+        $dispatch = prsMakeDispatch([
+            'no_of_bags'          => 5,
+            'status'              => DispatchManagement::STATUS_PARTIAL,
+            'partial_paid_amount' => 200.0,
+        ]);
+        $order = $dispatch->order;
+
+        (new PaymentReceivableService())->syncOrderPaymentStatus($order->fresh());
+
+        $order->refresh();
+        expect($order->payment_status)->toBe('partial')
+            ->and((float) $order->partial_paid_amount)->toBe(200.0);
+    });
+
+    it('sets payment_status to paid when all dispatches are paid and order is fully dispatched', function () {
+        $dispatch = prsMakeDispatch(['no_of_bags' => 10, 'status' => DispatchManagement::STATUS_PAID]);
+        $order    = $dispatch->order;
+
+        (new PaymentReceivableService())->syncOrderPaymentStatus($order->fresh());
+
+        $order->refresh();
+        expect($order->payment_status)->toBe('paid');
     });
 });
 

@@ -135,7 +135,7 @@
                 </div>
 
                 <!-- Status -->
-                <div class="col-md-6">
+                {{-- <div class="col-md-6">
                     <div class="radio-wrap">
                         <label class="col-form-label">Status</label>
                         <div class="d-flex align-items-center">
@@ -151,7 +151,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> --}}
             </div>
         </div>
         <!-- /Basic Info -->

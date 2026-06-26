@@ -277,6 +277,10 @@ class DealerManagementController extends Controller
     {
         $request->validate($this->rules(), $this->messages());
 
+        if (SalesScope::isBroker() && auth()->id() !== (int) $request->broker_id) {
+            abort(403, 'You can only add dealers for your own broker account.');
+        }
+
         $profileImage = null;
         if ($request->hasFile('profile_picture')) {
             $profileImage = basename(

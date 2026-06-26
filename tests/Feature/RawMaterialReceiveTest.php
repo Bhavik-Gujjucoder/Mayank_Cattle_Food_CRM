@@ -663,6 +663,15 @@ describe('export', function () {
             ->assertOk()
             ->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     });
+
+    it('returns pdf list download with permission', function () {
+        $s = rmrSetup();
+        rmrReceive($s);
+        actingAs(rmrActor(['export-raw-material-receive']))
+            ->get(route('raw-material.receive.export-list-pdf'))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    });
 });
 
 // ─────────────────────────────────────────────
