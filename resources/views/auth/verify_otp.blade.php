@@ -78,7 +78,7 @@
                         <!-- Logo -->
                         <div class="text-center mb-4">
                             {{-- <img src="{{ asset('assets/images/logo.png') }}" class="img-fluid" alt="Logo"> --}}
-                            <img src="{{ asset('storage/company_logo/' . getSetting('company_logo')) }}"
+                            <img src="{{ companyLogoUrl() }}"
                                 class="img-fluid" alt="Logo">
                         </div>
 

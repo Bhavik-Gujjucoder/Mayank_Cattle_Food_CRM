@@ -1,6 +1,5 @@
 <div class="sidebar" id="sidebar">
-    <div class="modern-profile p-3 pb-0">
-
+    {{--<div class="modern-profile p-3 pb-0">
         <div class="sidebar-nav mb-3">
             <ul class="nav nav-tabs nav-tabs-solid nav-tabs-rounded nav-justified bg-transparent" role="tablist">
                 <li class="nav-item"><a class="nav-link active border-0" href="#">Menu</a></li>
@@ -34,7 +33,7 @@
                 </a>
             </div>
         </div>
-    </div>
+    </div>--}}
     <div class="sidebar-inner slimscroll">
         <div id="sidebar-menu" class="sidebar-menu">
             <ul>
@@ -271,7 +270,8 @@
                                             request()->routeIs('supplier.*') ||
                                             request()->routeIs('dealer*') ||
                                             request()->routeIs('truck*') ||
-                                            request()->routeIs('roles*')) active  
+                                            request()->routeIs('roles*') ||
+                                            request()->routeIs('permissions*')) active
                                             subdrop @endif">
                                     <i class="ti ti-users"></i>
                                     <span>Users & Permissions</span>
@@ -283,7 +283,8 @@
                                         request()->routeIs('supplier.*') ||
                                         request()->routeIs('dealer*') ||
                                         request()->routeIs('truck*') ||
-                                        request()->routeIs('roles*')) block @else none @endif;">
+                                        request()->routeIs('roles*') ||
+                                        request()->routeIs('permissions*')) block @else none @endif;">
 
                                     {{-- ------------------------------------------------------------------ */
                                 /*  Brand Management (type: brand)
@@ -350,7 +351,8 @@
                                 /*  Roles — super admin only
                                 /* ------------------------------------------------------------------ --}}
                                     @hasanyrole('super admin')
-                                        <li><a href="{{ route('roles.index') }}">Roles & Permissions</a></li>
+                                        <li><a href="{{ route('roles.index') }}">Roles</a></li>
+                                        {{-- <li><a href="{{ route('permissions.index') }}">Permissions</a></li> --}}
                                     @endhasanyrole
                                 </ul>
                             </li>

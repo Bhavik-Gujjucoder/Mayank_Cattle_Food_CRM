@@ -5,8 +5,18 @@ use App\Models\GeneralSetting;
 if (!function_exists('getSetting')) {
     function getSetting($key)
     {
-        $value = GeneralSetting::where('key', $key)->first()->value ?? '';
-        return $value;
+        return GeneralSetting::where('key', $key)->value('value') ?? '';
+    }
+}
+
+if (!function_exists('companyLogoUrl')) {
+    function companyLogoUrl(): string
+    {
+        $logo = getSetting('company_logo');
+
+        return $logo !== ''
+            ? asset('storage/company_logo/' . $logo)
+            : asset('images/default-user.png');
     }
 }
 
