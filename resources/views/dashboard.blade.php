@@ -524,7 +524,8 @@ withDataTable(function($) {
         dom: 'rt',
         language: {
             emptyTable: 'No records found.',
-            processing: '<div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading...'
+            loadingRecords: '',
+            processing: ''
         }
     };
 
@@ -646,7 +647,8 @@ withDataTable(function($) {
         dom: 'rt<"rm-summary-dt-footer row align-items-center g-2"<"col-sm-6"i><"col-sm-6"p>>',
         language: {
             emptyTable: 'No records found.',
-            processing: '<div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading...',
+            loadingRecords: '',
+            processing: '',
             info: 'Showing _START_ to _END_ of _TOTAL_ entries',
             infoEmpty: 'No entries to show',
             paginate: {
