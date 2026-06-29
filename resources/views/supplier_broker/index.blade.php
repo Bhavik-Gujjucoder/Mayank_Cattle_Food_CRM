@@ -183,10 +183,23 @@
         </div>
     </div>
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
     <script>
+    withDataTable(function () {
         const isShowAction = {{ auth()->user()->canAny(['edit-supplier-broker', 'delete-supplier-broker']) ? 'true' : 'false' }};
         const isShowCheckbox = {{ auth()->user()->can('delete-supplier-broker') ? 'true' : 'false' }};
+        var supplierBrokerAjax = buildDataTableAjax("{{ route('supplier-broker.index') }}", {
+            data: function(d) {
+                d.status = $('#filterStatus').val();
+                d.state_id = $('#filterState').val();
+                d.city_id = $('#filterCity').val();
+            }
+        });
         var supplier_broker_table = $('#supplier_broker_table').DataTable({
             pageLength: 10,
             deferRender: true,
@@ -195,14 +208,7 @@
             responsive: true,
             dom: 'lrtip',
             order: [[0, 'desc']],
-            ajax: {
-                url: "{{ route('supplier-broker.index') }}",
-                data: function(d) {
-                    d.status = $('#filterStatus').val();
-                    d.state_id = $('#filterState').val();
-                    d.city_id = $('#filterCity').val();
-                }
-            },
+            ajax: supplierBrokerAjax,
             columns: [
                 { data: 'id', name: 'id', visible: false, searchable: false },
                 { data: 'checkbox', name: 'checkbox', orderable: false, searchable: false, visible: isShowCheckbox },
@@ -216,6 +222,7 @@
                 { data: 'action', name: 'action', orderable: false, searchable: false, visible: isShowAction },
             ]
         });
+        supplierBrokerAjax._bindTable(supplier_broker_table);
 
         bindDebouncedDataTableSearch('#customSearch', supplier_broker_table);
 
@@ -436,5 +443,6 @@
                 $('.' + key + '_error').text(value[0]);
             });
         }
+    });
     </script>
 @endsection

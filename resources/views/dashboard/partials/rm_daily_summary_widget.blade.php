@@ -1,8 +1,5 @@
 @php
-    $summary = $rm_daily_summary;
-    $rows = $summary['rows'] ?? collect();
-    $totals = $summary['totals'] ?? [];
-    $summaryDate = $summary['summary_date'] ?? now();
+    $summaryDate = $rm_daily_summary['summary_date'] ?? now();
     $exportParams = array_filter([
         'rm_material_id' => $rm_material_filter !== 'all' ? $rm_material_filter : null,
         'rm_date_from' => $rm_date_from,
@@ -12,7 +9,7 @@
 
 @include('raw_material.partials.module-responsive')
 
-<div class="row rm-daily-summary-module">
+<div class="row rm-daily-summary-module mb-4">
     <div class="col-12 d-flex">
         <div class="card flex-fill w-100 raw-material-module">
             <div class="card-header pb-2">
@@ -99,213 +96,105 @@
                 </form>
             </div>
 
-            <div class="card-body">
-                <div class="row g-2 mb-3 rm-summary-kpis">
+            <div class="card-body rm-summary-body">
+                <div class="row g-3 mb-3 rm-summary-kpis">
                     <div class="col-6 col-md-3">
                         <div class="rm-kpi-pill">
                             <span class="rm-kpi-label">Total Ordered</span>
-                            <strong>{{ number_format($totals['ordered_qty'] ?? 0) }}</strong>
+                            <strong id="rmKpiOrderedQty">0</strong>
                             <span class="text-muted small">tons</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="rm-kpi-pill">
                             <span class="rm-kpi-label">On Road</span>
-                            <strong>{{ number_format($totals['on_road_qty'] ?? 0) }}</strong>
+                            <strong id="rmKpiOnRoadQty">0</strong>
                             <span class="text-muted small">tons</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="rm-kpi-pill">
                             <span class="rm-kpi-label">Unloading</span>
-                            <strong>{{ number_format($totals['unloading_qty'] ?? 0) }}</strong>
+                            <strong id="rmKpiUnloadingQty">0</strong>
                             <span class="text-muted small">tons</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="rm-kpi-pill">
                             <span class="rm-kpi-label">Pending</span>
-                            <strong>{{ number_format($totals['pending_not_on_road'] ?? 0) }}</strong>
+                            <strong id="rmKpiPendingQty">0</strong>
                             <span class="text-muted small">not on road</span>
                         </div>
                     </div>
                 </div>
 
-                @if ($rows->isEmpty())
-                    <div class="text-center py-5">
-                        <i class="ti ti-package-off text-muted fs-1 mb-3 d-block"></i>
-                        <h5 class="mb-2">No open raw material orders found</h5>
-                        <p class="text-muted mb-0">All purchase orders are fully received or no items match your filters.</p>
-                    </div>
-                @else
-                    <div class="table-responsive custom-table rm-summary-table-wrap">
-                        <table class="table table-bordered table-sm mb-0">
-                            <thead class="thead-light">
-                                <tr>
-                                    <th>Sr</th>
-                                    <th>Date</th>
-                                    <th>Supplier Broker</th>
-                                    <th>Party Name</th>
-                                    <th>Material</th>
-                                    <th class="text-end">Total Qty</th>
-                                    <th class="text-end">On Road</th>
-                                    <th class="text-end">Unloading</th>
-                                    <th class="text-end">Pending</th>
-                                    <th class="text-end">Rate</th>
-                                    <th class="text-end">Avg</th>
-                                    <th class="text-end">Pending Amt</th>
-                                    <th class="text-end">Received Amt</th>
-                                    <th class="text-end">Freight</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($rows as $index => $row)
-                                    <tr>
-                                        <td>{{ $index + 1 }}</td>
-                                        <td>{{ $row['order_date'] }}</td>
-                                        <td>{{ $row['supplier_broker_name'] }}</td>
-                                        <td>
-                                            @can('view-raw-material-purchas-order')
-                                                @if ($row['order_id'] > 0)
-                                                    <a href="{{ route('raw-material.order.show', $row['order_id']) }}"
-                                                        class="text-decoration-none">
-                                                        {{ $row['party_name'] }}
-                                                    </a>
-                                                @else
-                                                    {{ $row['party_name'] }}
-                                                @endif
-                                            @else
-                                                {{ $row['party_name'] }}
-                                            @endcan
-                                        </td>
-                                        <td>{{ $row['material_name'] }}</td>
-                                        <td class="text-end">{{ number_format($row['total_qty']) }}</td>
-                                        <td class="text-end">{{ number_format($row['on_road_qty']) }}</td>
-                                        <td class="text-end">{{ number_format($row['unloading_qty']) }}</td>
-                                        <td class="text-end">{{ number_format($row['pending_qty']) }}</td>
-                                        <td class="text-end">{{ number_format($row['rate'], 2) }}</td>
-                                        <td class="text-end">{{ number_format($row['average'], 2) }}</td>
-                                        <td class="text-end">{{ number_format($row['pending_amount'], 2) }}</td>
-                                        <td class="text-end">{{ number_format($row['received_amount'], 2) }}</td>
-                                        <td class="text-end">{{ number_format($row['freight'], 2) }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                            <tfoot>
-                                <tr class="rm-summary-footer rm-summary-footer--pending">
-                                    <td colspan="5"><strong>PENDING</strong></td>
-                                    <td class="text-end"><strong>{{ number_format($totals['pending']['qty'] ?? 0) }}</strong>
-                                    </td>
-                                    <td colspan="4"></td>
-                                    <td class="text-end">
-                                        <strong>{{ number_format($totals['pending']['average'] ?? 0, 3) }}</strong></td>
-                                    <td class="text-end">
-                                        <strong>{{ number_format($totals['pending']['amount'] ?? 0, 2) }}</strong></td>
-                                    <td colspan="2"></td>
-                                </tr>
-                                <tr class="rm-summary-footer rm-summary-footer--received">
-                                    <td colspan="5"><strong>RECEIVED</strong> <span class="text-muted fw-normal">(without
-                                            GST)</span></td>
-                                    <td class="text-end">
-                                        <strong>{{ number_format($totals['received']['qty'] ?? 0) }}</strong></td>
-                                    <td colspan="4"></td>
-                                    <td class="text-end">
-                                        <strong>{{ number_format($totals['received']['average'] ?? 0, 3) }}</strong></td>
-                                    <td></td>
-                                    <td class="text-end">
-                                        <strong>{{ number_format($totals['received']['amount'] ?? 0, 2) }}</strong></td>
-                                    <td></td>
-                                </tr>
-                                <tr class="rm-summary-footer rm-summary-footer--total">
-                                    <td colspan="5"><strong>TOTAL</strong></td>
-                                    <td class="text-end"><strong>{{ number_format($totals['grand']['qty'] ?? 0) }}</strong>
-                                    </td>
-                                    <td colspan="4"></td>
-                                    <td class="text-end">
-                                        <strong>{{ number_format($totals['grand']['average'] ?? 0, 3) }}</strong></td>
-                                    <td class="text-end">
-                                        <strong>{{ number_format($totals['pending']['amount'] ?? 0, 2) }}</strong></td>
-                                    <td class="text-end">
-                                        <strong>{{ number_format($totals['received']['amount'] ?? 0, 2) }}</strong></td>
-                                    <td></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                    <p class="text-muted small mt-2 mb-0">Quantities are in tons. Rate and average are per kg.</p>
-                @endif
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 rm-summary-toolbar">
+                    <p class="text-muted small mb-0">Quantities are in tons. Rate and average are per kg.</p>
+                    <div id="rmSummarySearchSlot"></div>
+                </div>
+
+                <div class="table-responsive custom-table rm-summary-table-wrap">
+                    <table class="table table-hover table-nowrap mb-0 dataTable no-footer dashboard-rm-summary-table w-100" id="rm_daily_summary_table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Sr</th>
+                                <th>Date</th>
+                                <th>Supplier Broker</th>
+                                <th>Party Name</th>
+                                <th>Material</th>
+                                <th class="text-end">Total Qty</th>
+                                <th class="text-end">On Road</th>
+                                <th class="text-end">Unloading</th>
+                                <th class="text-end">Pending</th>
+                                <th class="text-end">Rate</th>
+                                <th class="text-end">Avg</th>
+                                <th class="text-end">Pending Amt</th>
+                                <th class="text-end">Received Amt</th>
+                                <th class="text-end">Freight</th>
+                            </tr>
+                        </thead>
+                        <tfoot class="rm-summary-foot">
+                            <tr class="rm-summary-footer rm-summary-footer--pending">
+                                <td colspan="5"><strong>PENDING</strong></td>
+                                <td class="text-end"><strong id="rmFootPendingQty">0</strong></td>
+                                <td class="text-end text-muted">—</td>
+                                <td class="text-end text-muted">—</td>
+                                <td class="text-end text-muted">—</td>
+                                <td class="text-end text-muted">—</td>
+                                <td class="text-end"><strong id="rmFootPendingAvg">0.000</strong></td>
+                                <td class="text-end"><strong id="rmFootPendingAmt">0.00</strong></td>
+                                <td class="text-end text-muted">—</td>
+                                <td class="text-end text-muted">—</td>
+                            </tr>
+                            <tr class="rm-summary-footer rm-summary-footer--received">
+                                <td colspan="5"><strong>RECEIVED</strong> <span class="text-muted fw-normal">(without GST)</span></td>
+                                <td class="text-end"><strong id="rmFootReceivedQty">0</strong></td>
+                                <td class="text-end text-muted">—</td>
+                                <td class="text-end text-muted">—</td>
+                                <td class="text-end text-muted">—</td>
+                                <td class="text-end text-muted">—</td>
+                                <td class="text-end"><strong id="rmFootReceivedAvg">0.000</strong></td>
+                                <td class="text-end text-muted">—</td>
+                                <td class="text-end"><strong id="rmFootReceivedAmt">0.00</strong></td>
+                                <td class="text-end text-muted">—</td>
+                            </tr>
+                            <tr class="rm-summary-footer rm-summary-footer--total">
+                                <td colspan="5"><strong>TOTAL</strong></td>
+                                <td class="text-end"><strong id="rmFootGrandQty">0</strong></td>
+                                <td class="text-end text-muted">—</td>
+                                <td class="text-end text-muted">—</td>
+                                <td class="text-end text-muted">—</td>
+                                <td class="text-end text-muted">—</td>
+                                <td class="text-end"><strong id="rmFootGrandAvg">0.000</strong></td>
+                                <td class="text-end"><strong id="rmFootGrandPendingAmt">0.00</strong></td>
+                                <td class="text-end"><strong id="rmFootGrandReceivedAmt">0.00</strong></td>
+                                <td class="text-end text-muted">—</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="rm-summary-dt-footer" id="rmSummaryDtFooter"></div>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-    .rm-daily-summary-module .rm-kpi-pill {
-        border: 1px solid #e2e8f0;
-        border-radius: 0.5rem;
-        padding: 0.75rem 1rem;
-        height: 100%;
-    }
-
-    .rm-daily-summary-module .rm-kpi-label {
-        display: block;
-        font-size: 0.75rem;
-        color: #64748b;
-        margin-bottom: 0.25rem;
-    }
-
-    .rm-daily-summary-module .rm-summary-table-wrap {
-        max-height: 28rem;
-        overflow: auto;
-    }
-
-    .rm-daily-summary-module .rm-summary-footer td {
-        background: #f8fafc;
-    }
-
-    .rm-daily-summary-module .rm-summary-footer--pending td:first-child {
-        border-left: 3px solid #f59e0b;
-    }
-
-    .rm-daily-summary-module .rm-summary-footer--received td:first-child {
-        border-left: 3px solid #10b981;
-    }
-
-    .rm-daily-summary-module .rm-summary-footer--total td:first-child {
-        border-left: 3px solid #3b82f6;
-    }
-</style>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var $form = $('#rmDailySummaryFilterForm');
-
-        $('#rmMaterialFilter').on('change', function() {
-            $form.trigger('submit');
-        });
-
-        if (typeof flatpickr !== 'undefined') {
-            flatpickr('#rmDateFrom', {
-                dateFormat: 'Y-m-d',
-                altInput: true,
-                altFormat: 'd-m-Y',
-                allowInput: true,
-                defaultDate: @json($rm_date_from),
-                onChange: function() {
-                    $form.trigger('submit');
-                },
-            });
-
-            flatpickr('#rmDateTo', {
-                dateFormat: 'Y-m-d',
-                altInput: true,
-                altFormat: 'd-m-Y',
-                allowInput: true,
-                defaultDate: @json($rm_date_to),
-                onChange: function() {
-                    $form.trigger('submit');
-                },
-            });
-        }
-    });
-</script>

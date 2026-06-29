@@ -259,8 +259,13 @@ test('dashboard shows daily summary widget for permitted users', function () {
 
     $response->assertOk();
     $response->assertSee('Daily Raw Material Summary');
-    $response->assertSee('Roquette Supplier - Gokak');
-    $response->assertSee('Nesheil Broker');
+    $response->assertSee('id="rm_daily_summary_table"', false);
+
+    $this->actingAs($user)
+        ->getJson(route('dashboard.data.rm-daily-summary'))
+        ->assertOk()
+        ->assertJsonPath('data.0.party_name', 'Roquette Supplier - Gokak')
+        ->assertJsonPath('data.0.supplier_broker_name', 'Nesheil Broker');
 });
 
 test('dashboard hides daily summary widget without permission', function () {

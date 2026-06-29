@@ -1,11 +1,25 @@
 <?php
 
 use App\Models\GeneralSetting;
+use Illuminate\Support\Facades\Cache;
+
+if (!function_exists('forgetGeneralSettingsCache')) {
+    function forgetGeneralSettingsCache(): void
+    {
+        Cache::forget('general_settings_all');
+    }
+}
 
 if (!function_exists('getSetting')) {
     function getSetting($key)
     {
-        return GeneralSetting::where('key', $key)->value('value') ?? '';
+        $settings = Cache::remember('general_settings_all', 3600, function () {
+            return GeneralSetting::query()->pluck('value', 'key')->all();
+        });
+
+        $value = $settings[$key] ?? '';
+
+        return $value === null ? '' : (string) $value;
     }
 }
 

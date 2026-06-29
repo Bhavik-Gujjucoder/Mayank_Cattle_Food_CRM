@@ -50,6 +50,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('dashboard.raw-material-daily-summary.export')
         ->middleware('permission:export-raw-material-purchas-order');
 
+    Route::prefix('dashboard/data')->name('dashboard.data.')->group(function () {
+        Route::get('dealers', [HomeController::class, 'dataDealers'])->name('dealers');
+        Route::get('soda-orders', [HomeController::class, 'dataSodaOrders'])->name('soda-orders');
+        Route::get('dispatches', [HomeController::class, 'dataDispatches'])->name('dispatches');
+        Route::get('raw-material-orders', [HomeController::class, 'dataRawMaterialOrders'])->name('raw-material-orders');
+        Route::get('raw-material-receives', [HomeController::class, 'dataRawMaterialReceives'])->name('raw-material-receives');
+        Route::get('rm-daily-summary', [HomeController::class, 'dataRmDailySummary'])->name('rm-daily-summary');
+        Route::get('dispatch-form-orders', [HomeController::class, 'dataDispatchFormOrders'])->name('dispatch-form-orders');
+    });
+
     /* ------------------------------------------------------------------ */
     /*  My Profile                                                        */
     /* ------------------------------------------------------------------ */

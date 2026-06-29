@@ -11,4 +11,10 @@ class GeneralSetting extends Model
         'key',
         'value',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(fn () => forgetGeneralSettingsCache());
+        static::deleted(fn () => forgetGeneralSettingsCache());
+    }
 }

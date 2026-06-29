@@ -188,11 +188,22 @@
 </div>
 
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
 <script>
+withDataTable(function () {
     const isShowAction = {{ auth()->user()->canAny(['edit-product', 'delete-product'])? 'true': 'false' }};
     const isShowCheckbox = {{ auth()->user()->can('delete-product') ? 'true' : 'false' }};
 
+    var productAjax = buildDataTableAjax("{{ route('product.index') }}", {
+        data: function(d) {
+            d.brand_id = $('#BrandId').val();
+        }
+    });
     var product_table = $('#product_table').DataTable({
         pageLength: 10,
         deferRender: true,
@@ -203,12 +214,7 @@
         order: [
             [0, 'desc']
         ],
-        ajax: {
-            url: "{{ route('product.index') }}",
-            data: function(d) {
-                d.brand_id = $('#BrandId').val();
-            }
-        },
+        ajax: productAjax,
         columns: [{
                 data: 'id',
                 name: 'id',
@@ -263,6 +269,7 @@
             },
         ]
     });
+    productAjax._bindTable(product_table);
 
     /* Brand */
     $('#BrandId').on('change', function() {
@@ -453,5 +460,6 @@
             }
         });
     }
+});
 </script>
 @endsection

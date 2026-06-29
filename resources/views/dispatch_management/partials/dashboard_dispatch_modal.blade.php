@@ -27,14 +27,6 @@
                             </label>
                             <select name="order_id" id="dashboardDispatchOrderId" class="form-select">
                                 <option value="">-- Select Order --</option>
-                                @foreach ($dispatch_form_orders as $dispatchOrder)
-                                    <option value="{{ $dispatchOrder->id }}"
-                                        data-form-url="{{ route('dispatch.orderFormData', $dispatchOrder->id) }}"
-                                        {{ (string) old('order_id') === (string) $dispatchOrder->id ? 'selected' : '' }}>
-                                        {{ $dispatchOrder->unique_order_id }}
-                                        — {{ $dispatchOrder->dealer?->user?->name ?? '—' }}
-                                    </option>
-                                @endforeach
                             </select>
                             <span class="field-error" id="order_id-error"></span>
                         </div>

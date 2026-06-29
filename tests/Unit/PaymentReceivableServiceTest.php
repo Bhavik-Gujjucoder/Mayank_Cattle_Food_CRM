@@ -25,6 +25,8 @@ function prsUpdateSettings(int $dueDays = 0, float $dueAmount = 0): void
     DB::table('general_settings')
         ->where('key', 'payment_due_amount')
         ->update(['value' => (string) $dueAmount]);
+
+    forgetGeneralSettingsCache();
 }
 
 function prsMakeDispatch(array $attrs = []): DispatchManagement

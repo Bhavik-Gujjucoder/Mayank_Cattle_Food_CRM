@@ -177,23 +177,33 @@
         </div>
     </div>
 @endsection
-@section('script')
-    {{-- Core DataTables is loaded by main layout. Buttons + JSZip (local) only for Excel export. --}}
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
     @can('export-dealer')
         <script src="{{ asset('assets/js/dataTables.buttons.min.js') }}"></script>
         <script src="{{ asset('assets/js/jszip.min.js') }}"></script>
         <script src="{{ asset('assets/js/buttons.html5.min.js') }}"></script>
     @endcan
+@endpush
 
+@section('script')
     <script>
-        $(document).ready(function() {
-            $('.search-dropdown').select2({
-                placeholder: 'Select'
-            });
+    withDataTable(function () {
+        $('.search-dropdown').select2({
+            placeholder: 'Select'
         });
 
         const isShowAction = {{ auth()->user()->canAny(['edit-dealer', 'delete-dealer'])? 'true': 'false' }};
 
+        var dealerAjax = buildDataTableAjax("{{ route('dealer.index') }}", {
+            data: function(d) {
+                d.broker_id = $('#broker_id').val();
+                d.start_date = $('#startDate').val();
+                d.end_date = $('#endDate').val();
+                d.brand_id = $('#BrandId').val();
+            }
+        });
         var dealerTable = $('#dealerTable').DataTable({
             pageLength: 10,
             deferRender: true,
@@ -204,15 +214,7 @@
             order: [
                 [0, 'desc']
             ],
-            ajax: {
-                url: "{{ route('dealer.index') }}",
-                data: function(d) {
-                    d.broker_id = $('#broker_id').val();
-                    d.start_date = $('#startDate').val();
-                    d.end_date = $('#endDate').val();
-                    d.brand_id = $('#BrandId').val();
-                }
-            },
+            ajax: dealerAjax,
             columns: [{
                     data: 'id',
                     name: 'id',
@@ -275,6 +277,7 @@
                 }
             ],
         });
+        dealerAjax._bindTable(dealerTable);
 
         /* Custom search */
         bindDebouncedDataTableSearch('#customSearch', dealerTable);
@@ -574,5 +577,6 @@
                 }
             });
         });
+    });
     </script>
 @endsection

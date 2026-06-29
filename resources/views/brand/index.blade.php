@@ -103,11 +103,18 @@
     </div>
 </div>
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
 <script>
+withDataTable(function () {
     const isShowAction = {{ auth()->user()->canAny(['edit-brand', 'delete-brand']) ? 'true' : 'false' }};
     const isShowCheckbox = {{ auth()->user()->can('delete-brand') ? 'true' : 'false' }};
 
+    var brandAjax = buildDataTableAjax("{{ route('brand.index') }}");
     var brand_table = $('#brand_table').DataTable({
         pageLength: 10,
         deferRender: true,
@@ -116,7 +123,7 @@
         responsive: true,
         dom: 'lrtip',
         order: [[0, 'asc']],
-        ajax: "{{ route('brand.index') }}",
+        ajax: brandAjax,
         columns: [
             { data: 'id', name: 'id', visible: false, searchable: false },
             { data: 'checkbox', name: 'checkbox', orderable: false, searchable: false, visible: isShowCheckbox },
@@ -126,6 +133,7 @@
             { data: 'action', name: 'action', orderable: false, searchable: false, visible: isShowAction },
         ],
     });
+    brandAjax._bindTable(brand_table);
 
     bindDebouncedDataTableSearch('#customSearch', brand_table);
 
@@ -255,5 +263,6 @@
             }
         });
     }
+});
 </script>
 @endsection

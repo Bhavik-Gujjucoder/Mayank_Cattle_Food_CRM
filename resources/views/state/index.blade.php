@@ -112,10 +112,17 @@
     </div>
 </div>
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
 <script>
+withDataTable(function () {
     const isShowAction = {{ auth()->user()->canAny(['edit-state', 'delete-state'])? 'true': 'false' }};
     const isShowCheckbox = {{ auth()->user()->can('delete-state')? 'true': 'false' }};
+    var stateAjax = buildDataTableAjax("{{ route('state.index') }}");
     var state_table = $('#state_table').DataTable({
         "pageLength": 10,
         deferRender: true, // Prevents unnecessary DOM rendering
@@ -126,7 +133,7 @@
         order: [
             [0, 'desc']
         ],
-        ajax: "{{ route('state.index') }}",
+        ajax: stateAjax,
         columns: [{
                 data: 'id',
                 name: 'id',
@@ -169,6 +176,7 @@
         ],
 
     });
+    stateAjax._bindTable(state_table);
 
     // Custom Search Box
     bindDebouncedDataTableSearch('#customSearch', state_table);
@@ -322,5 +330,6 @@
             }
         });
     }
+});
 </script>
 @endsection

@@ -131,9 +131,14 @@
 </div>
 
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
 <script>
-$(document).ready(function () {
+withDataTable(function () {
     $('.search-dropdown').select2({ placeholder: 'Select', width: '100%' });
 
     const filterParams = { status: '#statusFilter', supplier_id: '#supplierFilter', date_from: '#dateFrom', date_to: '#dateTo' };
@@ -153,6 +158,14 @@ $(document).ready(function () {
 
     const isShowAction = {{ auth()->user()->canAny(['add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order']) ? 'true' : 'false' }};
 
+    var rawMaterialOrderAjax = buildDataTableAjax("{{ route('raw-material.order.index') }}", {
+        data: function (d) {
+            d.status = $('#statusFilter').val();
+            d.supplier_id = $('#supplierFilter').val();
+            d.date_from = $('#dateFrom').val();
+            d.date_to = $('#dateTo').val();
+        }
+    });
     var raw_material_order_table = $('#raw_material_order_table').DataTable({
         pageLength: 10,
         deferRender: true,
@@ -161,15 +174,7 @@ $(document).ready(function () {
         responsive: true,
         dom: 'lrtip',
         order: [[0, 'desc']],
-        ajax: {
-            url: "{{ route('raw-material.order.index') }}",
-            data: function (d) {
-                d.status = $('#statusFilter').val();
-                d.supplier_id = $('#supplierFilter').val();
-                d.date_from = $('#dateFrom').val();
-                d.date_to = $('#dateTo').val();
-            }
-        },
+        ajax: rawMaterialOrderAjax,
         columns: [
             { data: 'id', name: 'id', visible: false, searchable: false },
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
@@ -192,6 +197,7 @@ $(document).ready(function () {
             }
         }
     });
+    rawMaterialOrderAjax._bindTable(raw_material_order_table);
 
     $('#statusFilter, #supplierFilter').on('change', function () {
         syncFilterUrl();

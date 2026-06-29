@@ -683,8 +683,8 @@ describe('getSetting helper', function () {
     });
 
     test('returns the updated value after the record is changed', function () {
-        GeneralSetting::create(['key' => 'company_email', 'value' => 'old@example.com']);
-        GeneralSetting::where('key', 'company_email')->update(['value' => 'new@cattle.com']);
+        $setting = GeneralSetting::create(['key' => 'company_email', 'value' => 'old@example.com']);
+        $setting->update(['value' => 'new@cattle.com']);
 
         expect(getSetting('company_email'))->toBe('new@cattle.com');
     });

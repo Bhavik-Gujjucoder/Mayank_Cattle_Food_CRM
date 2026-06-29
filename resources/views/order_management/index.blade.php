@@ -456,12 +456,16 @@
     {{-- </div> --}}
 
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
     <script>
-        $(document).ready(function() {
-            $('.search-dropdown').select2({
-                placeholder: 'Select'
-            });
+    withDataTable(function () {
+        $('.search-dropdown').select2({
+            placeholder: 'Select'
         });
 
         const isShowAction = {{ auth()->user()->canAny(['edit-order', 'delete-order', 'view-dispatch'])? 'true': 'false' }};
@@ -575,6 +579,21 @@
             });
         }
 
+        var orderAjax = buildDataTableAjax("{{ route('order.index') }}", {
+            data: function(d) {
+                if ($('#broker_id').length) {
+                    d.broker_id = $('#broker_id').val();
+                }
+                if ($('#BrandId').length) {
+                    d.brand_id = $('#BrandId').val();
+                }
+                if ($('#dealerFilter').length) {
+                    d.dealer_id = $('#dealerFilter').val() || 'all';
+                }
+                d.date_from = $('#orderDateFrom').val() || '';
+                d.date_to   = $('#orderDateTo').val() || '';
+            }
+        });
         var order_table = $('#order_table').DataTable({
             pageLength: 10,
             deferRender: true,
@@ -586,22 +605,7 @@
             order: [
                 [0, 'desc']
             ],
-            ajax: {
-                url: "{{ route('order.index') }}",
-                data: function(d) {
-                    if ($('#broker_id').length) {
-                        d.broker_id = $('#broker_id').val();
-                    }
-                    if ($('#BrandId').length) {
-                        d.brand_id = $('#BrandId').val();
-                    }
-                    if ($('#dealerFilter').length) {
-                        d.dealer_id = $('#dealerFilter').val() || 'all';
-                    }
-                    d.date_from = $('#orderDateFrom').val() || '';
-                    d.date_to   = $('#orderDateTo').val() || '';
-                }
-            },
+            ajax: orderAjax,
             columns: [{
                     data: 'id',
                     name: 'id',
@@ -701,6 +705,7 @@
                 order_table.columns.adjust();
             }
         });
+        orderAjax._bindTable(order_table);
 
         var orderTableResizeTimer;
         $(window).on('resize', function() {
@@ -1097,5 +1102,6 @@
                 if (result.isConfirmed) callback();
             });
         }
+    });
     </script>
 @endsection

@@ -276,22 +276,31 @@ class PaymentReceivableService
         $qty = max(0, (int) $dispatch->no_of_bags);
 
         DB::transaction(function () use ($dispatch, $asOf, $start, $dailyAmount, $rate, $qty, &$daysAccrued, &$amountAdded) {
+            $existingDates = DispatchLateFeeLog::query()
+                ->where('dispatch_management_id', $dispatch->id)
+                ->whereDate('charge_date', '>=', $start->toDateString())
+                ->whereDate('charge_date', '<=', $asOf->toDateString())
+                ->pluck('charge_date')
+                ->map(fn ($date) => Carbon::parse($date)->toDateString())
+                ->flip();
+
+            $rows = [];
+            $now = now();
             $current = $start->copy();
 
             while ($current->lte($asOf)) {
-                $exists = DispatchLateFeeLog::query()
-                    ->where('dispatch_management_id', $dispatch->id)
-                    ->whereDate('charge_date', $current)
-                    ->exists();
+                $dateStr = $current->toDateString();
 
-                if (! $exists) {
-                    DispatchLateFeeLog::create([
+                if (! isset($existingDates[$dateStr])) {
+                    $rows[] = [
                         'dispatch_management_id' => $dispatch->id,
-                        'charge_date'            => $current->toDateString(),
+                        'charge_date'            => $dateStr,
                         'daily_amount'           => $dailyAmount,
                         'rate_per_unit'          => $rate,
                         'quantity'               => $qty,
-                    ]);
+                        'created_at'             => $now,
+                        'updated_at'             => $now,
+                    ];
 
                     $daysAccrued++;
                     $amountAdded += $dailyAmount;
@@ -300,7 +309,11 @@ class PaymentReceivableService
                 $current->addDay();
             }
 
-            if ($daysAccrued > 0) {
+            if ($rows !== []) {
+                foreach (array_chunk($rows, 100) as $chunk) {
+                    DispatchLateFeeLog::insert($chunk);
+                }
+
                 $dispatch->update([
                     'accrued_late_fee'         => round($this->accruedLateFee($dispatch) + $amountAdded, 2),
                     'late_fee_last_accrued_on' => $asOf->toDateString(),

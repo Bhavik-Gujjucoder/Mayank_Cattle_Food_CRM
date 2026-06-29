@@ -249,11 +249,25 @@
         </div>
     </div>
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
     <script>
+    withDataTable(function () {
         /* ── DataTable ─────────────────────────────────────────────────────── */
         const isShowAction = {{ auth()->user()->canAny(['edit-supplier', 'delete-supplier'])? 'true': 'false' }};
         const isShowCheckbox = {{ auth()->user()->can('delete-supplier') ? 'true' : 'false' }};
+        var supplierAjax = buildDataTableAjax("{{ route('supplier.index') }}", {
+            data: function(d) {
+                d.supplier_broker_id = $('#filterSupplierBroker').val();
+                d.status = $('#filterStatus').val();
+                d.state_id = $('#filterState').val();
+                d.city_id = $('#filterCity').val();
+            }
+        });
         var supplier_table = $('#supplier_table').DataTable({
             pageLength: 10,
             deferRender: true,
@@ -264,15 +278,7 @@
             order: [
                 [0, 'desc']
             ],
-            ajax: {
-                url: "{{ route('supplier.index') }}",
-                data: function(d) {
-                    d.supplier_broker_id = $('#filterSupplierBroker').val();
-                    d.status = $('#filterStatus').val();
-                    d.state_id = $('#filterState').val();
-                    d.city_id = $('#filterCity').val();
-                }
-            },
+            ajax: supplierAjax,
             columns: [{
                     data: 'id',
                     name: 'id',
@@ -332,6 +338,7 @@
                 },
             ]
         });
+        supplierAjax._bindTable(supplier_table);
 
         /* Custom search */
         bindDebouncedDataTableSearch('#customSearch', supplier_table);
@@ -578,5 +585,6 @@
                 $('.' + key + '_error').text(value[0]);
             });
         }
+    });
     </script>
 @endsection

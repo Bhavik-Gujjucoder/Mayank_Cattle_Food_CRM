@@ -467,11 +467,6 @@
     <!-- Slimscroll JS -->
     <script src="{{ asset('assets/js/jquery.slimscroll.min.js') }}"></script>
 
-    <!-- Datatable JS -->
-    <script src="{{ asset('assets/js/jquery.dataTables.min.js') }}"></script>
-    <script src="{{ asset('assets/js/dataTables.bootstrap5.min.js') }}"></script>
-    <script src="{{ asset('assets/js/datatable-helpers.js') }}"></script>
-
     <!-- Daterangepicker JS -->
     <script src="{{ asset('assets/js/moment.min.js') }}"></script>
     <script src="{{ asset('assets/plugins/daterangepicker/daterangepicker.js') }}"></script>
@@ -499,7 +494,7 @@
     <!--- Custom Js -->
     <!-- <script src="assets/js/theme-colorpicker.js"></script> -->
     <script src="{{ asset('assets/js/script.js') }}"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="{{ asset('assets/js/jquery.validate.min.js') }}"></script>
 
     @if (session('success'))
         <script>
@@ -528,6 +523,8 @@
     @endif
 
     <script>
+        window.APP_LOGIN_URL = @json(route('login'));
+
         function show_success(msg) {
             Toastify({
                 text: msg,
@@ -551,6 +548,7 @@
         }
     </script>
 
+    @stack('datatable-scripts')
     @yield('script')
 </body>
 

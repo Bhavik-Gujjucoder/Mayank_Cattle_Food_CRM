@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Support\ProductUnit;
 use App\Support\SalesScope;
 use App\Services\PaymentReceivableService;
+use App\Services\SequentialDispatchService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -19,8 +20,9 @@ use Yajra\DataTables\DataTables;
 
 class DispatchManagementController extends Controller
 {
-    public function __construct()
-    {
+    public function __construct(
+        protected SequentialDispatchService $sequentialDispatch
+    ) {
         $this->middleware('permission:view-dispatch')->only(['index', 'show']);
         $this->middleware('permission:add-dispatch')->only(['create']);
         $this->middleware('permission:edit-dispatch')->only(['edit']);
@@ -175,12 +177,7 @@ class DispatchManagementController extends Controller
            not yet fully dispatched. Pass the result to the view so it
            can render a blocked-dispatch warning and disable the Add form.
         ──────────────────────────────────────────────────────────────── */
-        $blockingOrder = OrderManagement::where('dealer_id', $order->dealer_id)
-            ->where('id', '<', $order->id)
-            ->orderBy('id')
-            ->with(['items.dispatches', 'items.product'])
-            ->get()
-            ->first(fn($o) => ! $o->isFullyDispatched());
+        $blockingOrder = $this->sequentialDispatch->findBlockingOrderFor($order);
 
         $data['dispatchBlocked'] = $blockingOrder !== null;
         $data['blockingOrder']   = $blockingOrder;
@@ -265,12 +262,7 @@ class DispatchManagementController extends Controller
         $parentOrder   = OrderManagement::findOrFail($validated['order_id']);
         SalesScope::authorizeOrderAccess($parentOrder);
 
-        $blockingPrior = OrderManagement::where('dealer_id', $parentOrder->dealer_id)
-            ->where('id', '<', $parentOrder->id)
-            ->orderBy('id')
-            ->with(['items.dispatches'])
-            ->get()
-            ->first(fn($o) => ! $o->isFullyDispatched());
+        $blockingPrior = $this->sequentialDispatch->findBlockingOrderFor($parentOrder, ['items.dispatches']);
 
         if ($blockingPrior) {
             return $this->dispatchStoreErrorResponse($request, [
@@ -513,12 +505,7 @@ class DispatchManagementController extends Controller
 
         $order->load(['items.product', 'items.dispatches']);
 
-        $blockingOrder = OrderManagement::where('dealer_id', $order->dealer_id)
-            ->where('id', '<', $order->id)
-            ->orderBy('id')
-            ->with(['items.dispatches', 'items.product'])
-            ->get()
-            ->first(fn ($o) => ! $o->isFullyDispatched());
+        $blockingOrder = $this->sequentialDispatch->findBlockingOrderFor($order);
 
         $items = $order->items->map(function ($item) {
             $pending = $item->pendingQty();

@@ -77,8 +77,15 @@
 </div>
 
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
 <script>
+withDataTable(function () {
+    var permissionAjax = buildDataTableAjax("{{ route('permissions.index') }}");
     var permission_table = $('#permission').DataTable({
         "pageLength": 10,
         deferRender: true, // Prevents unnecessary DOM rendering
@@ -87,7 +94,7 @@
         responsive: true,
         dom: 'lrtip',
         order: [[0, 'desc']], // Order by 'id' in descending order
-        ajax: "{{ route('permissions.index') }}",
+        ajax: permissionAjax,
         columns: [
             { data: 'id', name: 'id', visible: false, searchable: false },
             {
@@ -110,7 +117,7 @@
         ],
 
     });
-
+    permissionAjax._bindTable(permission_table);
 
     /*** Custom Search Box ***/
     bindDebouncedDataTableSearch('#customSearch', permission_table);
@@ -201,7 +208,7 @@
         });
     }
 
-
+});
 </script>
 @endsection
 
