@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\DealersExport;
+use App\Http\Controllers\Concerns\ExportsExcel;
 use App\Models\BrandManagement;
 use App\Models\CityManagement;
 use App\Models\DealerManagement;
@@ -18,6 +20,8 @@ use Yajra\DataTables\DataTables;
 
 class DealerManagementController extends Controller
 {
+    use ExportsExcel;
+
     /* ------------------------------------------------------------------ */
     /*  Shared validation rules                                           */
     /* ------------------------------------------------------------------ */
@@ -31,7 +35,7 @@ class DealerManagementController extends Controller
             'applicant_name'    => 'required|string|max:255',
             'firm_shop_name'    => 'required|string|max:255',
             'firm_shop_address' => 'required|string|max:500',
-            'mobile_no'         => 'required|digits:10',
+            'mobile_no'         => 'required|digits:10|unique:users,phone_no,' . $ignoreId . ',id,deleted_at,NULL',
             'pancard'           => 'nullable|string|size:10|regex:/^[A-Z]{5}[0-9]{4}[A-Z]$/i',
             'gstin'             => 'nullable|string|size:15',
             'aadhar_card'       => 'nullable|digits:12',
@@ -57,7 +61,7 @@ class DealerManagementController extends Controller
             'applicant_name'    => 'required|string|max:255',
             'firm_shop_name'    => 'required|string|max:255',
             'firm_shop_address' => 'required|string|max:500',
-            'mobile_no'         => 'required|digits:10',
+            'mobile_no'         => 'required|digits:10|unique:users,phone_no,' . $userId . ',id,deleted_at,NULL',
             'pancard'           => 'nullable|string|size:10|regex:/^[A-Z]{5}[0-9]{4}[A-Z]$/i',
             'gstin'             => 'nullable|string|size:15',
             'aadhar_card'       => 'nullable|digits:12',
@@ -86,6 +90,7 @@ class DealerManagementController extends Controller
             'firm_shop_address.required' => 'Firm / shop address is required.',
             'mobile_no.required'        => 'Mobile no is required.',
             'mobile_no.digits'          => 'Mobile no must be exactly 10 digits.',
+            'mobile_no.unique'          => 'Mobile no is already registered.',
             // 'pancard.required'          => 'PAN card no is required.',
             'pancard.size'              => 'PAN card must be exactly 10 characters.',
             'pancard.regex'             => 'Invalid PAN format. Expected: AAAAA9999A',
@@ -272,6 +277,10 @@ class DealerManagementController extends Controller
     {
         $request->validate($this->rules(), $this->messages());
 
+        if (SalesScope::isBroker() && auth()->id() !== (int) $request->broker_id) {
+            abort(403, 'You can only add dealers for your own broker account.');
+        }
+
         $profileImage = null;
         if ($request->hasFile('profile_picture')) {
             $profileImage = basename(
@@ -451,5 +460,26 @@ class DealerManagementController extends Controller
             ]);
 
         return response()->json($dealers);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  EXPORT                                                            */
+    /* ------------------------------------------------------------------ */
+    public function export(Request $request)
+    {
+        $query = DealerManagement::with(['user', 'broker', 'brand', 'city', 'state'])
+            ->when(
+                $request->broker_id && $request->broker_id != 'all' && User::isActiveBroker((int) $request->broker_id),
+                fn ($q) => $q->where('broker_id', $request->broker_id)
+            )
+            ->when(
+                $request->brand_id && $request->brand_id != 'all' && BrandManagement::isActive((int) $request->brand_id),
+                fn ($q) => $q->where('brand_id', $request->brand_id)
+            )
+            ->when($request->start_date, fn ($q) => $q->whereDate('created_at', '>=', Carbon::parse($request->start_date)->format('Y-m-d')))
+            ->when($request->end_date, fn ($q) => $q->whereDate('created_at', '<=', Carbon::parse($request->end_date)->format('Y-m-d')))
+            ->orderByDesc('id');
+
+        return $this->downloadExcel($request, $query, DealersExport::class, 'dealers');
     }
 }

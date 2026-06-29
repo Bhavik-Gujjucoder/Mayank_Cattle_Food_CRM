@@ -70,7 +70,7 @@
             <div class="header-left active">
                 <a href="{{ route('dashboard') }}" class="logo logo-normal">
                     {{-- <img src="{{ asset('assets/images/logo.png') }}" alt="Logo"> --}}
-                    <img src="{{ asset('storage/company_logo/' . getSetting('company_logo')) }}" class="img-fluid"
+                    <img src="{{ companyLogoUrl() }}" class="img-fluid"
                         alt="Logo">
 
                 </a>
@@ -393,15 +393,19 @@
                 <a href="javascript:void(0);" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
                     aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                 <div class="dropdown-menu">
-                    <a class="dropdown-item" href="index.html">
+                    <a class="dropdown-item" href="{{ route('dashboard') }}">
                         <i class="ti ti-layout-2"></i> Dashboard
                     </a>
-                    <a class="dropdown-item" href="profile.html">
+                    <a class="dropdown-item" href="{{ route('my_profile', auth()->user()->id) }}">
                         <i class="ti ti-user-pin"></i> My Profile
                     </a>
-                    <a class="dropdown-item" href="login.html">
+                    {{-- <a class="dropdown-item" href="login.html">
                         <i class="ti ti-lock"></i> Logout
-                    </a>
+                    </a> --}}
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button class="dropdown-item"> <i class="ti ti-lock"></i>Logout</button>
+                    </form>
                 </div>
             </div>
             <!-- /Mobile Menu -->

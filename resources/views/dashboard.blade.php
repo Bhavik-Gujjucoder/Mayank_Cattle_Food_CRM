@@ -147,7 +147,7 @@
     @endcan
 </div>
 {{-- {{dd(Auth::user()->getPermissionsViaRoles())}} --}}
-@can('daily-raw-material-summary')
+@can('raw-material-daily-summary')
     @if ($rm_daily_summary)
         @include('dashboard.partials.rm_daily_summary_widget')
     @endif
@@ -548,7 +548,7 @@
             <div class="card flex-fill recent-cards">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
                     <h5 class="mb-8">Raw Material Received OnRoad</h5>
-                    <a href="{{ route('raw-material.order.index') }}" class="btn btn-light btn-md mb-2">View All</a>
+                    <a href="{{ route('raw-material.receive.index') }}" class="btn btn-light btn-md mb-2">View All</a>
                 </div>
                 <div class="card-body p-0">
                     @if ($raw_material_receives->isEmpty())

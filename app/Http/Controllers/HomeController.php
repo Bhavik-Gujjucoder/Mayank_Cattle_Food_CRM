@@ -28,7 +28,7 @@ class HomeController extends Controller
     /* ------------------------------------------------------------------ */
     public function dashboard(Request $request)
     {
-        $data['login_user']       = auth()->user();
+        $data['login_user']       = $request->user();
         $data['role']             = $data['login_user']->roles->first()->name ?? '';
         $data['user_name']        = $data['login_user']->name;
         $data['page_title']       = ucfirst($data['role']) . ' Dashboard';

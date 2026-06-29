@@ -21,7 +21,7 @@ class DispatchManagementController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:view-dispatch')->only(['index']);
+        $this->middleware('permission:view-dispatch')->only(['index', 'show']);
         $this->middleware('permission:add-dispatch')->only(['create']);
         $this->middleware('permission:edit-dispatch')->only(['edit']);
     }
@@ -682,9 +682,25 @@ class DispatchManagementController extends Controller
     }
 
     /* ------------------------------------------------------------------ */
-    /*  STUBS                                                             */
+    /*  RESOURCE STUBS — dispatch UI is modal / order-history based         */
     /* ------------------------------------------------------------------ */
-    public function create() {}
-    public function show(DispatchManagement $dispatch) {}
-    public function edit(DispatchManagement $dispatch) {}
+    public function create()
+    {
+        return redirect()->route('dispatch.index')
+            ->with('info', 'Dispatches are created from the order dispatch workflow.');
+    }
+
+    public function show(DispatchManagement $dispatch)
+    {
+        SalesScope::authorizeDispatchAccess($dispatch);
+
+        return redirect()->route('dispatch.orderHistory', $dispatch->order_id);
+    }
+
+    public function edit(DispatchManagement $dispatch)
+    {
+        SalesScope::authorizeDispatchAccess($dispatch);
+
+        return redirect()->route('dispatch.orderHistory', $dispatch->order_id);
+    }
 }

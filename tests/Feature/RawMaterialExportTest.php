@@ -8,6 +8,8 @@ use App\Models\RawMaterialReceive;
 use App\Models\Supplier;
 use App\Models\User;
 
+use function Pest\Laravel\actingAs;
+
 function seedRawMaterialReceive(array $overrides = []): RawMaterialReceive
 {
     $category = RawMaterialCategory::create([
@@ -66,7 +68,7 @@ describe('raw material category exports', function () {
             'status' => 1,
         ]);
 
-        $response = $this->actingAs($user)->get(route('raw-material.category.export'));
+        $response = actingAs($user)->get(route('raw-material.category.export'));
 
         $response->assertOk();
         $response->assertDownload('raw-material-categories-' . now()->format('Y-m-d') . '.xlsx');
@@ -81,7 +83,7 @@ describe('raw material category exports', function () {
             'status' => 1,
         ]);
 
-        $response = $this->actingAs($user)->get(route('raw-material.category.export-list-pdf'));
+        $response = actingAs($user)->get(route('raw-material.category.export-list-pdf'));
 
         $response->assertOk();
         $response->assertHeader('content-type', 'application/pdf');
@@ -97,8 +99,8 @@ describe('raw material category exports', function () {
             'status' => 1,
         ]);
 
-        $this->actingAs($user)->get(route('raw-material.category.export'))->assertForbidden();
-        $this->actingAs($user)->get(route('raw-material.category.export-list-pdf'))->assertForbidden();
+        actingAs($user)->get(route('raw-material.category.export'))->assertForbidden();
+        actingAs($user)->get(route('raw-material.category.export-list-pdf'))->assertForbidden();
     });
 
     test('category export redirects when no records match filters', function () {
@@ -110,7 +112,7 @@ describe('raw material category exports', function () {
             'status' => 1,
         ]);
 
-        $response = $this->actingAs($user)
+        $response = actingAs($user)
             ->from(route('raw-material.category.index'))
             ->get(route('raw-material.category.export', ['status' => 0]));
 
@@ -137,7 +139,7 @@ describe('raw material inventory exports', function () {
             'status' => 1,
         ]);
 
-        $response = $this->actingAs($user)->get(route('raw-material.export'));
+        $response = actingAs($user)->get(route('raw-material.export'));
 
         $response->assertOk();
         $response->assertDownload('raw-materials-' . now()->format('Y-m-d') . '.xlsx');
@@ -160,7 +162,7 @@ describe('raw material inventory exports', function () {
             'status' => 1,
         ]);
 
-        $response = $this->actingAs($user)->get(route('raw-material.export-list-pdf'));
+        $response = actingAs($user)->get(route('raw-material.export-list-pdf'));
 
         $response->assertOk();
         $response->assertHeader('content-type', 'application/pdf');
@@ -184,8 +186,8 @@ describe('raw material inventory exports', function () {
             'status' => 1,
         ]);
 
-        $this->actingAs($user)->get(route('raw-material.export'))->assertForbidden();
-        $this->actingAs($user)->get(route('raw-material.export-list-pdf'))->assertForbidden();
+        actingAs($user)->get(route('raw-material.export'))->assertForbidden();
+        actingAs($user)->get(route('raw-material.export-list-pdf'))->assertForbidden();
     });
 
     test('material export redirects when no records match filters', function () {
@@ -205,7 +207,7 @@ describe('raw material inventory exports', function () {
             'status' => 1,
         ]);
 
-        $response = $this->actingAs($user)
+        $response = actingAs($user)
             ->from(route('raw-material.index'))
             ->get(route('raw-material.export', ['status' => 0]));
 
@@ -220,7 +222,7 @@ describe('raw material receive exports', function () {
 
         seedRawMaterialReceive();
 
-        $response = $this->actingAs($user)->get(route('raw-material.receive.export'));
+        $response = actingAs($user)->get(route('raw-material.receive.export'));
 
         $response->assertOk();
         $response->assertDownload('raw-material-receives-' . now()->format('Y-m-d') . '.xlsx');
@@ -231,7 +233,7 @@ describe('raw material receive exports', function () {
 
         seedRawMaterialReceive();
 
-        $response = $this->actingAs($user)->get(route('raw-material.receive.export-list-pdf'));
+        $response = actingAs($user)->get(route('raw-material.receive.export-list-pdf'));
 
         $response->assertOk();
         $response->assertHeader('content-type', 'application/pdf');
@@ -243,8 +245,8 @@ describe('raw material receive exports', function () {
 
         seedRawMaterialReceive();
 
-        $this->actingAs($user)->get(route('raw-material.receive.export'))->assertForbidden();
-        $this->actingAs($user)->get(route('raw-material.receive.export-list-pdf'))->assertForbidden();
+        actingAs($user)->get(route('raw-material.receive.export'))->assertForbidden();
+        actingAs($user)->get(route('raw-material.receive.export-list-pdf'))->assertForbidden();
     });
 
     test('receive export redirects when no records match filters', function () {
@@ -252,7 +254,7 @@ describe('raw material receive exports', function () {
 
         seedRawMaterialReceive(['status' => 0]);
 
-        $response = $this->actingAs($user)
+        $response = actingAs($user)
             ->from(route('raw-material.receive.index'))
             ->get(route('raw-material.receive.export', ['status' => 2]));
 

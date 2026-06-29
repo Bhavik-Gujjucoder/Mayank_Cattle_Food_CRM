@@ -129,23 +129,6 @@
     });
 
 
-    // /***  Open Modal for Editing an Admin ***/
-    // $(document).on('click', '.edit-btn', function() {
-    //     let user_id = $(this).data('id');
-    //     $("#adminForm .text-danger").text('');
-    //     $('#adminForm').find('.is-invalid').removeClass('is-invalid');
-
-    //     $.get('{{ route('grade.edit', ':id') }}'.replace(':id', user_id), function(user) {
-    //         $('#modalTitle').text('Edit Permission');
-    //         $('#submitBtn').text('Update');
-    //         $('input[name="user_id"]').val(user_id);
-    //         $('input[name="name"]').val(user.name);
-    //         $('input[name="status"][value="' + user.status + '"]').prop('checked', true);
-    //         $('#adminModal').modal('show');
-    //     });
-    // });
-
-
     /***  Handle Add & Edit Form Submission ***/
     $('#adminForm').submit(function(e) {
         e.preventDefault();
@@ -217,61 +200,6 @@
             $('.' + key + '_error').text(value[0]).addClass('text-danger');
         });
     }
-
-
-    /***** Bulk Delete *****/
-    // $('#select-all').change(function() {
-    //     // Check/uncheck all checkboxes when the select-all checkbox is clicked
-    //     $('.grade_checkbox').prop('checked', this.checked);
-
-    // });
-
-
-    // $(document).on('change', '.permission_checkbox', function() {
-    //     let count = $('.permission_checkbox:checked').length; // Count checked checkboxes
-    //     $('#checked-count').text(count); // Display count in an element
-    //     if (count > 0) {
-    //         $('#bulk_delete_button').show();
-    //     } else {
-    //         $('#bulk_delete_button').hide();
-    //     }
-    // });
-
-
-    // Handle Bulk Delete button click
-    // $('#bulk_delete_button').click(function() {
-    //     confirmDeletion(function() {
-    //         var selectedIds = $('.grade_checkbox:checked').map(function() {
-    //             return $(this).data('id');
-    //         }).get();
-
-    //         if (selectedIds.length > 0) {
-    //             // Make an AJAX request to delete the selected items
-    //             $.ajax({
-    //                 url: "{{ route('grade.bulkDelete') }}",
-    //                 method: 'POST',
-    //                 data: {
-    //                     ids: selectedIds, // Send the selected IDs
-    //                     _token: '{{ csrf_token() }}' // CSRF token for security
-    //                 },
-    //                 success: function(response) {
-    //                     // Swal.fire("Deleted!", response.message, "success");
-    //                     show_success(response.message);
-    //                     // Optionally, reload the page to reflect changes
-    //                     permission_table.ajax.reload();
-    //                     // location.reload();
-    //                     $('#bulk_delete_button').hide();
-    //                 },
-    //                 error: function(xhr, status, error) {
-    //                     show_error('An error occurred while deleting.');
-    //                     // alert("An error occurred while deleting.");
-    //                 }
-    //             });
-    //         } else {
-    //             alert("No items selected.");
-    //         }
-    //     });
-    // });
 
 
 </script>

@@ -90,6 +90,17 @@ class RoleController extends Controller
     }
 
     /* ------------------------------------------------------------------ */
+    /*  SHOW                                                              */
+    /* ------------------------------------------------------------------ */
+    public function show(Role $role)
+    {
+        $data['page_title'] = 'View Role & Permission';
+        $data['role']       = $role->load('permissions');
+
+        return view('roles.show', $data);
+    }
+
+    /* ------------------------------------------------------------------ */
     /*  EDIT                                                              */
     /* ------------------------------------------------------------------ */
     public function edit(Role $role)
