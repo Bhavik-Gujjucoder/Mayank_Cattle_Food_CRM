@@ -69,7 +69,7 @@
                 <div class="card-body">
                     <div class="alert alert-danger py-2 mb-3">
                         <strong>Warning:</strong> Restore will overwrite the current database and
-                        <code>storage/app/public</code> files. This action cannot be undone.
+                        files. This action cannot be undone.
                     </div>
 
                     <form id="restore-backup-form" action="{{ route('system.backup.restore') }}" method="POST"
