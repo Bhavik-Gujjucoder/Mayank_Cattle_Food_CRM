@@ -40,7 +40,7 @@ class RestoreBackupRequest extends FormRequest
                 },
             ],
             'password' => ['required', 'string'],
-            'restore_passphrase' => ['required', 'string', 'min:8'],
+            'restore_passphrase' => ['required_if:restore_source,upload', 'nullable', 'string', 'min:8'],
             'confirmation_text' => ['required', 'in:RESTORE'],
         ];
     }
@@ -53,7 +53,7 @@ class RestoreBackupRequest extends FormRequest
         return [
             'backup_filename.required_if' => 'Please select a backup from the server.',
             'backup_file.required_if' => 'Please upload a backup file.',
-            'restore_passphrase.required' => 'Backup passphrase is required.',
+            'restore_passphrase.required_if' => 'Backup passphrase is required when uploading a backup file.',
             'restore_passphrase.min' => 'Backup passphrase must be at least 8 characters.',
             'confirmation_text.in' => 'Type RESTORE exactly to confirm this action.',
         ];

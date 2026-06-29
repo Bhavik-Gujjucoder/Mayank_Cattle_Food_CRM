@@ -62,4 +62,17 @@ return [
 
     'retention_days' => (int) env('BACKUP_RETENTION_DAYS', 30),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Tables excluded from database dump/restore
+    |--------------------------------------------------------------------------
+    |
+    | Backup history is managed separately and must survive a database restore.
+    |
+    */
+
+    'excluded_tables' => [
+        'system_backups',
+    ],
+
 ];

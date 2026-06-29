@@ -67,7 +67,7 @@ class BackupCrypto
         $plaintext = sodium_crypto_secretbox_open($ciphertext, $nonce, $encryptionKey);
 
         if ($plaintext === false) {
-            throw new RuntimeException('Decryption failed. Wrong passphrase or corrupted backup.');
+            throw new RuntimeException('Decryption failed. Wrong passphrase, corrupted backup file, or backup was created with different server encryption keys.');
         }
 
         return $plaintext;

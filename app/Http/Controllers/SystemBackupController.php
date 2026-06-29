@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CreateBackupRequest;
 use App\Http\Requests\RestoreBackupRequest;
+use App\Models\SystemBackup;
 use App\Services\Backup\BackupEnvWriter;
 use App\Services\Backup\BackupService;
+use App\Services\Backup\SystemBackupRegistry;
+use App\Support\BackupEmailDelivery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -18,41 +21,46 @@ use Yajra\DataTables\DataTables;
 
 class SystemBackupController extends Controller
 {
-    public function index(BackupService $backupService, BackupEnvWriter $envWriter): View
+    public function index(BackupEnvWriter $envWriter): View
     {
-        $initialized = $envWriter->isInitialized();
-
         return view('system.backup.index', [
             'page_title' => 'System Backup',
-            'initialized' => $initialized,
+            'initialized' => $envWriter->isInitialized(),
         ]);
     }
 
-    public function list(Request $request, BackupService $backupService, BackupEnvWriter $envWriter): JsonResponse
+    public function list(Request $request, SystemBackupRegistry $registry, BackupEnvWriter $envWriter): JsonResponse
     {
-        $initialized = $envWriter->isInitialized();
-
         if ($request->query('for') === 'options') {
             return response()->json([
                 'success' => true,
-                'initialized' => $initialized,
-                'backups' => $initialized ? $this->formatBackups($backupService->listBackups()) : [],
+                'initialized' => $envWriter->isInitialized(),
+                'backups' => $envWriter->isInitialized() ? $registry->optionsPayload() : [],
             ]);
         }
 
-        if (! $initialized) {
+        if (! $envWriter->isInitialized()) {
             return DataTables::of(collect())->make(true);
         }
 
-        $backups = collect($this->formatBackups($backupService->listBackups()));
-
-        return DataTables::of($backups)
+        return DataTables::of($registry->datatableQuery())
             ->addIndexColumn()
-            ->addColumn('action', function ($row) {
-                $filename = data_get($row, 'filename');
+            ->addColumn('size_label', fn (SystemBackup $backup) => BackupService::formatBytes($backup->file_size))
+            ->addColumn('modified_at', fn (SystemBackup $backup) => $backup->created_at?->format('Y-m-d H:i:s') ?? '—')
+            ->addColumn('created_by_name', fn (SystemBackup $backup) => e($backup->creator?->name ?? '—'))
+            ->addColumn('action', function (SystemBackup $backup) {
+                $downloadButton = $backup->fileExists()
+                    ? '<a href="'.e(route('system.backup.download', $backup->filename)).'" class="btn btn-sm btn-outline-primary me-1">'
+                        .'<i class="ti ti-download"></i> Download</a>'
+                    : '<span class="text-muted me-2">File missing</span>';
 
-                return '<a href="'.e(route('system.backup.download', $filename)).'" class="btn btn-sm btn-outline-primary">'
-                    .'<i class="ti ti-download"></i> Download</a>';
+                return $downloadButton
+                    .'<button type="button" class="btn btn-sm btn-outline-danger delete-backup-btn" '
+                    .'data-id="'.$backup->id.'" data-filename="'.e($backup->filename).'">'
+                    .'<i class="ti ti-trash"></i> Delete</button>';
+            })
+            ->filterColumn('filename', function ($query, $keyword) {
+                $query->where('filename', 'like', '%'.$keyword.'%');
             })
             ->rawColumns(['action'])
             ->make(true);
@@ -75,33 +83,55 @@ class SystemBackupController extends Controller
         ]);
     }
 
-    public function create(CreateBackupRequest $request, BackupService $backupService): JsonResponse
-    {
+    public function create(
+        CreateBackupRequest $request,
+        BackupService $backupService,
+        SystemBackupRegistry $registry
+    ): JsonResponse {
+        $passphrase = $request->string('create_passphrase')->toString();
+
         try {
-            $backupPath = $backupService->create($request->string('create_passphrase')->toString());
+            $backupPath = $backupService->create($passphrase);
+            $record = $registry->record($backupPath, $passphrase, Auth::id());
+            BackupEmailDelivery::queueCreated($record->load('creator'));
         } catch (\Throwable $exception) {
             return $this->errorResponse($exception->getMessage());
         }
 
-        $backups = $this->formatBackups($backupService->listBackups());
-
         return response()->json([
             'success' => true,
-            'message' => 'Backup created successfully: '.basename($backupPath),
-            'backup' => $backups[0] ?? null,
-            'backups' => $backups,
+            'message' => 'Backup created successfully: '.$record->filename,
+            'backup' => $registry->formatRow($record->load('creator')),
         ]);
     }
 
     public function download(string $filename, BackupService $backupService): BinaryFileResponse|JsonResponse
     {
         try {
-            $path = $backupService->resolveBackupPath($filename);
+            $path = $this->resolveDownloadPath($filename, $backupService);
         } catch (\Throwable $exception) {
             return $this->errorResponse($exception->getMessage(), 404);
         }
 
         return response()->download($path, basename($path));
+    }
+
+    public function destroy(SystemBackup $backup): JsonResponse
+    {
+        try {
+            if ($backup->fileExists()) {
+                unlink($backup->storagePath());
+            }
+
+            $backup->delete();
+        } catch (\Throwable $exception) {
+            return $this->errorResponse($exception->getMessage());
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Backup deleted successfully.',
+        ]);
     }
 
     public function restore(RestoreBackupRequest $request, BackupService $backupService): JsonResponse
@@ -122,7 +152,7 @@ class SystemBackupController extends Controller
 
             $backupService->restore(
                 $backupPath,
-                $request->string('restore_passphrase')->toString()
+                $this->resolveRestorePassphrase($request)
             );
         } catch (ValidationException $exception) {
             throw $exception;
@@ -137,27 +167,7 @@ class SystemBackupController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Backup restored successfully. Database and storage files were replaced.',
-            'reload' => true,
         ]);
-    }
-
-    /**
-     * @param  list<array{filename: string, path: string, size: int, modified_at: string}>  $backups
-     * @return list<array{filename: string, path: string, size: int, size_label: string, modified_at: string, download_url: string}>
-     */
-    private function formatBackups(array $backups): array
-    {
-        return array_map(function (array $backup) {
-            return [
-                'filename' => $backup['filename'],
-                'path' => $backup['path'],
-                'size' => $backup['size'],
-                'size_label' => BackupService::formatBytes($backup['size']),
-                'modified_at' => $backup['modified_at'],
-                'sort_at' => (int) filemtime($backup['path']),
-                'download_url' => route('system.backup.download', $backup['filename']),
-            ];
-        }, $backups);
     }
 
     private function errorResponse(string $message, int $status = 422): JsonResponse
@@ -168,13 +178,18 @@ class SystemBackupController extends Controller
         ], $status);
     }
 
+    private function resolveDownloadPath(string $filename, BackupService $backupService): string
+    {
+        return $backupService->resolveBackupPath($filename);
+    }
+
     private function resolveRestorePath(
         RestoreBackupRequest $request,
         BackupService $backupService,
         ?string &$tempDirectory
     ): string {
         if ($request->input('restore_source') === 'server') {
-            return $backupService->resolveBackupPath((string) $request->input('backup_filename'));
+            return $this->resolveDownloadPath((string) $request->input('backup_filename'), $backupService);
         }
 
         $uploadedFile = $request->file('backup_file');
@@ -195,5 +210,31 @@ class SystemBackupController extends Controller
         $uploadedFile->move($tempDirectory, basename($destination));
 
         return $destination;
+    }
+
+    private function resolveRestorePassphrase(RestoreBackupRequest $request): string
+    {
+        if ($request->input('restore_source') === 'server') {
+            $filename = basename((string) $request->input('backup_filename'));
+            $record = SystemBackup::query()->where('filename', $filename)->first();
+
+            if ($record && filled($record->passphrase)) {
+                return $record->passphrase;
+            }
+
+            throw ValidationException::withMessages([
+                'backup_filename' => 'No passphrase is stored for this backup. Upload the file instead and enter the passphrase manually.',
+            ]);
+        }
+
+        $passphrase = (string) $request->input('restore_passphrase', '');
+
+        if ($passphrase === '') {
+            throw ValidationException::withMessages([
+                'restore_passphrase' => 'Backup passphrase is required.',
+            ]);
+        }
+
+        return $passphrase;
     }
 }

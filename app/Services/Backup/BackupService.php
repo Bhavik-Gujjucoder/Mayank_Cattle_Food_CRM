@@ -2,6 +2,7 @@
 
 namespace App\Services\Backup;
 
+use App\Models\SystemBackup;
 use FilesystemIterator;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
@@ -144,8 +145,11 @@ class BackupService
 
             Artisan::call('down', ['--retry' => 60]);
 
+            $preservedBackupRecords = SystemBackup::captureForRestore();
+
             try {
                 $this->databaseRestorer->restore($databaseSqlPath);
+                SystemBackup::reapplyAfterRestore($preservedBackupRecords);
                 $this->restoreStoragePaths($publicSource);
                 $this->ensureStorageLink();
                 Artisan::call('config:clear');

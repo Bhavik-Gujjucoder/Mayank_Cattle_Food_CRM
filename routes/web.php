@@ -412,6 +412,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/create', [SystemBackupController::class, 'create'])->name('create');
         Route::post('/restore', [SystemBackupController::class, 'restore'])->name('restore');
         Route::get('/download/{filename}', [SystemBackupController::class, 'download'])->name('download');
+        Route::delete('/{backup}', [SystemBackupController::class, 'destroy'])->name('destroy');
     });
 
 

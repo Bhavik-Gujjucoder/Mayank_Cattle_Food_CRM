@@ -20,6 +20,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
+
+        $middleware->trimStrings(except: [
+            'password',
+            'create_passphrase',
+            'create_passphrase_confirmation',
+            'restore_passphrase',
+        ]);
     })
 
     ->withSchedule(function (Schedule $schedule): void {

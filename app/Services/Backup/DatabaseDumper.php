@@ -40,6 +40,10 @@ class DatabaseDumper
 
         foreach ($pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'") as $row) {
             $table = $row['name'];
+
+            if ($this->isExcludedTable($table)) {
+                continue;
+            }
             $create = $pdo->query("SELECT sql FROM sqlite_master WHERE type='table' AND name=".$pdo->quote($table))->fetchColumn();
             $sql .= $create.';'.PHP_EOL;
 
@@ -78,8 +82,13 @@ class DatabaseDumper
             '--triggers',
             '--add-drop-table',
             '--result-file='.$outputPath,
-            $database,
         ];
+
+        foreach ($this->excludedTables() as $table) {
+            $command[] = '--ignore-table='.$database.'.'.$table;
+        }
+
+        $command[] = $database;
 
         if ($password !== '') {
             $command[] = '--password='.$password;
@@ -96,5 +105,18 @@ class DatabaseDumper
         if (! is_file($outputPath) || filesize($outputPath) === 0) {
             throw new RuntimeException('Database dump file is empty.');
         }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function excludedTables(): array
+    {
+        return array_values(array_filter((array) config('backup.excluded_tables', [])));
+    }
+
+    private function isExcludedTable(string $table): bool
+    {
+        return in_array($table, $this->excludedTables(), true);
     }
 }

@@ -29,7 +29,7 @@
                         Store your passphrase safely. Backups cannot be restored without it.
                     </p>
 
-                    <form id="create-backup-form" action="{{ route('system.backup.create') }}" method="POST">
+                    <form id="create-backup-form" action="{{ route('system.backup.create') }}" method="POST" novalidate>
                         @csrf
                         <div class="mb-3">
                             <label class="col-form-label">Backup Passphrase <span class="text-danger">*</span></label>
@@ -73,7 +73,7 @@
                     </div>
 
                     <form id="restore-backup-form" action="{{ route('system.backup.restore') }}" method="POST"
-                        enctype="multipart/form-data">
+                        enctype="multipart/form-data" novalidate>
                         @csrf
 
                         <div class="mb-3">
@@ -118,12 +118,19 @@
                             <div class="invalid-feedback d-block password_error"></div>
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-3 restore-passphrase-field d-none">
                             <label class="col-form-label">Backup Passphrase <span class="text-danger">*</span></label>
                             <input type="password" name="restore_passphrase" id="restore_passphrase"
-                                class="form-control" minlength="8" autocomplete="off"
-                                {{ $initialized ? '' : 'disabled' }}>
+                                class="form-control" minlength="8" autocomplete="new-password"
+                                disabled {{ $initialized ? '' : 'disabled' }}>
+                            <small class="text-muted">Required when uploading a backup file from another location.</small>
                             <div class="invalid-feedback d-block restore_passphrase_error"></div>
+                        </div>
+
+                        <div class="mb-3 restore-passphrase-note restore-server-field">
+                            <small class="text-muted">
+                                The backup passphrase saved when this backup was created will be used automatically.
+                            </small>
                         </div>
 
                         <div class="mb-3">
@@ -150,18 +157,15 @@
         <div class="card-header">
             <div class="row align-items-center">
                 <div class="col-sm-4">
-                    <h5 class="card-title mb-0 mb-sm-0">
-                        <i class="ti ti-history me-1"></i> Backup History
-                    </h5>
+                    <div class="icon-form mb-3 mb-sm-0">
+                        <span class="form-icon"><i class="ti ti-search"></i></span>
+                        <input type="text" class="form-control" id="backupCustomSearch" placeholder="Search backups"
+                            {{ $initialized ? '' : 'disabled' }}>
+                    </div>
                 </div>
                 <div class="col-sm-8">
                     <div class="d-flex align-items-center flex-wrap row-gap-2 justify-content-sm-end">
-                        <div class="icon-form mb-0 me-2">
-                            <span class="form-icon"><i class="ti ti-search"></i></span>
-                            <input type="text" class="form-control" id="backupCustomSearch" placeholder="Search backups"
-                                {{ $initialized ? '' : 'disabled' }}>
-                        </div>
-                        <button type="button" id="refresh-backup-list-btn" class="btn btn-sm btn-outline-secondary"
+                        <button type="button" id="refresh-backup-list-btn" class="btn btn-outline-secondary"
                             {{ $initialized ? '' : 'disabled' }}>
                             <i class="ti ti-refresh"></i> Refresh
                         </button>
@@ -174,12 +178,13 @@
                 <table class="table dataTable no-footer" id="backup_history_table">
                     <thead class="thead-light">
                         <tr>
-                            <th hidden>Sort</th>
-                            <th>Sr no</th>
-                            <th>Filename</th>
-                            <th>Size</th>
-                            <th>Created At</th>
-                            <th class="text-end">Action</th>
+                            <th hidden>ID</th>
+                            <th class="no-sort" scope="col">Sr no</th>
+                            <th scope="col">Filename</th>
+                            <th scope="col">Size</th>
+                            <th scope="col">Created At</th>
+                            <th scope="col">Created By</th>
+                            <th scope="col">Action</th>
                         </tr>
                     </thead>
                 </table>
@@ -187,6 +192,10 @@
         </div>
     </div>
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
 
 @section('script')
 <script>
@@ -198,6 +207,7 @@
                 initialize: @json(route('system.backup.initialize')),
                 create: @json(route('system.backup.create')),
                 restore: @json(route('system.backup.restore')),
+                destroy: @json(route('system.backup.destroy', ['backup' => '__id__'])),
             },
             csrfToken: @json(csrf_token()),
         };
@@ -281,8 +291,11 @@
 
             $('.restore-server-field').toggleClass('d-none', isUpload);
             $('.restore-upload-field').toggleClass('d-none', !isUpload);
+            $('.restore-passphrase-field').toggleClass('d-none', !isUpload);
+            $('.restore-passphrase-note').toggleClass('d-none', isUpload);
             $('#backup_filename').prop('disabled', isUpload || !initialized);
             $('#backup_file').prop('disabled', !isUpload || !initialized);
+            $('#restore_passphrase').prop('disabled', !isUpload || !initialized);
         }
 
         function renderBackupOptions(backups) {
@@ -306,9 +319,11 @@
 
         function initBackupTable() {
             if (backup_table) {
-                backup_table.ajax.reload();
+                backup_table.ajax.reload(null, true);
                 return;
             }
+
+            var backupAjax = buildDataTableAjax(config.routes.list);
 
             backup_table = $('#backup_history_table').DataTable({
                 pageLength: 10,
@@ -318,11 +333,11 @@
                 responsive: true,
                 dom: 'lrtip',
                 order: [[0, 'desc']],
-                ajax: config.routes.list,
+                ajax: backupAjax,
                 columns: [
                     {
-                        data: 'sort_at',
-                        name: 'sort_at',
+                        data: 'id',
+                        name: 'id',
                         visible: false,
                         searchable: false
                     },
@@ -348,15 +363,21 @@
                         searchable: false
                     },
                     {
+                        data: 'created_by_name',
+                        name: 'created_by_name',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
                         data: 'action',
                         name: 'action',
                         orderable: false,
-                        searchable: false,
-                        className: 'text-end'
+                        searchable: false
                     }
                 ]
             });
 
+            backupAjax._bindTable(backup_table);
             bindDebouncedDataTableSearch('#backupCustomSearch', backup_table);
         }
 
@@ -373,9 +394,9 @@
             });
         }
 
-        function reloadBackupData(showToast) {
+        function reloadBackupData(showToast, resetPaging) {
             if (backup_table) {
-                backup_table.ajax.reload();
+                backup_table.ajax.reload(null, resetPaging !== false);
             }
 
             return refreshBackupOptions().done(function() {
@@ -432,20 +453,203 @@
             show_error(message);
         }
 
+        function submitCreateBackup($form) {
+            var $btn = $('#create-backup-btn');
+
+            clearPageAlert();
+            clearFormErrors($form);
+            setButtonLoading($btn, true);
+
+            $.ajax({
+                url: config.routes.create,
+                type: 'POST',
+                headers: ajaxHeaders(),
+                data: $form.serialize(),
+                dataType: 'json',
+                timeout: 600000
+            }).done(function(response) {
+                $form.trigger('reset');
+                $form.validate().resetForm();
+                reloadBackupData(false, true);
+                show_success(response.message);
+            }).fail(function(xhr) {
+                handleAjaxError($form, xhr);
+            }).always(function() {
+                setButtonLoading($btn, false);
+            });
+        }
+
+        function submitRestoreBackup($form) {
+            var $btn = $('#restore-backup-btn');
+
+            clearPageAlert();
+            clearFormErrors($form);
+            setButtonLoading($btn, true);
+
+            var formData = new FormData($form[0]);
+            formData.set('_token', getCsrfToken());
+
+            $.ajax({
+                url: config.routes.restore,
+                type: 'POST',
+                headers: ajaxHeaders(),
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                timeout: 600000
+            }).done(function(response) {
+                $form.trigger('reset');
+                $form.validate().resetForm();
+                toggleRestoreFields();
+                show_success(response.message);
+            }).fail(function(xhr) {
+                handleAjaxError($form, xhr);
+            }).always(function() {
+                setButtonLoading($btn, false);
+            });
+        }
+
+        function initBackupValidators() {
+            $.validator.addMethod('restoreConfirm', function(value) {
+                return value === 'RESTORE';
+            }, 'Type RESTORE exactly to confirm this action.');
+
+            $('#create-backup-form').validate({
+                rules: {
+                    create_passphrase: {
+                        required: true,
+                        minlength: 8
+                    },
+                    create_passphrase_confirmation: {
+                        required: true,
+                        equalTo: '#create_passphrase'
+                    }
+                },
+                messages: {
+                    create_passphrase: {
+                        required: 'Backup passphrase is required.',
+                        minlength: 'Backup passphrase must be at least 8 characters.'
+                    },
+                    create_passphrase_confirmation: {
+                        required: 'Please confirm the backup passphrase.',
+                        equalTo: 'Backup passphrase confirmation does not match.'
+                    }
+                },
+                errorElement: 'span',
+                errorClass: 'text-danger',
+                highlight: function(element) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function(element) {
+                    $(element).removeClass('is-invalid');
+                    var name = $(element).attr('name');
+                    $('.' + name + '_error').text('');
+                },
+                errorPlacement: function(error, element) {
+                    var name = element.attr('name');
+                    var $holder = $('.' + name + '_error');
+                    if ($holder.length) {
+                        $holder.text(error.text());
+                    } else {
+                        error.insertAfter(element);
+                    }
+                },
+                submitHandler: function(form) {
+                    submitCreateBackup($(form));
+                }
+            });
+
+            $('#restore-backup-form').validate({
+                rules: {
+                    backup_filename: {
+                        required: function() {
+                            return $('input[name="restore_source"]:checked').val() === 'server';
+                        }
+                    },
+                    backup_file: {
+                        required: function() {
+                            return $('input[name="restore_source"]:checked').val() === 'upload';
+                        }
+                    },
+                    password: {
+                        required: true
+                    },
+                    restore_passphrase: {
+                        required: function() {
+                            return $('input[name="restore_source"]:checked').val() === 'upload';
+                        },
+                        minlength: 8
+                    },
+                    confirmation_text: {
+                        required: true,
+                        restoreConfirm: true
+                    }
+                },
+                messages: {
+                    backup_filename: {
+                        required: 'Please select a backup from the server.'
+                    },
+                    backup_file: {
+                        required: 'Please upload a backup file.'
+                    },
+                    password: {
+                        required: 'Your account password is required.'
+                    },
+                    restore_passphrase: {
+                        required: 'Backup passphrase is required.',
+                        minlength: 'Backup passphrase must be at least 8 characters.'
+                    },
+                    confirmation_text: {
+                        required: 'Type RESTORE to confirm this action.'
+                    }
+                },
+                errorElement: 'span',
+                errorClass: 'text-danger',
+                highlight: function(element) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function(element) {
+                    $(element).removeClass('is-invalid');
+                    var name = $(element).attr('name');
+                    $('.' + name + '_error').text('');
+                },
+                errorPlacement: function(error, element) {
+                    var name = element.attr('name');
+                    var $holder = $('.' + name + '_error');
+                    if ($holder.length) {
+                        $holder.text(error.text());
+                    } else {
+                        error.insertAfter(element);
+                    }
+                },
+                submitHandler: function(form) {
+                    submitRestoreBackup($(form));
+                }
+            });
+        }
+
+        withDataTable(function() {
+            if (initialized) {
+                initBackupTable();
+                refreshBackupOptions();
+            }
+        });
+
         $(function() {
             if (typeof $ === 'undefined') {
                 console.error('jQuery is not loaded. System backup page cannot initialize.');
                 return;
             }
 
-            if (initialized) {
-                initBackupTable();
-                refreshBackupOptions();
-            }
-
             toggleRestoreFields();
+            initBackupValidators();
 
-            $('.restore-source').on('change', toggleRestoreFields);
+            $('.restore-source').on('change', function() {
+                toggleRestoreFields();
+                $('#restore-backup-form').validate().resetForm();
+                clearFormErrors($('#restore-backup-form'));
+            });
 
             $('#backup-init-btn').on('click', function() {
                 var $btn = $(this);
@@ -479,75 +683,55 @@
                 });
             });
 
-            $('#create-backup-form').on('submit', function(e) {
-                e.preventDefault();
+            $(document).on('click', '.delete-backup-btn', function() {
+                var $btn = $(this);
+                var backupId = $btn.data('id');
+                var filename = $btn.data('filename');
 
-                var $form = $(this);
-                var $btn = $('#create-backup-btn');
+                confirmBackupDeletion(filename, function() {
+                    $btn.prop('disabled', true);
 
-                clearPageAlert();
-                clearFormErrors($form);
-                setButtonLoading($btn, true);
-
-                $.ajax({
-                    url: config.routes.create,
-                    type: 'POST',
-                    headers: ajaxHeaders(),
-                    data: $form.serialize(),
-                    dataType: 'json',
-                    timeout: 600000
-                }).done(function(response) {
-                    $form.trigger('reset');
-                    reloadBackupData(false);
-                    show_success(response.message);
-                }).fail(function(xhr) {
-                    handleAjaxError($form, xhr);
-                }).always(function() {
-                    setButtonLoading($btn, false);
-                });
-            });
-
-            $('#restore-backup-form').on('submit', function(e) {
-                e.preventDefault();
-
-                var $form = $(this);
-                var $btn = $('#restore-backup-btn');
-
-                clearPageAlert();
-                clearFormErrors($form);
-                setButtonLoading($btn, true);
-
-                var formData = new FormData(this);
-                formData.set('_token', getCsrfToken());
-
-                $.ajax({
-                    url: config.routes.restore,
-                    type: 'POST',
-                    headers: ajaxHeaders(),
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    dataType: 'json',
-                    timeout: 600000
-                }).done(function(response) {
-                    show_success(response.message);
-
-                    if (response.reload) {
-                        setTimeout(function() {
-                            window.location.reload();
-                        }, 1500);
-                        return;
-                    }
-
-                    $form.trigger('reset');
-                    toggleRestoreFields();
-                }).fail(function(xhr) {
-                    handleAjaxError($form, xhr);
-                }).always(function() {
-                    setButtonLoading($btn, false);
+                    $.ajax({
+                        url: config.routes.destroy.replace('__id__', backupId),
+                        type: 'DELETE',
+                        headers: ajaxHeaders(),
+                        dataType: 'json'
+                    }).done(function(response) {
+                        reloadBackupData(false, false);
+                        show_success(response.message);
+                    }).fail(function(xhr) {
+                        var message = (xhr.responseJSON && xhr.responseJSON.message)
+                            ? xhr.responseJSON.message
+                            : 'Unable to delete backup.';
+                        show_error(message);
+                    }).always(function() {
+                        $btn.prop('disabled', false);
+                    });
                 });
             });
         });
+
+        function confirmBackupDeletion(filename, callback) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'Delete backup "' + escapeHtml(filename) + '"? This will remove the backup file and its database record permanently.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel',
+                customClass: {
+                    popup: 'my-custom-popup',
+                    title: 'my-custom-title',
+                    confirmButton: 'btn btn-primary',
+                    cancelButton: 'btn btn-secondary',
+                    icon: 'my-custom-icon swal2-warning'
+                }
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    callback();
+                }
+            });
+        }
     })();
 </script>
 @endsection
