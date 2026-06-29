@@ -111,3 +111,25 @@ function grantPermissions(\App\Models\User $user, array $permissionNames): \App\
 
     return $user;
 }
+
+function superAdminUser(array $attrs = []): \App\Models\User
+{
+    $user = authUser($attrs);
+    $user->assignRole(\Spatie\Permission\Models\Role::firstOrCreate([
+        'name' => 'super admin',
+        'guard_name' => 'web',
+    ]));
+
+    return $user;
+}
+
+function adminUser(array $attrs = []): \App\Models\User
+{
+    $user = authUser($attrs);
+    $user->assignRole(\Spatie\Permission\Models\Role::firstOrCreate([
+        'name' => 'admin',
+        'guard_name' => 'web',
+    ]));
+
+    return $user;
+}
