@@ -351,7 +351,7 @@
                                 /*  Roles — super admin only
                                 /* ------------------------------------------------------------------ --}}
                                     @hasanyrole('super admin')
-                                        <li><a href="{{ route('roles.index') }}">Roles</a></li>
+                                        <li><a href="{{ route('roles.index') }}">Roles & Permissions</a></li>
                                         {{-- <li><a href="{{ route('permissions.index') }}">Permissions</a></li> --}}
                                     @endhasanyrole
                                 </ul>
