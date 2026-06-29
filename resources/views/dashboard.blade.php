@@ -1,4 +1,213 @@
 @extends('layouts.main')
+
+@section('styles')
+<style>
+    .recent-cards .custom-table .dataTables_wrapper {
+        padding: 0;
+    }
+
+    .recent-cards .custom-table table.dashboard-recent-table,
+    .recent-cards .custom-table table.dashboard-recent-table.dataTable {
+        width: 100% !important;
+        margin-bottom: 0;
+        border: none !important;
+        border-collapse: separate !important;
+        border-spacing: 0;
+    }
+
+    .recent-cards .custom-table table.dashboard-recent-table thead {
+        display: table-header-group !important;
+    }
+
+    .recent-cards .custom-table table.dashboard-recent-table thead th {
+        font-size: 13px;
+        font-weight: 500;
+        color: #262A2A;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #E8E8E8;
+        padding: 10px 15px;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    .recent-cards .custom-table table.dashboard-recent-table tbody td {
+        display: table-cell !important;
+        font-size: 13px;
+        color: #6F6F6F;
+        border-bottom: 1px solid #E8E8E8;
+        padding: 10px 15px;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .recent-cards .custom-table table.dashboard-recent-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .recent-cards .custom-table table.dashboard-recent-table tbody tr:hover td {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+
+    .recent-cards .custom-table .dataTables_empty {
+        padding: 12px 15px;
+        text-align: center;
+        border-bottom: none;
+    }
+
+    .rm-daily-summary-module #rm_daily_summary_table,
+    .rm-daily-summary-module #rm_daily_summary_table.dataTable,
+    .rm-daily-summary-module table.dashboard-rm-summary-table {
+        width: 100% !important;
+        margin-bottom: 0;
+        border: none !important;
+        border-collapse: separate !important;
+        border-spacing: 0;
+    }
+
+    .rm-daily-summary-module .rm-summary-body {
+        padding: 1rem 1.25rem 1.25rem;
+    }
+
+    .rm-daily-summary-module .rm-kpi-pill {
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 0.85rem 1rem;
+        height: 100%;
+        background: #fff;
+    }
+
+    .rm-daily-summary-module .rm-kpi-label {
+        display: block;
+        font-size: 12px;
+        color: #64748b;
+        margin-bottom: 0.35rem;
+    }
+
+    .rm-daily-summary-module .rm-kpi-pill strong {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #262A2A;
+    }
+
+    .rm-daily-summary-module .custom-table .dataTables_wrapper {
+        padding: 0;
+    }
+
+    .rm-daily-summary-module table.dashboard-rm-summary-table thead th {
+        font-size: 13px;
+        font-weight: 500;
+        color: #262A2A;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #E8E8E8;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        padding: 10px 15px;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    .rm-daily-summary-module table.dashboard-rm-summary-table tbody td {
+        font-size: 13px;
+        color: #6F6F6F;
+        border-bottom: 1px solid #E8E8E8;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+        padding: 10px 15px;
+        vertical-align: middle;
+    }
+
+    .rm-daily-summary-module table.dashboard-rm-summary-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .rm-daily-summary-module table.dashboard-rm-summary-table tbody tr:hover td {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+
+    .rm-daily-summary-module table.dashboard-rm-summary-table tfoot td {
+        background: #f8fafc;
+        border-top: 1px solid #E8E8E8;
+        border-bottom: none !important;
+        border-left: none !important;
+        border-right: none !important;
+        padding: 10px 15px;
+        font-size: 13px;
+        color: #262A2A;
+        vertical-align: middle;
+    }
+
+    .rm-daily-summary-module table.dashboard-rm-summary-table tfoot tr.rm-summary-footer--pending td:first-child {
+        box-shadow: inset 3px 0 0 #f59e0b;
+    }
+
+    .rm-daily-summary-module table.dashboard-rm-summary-table tfoot tr.rm-summary-footer--received td:first-child {
+        box-shadow: inset 3px 0 0 #10b981;
+    }
+
+    .rm-daily-summary-module table.dashboard-rm-summary-table tfoot tr.rm-summary-footer--total td:first-child {
+        box-shadow: inset 3px 0 0 #3b82f6;
+    }
+
+    .rm-daily-summary-module table.dashboard-rm-summary-table tfoot tr:last-child td {
+        border-bottom: none !important;
+    }
+
+    .rm-daily-summary-module .rm-summary-table-wrap {
+        max-height: 28rem;
+        overflow: auto;
+        border-radius: 0;
+    }
+
+    .rm-daily-summary-module #rmSummarySearchSlot .dataTables_filter {
+        margin: 0;
+        float: none;
+        text-align: right;
+    }
+
+    .rm-daily-summary-module #rmSummarySearchSlot .dataTables_filter label {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0;
+    }
+
+    .rm-daily-summary-module #rmSummarySearchSlot .dataTables_filter input {
+        margin: 0 !important;
+        width: 220px;
+        font-size: 13px;
+        padding: 0.4rem 0.75rem;
+        border: 1px solid #E8E8E8;
+        border-radius: 0.375rem;
+    }
+
+    .rm-daily-summary-module .rm-summary-dt-footer {
+        margin-top: 0.75rem;
+    }
+
+    .rm-daily-summary-module .rm-summary-dt-footer .dataTables_info,
+    .rm-daily-summary-module .rm-summary-dt-footer .dataTables_paginate {
+        margin: 0;
+        padding: 0;
+        font-size: 13px;
+        color: #6F6F6F;
+    }
+
+    .rm-daily-summary-module .rm-summary-dt-footer .dataTables_paginate .pagination {
+        margin-bottom: 0;
+        justify-content: flex-end;
+    }
+
+    .rm-daily-summary-module .dataTables_empty {
+        padding: 12px 15px;
+        text-align: center;
+        border-bottom: none;
+    }
+</style>
+@endsection
+
 @section('content')
 @section('title')
     <h3>{{ $page_title }}</h3>
@@ -153,448 +362,138 @@
     @endif
 @endcan
 
-<div class="row">
-    <div class="col-lg-6 d-flex">
-        <!--col-xxl-3 -->
-        {{-- @can('total-orders')
-            <div class="card flex-fill total-orders">
-                <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
-                    <h5 class="mb-2">Total Orders</h5>
-                </div>
-                <div class="card-body pb-0">
-                    <div id="company-chart">
-                    </div>
-                    <div class="d-flex align-items-center justify-content-between flex-wrap">
-                        <div class="mb-1">
-                            <h2 class="mb-1">{{ $total_soda_order }}</h2>
-                        </div>
-                        <p class="fs-13 text-gray-9 d-flex align-items-center mb-1"><i
-                                class="ti ti-circle-filled me-1 fs-6 text-primary"></i>Orders</p>
-                    </div>
-                </div>
-            </div>
-        @endcan --}}
-    </div>
-    {{-- <div class="col-lg-6 d-flex">
-        @can('revenue')
-            <div class="card flex-fill revenue">
-                <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
-                    <h5 class="mb-2">Revenue</h5>
-                </div>
-                <div class="card-body pb-0">
-                    <div class="d-flex align-items-center justify-content-between flex-wrap">
-                        <div class="mb-1">
-                            <h2 class="mb-1">₹0</h2>
-                        </div>
-                        <p class="fs-13 text-gray-9 d-flex align-items-center mb-1"><i
-                                class="ti ti-circle-filled me-1 fs-6 text-primary"></i>Revenue</p>
-                    </div>
-                    <div id="revenue-income"></div>
-                </div>
-            </div>
-        @endcan
-    </div> --}}
-</div>
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
 
 <div class="row">
-    <!------------ Recent Dealers ---------------->
     @can('recent-dealers')
         <div class="col-xxl-4 col-xl-6 d-flex">
-            <div class="card flex-fill recent-cards">
+            <div class="card flex-fill recent-cards w-100">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
-                    <h5 class="mb-2"> Recent Dealers </h5>
+                    <h5 class="mb-2">Recent Dealers</h5>
                     <a href="{{ route('dealer.index') }}" class="btn btn-light btn-md mb-2">View All</a>
                 </div>
-                <div class="card-body pb-2">
-                    @foreach ($dealers->take(5) as $d)
-                        <div class="d-flex justify-content-between flex-wrap dashboard-card">
-                            <div class="d-flex align-items-center mb-2">
-                                <a href="{{ !empty($d->user) && !empty($d->user->profile_picture)
-                                    ? asset('storage/profile_pictures/' . $d->user->profile_picture)
-                                    : asset('images/default-user.png') }}"
-                                    class="avatar avatar-sm border flex-shrink-0" target="_blank">
-
-                                    <img id="profilePreview"
-                                        src="{{ !empty($d->user) && !empty($d->user->profile_picture)
-                                            ? asset('storage/profile_pictures/' . $d->user->profile_picture)
-                                            : asset('images/default-user.png') }}"
-                                        alt="Profile Image" class="img-thumbnail mb-2">
-                                </a>
-                                <div class="ms-2 flex-fill">
-                                    <h6 class="fs-medium text-truncate mb-1">
-                                        @can('edit-dealer')
-                                            <a href="{{ route('dealer.edit', $d->id) }}">
-                                                {{ $d->user->name }}
-                                            </a>
-                                        @else
-                                            {{ $d->user->name }}
-                                        @endcan
-                                    </h6>
-                                    <p class="fs-13">{{ $d->city->city_name }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
+                <div class="card-body p-0">
+                    <div class="table-responsive custom-table">
+                        <table class="table table-hover table-nowrap mb-0 dataTable no-footer dashboard-recent-table w-100" id="dashboard_dealers_table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Sr</th>
+                                    <th>Dealer</th>
+                                    <th>City</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     @endcan
-    <!------------ Recent Soda/Orders ------------>
+
     @can('recent-soda-orders')
-        <div class="col-xxl-4 col-xl-12 d-flex">
-            <div class="card flex-fill recent-cards">
+        <div class="col-xxl-4 col-xl-6 d-flex">
+            <div class="card flex-fill recent-cards w-100">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <h5 class="mb-2">Recent Soda/Orders</h5>
                     <a href="{{ route('order.index') }}" class="btn btn-light btn-md mb-2">View All</a>
                 </div>
-                <div class="card-body pb-2">
-                    @if ($soda_order->isEmpty())
-                        <p class="text-muted center">No recent soda orders found.</p>
-                    @else
-                        @foreach ($soda_order->sortByDesc('created_at')->take(5) as $order)
-                            <div class="d-flex justify-content-between flex-wrap dashboard-card">
-                                <div class="d-flex align-items-center mb-2">
-                                    {{-- <a href="#" class="avatar avatar-sm border flex-shrink-0" target="_blank">
-                                        <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
-                                            class="img-thumbnail mb-2">
-                                    </a> --}}
-                                    <div class="ms-2 flex-fill">
-                                        <h6 class="fs-medium text-truncate mb-1">
-                                            @can('edit-order')
-                                                <a href="{{ route('order.edit', $order->id) }}">
-                                                    {{ $order->dealer->user->name ?? '—' }}
-                                                </a>
-                                            @else
-                                                {{ $order->dealer->user->name ?? '—' }}
-                                            @endcan
-                                        </h6>   
-                                        <p class="fs-13 d-inline-flex align-items-center">
-                                            @can('edit-order')
-                                            <a href="{{ route('order.edit', $order->id) }}">
-                                                    <span class="text-info">{{ $order->unique_order_id ?? '—' }}</span>
-                                                </a>
-                                            @else
-                                                <span class="text-info">{{ $order->unique_order_id ?? '—' }}</span>
-                                            @endcan
-                                            <i class="ti ti-circle-filled fs-4 text-primary mx-1"></i>
-                                            {{ $order->order_date->format('d M Y') }}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="text-sm-end mb-2">
-                                    <h6 class="mb-1">{{-- $order->totalAmount() --}}</h6>
-                                </div>
-                            </div>
-                        @endforeach
-                    @endif
+                <div class="card-body p-0">
+                    <div class="table-responsive custom-table">
+                        <table class="table table-hover table-nowrap mb-0 dataTable no-footer dashboard-recent-table w-100" id="dashboard_soda_orders_table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Sr</th>
+                                    <th>Order ID</th>
+                                    <th>Dealer</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     @endcan
 
-    <!------------ Recent Dispatch Request ------->
     @can('recent-dispatch-request')
         <div class="col-xxl-4 col-xl-6 d-flex">
-            <div class="card flex-fill recent-cards">
+            <div class="card flex-fill recent-cards w-100">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
                     <h5 class="mb-2">Recent Dispatch Request</h5>
                     <a href="{{ route('dispatch.index') }}" class="btn btn-light btn-md mb-2">View All</a>
                 </div>
-                <div class="card-body pb-2">
-                    @if ($dispatch_order->isEmpty())
-                        <p class="text-muted center">No recent dispatch requests found.</p>
-                    @else
-                        <div>
-                            @foreach ($dispatch_order->sortByDesc('created_at')->take(5) as $dispatch_order)
-                                <div class="d-flex justify-content-between flex-wrap dashboard-card">
-                                    <div class="d-flex align-items-center mb-2">
-                                        {{-- <a href="assets/images/avatar-14.png" class="avatar avatar-sm border flex-shrink-0"
-                                            target="_blank">
-                                            <img id="profilePreview" src="assets/images/avatar-14.png" alt="Profile Image"
-                                            class="img-thumbnail mb-2">
-                                    </a> --}}
-                                        <div class="ms-2 flex-fill">
-                                            <h6 class="fs-medium text-truncate mb-1">
-                                                @can('edit-dispatch')
-                                                <a href="{{ route('dispatch.orderHistory', $dispatch_order->order_id) }}">
-                                                    {{ $dispatch_order->product->name }}
-                                                    <span class="text-info">
-                                                        <small>({{ \App\Support\ProductUnit::formatWithUnit($dispatch_order->no_of_bags, $dispatch_order->product?->unit) }})</small>
-                                                    </span>
-                                                </a>
-                                                @else
-                                                    {{ $dispatch_order->product->name }}
-                                                    <span class="text-info">
-                                                        <small>({{ \App\Support\ProductUnit::formatWithUnit($dispatch_order->no_of_bags, $dispatch_order->product?->unit) }})</small>
-                                                    </span>
-                                                @endcan
-                                            </h6>
-                                            <p class="fs-13">
-                                                @can('edit-dispatch')
-                                                <a href="{{ route('dispatch.orderHistory', $dispatch_order->order_id) }}">
-                                                    <span class="text-info">
-                                                        {{ $dispatch_order->order->unique_order_id }}
-                                                    </span>
-                                                </a>
-                                                @else
-                                                    <span class="text-info">
-                                                        {{ $dispatch_order->order->unique_order_id }}
-                                                    </span>
-                                                @endcan
-                                                <i class="ti ti-circle-filled fs-4 text-primary mx-1"></i>
-                                                {{ $dispatch_order->dispatch_date->format('d M Y') }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @endif
+                <div class="card-body p-0">
+                    <div class="table-responsive custom-table">
+                        <table class="table table-hover table-nowrap mb-0 dataTable no-footer dashboard-recent-table w-100" id="dashboard_dispatches_table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Sr</th>
+                                    <th>Product</th>
+                                    <th>Order ID</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     @endcan
-
-    <!------------ Recent Broker ----------------->
-    {{-- @can('recent-broker')
-        <div class="col-xxl-4 col-xl-6 d-flex">
-            <div class="card flex-fill recent-cards">
-                <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
-                    <h5 class="mb-2">Recent Broker</h5>
-                    <a href="{{ route('users.index', ['type' => 'broker']) }}" class="btn btn-light btn-md mb-2">View
-                        All</a>
-                </div>
-                <div class="card-body pb-2">
-                    <div>
-                        <div>
-                            @foreach ($brokers->take(5) as $b)
-                                <div class="d-flex justify-content-between flex-wrap dashboard-card">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <a href="{{ !empty($b->profile_picture)
-                                            ? asset('storage/profile_pictures/' . $b->profile_picture)
-                                            : asset('images/default-user.png') }}"
-                                            class="avatar avatar-sm border flex-shrink-0" target="_blank">
-                                            <img id="profilePreview"
-                                                src="{{ !empty($b->profile_picture)
-                                                    ? asset('storage/profile_pictures/' . $b->profile_picture)
-                                                    : asset('images/default-user.png') }}"
-                                                alt="Profile Image" class="img-thumbnail mb-2">
-                                        </a>
-                                        <div class="ms-2 flex-fill">
-                                            <h6 class="fs-medium text-truncate mb-1"><a
-                                                    href="{{ route('users.edit', ['type' => 'broker', 'id' => $b->id]) }}">
-                                                    {{ $b->name }}</a>
-                                            </h6>
-                                            <p class="fs-13">{{ $b->email }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endcan --}}
-
-    <!------------ Recent Transporter ------------>
-    {{-- @can('recent-transporter')
-        <div class="col-xxl-4 col-xl-6 d-flex">
-            <div class="card flex-fill recent-cards">
-                <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
-                    <h5 class="mb-2">Recent Transporter </h5>
-                    <a href="{{ route('users.index', ['type' => 'transporter']) }}"
-                        class="btn btn-light btn-md mb-2">View All</a>
-                </div>
-                <div class="card-body pb-2">
-                    <div>
-                        <div>
-                            @foreach ($transporters->take(5) as $t)
-                                <div class="d-flex justify-content-between flex-wrap dashboard-card">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <a href="{{ !empty($t->profile_picture)
-                                            ? asset('storage/profile_pictures/' . $t->profile_picture)
-                                            : asset('images/default-user.png') }}"
-                                            class="avatar avatar-sm border flex-shrink-0" target="_blank">
-                                            <img id="profilePreview"
-                                                src="{{ !empty($t->profile_picture)
-                                                    ? asset('storage/profile_pictures/' . $t->profile_picture)
-                                                    : asset('images/default-user.png') }}"
-                                                alt="Profile Image" class="img-thumbnail mb-2">
-                                        </a>
-                                        <div class="ms-2 flex-fill">
-                                            <h6 class="fs-medium text-truncate mb-1"><a
-                                                    href="{{ route('users.edit', ['type' => 'transporter', 'id' => $t->id]) }}">
-                                                    {{ $t->name }}</a>
-                                            </h6>
-                                            <p class="fs-13">{{ $t->email }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endcan --}}
 </div>
 
 <div class="row">
-    <!------------ Raw Materials ----------------->
-    {{-- @can('view-raw-material-inventory')
-        <div class="col-xxl-12 col-xl-12 d-flex">
-            <div class="card flex-fill recent-cards">
-                <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
-                    <h5 class="mb-2">Raw Materials</h5>
-                    <a href="{{ route('raw-material.index') }}" class="btn btn-light btn-md mb-2">View All</a>
-                </div>
-                <div class="card-body p-0">
-                    @if ($raw_materials->isEmpty())
-                        <p class="text-muted fs-13 p-3">No raw materials found.</p>
-                    @else
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th class="fs-13">Material ID</th>
-                                        <th class="fs-13">Category</th>
-                                        <th class="fs-13">Name</th>
-                                        <th class="fs-13">Unit</th>
-                                        <th class="fs-13 text-end">Total Stock</th>
-                                        <th class="fs-13 text-end">Available Stock</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($raw_materials as $rm)
-                                        <tr>
-                                            <td class="fs-13">
-                                                <a href="{{ route('raw-material.show', $rm->id) }}" class="text-info">
-                                                    {{ $rm->raw_material_unique_id ?? '#' . $rm->id }}
-                                                </a>
-                                            </td>
-                                            <td class="fs-13">{{ $rm->category?->name ?? '—' }}</td>
-                                            <td class="fs-13 fw-semibold">{{ $rm->name }}</td>
-                                            <td class="fs-13">{{ $rm->unit }}</td>
-                                            <td class="fs-13 text-end">{{ number_format($rm->total_stock, 2) }}</td>
-                                            <td class="fs-13 text-end">{{ number_format($rm->available_stock, 2) }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-    @endcan --}}
-
-    <!------------ Raw Material Orders ----------->
     @can('raw-material-orders')
         <div class="col-xxl-12 col-xl-12 d-flex">
-            <div class="card flex-fill recent-cards">
+            <div class="card flex-fill recent-cards w-100">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
                     <h5 class="mb-8">Raw Material Orders</h5>
                     <a href="{{ route('raw-material.order.index') }}" class="btn btn-light btn-md mb-2">View All</a>
                 </div>
                 <div class="card-body p-0">
-                    @if ($raw_material_orders->isEmpty())
-                        <p class="text-muted fs-13 p-3">No raw material orders found.</p>
-                    @else
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th class="fs-13">Order ID</th>
-                                        <th class="fs-13">Supplier Broker</th>
-                                        <th class="fs-13">Supplier</th>
-                                        <th class="fs-13">Order Date</th>
-                                        <th class="fs-13 text-end">Total Qty</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($raw_material_orders as $rmo)
-                                        <tr>
-                                            <td class="fs-13">
-                                                @can('edit-raw-material-purchas-order')
-                                                    <a href="{{ route('raw-material.order.show', $rmo->id) }}"
-                                                        class="text-info">
-                                                        {{ $rmo->order_unique_id ?? '#' . $rmo->id }}
-                                                    </a>
-                                                @else
-                                                    {{ $rmo->order_unique_id ?? '—' }}
-                                                @endcan
-                                            </td>
-                                            <td class="fs-13">{{ $rmo->supplierBroker?->name ?? '—' }}</td>
-                                            <td class="fs-13 fw-semibold">{{ $rmo->supplier?->name ?? '—' }}</td>
-                                            <td class="fs-13">{{ $rmo->order_date?->format('d M Y') ?? '—' }}</td>
-                                            <td class="fs-13 text-end">{{ number_format($rmo->total_qty) }} tons</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
+                    <div class="table-responsive custom-table">
+                        <table class="table table-hover table-nowrap mb-0 dataTable no-footer dashboard-recent-table w-100" id="dashboard_rm_orders_table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Sr</th>
+                                    <th>Order ID</th>
+                                    <th>Supplier Broker</th>
+                                    <th>Supplier</th>
+                                    <th>Order Date</th>
+                                    <th class="text-end">Total Qty</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     @endcan
 
-
-    <!------------ Raw Material Received OnRoad ----------->
-    {{-- {{dd(Auth::user()->getPermissionsViaRoles())}} --}}
     @can('raw-material-received-onroad')
         <div class="col-xxl-12 col-xl-12 d-flex">
-            <div class="card flex-fill recent-cards">
+            <div class="card flex-fill recent-cards w-100">
                 <div class="card-header pb-2 d-flex align-items-center justify-content-between flex-wrap">
                     <h5 class="mb-8">Raw Material Received OnRoad</h5>
                     <a href="{{ route('raw-material.receive.index') }}" class="btn btn-light btn-md mb-2">View All</a>
                 </div>
                 <div class="card-body p-0">
-                    @if ($raw_material_receives->isEmpty())
-                        <p class="text-muted fs-13 p-3">No raw material receives found.</p>
-                    @else
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th class="fs-13">Order ID</th>
-                                        <th class="fs-13">Supplier Order ID</th>
-                                        <th class="fs-13">Category</th>
-                                        <th class="fs-13">Material</th>
-                                        <th class="fs-13 text-end">Qty (tons)</th>
-                                        <th class="fs-13">Freight</th>
-                                        <th class="fs-13">Received Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($raw_material_receives as $rmr)
-                                        <tr>
-                                            <td class="fs-13">
-                                                @can('edit-raw-material-purchas-order')
-                                                    <a href="{{ route('raw-material.receive.edit', $rmr->id) }}"
-                                                        class="text-info">
-                                                        {{ $rmr->order?->order_unique_id ?? '#' . $rmr->id }}
-                                                    </a>
-                                                @else
-                                                    {{ $rmr->order?->order_unique_id ?? '—' }}
-                                                @endcan
-                                            </td>
-                                            <td class="fs-13">{{ $rmr->order?->supplier_order_id ?? '—' }}</td>
-                                            <td class="fs-13 fw-semibold">{{ $rmr->rawMaterial?->category?->name ?? '—' }}
-                                            </td>
-                                            <td class="fs-13">{{ $rmr->rawMaterial?->name ?? '—' }}</td>
-                                            <td class="fs-13 text-end">{{ number_format($rmr->qty) }} </td>
-                                            <td class="fs-13">
-                                                {!! \App\Services\RawMaterialCacheService::receiveFreightHtml($rmr) !!}
-                                            </td>
-                                            <td class="fs-13">{{ $rmr->received_date?->format('d M Y') ?? '—' }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
+                    <div class="table-responsive custom-table">
+                        <table class="table table-hover table-nowrap mb-0 dataTable no-footer dashboard-recent-table w-100" id="dashboard_rm_receives_table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Sr</th>
+                                    <th>Order ID</th>
+                                    <th>Supplier Order ID</th>
+                                    <th>Category</th>
+                                    <th>Material</th>
+                                    <th class="text-end">Qty (tons)</th>
+                                    <th>Freight</th>
+                                    <th>Received Date</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -607,12 +506,294 @@
 
 @endsection
 @section('script')
+<script>
+withDataTable(function($) {
+    var dashboardRecentDtDefaults = {
+        pageLength: 10,
+        deferRender: true,
+        processing: true,
+        serverSide: false,
+        paging: false,
+        info: false,
+        lengthChange: false,
+        searching: false,
+        ordering: false,
+        responsive: false,
+        autoWidth: false,
+        order: [],
+        dom: 'rt',
+        language: {
+            emptyTable: 'No records found.',
+            processing: '<div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading...'
+        }
+    };
+
+    function initDashboardRecentTable(selector, url, columns) {
+        if (!$(selector).length) {
+            return null;
+        }
+
+        var ajaxConfig = buildDataTableAjax(url);
+        var table = $(selector).DataTable($.extend(true, {}, dashboardRecentDtDefaults, {
+            ajax: ajaxConfig,
+            columns: columns,
+            drawCallback: function() {
+                $(selector).addClass('dashboard-recent-table w-100');
+            }
+        }));
+        ajaxConfig._bindTable(table);
+
+        return table;
+    }
+
+    @can('recent-dealers')
+    initDashboardRecentTable('#dashboard_dealers_table', @json(route('dashboard.data.dealers')), [
+        { data: 'DT_RowIndex', title: 'Sr', name: 'DT_RowIndex', orderable: false, searchable: false },
+        { data: 'dealer_name', title: 'Dealer', name: 'dealer_name', orderable: false },
+        { data: 'city_name', title: 'City', name: 'city_name', orderable: false }
+    ]);
+    @endcan
+
+    @can('recent-soda-orders')
+    initDashboardRecentTable('#dashboard_soda_orders_table', @json(route('dashboard.data.soda-orders')), [
+        { data: 'DT_RowIndex', title: 'Sr', name: 'DT_RowIndex', orderable: false, searchable: false },
+        { data: 'order_ref', title: 'Order ID', name: 'unique_order_id', orderable: false },
+        { data: 'dealer_name', title: 'Dealer', name: 'dealer_name', orderable: false },
+        { data: 'order_date', title: 'Date', name: 'order_date', orderable: false }
+    ]);
+    @endcan
+
+    @can('recent-dispatch-request')
+    initDashboardRecentTable('#dashboard_dispatches_table', @json(route('dashboard.data.dispatches')), [
+        { data: 'DT_RowIndex', title: 'Sr', name: 'DT_RowIndex', orderable: false, searchable: false },
+        { data: 'product_info', title: 'Product', name: 'product_info', orderable: false },
+        { data: 'order_ref', title: 'Order ID', name: 'order_ref', orderable: false },
+        { data: 'dispatch_date', title: 'Date', name: 'dispatch_date', orderable: false }
+    ]);
+    @endcan
+
+    @can('raw-material-orders')
+    initDashboardRecentTable('#dashboard_rm_orders_table', @json(route('dashboard.data.raw-material-orders')), [
+        { data: 'DT_RowIndex', title: 'Sr', name: 'DT_RowIndex', orderable: false, searchable: false },
+        { data: 'order_ref', title: 'Order ID', name: 'order_unique_id', orderable: false },
+        { data: 'supplier_broker_name', title: 'Supplier Broker', name: 'supplier_broker_name', orderable: false },
+        { data: 'supplier_name', title: 'Supplier', name: 'supplier_name', orderable: false },
+        { data: 'order_date', title: 'Order Date', name: 'order_date', orderable: false },
+        { data: 'total_qty', title: 'Total Qty', name: 'total_qty', orderable: false, className: 'text-end' }
+    ]);
+    @endcan
+
+    @can('raw-material-received-onroad')
+    initDashboardRecentTable('#dashboard_rm_receives_table', @json(route('dashboard.data.raw-material-receives')), [
+        { data: 'DT_RowIndex', title: 'Sr', name: 'DT_RowIndex', orderable: false, searchable: false },
+        { data: 'order_ref', title: 'Order ID', name: 'order_ref', orderable: false },
+        { data: 'supplier_order_id', title: 'Supplier Order ID', name: 'supplier_order_id', orderable: false },
+        { data: 'category_name', title: 'Category', name: 'category_name', orderable: false },
+        { data: 'material_name', title: 'Material', name: 'material_name', orderable: false },
+        { data: 'qty', title: 'Qty (tons)', name: 'qty', orderable: false, className: 'text-end' },
+        { data: 'freight_html', title: 'Freight', name: 'freight_html', orderable: false },
+        { data: 'received_date', title: 'Received Date', name: 'received_date', orderable: false }
+    ]);
+    @endcan
+
+    @can('raw-material-daily-summary')
+    @if ($rm_daily_summary)
+    function updateRmSummaryTotals(totals) {
+        totals = totals || {};
+        var top = totals || {};
+        $('#rmKpiOrderedQty').text(Number(top.ordered_qty || 0).toLocaleString());
+        $('#rmKpiOnRoadQty').text(Number(top.on_road_qty || 0).toLocaleString());
+        $('#rmKpiUnloadingQty').text(Number(top.unloading_qty || 0).toLocaleString());
+        $('#rmKpiPendingQty').text(Number(top.pending_not_on_road || 0).toLocaleString());
+
+        var pending = top.pending || {};
+        var received = top.received || {};
+        var grand = top.grand || {};
+
+        $('#rmFootPendingQty').text(Number(pending.qty || 0).toLocaleString());
+        $('#rmFootPendingAvg').text(Number(pending.average || 0).toFixed(3));
+        $('#rmFootPendingAmt').text(Number(pending.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
+        $('#rmFootReceivedQty').text(Number(received.qty || 0).toLocaleString());
+        $('#rmFootReceivedAvg').text(Number(received.average || 0).toFixed(3));
+        $('#rmFootReceivedAmt').text(Number(received.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
+        $('#rmFootGrandQty').text(Number(grand.qty || 0).toLocaleString());
+        $('#rmFootGrandAvg').text(Number(grand.average || 0).toFixed(3));
+        $('#rmFootGrandPendingAmt').text(Number(pending.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        $('#rmFootGrandReceivedAmt').text(Number(received.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    }
+
+    var rmSummaryAjax = buildDataTableAjax(@json(route('dashboard.data.rm-daily-summary')), {
+        data: function(d) {
+            d.rm_material_id = $('#rmMaterialFilter').val() || 'all';
+            d.rm_date_from = $('#rmDateFrom').val() || '';
+            d.rm_date_to = $('#rmDateTo').val() || '';
+        }
+    });
+
+    var dashboardSummaryDtDefaults = {
+        pageLength: 25,
+        deferRender: true,
+        processing: true,
+        serverSide: true,
+        lengthChange: false,
+        searching: true,
+        ordering: true,
+        responsive: false,
+        autoWidth: false,
+        order: [],
+        dom: 'rt<"rm-summary-dt-footer row align-items-center g-2"<"col-sm-6"i><"col-sm-6"p>>',
+        language: {
+            emptyTable: 'No records found.',
+            processing: '<div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading...',
+            info: 'Showing _START_ to _END_ of _TOTAL_ entries',
+            infoEmpty: 'No entries to show',
+            paginate: {
+                previous: 'Previous',
+                next: 'Next'
+            }
+        }
+    };
+
+    var rmSummaryTable = $('#rm_daily_summary_table').DataTable($.extend(true, {}, dashboardSummaryDtDefaults, {
+        ajax: $.extend(true, {}, rmSummaryAjax, {
+            dataSrc: function(json) {
+                if (json.totals) {
+                    updateRmSummaryTotals(json.totals);
+                }
+                return json.data;
+            }
+        }),
+        initComplete: function() {
+            var $filter = $('#rm_daily_summary_table_filter');
+            if ($filter.length) {
+                $filter.appendTo('#rmSummarySearchSlot');
+                $filter.find('input').attr('placeholder', 'Search summary...');
+            }
+
+            var $footer = $('#rm_daily_summary_table_wrapper .rm-summary-dt-footer');
+            if ($footer.length) {
+                $footer.appendTo('#rmSummaryDtFooter');
+            }
+
+            $('#rm_daily_summary_table').addClass('dashboard-rm-summary-table w-100');
+        },
+        columns: [
+            { data: 'DT_RowIndex', title: 'Sr', name: 'DT_RowIndex', orderable: false, searchable: false },
+            { data: 'order_date', title: 'Date', name: 'order_date' },
+            { data: 'supplier_broker_name', title: 'Supplier Broker', name: 'supplier_broker_name' },
+            { data: 'party_name', title: 'Party Name', name: 'party_name' },
+            { data: 'material_name', title: 'Material', name: 'material_name' },
+            { data: 'total_qty_fmt', title: 'Total Qty', name: 'total_qty', className: 'text-end' },
+            { data: 'on_road_qty_fmt', title: 'On Road', name: 'on_road_qty', className: 'text-end' },
+            { data: 'unloading_qty_fmt', title: 'Unloading', name: 'unloading_qty', className: 'text-end' },
+            { data: 'pending_qty_fmt', title: 'Pending', name: 'pending_qty', className: 'text-end' },
+            { data: 'rate_fmt', title: 'Rate', name: 'rate', className: 'text-end' },
+            { data: 'average_fmt', title: 'Avg', name: 'average', className: 'text-end' },
+            { data: 'pending_amount_fmt', title: 'Pending Amt', name: 'pending_amount', className: 'text-end' },
+            { data: 'received_amount_fmt', title: 'Received Amt', name: 'received_amount', className: 'text-end' },
+            { data: 'freight_fmt', title: 'Freight', name: 'freight', className: 'text-end' }
+        ]
+    }));
+    rmSummaryAjax._bindTable(rmSummaryTable);
+
+    function updateRmExportLink() {
+        var params = new URLSearchParams();
+        var material = $('#rmMaterialFilter').val();
+        if (material && material !== 'all') {
+            params.set('rm_material_id', material);
+        }
+        var from = $('#rmDateFrom').val();
+        if (from) {
+            params.set('rm_date_from', from);
+        }
+        var to = $('#rmDateTo').val();
+        if (to) {
+            params.set('rm_date_to', to);
+        }
+        var base = @json(route('dashboard.raw-material-daily-summary.export'));
+        var qs = params.toString();
+        $('#rmDailySummaryExportBtn').attr('href', qs ? base + '?' + qs : base);
+    }
+
+    var $form = $('#rmDailySummaryFilterForm');
+    $('#rmMaterialFilter').on('change', function() {
+        updateRmExportLink();
+        rmSummaryTable.ajax.reload();
+    });
+
+    if (typeof flatpickr !== 'undefined') {
+        flatpickr('#rmDateFrom', {
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'd-m-Y',
+            allowInput: true,
+            defaultDate: @json($rm_date_from),
+            onChange: function() {
+                updateRmExportLink();
+                rmSummaryTable.ajax.reload();
+            },
+        });
+
+        flatpickr('#rmDateTo', {
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'd-m-Y',
+            allowInput: true,
+            defaultDate: @json($rm_date_to),
+            onChange: function() {
+                updateRmExportLink();
+                rmSummaryTable.ajax.reload();
+            },
+        });
+    }
+
+    updateRmExportLink();
+    @endif
+    @endcan
+});
+</script>
+
 @can('add-dispatch')
     @include('dispatch_management.partials.status-field-script')
     <script>
         $(document).ready(function() {
             var TRUCKS_URL = '{{ route('dispatch.transporterTrucks', ':id') }}';
+            var ORDERS_URL = @json(route('dashboard.data.dispatch-form-orders'));
             var dashboardDispatchEligible = true;
+            var dispatchOrdersLoaded = false;
+
+            function loadDispatchOrders(callback) {
+                var $sel = $('#dashboardDispatchOrderId');
+                if (dispatchOrdersLoaded) {
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
+                    return;
+                }
+
+                $sel.prop('disabled', true).html('<option value="">Loading orders…</option>');
+
+                $.get(ORDERS_URL)
+                    .done(function(data) {
+                        var html = '<option value="">-- Select Order --</option>';
+                        var savedOrder = @json(old('order_id'));
+                        $.each(data.orders || [], function(i, order) {
+                            var selected = String(savedOrder) === String(order.id) ? ' selected' : '';
+                            html += '<option value="' + order.id + '" data-form-url="' + order.form_url + '"' + selected + '>' +
+                                $('<span>').text(order.label).html() + '</option>';
+                        });
+                        $sel.html(html).prop('disabled', false);
+                        dispatchOrdersLoaded = true;
+                        if (typeof callback === 'function') {
+                            callback();
+                        }
+                    })
+                    .fail(function() {
+                        $sel.html('<option value="">Could not load orders</option>').prop('disabled', false);
+                    });
+            }
 
             function loadTrucksForTransporter(transporterId, $truckSelect, $contactInput, opts) {
                 opts = opts || {};
@@ -761,6 +942,7 @@
                 $('#dashboardDispatchTruckNumber')
                     .html('<option value="">-- Select Transporter First --</option>')
                     .prop('disabled', true);
+                loadDispatchOrders();
             });
 
             $.validator.addMethod('maxDashboardPending', function(value) {
@@ -876,21 +1058,23 @@
                     var savedContact = '{{ old('driver_contact') }}';
                     var savedOrder = '{{ old('order_id') }}';
 
-                    if (savedOrder) {
-                        $('#dashboardDispatchOrderId').val(savedOrder);
-                        loadOrderItems(savedOrder);
-                    }
+                    loadDispatchOrders(function() {
+                        if (savedOrder) {
+                            $('#dashboardDispatchOrderId').val(savedOrder);
+                            loadOrderItems(savedOrder);
+                        }
 
-                    if (savedTransporter) {
-                        $('#dashboardDispatchTransport').val(savedTransporter);
-                        loadTrucksForTransporter(savedTransporter, $('#dashboardDispatchTruckNumber'),
-                            $('#dashboardDispatchDriverContact'), {
-                                setTruckNumber: savedTruck,
-                                setDriverContact: savedContact || null
-                            });
-                    }
+                        if (savedTransporter) {
+                            $('#dashboardDispatchTransport').val(savedTransporter);
+                            loadTrucksForTransporter(savedTransporter, $('#dashboardDispatchTruckNumber'),
+                                $('#dashboardDispatchDriverContact'), {
+                                    setTruckNumber: savedTruck,
+                                    setDriverContact: savedContact || null
+                                });
+                        }
 
-                    (new bootstrap.Modal(document.getElementById('dashboardDispatchModal'))).show();
+                        (new bootstrap.Modal(document.getElementById('dashboardDispatchModal'))).show();
+                    });
                 })();
             @endif
         });

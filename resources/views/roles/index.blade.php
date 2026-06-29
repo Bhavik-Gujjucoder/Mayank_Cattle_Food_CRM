@@ -104,8 +104,15 @@
     </table> --}}
 {{-- </div> --}}
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
 <script>
+withDataTable(function () {
+    var rolesAjax = buildDataTableAjax("{{ route('roles.index') }}");
     var roles_table = $('#roles').DataTable({
         "pageLength": 10,
         deferRender: true, // Prevents unnecessary DOM rendering
@@ -116,7 +123,7 @@
         order: [
             [0, 'desc']
         ], // Order by 'id' in descending order
-        ajax: "{{ route('roles.index') }}",
+        ajax: rolesAjax,
         columns: [{
                 data: 'id',
                 name: 'id',
@@ -181,6 +188,7 @@
 
 
     });
+    rolesAjax._bindTable(roles_table);
 
     /*** Custom Search Box ***/
     bindDebouncedDataTableSearch('#customSearch', roles_table);
@@ -221,5 +229,6 @@
             form.submit(); // Submit the form if confirmed
         });
     });
+});
 </script>
 @endsection

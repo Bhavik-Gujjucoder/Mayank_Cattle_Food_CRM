@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('products')) {
+            return;
+        }
+
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->string('name')->comment('Cottonseed Cake, Soybean Meal, Wheat Straw (Bhusa), etc.');

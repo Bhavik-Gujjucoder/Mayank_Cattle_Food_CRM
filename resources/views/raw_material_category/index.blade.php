@@ -83,9 +83,14 @@
         </div>
     </div>
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
     <script>
-        $(document).ready(function() {
+    withDataTable(function () {
             $('.search-dropdown').select2({
                 placeholder: 'Select',
                 width: '100%'
@@ -96,6 +101,11 @@
             const isShowAction =
                 {{ auth()->user()->canAny(['edit-raw-material-category', 'delete-raw-material-category'])? 'true': 'false' }};
 
+            var categoryAjax = buildDataTableAjax("{{ route('raw-material.category.index') }}", {
+                data: function(d) {
+                    d.status = $('#statusFilter').val();
+                }
+            });
             var category_table = $('#raw_material_category_table').DataTable({
                 pageLength: 10,
                 deferRender: true,
@@ -106,12 +116,7 @@
                 order: [
                     [0, 'desc']
                 ],
-                ajax: {
-                    url: "{{ route('raw-material.category.index') }}",
-                    data: function(d) {
-                        d.status = $('#statusFilter').val();
-                    }
-                },
+                ajax: categoryAjax,
                 columns: [{
                         data: 'id',
                         name: 'id',
@@ -156,6 +161,7 @@
                     }
                 }
             });
+            categoryAjax._bindTable(category_table);
 
             $('#statusFilter').on('change', function() {
                 const p = new URLSearchParams();
@@ -244,6 +250,6 @@
                     }
                 });
             });
-        });
+    });
     </script>
 @endsection

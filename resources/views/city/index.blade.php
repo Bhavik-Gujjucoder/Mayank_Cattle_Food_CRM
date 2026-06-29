@@ -116,10 +116,17 @@
 </div>
 
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
 <script>
+withDataTable(function () {
     const isShowAction = {{ auth()->user()->canAny(['edit-city', 'delete-city'])? 'true': 'false' }};
     const isShowCheckbox = {{ auth()->user()->can('delete-city')? 'true': 'false' }};
+    var cityAjax = buildDataTableAjax("{{ route('city.index') }}");
     var city_table = $('#city_table').DataTable({
         "pageLength": 10,
         deferRender: true, // Prevents unnecessary DOM rendering
@@ -130,7 +137,7 @@
         order: [
             [0, 'desc']
         ],
-        ajax: "{{ route('city.index') }}",
+        ajax: cityAjax,
         columns: [{
                 data: 'id',
                 name: 'id',
@@ -172,6 +179,7 @@
             },
         ],
     });
+    cityAjax._bindTable(city_table);
 
     // Custom Search Box
     bindDebouncedDataTableSearch('#customSearch', city_table);
@@ -347,5 +355,6 @@
             }
         });
     }
+});
 </script>
 @endsection

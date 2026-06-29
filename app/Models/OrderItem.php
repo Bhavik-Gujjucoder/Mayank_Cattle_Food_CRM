@@ -39,6 +39,10 @@ class OrderItem extends Model
 
     public function dispatchedQty(): int
     {
+        if ($this->relationLoaded('dispatches')) {
+            return (int) $this->dispatches->sum('no_of_bags');
+        }
+
         return (int) $this->dispatches()->sum('no_of_bags');
     }
 
@@ -50,9 +54,11 @@ class OrderItem extends Model
     /** Max bags allowed when editing an existing dispatch (includes its current qty). */
     public function maxBagsWhenEditing(DispatchManagement $dispatch): int
     {
-        $otherBags = (int) $this->dispatches()
-            ->where('id', '!=', $dispatch->id)
-            ->sum('no_of_bags');
+        $otherBags = $this->relationLoaded('dispatches')
+            ? (int) $this->dispatches->where('id', '!=', $dispatch->id)->sum('no_of_bags')
+            : (int) $this->dispatches()
+                ->where('id', '!=', $dispatch->id)
+                ->sum('no_of_bags');
 
         $maxFromOrder = max(0, (int) $this->qty - $otherBags);
 

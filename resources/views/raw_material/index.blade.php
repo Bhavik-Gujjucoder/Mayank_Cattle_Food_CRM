@@ -88,15 +88,25 @@
 </div>
 
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
 <script>
-$(document).ready(function () {
+withDataTable(function () {
     $('.search-dropdown').select2({ placeholder: 'Select', width: '100%' });
 
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('status')) $('#statusFilter').val(urlParams.get('status'));
     const isShowAction = {{ auth()->user()->canAny(['edit-raw-material-inventory', 'delete-raw-material-inventory']) ? 'true' : 'false' }};
 
+    var rawMaterialAjax = buildDataTableAjax("{{ route('raw-material.index') }}", {
+        data: function (d) {
+            d.status = $('#statusFilter').val();
+        }
+    });
     var raw_material_table = $('#raw_material_table').DataTable({
         pageLength: 10,
         deferRender: true,
@@ -105,12 +115,7 @@ $(document).ready(function () {
         responsive: true,
         dom: 'lrtip',
         order: [[0, 'desc']],
-        ajax: {
-            url: "{{ route('raw-material.index') }}",
-            data: function (d) {
-                d.status = $('#statusFilter').val();
-            }
-        },
+        ajax: rawMaterialAjax,
         columns: [
             { data: 'id', name: 'id', visible: false, searchable: false },
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
@@ -132,6 +137,7 @@ $(document).ready(function () {
             }
         }
     });
+    rawMaterialAjax._bindTable(raw_material_table);
 
     $('#statusFilter').on('change', function () {
         const p = new URLSearchParams();

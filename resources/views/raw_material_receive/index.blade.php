@@ -120,9 +120,14 @@
 </div>
 
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
 <script>
-$(document).ready(function () {
+withDataTable(function () {
     $('.search-dropdown').select2({ placeholder: 'Select', width: '100%' });
 
     const filterParams = { status: '#statusFilter', raw_material_id: '#materialFilter', raw_material_order_id: '#orderFilter', date_from: '#dateFrom', date_to: '#dateTo' };
@@ -142,6 +147,15 @@ $(document).ready(function () {
 
     const isShowAction = {{ auth()->user()->canAny(['edit-raw-material-receive', 'delete-raw-material-receive']) ? 'true' : 'false' }};
 
+    var rawMaterialReceiveAjax = buildDataTableAjax("{{ route('raw-material.receive.index') }}", {
+        data: function (d) {
+            d.status = $('#statusFilter').val();
+            d.raw_material_id = $('#materialFilter').val();
+            d.raw_material_order_id = $('#orderFilter').val();
+            d.date_from = $('#dateFrom').val();
+            d.date_to = $('#dateTo').val();
+        }
+    });
     var raw_material_receive_table = $('#raw_material_receive_table').DataTable({
         pageLength: 10,
         deferRender: true,
@@ -150,16 +164,7 @@ $(document).ready(function () {
         responsive: true,
         dom: 'lrtip',
         order: [[0, 'desc']],
-        ajax: {
-            url: "{{ route('raw-material.receive.index') }}",
-            data: function (d) {
-                d.status = $('#statusFilter').val();
-                d.raw_material_id = $('#materialFilter').val();
-                d.raw_material_order_id = $('#orderFilter').val();
-                d.date_from = $('#dateFrom').val();
-                d.date_to = $('#dateTo').val();
-            }
-        },
+        ajax: rawMaterialReceiveAjax,
         columns: [
             { data: 'id', name: 'id', visible: false, searchable: false },
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
@@ -180,6 +185,7 @@ $(document).ready(function () {
             }
         }
     });
+    rawMaterialReceiveAjax._bindTable(raw_material_receive_table);
 
     var dateFromPicker = flatpickr('#dateFrom', {
         dateFormat: 'Y-m-d',

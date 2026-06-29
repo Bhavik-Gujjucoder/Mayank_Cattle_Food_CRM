@@ -149,12 +149,23 @@
 </div>
 
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
 <script>
+withDataTable(function () {
     const isShowAction   = {{ auth()->user()->canAny(['edit-truck', 'delete-truck']) ? 'true' : 'false' }};
     const isShowCheckbox = {{ auth()->user()->can('delete-truck') ? 'true' : 'false' }};
 
     /* ── DataTable ──────────────────────────────────────────────── */
+    var truckAjax = buildDataTableAjax("{{ route('truck.index') }}", {
+        data: function(d) {
+            d.transporter_id = $('#filterTransporter').val();
+        }
+    });
     var truck_table = $('#truck_table').DataTable({
         pageLength: 10,
         deferRender: true,
@@ -163,12 +174,7 @@
         responsive:  true,
         dom:         'lrtip',
         order:       [[0, 'desc']],
-        ajax: {
-            url: "{{ route('truck.index') }}",
-            data: function(d) {
-                d.transporter_id = $('#filterTransporter').val();
-            }
-        },
+        ajax: truckAjax,
         columns: [
             { data: 'id',             name: 'id',             visible: false, searchable: false },
             { data: 'checkbox',       name: 'checkbox',       orderable: false, searchable: false, visible: isShowCheckbox },
@@ -179,6 +185,7 @@
             { data: 'action',         name: 'action',         orderable: false, searchable: false, visible: isShowAction },
         ]
     });
+    truckAjax._bindTable(truck_table);
 
     /* ── Filters ────────────────────────────────────────────────── */
     $('#filterTransporter').on('change', function() { truck_table.draw(); });
@@ -335,5 +342,6 @@
             if (result.isConfirmed) callback();
         });
     }
+});
 </script>
 @endsection

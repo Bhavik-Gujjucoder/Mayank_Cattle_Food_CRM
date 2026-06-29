@@ -142,10 +142,17 @@
 </div> --}}
 
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
 <script>
+withDataTable(function () {
     const isShowAction = {{ auth()->user()->canAny(['edit-' . $type, 'delete-' . $type])? 'true': 'false' }};
     const isShowCheckbox = {{ auth()->user()->can('delete-' . $type)? 'true': 'false' }};
+    var usersAjax = buildDataTableAjax("{{ route('users.index', $type) }}");
     var users_table = $('#users').DataTable({
         "pageLength": 10,
         deferRender: true,
@@ -156,7 +163,7 @@
         order: [
             [0, 'desc']
         ],
-        ajax: "{{ route('users.index', $type) }}",
+        ajax: usersAjax,
         columns: [{
                 data: 'id',
                 name: 'id',
@@ -245,6 +252,7 @@
         }
 
     });
+    usersAjax._bindTable(users_table);
 
     let userType = "{{ $type }}"; // 'user' or 'broker'
 
@@ -407,5 +415,6 @@
             }
         });
     }
+});
 </script>
 @endsection

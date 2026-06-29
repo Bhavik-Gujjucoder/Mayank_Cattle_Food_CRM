@@ -207,21 +207,13 @@ describe('view data', function () {
             ->assertViewHas('role')
             ->assertViewHas('user_name')
             ->assertViewHas('page_title')
-            ->assertViewHas('dealers')
-            ->assertViewHas('brokers')
-            ->assertViewHas('transporters')
             ->assertViewHas('total_dealers')
             ->assertViewHas('total_broker')
             ->assertViewHas('total_soda_order')
-            ->assertViewHas('soda_order')
-            ->assertViewHas('dispatch_order')
             ->assertViewHas('total_dispatch_order')
-            ->assertViewHas('raw_materials')
             ->assertViewHas('total_raw_materials')
-            ->assertViewHas('raw_material_orders')
             ->assertViewHas('total_raw_material_orders')
-            ->assertViewHas('raw_material_receives')
-            ->assertViewHas('dispatch_form_orders')
+            ->assertViewHas('transporters')
             ->assertViewHas('rm_daily_summary')
             ->assertViewHas('rm_summary_materials')
             ->assertViewHas('rm_material_filter')
@@ -254,23 +246,26 @@ describe('view data', function () {
         expect($response->viewData('role'))->toBe('broker');
     });
 
-    it('dispatch_form_orders is empty when user lacks add-dispatch permission', function () {
-        $response = actingAs(dashActor())->get(route('dashboard'));
-        expect($response->viewData('dispatch_form_orders'))->toBeEmpty();
+    it('dispatch form orders endpoint returns 403 without add-dispatch permission', function () {
+        actingAs(dashActor())
+            ->getJson(route('dashboard.data.dispatch-form-orders'))
+            ->assertForbidden();
     });
 
-    it('dispatch_form_orders is populated when user has add-dispatch and orders exist', function () {
+    it('dispatch form orders endpoint is populated when user has add-dispatch and orders exist', function () {
         $actor  = dashActor();
         grantPermissions($actor, ['add-dispatch']);
         $broker = User::factory()->create(['status' => 1]);
         $broker->assignRole(\Spatie\Permission\Models\Role::firstOrCreate(['name' => 'broker', 'guard_name' => 'web']));
         dashSetupOrder($broker);
 
-        $response = actingAs($actor)->get(route('dashboard'));
-        expect($response->viewData('dispatch_form_orders'))->not->toBeEmpty();
+        actingAs($actor)
+            ->getJson(route('dashboard.data.dispatch-form-orders'))
+            ->assertOk()
+            ->assertJsonPath('orders.0.id', fn ($id) => $id > 0);
     });
 
-    it('dispatch_form_orders excludes fully dispatched orders', function () {
+    it('dispatch form orders endpoint excludes fully dispatched orders', function () {
         $actor  = dashActor();
         grantPermissions($actor, ['add-dispatch']);
         $broker = User::factory()->create(['status' => 1]);
@@ -280,8 +275,8 @@ describe('view data', function () {
         $closedOrder = dashSetupOrder($broker, null, 5);
         dashCreateDispatch($closedOrder, 5);
 
-        $response = actingAs($actor)->get(route('dashboard'));
-        $orderIds = $response->viewData('dispatch_form_orders')->pluck('id')->all();
+        $response = actingAs($actor)->getJson(route('dashboard.data.dispatch-form-orders'));
+        $orderIds = collect($response->json('orders'))->pluck('id')->all();
 
         expect($orderIds)->toContain($openOrder->id)
             ->and($orderIds)->not->toContain($closedOrder->id);
@@ -322,8 +317,16 @@ describe('view data', function () {
 
         expect($response->viewData('rm_material_filter'))->toBe((string) $fixture['material']->id)
             ->and($response->viewData('rm_date_from'))->toBe($dateFrom)
-            ->and($response->viewData('rm_date_to'))->toBe($dateTo)
-            ->and($response->viewData('rm_daily_summary')['rows'])->toHaveCount(1);
+            ->and($response->viewData('rm_date_to'))->toBe($dateTo);
+
+        actingAs($actor)
+            ->getJson(route('dashboard.data.rm-daily-summary', [
+                'rm_material_id' => $fixture['material']->id,
+                'rm_date_from'   => $dateFrom,
+                'rm_date_to'     => $dateTo,
+            ]))
+            ->assertOk()
+            ->assertJsonStructure(['data', 'totals']);
     });
 
     it('shows daily summary widget for permitted users', function () {
@@ -335,8 +338,13 @@ describe('view data', function () {
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Daily Raw Material Summary')
-            ->assertSee('Roquette Supplier - Gokak')
-            ->assertSee('Nesheil Broker');
+            ->assertSee('id="rm_daily_summary_table"', false);
+
+        actingAs($actor)
+            ->getJson(route('dashboard.data.rm-daily-summary'))
+            ->assertOk()
+            ->assertJsonPath('data.0.party_name', 'Roquette Supplier - Gokak')
+            ->assertJsonPath('data.0.supplier_broker_name', 'Nesheil Broker');
     });
 
     it('hides daily summary widget without permission', function () {

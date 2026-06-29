@@ -12,6 +12,7 @@ use App\Support\ActiveDropdownValidation;
 use App\Support\ProductUnit;
 use App\Support\SalesScope;
 use App\Services\PaymentReceivableService;
+use App\Services\SequentialDispatchService;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
@@ -580,24 +581,7 @@ class OrderManagementController extends Controller
     {
         SalesScope::authorizeOrderAccess($order);
 
-        /* All non-deleted orders for the same dealer, oldest first */
-        $dealerOrders = OrderManagement::where('dealer_id', $order->dealer_id)
-            ->orderBy('id')
-            ->with(['items.dispatches', 'items.product'])
-            ->get();
-
-        /* Walk the sorted list; stop when we reach the requested order.
-           The first incomplete order we encounter is the blocker. */
-        $blockingOrder = null;
-        foreach ($dealerOrders as $dealerOrder) {
-            if ($dealerOrder->id === $order->id) {
-                break;  // reached the target order — no blocker found
-            }
-            if (! $dealerOrder->isFullyDispatched()) {
-                $blockingOrder = $dealerOrder;
-                break;
-            }
-        }
+        $blockingOrder = app(SequentialDispatchService::class)->findBlockingOrderFor($order);
 
         if (! $blockingOrder) {
             return response()->json(['eligible' => true]);

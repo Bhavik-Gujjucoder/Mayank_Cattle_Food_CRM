@@ -109,9 +109,14 @@
 </div>
 
 @endsection
+
+@push('datatable-scripts')
+    @include('partials.datatable-scripts')
+@endpush
+
 @section('script')
 <script>
-$(document).ready(function () {
+withDataTable(function () {
 
     $('.search-dropdown').select2({ width: '100%' });
 
@@ -172,6 +177,15 @@ $(document).ready(function () {
 
     filterOrderOptions();
 
+    var dispatchAjax = buildDataTableAjax("{{ route('dispatch.index') }}", {
+        data: function (d) {
+            d.date_from  = $('#dateFrom').val() || '';
+            d.date_to    = $('#dateTo').val() || '';
+            d.dealer_id  = $('#dealerFilter').val() || 'all';
+            d.order_id   = $('#orderFilter').val() || 'all';
+            d.product_id = $('#productFilter').val() || 'all';
+        }
+    });
     var dispatch_table = $('#dispatch_table').DataTable({
         pageLength  : 10,
         deferRender : true,
@@ -181,16 +195,7 @@ $(document).ready(function () {
         dom         : 'lrtip',
         order       : [[0, 'desc']],
 
-        ajax: {
-            url  : "{{ route('dispatch.index') }}",
-            data : function (d) {
-                d.date_from  = $('#dateFrom').val() || '';
-                d.date_to    = $('#dateTo').val() || '';
-                d.dealer_id  = $('#dealerFilter').val() || 'all';
-                d.order_id   = $('#orderFilter').val() || 'all';
-                d.product_id = $('#productFilter').val() || 'all';
-            }
-        },
+        ajax: dispatchAjax,
 
         columns: [
             { data: 'id',              name: 'id',              visible: false,  orderable: false, searchable: false },
@@ -222,6 +227,7 @@ $(document).ready(function () {
             zeroRecords: 'No matching records found.',
         },
     });
+    dispatchAjax._bindTable(dispatch_table);
 
     $('#dealerFilter, #orderFilter, #productFilter').on('change', function () {
         if (this.id === 'dealerFilter') {
