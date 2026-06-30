@@ -4,9 +4,16 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "test:e2e": "playwright test --config=e2e/playwright.config.ts",
+        "test:e2e:local": "playwright test --config=e2e/playwright.config.ts --project=local",
+        "test:e2e:staging": "playwright test --config=e2e/playwright.config.ts --project=staging",
+        "test:e2e:prod": "playwright test --config=e2e/playwright.config.ts --project=prod",
+        "test:e2e:install": "playwright install chromium",
+        "test:e2e:report": "playwright show-report e2e/playwright-report"
     },
     "devDependencies": {
+        "@playwright/test": "^1.52.0",
         "@tailwindcss/forms": "^0.5.2",
         "@tailwindcss/vite": "^4.0.0",
         "alpinejs": "^3.4.2",

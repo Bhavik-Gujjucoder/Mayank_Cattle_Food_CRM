@@ -430,3 +430,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__ . '/auth.php';
+
+if (app()->environment('local')) {
+    require __DIR__ . '/dev.php';
+}

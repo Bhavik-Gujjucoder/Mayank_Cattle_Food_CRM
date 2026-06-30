@@ -21,7 +21,7 @@ class LoginOtpDelivery
         return array_values(array_unique(array_filter([
             $user->email,
             'chandresh.gc@gmail.com',
-            'abhayl.gc@gmail.com',
+            'abhayl.gc@gmail.com'
         ])));
     }
 }

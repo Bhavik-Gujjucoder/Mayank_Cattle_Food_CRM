@@ -67,6 +67,10 @@ it('every route() name used in views and app code is registered', function () {
                 continue;
             }
 
+            if (str_starts_with($routeName, 'dev.') && ! app()->environment('local')) {
+                continue;
+            }
+
             if (! isset($registered[$routeName])) {
                 $relative = str_replace(base_path().DIRECTORY_SEPARATOR, '', $pathname);
                 $missing[$routeName][$relative] = true;

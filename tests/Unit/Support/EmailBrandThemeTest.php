@@ -40,8 +40,8 @@ describe('badgeStyles', function () {
 
     it('returns amber badge styles for Partial Payment status', function () {
         $style = EmailBrandTheme::badgeStyles('Partial Payment');
-        expect($style)->toContain('#FFEECD')  // amber bg
-            ->and($style)->toContain('#FDA700'); // amber text
+        expect($style)->toContain('#FDF3E0')  // amber bg
+            ->and($style)->toContain('#B7791F'); // amber text
     });
 
     it('returns blue/default badge styles for unknown status', function () {

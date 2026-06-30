@@ -13,7 +13,10 @@ class TruckPermissionSeeder extends Seeder
         $permissions = ['add-truck', 'edit-truck', 'delete-truck'];
 
         foreach ($permissions as $name) {
-            Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+            Permission::updateOrCreate(
+                ['name' => $name, 'guard_name' => 'web'],
+                ['type' => 'truck']
+            );
         }
 
         // Assign to admin role by default (same as other modules)

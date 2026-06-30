@@ -1,7 +1,15 @@
 <?php
 
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+
+pest()->extend(Tests\DuskTestCase::class)
+    ->use(DatabaseMigrations::class)
+    ->beforeEach(function () {
+        Tests\Browser\Support\DuskModuleHelpers::seedPermissions();
+    })
+    ->in('Browser');
 
 /*
 |--------------------------------------------------------------------------
@@ -103,7 +111,7 @@ function grantPermissions(\App\Models\User $user, array $permissionNames): \App\
     foreach ($permissionNames as $name) {
         \Spatie\Permission\Models\Permission::firstOrCreate(
             ['name' => $name, 'guard_name' => 'web'],
-            ['type' => 'test']
+            ['type' => \Database\Seeders\AdminModulePermissionSeeder::typeFor($name) ?? 'test']
         );
     }
 
@@ -132,4 +140,39 @@ function adminUser(array $attrs = []): \App\Models\User
     ]));
 
     return $user;
+}
+
+/**
+ * Fill the six OTP digit inputs on the verify-otp page.
+ */
+function duskFillOtp(\Laravel\Dusk\Browser $browser, string $otp): void
+{
+    $code = str_pad(preg_replace('/\D/', '', $otp), 6, '0', STR_PAD_LEFT);
+    $jsonCode = json_encode($code);
+
+    $browser->script(<<<JS
+        (function () {
+            const digits = {$jsonCode}.split('');
+            const inputs = document.querySelectorAll('.otp');
+            digits.forEach((digit, index) => {
+                if (!inputs[index]) {
+                    return;
+                }
+                inputs[index].value = digit;
+                inputs[index].dispatchEvent(new Event('input', { bubbles: true }));
+            });
+            const combined = document.getElementById('otp_combined');
+            if (combined) {
+                combined.value = digits.join('');
+            }
+        })();
+    JS);
+}
+
+/**
+ * Submit the verify-otp form (avoids clicking the adjacent Resend button).
+ */
+function duskSubmitOtp(\Laravel\Dusk\Browser $browser): void
+{
+    $browser->script('document.getElementById("otpForm").requestSubmit();');
 }

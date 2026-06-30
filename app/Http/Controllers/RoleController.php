@@ -11,6 +11,21 @@ use Spatie\Permission\Models\Role;
 class RoleController extends Controller
 {
     /**
+     * Permissions shown when assigning roles (hide internal test-only groups).
+     */
+    private function assignablePermissions()
+    {
+        return Permission::query()
+            ->whereNull('deleted_at')
+            ->where(function ($query) {
+                $query->whereNull('type')
+                    ->orWhereNotIn('type', ['test', 'e2e', 'dusk']);
+            })
+            ->get()
+            ->groupBy('type');
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -65,7 +80,7 @@ class RoleController extends Controller
     public function create()
     {
         $data['page_title']  = 'Add Role & Permission';
-        $data['permissions'] = Permission::whereNull('deleted_at')->get()->groupBy('type');
+        $data['permissions'] = $this->assignablePermissions();
         $data['dashboard_permissions']  = Permission::where('deleted_at', null)->where('is_dashboard', 1)->get()->all();
 
         return view('roles.create', $data);
@@ -107,7 +122,7 @@ class RoleController extends Controller
     {
         // auth()->user()->assignRole('super admin');
         $data['page_title']   = 'Edit Role & Permission';
-        $data['permissions']  = Permission::whereNull('deleted_at')->get()->groupBy('type');
+        $data['permissions']  = $this->assignablePermissions();
         $data['dashboard_permissions']  = Permission::where('deleted_at', null)->where('is_dashboard', 1)->get()->all();
 
         $data['role'] = $role;

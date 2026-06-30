@@ -1,7 +1,7 @@
 @php
     $brand = $brand ?? \App\Support\EmailBrandTheme::colors();
     $emphasize = $emphasize ?? false;
-    $rowBg = $emphasize ? $brand['emphasize_bg'] : $brand['card_bg'];
+    $rowBg = $emphasize ? $brand['emphasize_bg'] : $brand['table_bg'];
     $valueWeight = $emphasize ? 'bold' : 'normal';
     $valueColor = $emphasize ? $brand['emphasize_text'] : $brand['text_primary'];
 @endphp

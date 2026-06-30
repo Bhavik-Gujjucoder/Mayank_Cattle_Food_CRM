@@ -299,7 +299,7 @@
 
         body,
         #bodyTable {
-            background-color: rgb(255, 252, 227);
+            background-color: #fff;
         }
 
         .mceText,
@@ -417,7 +417,7 @@
     <!---->
     <center>
         <table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="bodyTable"
-            style="background-color: rgb(255, 252, 227);">
+            style="background-color: #fff;">
             <tbody>
                 <tr>
                     <td class="bodyCell" align="center" valign="top">
@@ -430,7 +430,7 @@
                                             style="max-width:660px" role="presentation">
                                             <tbody>
                                                 <tr>
-                                                    <td style="background-color:#fffce3;background-position:center;background-repeat:no-repeat;background-size:cover"
+                                                    <td style="background-color:#fff;background-position:center;background-repeat:no-repeat;background-size:cover"
                                                         class="mceWrapperInner" valign="top">
                                                         <table align="center" border="0" cellpadding="0"
                                                             cellspacing="0" width="100%" role="presentation"
@@ -486,7 +486,7 @@
                                                                                                             data-block-id="2">
                                                                                                             <tbody>
                                                                                                                 <tr>
-                                                                                                                    <td style="min-width:100%;border-top:2px dashed #000000"
+                                                                                                                    <td style="min-width:100%;border-top:2px dashed rgba(0, 80, 157, 1)"
                                                                                                                         valign="top">
                                                                                                                     </td>
                                                                                                                 </tr>
@@ -502,7 +502,7 @@
                                                                                                     </td>
                                                                                                 </tr>
                                                                                                 <tr>
-                                                                                                    <td style="background-color:transparent;padding-top:15px;padding-bottom:15px;padding-right:50px;padding-left:50px"
+                                                                                                    <td style="background-color:transparent;padding-top:10px;padding-bottom:10px;padding-right:50px;padding-left:50px"
                                                                                                         class="mceBlockContainer"
                                                                                                         valign="top">
                                                                                                         <table
@@ -515,7 +515,7 @@
                                                                                                             data-block-id="8">
                                                                                                             <tbody>
                                                                                                                 <tr>
-                                                                                                                    <td style="min-width:100%;border-top:2px dashed #000000"
+                                                                                                                    <td style="min-width:100%;border-top:2px dashed rgba(0, 80, 157, 1)"
                                                                                                                         valign="top">
                                                                                                                     </td>
                                                                                                                 </tr>
@@ -524,7 +524,7 @@
                                                                                                     </td>
                                                                                                 </tr>
                                                                                                 <tr>
-                                                                                                    <td style="background-color:#fffce3;padding-top:25px;padding-bottom:25px;padding-right:10px;padding-left:10px"
+                                                                                                    <td style="padding-top:30px;padding-bottom:25px;padding-right:10px;padding-left:10px"
                                                                                                         class="mceLayoutContainer"
                                                                                                         valign="top">
                                                                                                         <table
@@ -540,7 +540,7 @@
                                                                                                             <tbody>
                                                                                                                 <tr
                                                                                                                     class="mceRow">
-                                                                                                                    <td style="background-color:#fffce3;background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px"
+                                                                                                                    <td style="background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px"
                                                                                                                         valign="top">
                                                                                                                         <table
                                                                                                                             border="0"
@@ -573,7 +573,7 @@
                                                                                                                                                             id="dataBlockId-11"
                                                                                                                                                             style="display:inline-block;width:100%">
                                                                                                                                                             <p><span
-                                                                                                                                                                    style="font-size: 12px"><br><br>Copyright
+                                                                                                                                                                    style="font-size: 12px">Copyright
                                                                                                                                                                     (C)
                                                                                                                                                                     {{ date('Y') }}
                                                                                                                                                                     {{ env('APP_NAME') }}.<br>All
@@ -651,14 +651,15 @@
                 </tr>
 
                 <tr align="center">
-                    <!-- Add environment info -->
-                    @if (app()->environment('local'))
-                        <p><small>📌 This email was sent from the LOCAL environment.</small></p>
-                    @elseif(app()->environment('production'))
-                        <p><small>✅ This email was sent from the LIVE (production) environment.</small></p>
-                    @else
-                        <p><small>⚠️ This email was sent from the {{ app()->environment() }} environment.</small></p>
-                    @endif
+                    <td align="center" style="padding:12px 16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#666666;">
+                        @if (app()->environment('local'))
+                            <p style="margin:0;"><small>📌 This email was sent from the LOCAL environment.</small></p>
+                        @elseif(app()->environment('production'))
+                            <p style="margin:0;"><small>✅ This email was sent from the LIVE (production) environment.</small></p>
+                        @else
+                            <p style="margin:0;"><small>⚠️ This email was sent from the {{ app()->environment() }} environment.</small></p>
+                        @endif
+                    </td>
                 </tr>
 
 

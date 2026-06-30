@@ -21,6 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
 
+        $middleware->validateCsrfTokens(except: [
+            'dev/e2e/*',
+        ]);
+
         $middleware->trimStrings(except: [
             'password',
             'create_passphrase',

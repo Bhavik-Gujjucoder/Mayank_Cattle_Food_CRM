@@ -2,9 +2,9 @@
     $brand = $brand ?? \App\Support\EmailBrandTheme::colors();
 @endphp
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
-    style="border-collapse:collapse;margin-top:{{ $marginTop ?? '18px' }};border:1px solid {{ $brand['border'] }};background-color:{{ $brand['card_bg'] }};">
+    style="border-collapse:collapse;margin-top:{{ $marginTop ?? '18px' }};background-color:{{ $brand['card_bg'] }}; border-radius: 10px; overflow: hidden;">
     <tr>
-        <td style="padding:12px 16px;background-color:{{ $brand['section_bg'] }};border-left:4px solid {{ $brand['primary'] }};font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:{{ $brand['text_primary'] }};">
+        <td style="padding:12px 16px;background-color: {{ $brand['primary'] }};font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#fff;">
             {{ $title }}
         </td>
     </tr>

@@ -1,0 +1,117 @@
+name: Playwright Smoke
+
+on:
+  schedule:
+    # Production read-only smoke — every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which environment to test
+        required: true
+        default: both
+        type: choice
+        options:
+          - both
+          - prod
+          - staging
+      run_staging_auth:
+        description: Run optional staging OTP login tests (requires OTP secret)
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: playwright-smoke-${{ github.workflow }}-${{ github.event.inputs.target || 'scheduled' }}
+  cancel-in-progress: true
+
+jobs:
+  prod-smoke:
+    name: Production smoke
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' &&
+        (github.event.inputs.target == 'prod' || github.event.inputs.target == 'both'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run production smoke tests
+        env:
+          E2E_PROD_URL: ${{ secrets.E2E_PROD_URL }}
+        run: npm run test:e2e:prod
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-prod
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 7
+
+  staging-smoke:
+    name: Staging smoke
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' &&
+        (github.event.inputs.target == 'staging' || github.event.inputs.target == 'both'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run staging smoke tests (public)
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_staging_auth != 'true')
+        env:
+          E2E_STAGING_URL: ${{ secrets.E2E_STAGING_URL }}
+          E2E_STAGING_EMAIL: ${{ secrets.E2E_STAGING_EMAIL }}
+          E2E_STAGING_PASSWORD: ${{ secrets.E2E_STAGING_PASSWORD }}
+        run: npm run test:e2e:staging
+
+      - name: Run staging smoke tests (with OTP auth)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_staging_auth == 'true'
+        env:
+          E2E_STAGING_URL: ${{ secrets.E2E_STAGING_URL }}
+          E2E_STAGING_EMAIL: ${{ secrets.E2E_STAGING_EMAIL }}
+          E2E_STAGING_PASSWORD: ${{ secrets.E2E_STAGING_PASSWORD }}
+          E2E_STAGING_OTP: ${{ secrets.E2E_STAGING_OTP }}
+        run: npm run test:e2e:staging
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-staging
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 7

@@ -17,16 +17,17 @@ class EmailBrandTheme
             'primary'        => '#014e9c',
             'text_primary'   => '#262A2A',
             'text_muted'     => '#6F6F6F',
-            'border'         => '#E8E8E8',
+            'border'         => '#dae0e2',
             'section_bg'     => '#F6F6F6',
             'panel_bg'       => '#F9F9FC',
             'card_bg'        => '#ffffff',
+            'table_bg'        => '#f2f9fc',
             'email_cream'    => '#fffce3',
             'link_accent'    => '#ddbe8d',
             'callout_bg'     => '#FFF7D8',
             'callout_border' => '#FDA700',
-            'emphasize_bg'   => '#F9F9FC',
-            'emphasize_text' => '#014e9c',
+            'emphasize_bg'   => '#FDEAEA',
+            'emphasize_text' => '#D64545',
         ];
     }
 
@@ -39,9 +40,9 @@ class EmailBrandTheme
                 'border' => '#5CB85C',
             ],
             'Partial Payment' => [
-                'bg'     => '#FFEECD',
-                'text'   => '#FDA700',
-                'border' => '#FDA700',
+                'bg'     => '#FDF3E0',
+                'text'   => '#B7791F',
+                'border' => '#B7791F',
             ],
             default => [
                 'bg'     => '#FFEEEC',
