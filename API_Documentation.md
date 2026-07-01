@@ -24,7 +24,7 @@
    - [Auth: Forgot Password](#api-auth-forgot-password)
    - [Auth: Authentication Check (Dealer/Broker)](#api-auth-authentication-check-dealerbroker)
    - [Orders: Soda/Order Listing](#api-orders-sodaorder-listing)
-   - [Dispatches: Dispatch Listing (API 9)](#api-dispatches-dispatch-listing-api-9)
+   - [Dispatches: Dispatch Listing (API 10)](#api-dispatches-dispatch-listing-api-10)
 10. [Bearer Token Usage](#bearer-token-usage)
 11. [Postman Testing](#postman-testing)
 12. [Android Integration](#android-integration)
@@ -1003,7 +1003,11 @@ request.setValue("application/json", forHTTPHeaderField: "Accept")
 
 ---
 
-### API: Dispatches — Dispatch Listing (API 9)
+### API: Dispatches — Dispatch Listing (API 10)
+
+> **Standalone, dedicated API.** This endpoint has its own controller (`DispatchListingController`),
+> its own request class (`DispatchListingRequest`), and its own test suite (`DispatchListingTest`).
+> It does not share code or responsibility with any other API module.
 
 **`GET /api/v1/dispatches`**
 
@@ -1392,7 +1396,7 @@ app/
 │   │       ├── Orders/
 │   │       │   └── OrderController.php        # GET orders (paginated, filtered)
 │   │       ├── Dispatches/
-│   │       │   └── DispatchController.php     # GET dispatches (paginated, filtered)
+│   │       │   └── DispatchListingController.php  # GET dispatches — API 10 (standalone)
 │   │       └── System/
 │   │           └── HealthCheckController.php  # GET health-check
 │   ├── Requests/Api/
@@ -1405,7 +1409,7 @@ app/
 │   │   ├── V1/Orders/
 │   │   │   └── OrderListRequest.php           # filter + pagination validation
 │   │   └── V1/Dispatches/
-│   │       └── DispatchListRequest.php        # filter + pagination validation
+│   │       └── DispatchListingRequest.php     # filter + pagination validation (API 10)
 │   └── Resources/Api/V1/
 │       ├── UserResource.php                   # Safe user JSON shape
 │       ├── OrderResource.php                  # Order + dispatch summary
@@ -1491,4 +1495,4 @@ Include:
 
 ---
 
-*Last updated: Mobile API v1 — auth/login, auth/otp/verify, auth/otp/resend, auth/forgot-password, auth/me (dealer/broker check), orders (paginated listing), dispatches (dispatch listing with quantity context, payment receivable, dispatch_number filter, delivery address — API 9), system/health-check*
+*Last updated: Mobile API v1 — auth/login, auth/otp/verify, auth/otp/resend, auth/forgot-password, auth/me (dealer/broker check), orders (paginated listing), dispatches (standalone Dispatch Listing — API 10, dedicated DispatchListingController, 43 tests), system/health-check*

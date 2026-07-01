@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\V1\Auth\AuthCheckController;
 use App\Http\Controllers\Api\V1\Auth\ForgotPasswordController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
-use App\Http\Controllers\Api\V1\Dispatches\DispatchController;
+use App\Http\Controllers\Api\V1\Dispatches\DispatchListingController;
 use App\Http\Controllers\Api\V1\Orders\OrderController;
 use App\Http\Controllers\Api\V1\System\HealthCheckController;
 use Illuminate\Support\Facades\Route;
@@ -104,9 +104,19 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('orders', [OrderController::class, 'index'])
             ->name('orders.index');
 
-        // Dispatch history — Dealer and Broker roles only.
-        Route::get('dispatches', [DispatchController::class, 'index'])
-            ->name('dispatches.index');
+        /*
+         * Dispatch Listing (API 10) — Dedicated, standalone dispatch listing.
+         *
+         * Dealer  → sees only dispatches tied to their own orders.
+         * Broker  → sees only dispatches tied to orders where broker_id = user.
+         * Others  → 403 Access Denied (enforced inside the controller).
+         *
+         * Supported filters: dispatch_number, order_number, status,
+         *                    date_from, date_to, brand_id, product_id,
+         *                    dealer_id, per_page.
+         */
+        Route::get('dispatches', [DispatchListingController::class, 'list'])
+            ->name('dispatches.list');
 
         // Route::prefix('profile')->name('profile.')->group(function () { ... });
         // Route::prefix('notifications')->name('notifications.')->group(function () { ... });
