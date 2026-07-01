@@ -519,3 +519,125 @@ describe('GET /api/v1/dispatches — pagination & validation', function () {
             ->assertJsonStructure(['data' => ['status']]);
     });
 });
+
+// ─── API 9 enhanced fields ────────────────────────────────────────────────────
+
+describe('GET /api/v1/dispatches — API 9 enhanced fields', function () {
+
+    it('returns dispatch_number formatted as DISP-XXXXXX', function () {
+        [$dealerUser, $token] = dispatchUser('dealer');
+        $dealerRecord = dispatchDealer($dealerUser);
+        $order        = dispatchOrder(['dealer_id' => $dealerRecord->id]);
+        $item         = dispatchItem($order);
+        $d            = dispatchRecord($order, $item);
+
+        $response = getJson('/api/v1/dispatches', ['Authorization' => "Bearer $token"])
+            ->assertOk();
+
+        $dispatchNumber = $response->json('data.dispatches.0.dispatch_number');
+        expect($dispatchNumber)->toBe('DISP-' . str_pad((string) $d->id, 6, '0', STR_PAD_LEFT));
+    });
+
+    it('returns broker info nested inside the order object', function () {
+        [$brokerUser, $token] = dispatchUser('broker');
+
+        $order = dispatchOrder(['broker_id' => $brokerUser->id]);
+        $item  = dispatchItem($order);
+        dispatchRecord($order, $item);
+
+        $response = getJson('/api/v1/dispatches', ['Authorization' => "Bearer $token"])
+            ->assertOk();
+
+        $broker = $response->json('data.dispatches.0.order.broker');
+
+        expect($broker)->not->toBeNull()
+            ->and($broker['id'])->toBe($brokerUser->id)
+            ->and($broker['name'])->toBe($brokerUser->name);
+    });
+
+    it('returns ordered_qty, total_dispatched_qty, and pending_qty for an incomplete item', function () {
+        [$dealerUser, $token] = dispatchUser('dealer');
+        $dealerRecord = dispatchDealer($dealerUser);
+        $order        = dispatchOrder(['dealer_id' => $dealerRecord->id]);
+
+        // Order item with qty=10; dispatch only 3 bags so 7 remain pending.
+        $item = dispatchItem($order, ['qty' => 10]);
+        dispatchRecord($order, $item, ['no_of_bags' => 3]);
+
+        $response = getJson('/api/v1/dispatches', ['Authorization' => "Bearer $token"])
+            ->assertOk();
+
+        $d = $response->json('data.dispatches.0');
+
+        expect($d['ordered_qty'])->toBe(10)
+            ->and($d['total_dispatched_qty'])->toBe(3)
+            ->and($d['pending_qty'])->toBe(7)
+            ->and($d['is_item_complete'])->toBeFalse();
+    });
+
+    it('sums total_dispatched_qty across all dispatch events for the same order item', function () {
+        [$dealerUser, $token] = dispatchUser('dealer');
+        $dealerRecord = dispatchDealer($dealerUser);
+        $order        = dispatchOrder(['dealer_id' => $dealerRecord->id]);
+
+        // Same item dispatched in two separate events (3 + 4 = 7 bags total).
+        $item = dispatchItem($order, ['qty' => 10]);
+        dispatchRecord($order, $item, ['no_of_bags' => 3]);
+        dispatchRecord($order, $item, ['no_of_bags' => 4]);
+
+        $response = getJson('/api/v1/dispatches', ['Authorization' => "Bearer $token"])
+            ->assertOk();
+
+        $dispatches = $response->json('data.dispatches');
+        expect($dispatches)->toHaveCount(2);
+
+        // Both dispatch records see the same item-level totals.
+        foreach ($dispatches as $d) {
+            expect($d['ordered_qty'])->toBe(10)
+                ->and($d['total_dispatched_qty'])->toBe(7)
+                ->and($d['pending_qty'])->toBe(3);
+        }
+    });
+
+    it('marks is_item_complete true when all bags are dispatched', function () {
+        [$dealerUser, $token] = dispatchUser('dealer');
+        $dealerRecord = dispatchDealer($dealerUser);
+        $order        = dispatchOrder(['dealer_id' => $dealerRecord->id]);
+
+        // Dispatch exactly the ordered qty.
+        $item = dispatchItem($order, ['qty' => 5]);
+        dispatchRecord($order, $item, ['no_of_bags' => 5]);
+
+        $response = getJson('/api/v1/dispatches', ['Authorization' => "Bearer $token"])
+            ->assertOk();
+
+        expect($response->json('data.dispatches.0.is_item_complete'))->toBeTrue()
+            ->and($response->json('data.dispatches.0.pending_qty'))->toBe(0);
+    });
+
+    it('returns unit_price inside the product object', function () {
+        [$dealerUser, $token] = dispatchUser('dealer');
+        $dealerRecord = dispatchDealer($dealerUser);
+        $order        = dispatchOrder(['dealer_id' => $dealerRecord->id]);
+        $item         = dispatchItem($order, ['unit_price' => 250.00]);
+        dispatchRecord($order, $item);
+
+        $response = getJson('/api/v1/dispatches', ['Authorization' => "Bearer $token"])
+            ->assertOk();
+
+        expect($response->json('data.dispatches.0.product.unit_price'))->toBe('250.00');
+    });
+
+    it('returns updated_at field on each dispatch record', function () {
+        [$dealerUser, $token] = dispatchUser('dealer');
+        $dealerRecord = dispatchDealer($dealerUser);
+        $order        = dispatchOrder(['dealer_id' => $dealerRecord->id]);
+        $item         = dispatchItem($order);
+        dispatchRecord($order, $item);
+
+        $response = getJson('/api/v1/dispatches', ['Authorization' => "Bearer $token"])
+            ->assertOk();
+
+        expect($response->json('data.dispatches.0.updated_at'))->not->toBeNull();
+    });
+});

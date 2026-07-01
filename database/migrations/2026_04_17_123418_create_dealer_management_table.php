@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('dealer_management', function (Blueprint $table) {
             $table->id();
             $table->string('profile_image')->nullable();
-            $table->unsignedBigInteger('broker_id');
-            $table->unsignedBigInteger('brand_id');
+            $table->unsignedBigInteger('broker_id')->nullable();
+            $table->unsignedBigInteger('brand_id')->nullable();
             $table->foreign('broker_id')->references('id')->on('users')->onDelete('set null');
             $table->string('code_no')->unique();
             $table->string('applicant_name');

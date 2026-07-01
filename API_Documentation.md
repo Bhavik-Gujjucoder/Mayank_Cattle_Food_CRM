@@ -24,7 +24,7 @@
    - [Auth: Forgot Password](#api-auth-forgot-password)
    - [Auth: Authentication Check (Dealer/Broker)](#api-auth-authentication-check-dealerbroker)
    - [Orders: Soda/Order Listing](#api-orders-sodaorder-listing)
-   - [Dispatches: Dispatch History](#api-dispatches-dispatch-history)
+   - [Dispatches: Dispatch Listing (API 9)](#api-dispatches-dispatch-listing-api-9)
 10. [Bearer Token Usage](#bearer-token-usage)
 11. [Postman Testing](#postman-testing)
 12. [Android Integration](#android-integration)
@@ -1003,12 +1003,16 @@ request.setValue("application/json", forHTTPHeaderField: "Accept")
 
 ---
 
-### API: Dispatches — Dispatch History
+### API: Dispatches — Dispatch Listing (API 9)
 
 **`GET /api/v1/dispatches`**
 
 Returns a paginated, filterable list of dispatch records for the authenticated Dealer or Broker user.  
 Role-based visibility mirrors `DispatchManagementController::index()` using `SalesScope::scopeDispatches()`.
+
+Each dispatch record includes the parent order (with broker, brand, dealer), the dispatched product (with unit price),
+the transporter details, and **order-item quantity context** (`ordered_qty`, `total_dispatched_qty`, `pending_qty`)
+so the mobile app can display fulfilment progress without additional API calls.
 
 #### Authentication
 
@@ -1046,8 +1050,13 @@ Role-based visibility mirrors `DispatchManagementController::index()` using `Sal
     "dispatches": [
       {
         "id": 12,
+        "dispatch_number": "DISP-000012",
         "dispatch_date": "2025-03-20",
         "no_of_bags": 5,
+        "ordered_qty": 10,
+        "total_dispatched_qty": 7,
+        "pending_qty": 3,
+        "is_item_complete": false,
         "payment_status": "paid",
         "partial_paid_amount": null,
         "accrued_late_fee": "0.00",
@@ -1058,6 +1067,7 @@ Role-based visibility mirrors `DispatchManagementController::index()` using `Sal
           "id": 3,
           "order_number": "ORD/2025/0010",
           "order_date": "2025-03-15",
+          "broker": { "id": 4, "name": "Broker Name" },
           "brand": { "id": 1, "name": "Brand A" },
           "dealer": {
             "id": 2,
@@ -1068,14 +1078,16 @@ Role-based visibility mirrors `DispatchManagementController::index()` using `Sal
         "product": {
           "id": 7,
           "name": "Product X",
-          "unit": "Bag"
+          "unit": "Bag",
+          "unit_price": "100.00"
         },
         "transporter": {
           "id": 5,
           "name": "Transport Co",
           "phone_no": "8888888888"
         },
-        "created_at": "2025-03-20 10:00:00"
+        "created_at": "2025-03-20 10:00:00",
+        "updated_at": "2025-03-21 14:30:00"
       }
     ],
     "pagination": {
@@ -1089,6 +1101,21 @@ Role-based visibility mirrors `DispatchManagementController::index()` using `Sal
   }
 }
 ```
+
+#### Response field reference
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `dispatch_number` | string | Human-readable dispatch reference (`DISP-XXXXXX` padded to 6 digits) |
+| `no_of_bags` | integer | Bags dispatched in **this specific dispatch event** |
+| `ordered_qty` | integer | Total bags ordered for the parent order item |
+| `total_dispatched_qty` | integer | Sum of `no_of_bags` across **all dispatch events** for the same order item |
+| `pending_qty` | integer | Bags still outstanding: `ordered_qty − total_dispatched_qty` |
+| `is_item_complete` | boolean | `true` when `total_dispatched_qty >= ordered_qty` |
+| `payment_status` | string | Payment state of this dispatch: `unpaid` / `paid` / `partial` |
+| `accrued_late_fee` | string | Late fee accrued on this dispatch (decimal string) |
+| `order.broker` | object\|null | Broker who placed/manages the parent order |
+| `product.unit_price` | string | Unit price per bag at time of order (from order item) |
 
 #### `payment_status` values
 
@@ -1108,8 +1135,9 @@ Role-based visibility mirrors `DispatchManagementController::index()` using `Sal
 
 #### Performance notes
 
-- `order`, `order.brand`, `order.dealer`, `product`, and `transporter` are eager-loaded to avoid N+1 queries.
-- `brand_id` and `dealer_id` filters are silently ignored for Dealer accounts (scoping already limits their view).
+- All relations (`order`, `order.brand`, `order.dealer`, `order.broker`, `product`, `transporter`, `orderItem`) are eager-loaded in a single batch to avoid N+1 queries.
+- `orderItem` is loaded with `withSum('dispatches','no_of_bags')` — a single subquery per item computes `total_dispatched_qty` without loading every dispatch record.
+- `brand_id` and `dealer_id` filters are silently ignored for Dealer accounts (SalesScope already limits their view).
 - Pagination default is 15 records; maximum is 100.
 
 #### Postman (XAMPP)
@@ -1390,4 +1418,4 @@ Include:
 
 ---
 
-*Last updated: Mobile API v1 — auth/login, auth/otp/verify, auth/otp/resend, auth/forgot-password, auth/me (dealer/broker check), orders (paginated listing), dispatches (dispatch history), system/health-check*
+*Last updated: Mobile API v1 — auth/login, auth/otp/verify, auth/otp/resend, auth/forgot-password, auth/me (dealer/broker check), orders (paginated listing), dispatches (dispatch listing with quantity context, API 9), system/health-check*
