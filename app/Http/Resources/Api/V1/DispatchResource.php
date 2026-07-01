@@ -10,7 +10,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * Transforms a DispatchManagement model into the mobile API dispatch object.
  *
  * Expected eager loads (set by DispatchController::index()):
- *   order:id,unique_order_id,order_date,brand_id,dealer_id,broker_id
+ *   order:id,unique_order_id,order_date,delivery_address,brand_id,dealer_id,broker_id
  *   order.brand:id,name
  *   order.dealer:id,user_id,firm_shop_name
  *   order.dealer.user:id,name
@@ -25,6 +25,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *   total_dispatched_qty  — sum of no_of_bags across ALL dispatch events for the item
  *   pending_qty           — bags still to be dispatched for the item
  *   is_item_complete      — true when total_dispatched_qty >= ordered_qty
+ *
+ * Payment receivable fields (computed inline, no extra queries):
+ *   base_amount      — unit_price × no_of_bags (value at time of dispatch)
+ *   total_receivable — base_amount + accrued_late_fee
+ *   amount_paid      — 0 (unpaid) | partial_paid_amount (partial) | total_receivable (paid)
+ *   balance_due      — total_receivable − amount_paid (0 when fully paid)
  *
  * @mixin DispatchManagement
  */
@@ -50,9 +56,25 @@ class DispatchResource extends JsonResource
         // dispatches_sum_no_of_bags is added by withSum() in the controller query.
         // It represents the TOTAL bags dispatched for this order item across all
         // dispatch events — not just the bags in this specific dispatch record.
-        $orderedQty            = (int) ($this->orderItem?->qty ?? 0);
+        $orderedQty             = (int) ($this->orderItem?->qty ?? 0);
         $totalDispatchedForItem = (int) ($this->orderItem?->dispatches_sum_no_of_bags ?? 0);
-        $pendingQty            = max(0, $orderedQty - $totalDispatchedForItem);
+        $pendingQty             = max(0, $orderedQty - $totalDispatchedForItem);
+
+        // ── Payment receivable (computed inline — no extra queries) ────────────
+        // All inputs are already loaded: orderItem.unit_price, no_of_bags,
+        // accrued_late_fee, status, partial_paid_amount.
+        $unitPrice       = (float) ($this->orderItem?->unit_price ?? 0);
+        $baseAmount      = round($unitPrice * (int) $this->no_of_bags, 2);
+        $lateFee         = round((float) ($this->accrued_late_fee ?? 0), 2);
+        $totalReceivable = round($baseAmount + $lateFee, 2);
+        $amountPaid      = match ((int) $this->status) {
+            DispatchManagement::STATUS_PAID    => $totalReceivable,
+            DispatchManagement::STATUS_PARTIAL => (float) ($this->partial_paid_amount ?? 0),
+            default                            => 0.0,
+        };
+        $balanceDue = (int) $this->status === DispatchManagement::STATUS_PAID
+            ? 0.0
+            : max(0.0, round($totalReceivable - $amountPaid, 2));
 
         return [
             // ── Dispatch identity ──────────────────────────────────────────────
@@ -67,12 +89,12 @@ class DispatchResource extends JsonResource
             // ── Quantity (order-item totals) ───────────────────────────────────
             // These allow the mobile app to show fulfilment progress for the
             // parent order item without a separate API call.
-            'ordered_qty'           => $orderedQty,
-            'total_dispatched_qty'  => $totalDispatchedForItem,
-            'pending_qty'           => $pendingQty,
-            'is_item_complete'      => $orderedQty > 0 && $totalDispatchedForItem >= $orderedQty,
+            'ordered_qty'          => $orderedQty,
+            'total_dispatched_qty' => $totalDispatchedForItem,
+            'pending_qty'          => $pendingQty,
+            'is_item_complete'     => $orderedQty > 0 && $totalDispatchedForItem >= $orderedQty,
 
-            // ── Payment ────────────────────────────────────────────────────────
+            // ── Payment status ─────────────────────────────────────────────────
             'payment_status'           => $statusLabel,
             'partial_paid_amount'      => $this->partial_paid_amount !== null
                 ? (string) $this->partial_paid_amount
@@ -80,15 +102,26 @@ class DispatchResource extends JsonResource
             'accrued_late_fee'         => (string) ($this->accrued_late_fee ?? '0.00'),
             'late_fee_last_accrued_on' => $this->late_fee_last_accrued_on?->format('Y-m-d'),
 
+            // ── Payment receivable summary ─────────────────────────────────────
+            // Gives the mobile app a complete financial picture per dispatch
+            // without requiring a separate /payment endpoint call.
+            'payment_receivable' => [
+                'base_amount'      => number_format($baseAmount, 2, '.', ''),
+                'total_receivable' => number_format($totalReceivable, 2, '.', ''),
+                'amount_paid'      => number_format($amountPaid, 2, '.', ''),
+                'balance_due'      => number_format($balanceDue, 2, '.', ''),
+            ],
+
             // ── Transport ─────────────────────────────────────────────────────
             'truck_number'   => $this->truck_number,
             'driver_contact' => $this->driver_contact,
 
             // ── Parent order ──────────────────────────────────────────────────
             'order' => $this->order ? [
-                'id'           => $this->order->id,
-                'order_number' => $this->order->unique_order_id,
-                'order_date'   => $this->order->order_date?->format('Y-m-d'),
+                'id'               => $this->order->id,
+                'order_number'     => $this->order->unique_order_id,
+                'order_date'       => $this->order->order_date?->format('Y-m-d'),
+                'delivery_address' => $this->order->delivery_address,
 
                 // Broker who placed / manages this order.
                 'broker' => $this->order->broker ? [

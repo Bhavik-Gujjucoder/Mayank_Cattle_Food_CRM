@@ -91,8 +91,8 @@ class DispatchController extends Controller
         // Every relation that the DispatchResource will access is loaded upfront.
         // FK columns are always included so Laravel's relation binder can match rows.
         $query = DispatchManagement::with([
-            // Parent order — include broker_id so order.broker can be loaded.
-            'order:id,unique_order_id,order_date,brand_id,dealer_id,broker_id',
+            // Parent order — delivery_address and broker_id both needed downstream.
+            'order:id,unique_order_id,order_date,delivery_address,brand_id,dealer_id,broker_id',
             'order.brand:id,name',
 
             // Dealer profile + linked user account (user_id needed for dealer.user).
@@ -124,6 +124,15 @@ class DispatchController extends Controller
         SalesScope::scopeDispatches($query, $user);
 
         // ── Filters ────────────────────────────────────────────────────────────
+
+        // Exact dispatch record lookup by human-readable ID.
+        // Accepts "DISP-000042", "DISP-42", or plain "42".
+        // Non-numeric input (e.g. "DISP-ABC") resolves to 0 and matches nothing.
+        if ($request->filled('dispatch_number')) {
+            $raw       = trim((string) $request->input('dispatch_number'));
+            $numericId = (int) ltrim(preg_replace('/^DISP-/i', '', $raw), '0');
+            $query->where('id', $numericId > 0 ? $numericId : -1);
+        }
 
         // Partial search on the human-readable order reference number.
         if ($request->filled('order_number')) {

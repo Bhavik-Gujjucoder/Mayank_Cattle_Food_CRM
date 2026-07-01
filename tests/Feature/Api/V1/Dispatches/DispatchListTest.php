@@ -640,4 +640,142 @@ describe('GET /api/v1/dispatches — API 9 enhanced fields', function () {
 
         expect($response->json('data.dispatches.0.updated_at'))->not->toBeNull();
     });
+
+    it('returns delivery_address inside the order object', function () {
+        [$dealerUser, $token] = dispatchUser('dealer');
+        $dealerRecord = dispatchDealer($dealerUser);
+        $order        = dispatchOrder([
+            'dealer_id'        => $dealerRecord->id,
+            'delivery_address' => '42 Farm Road, Ahmedabad',
+        ]);
+        $item = dispatchItem($order);
+        dispatchRecord($order, $item);
+
+        $response = getJson('/api/v1/dispatches', ['Authorization' => "Bearer $token"])
+            ->assertOk();
+
+        expect($response->json('data.dispatches.0.order.delivery_address'))
+            ->toBe('42 Farm Road, Ahmedabad');
+    });
+
+    it('returns payment_receivable block with correct financial summary', function () {
+        [$dealerUser, $token] = dispatchUser('dealer');
+        $dealerRecord = dispatchDealer($dealerUser);
+        $order        = dispatchOrder(['dealer_id' => $dealerRecord->id]);
+
+        // 8 bags @ ₹150 each → base_amount = 1200, status unpaid → balance_due = 1200.
+        $item = dispatchItem($order, ['qty' => 10, 'unit_price' => 150.00]);
+        dispatchRecord($order, $item, ['no_of_bags' => 8, 'status' => DispatchManagement::STATUS_UNPAID]);
+
+        $response = getJson('/api/v1/dispatches', ['Authorization' => "Bearer $token"])
+            ->assertOk();
+
+        $pr = $response->json('data.dispatches.0.payment_receivable');
+
+        expect($pr)->toHaveKeys(['base_amount', 'total_receivable', 'amount_paid', 'balance_due'])
+            ->and($pr['base_amount'])->toBe('1200.00')
+            ->and($pr['total_receivable'])->toBe('1200.00')
+            ->and($pr['amount_paid'])->toBe('0.00')
+            ->and($pr['balance_due'])->toBe('1200.00');
+    });
+
+    it('sets amount_paid equal to total_receivable and balance_due to 0.00 for a fully paid dispatch', function () {
+        [$dealerUser, $token] = dispatchUser('dealer');
+        $dealerRecord = dispatchDealer($dealerUser);
+        $order        = dispatchOrder(['dealer_id' => $dealerRecord->id]);
+
+        $item = dispatchItem($order, ['qty' => 5, 'unit_price' => 200.00]);
+        dispatchRecord($order, $item, ['no_of_bags' => 5, 'status' => DispatchManagement::STATUS_PAID]);
+
+        $response = getJson('/api/v1/dispatches', ['Authorization' => "Bearer $token"])
+            ->assertOk();
+
+        $pr = $response->json('data.dispatches.0.payment_receivable');
+
+        // base = 5 × 200 = 1000; paid in full → amount_paid = 1000, balance = 0.
+        expect($pr['base_amount'])->toBe('1000.00')
+            ->and($pr['amount_paid'])->toBe('1000.00')
+            ->and($pr['balance_due'])->toBe('0.00');
+    });
+});
+
+// ─── Dispatch number filter ───────────────────────────────────────────────────
+
+describe('GET /api/v1/dispatches — dispatch_number filter', function () {
+
+    it('filters by dispatch_number in DISP-XXXXXX format', function () {
+        [$dealerUser, $token] = dispatchUser('dealer');
+        $dealerRecord = dispatchDealer($dealerUser);
+
+        $order1 = dispatchOrder(['dealer_id' => $dealerRecord->id]);
+        $item1  = dispatchItem($order1);
+        $d1     = dispatchRecord($order1, $item1);
+
+        $order2 = dispatchOrder(['dealer_id' => $dealerRecord->id]);
+        $item2  = dispatchItem($order2);
+        dispatchRecord($order2, $item2);
+
+        $dispatchNumber = 'DISP-' . str_pad((string) $d1->id, 6, '0', STR_PAD_LEFT);
+
+        $response = getJson(
+            '/api/v1/dispatches?dispatch_number=' . $dispatchNumber,
+            ['Authorization' => "Bearer $token"]
+        )->assertOk();
+
+        expect($response->json('data.dispatches'))->toHaveCount(1)
+            ->and($response->json('data.dispatches.0.id'))->toBe($d1->id);
+    });
+
+    it('filters by dispatch_number as a plain integer string', function () {
+        [$dealerUser, $token] = dispatchUser('dealer');
+        $dealerRecord = dispatchDealer($dealerUser);
+
+        $order = dispatchOrder(['dealer_id' => $dealerRecord->id]);
+        $item  = dispatchItem($order);
+        $d     = dispatchRecord($order, $item);
+
+        $response = getJson(
+            '/api/v1/dispatches?dispatch_number=' . $d->id,
+            ['Authorization' => "Bearer $token"]
+        )->assertOk();
+
+        expect($response->json('data.dispatches'))->toHaveCount(1)
+            ->and($response->json('data.dispatches.0.id'))->toBe($d->id);
+    });
+
+    it('returns empty list when dispatch_number matches no record', function () {
+        [$dealerUser, $token] = dispatchUser('dealer');
+        $dealerRecord = dispatchDealer($dealerUser);
+
+        $order = dispatchOrder(['dealer_id' => $dealerRecord->id]);
+        $item  = dispatchItem($order);
+        dispatchRecord($order, $item);
+
+        $response = getJson(
+            '/api/v1/dispatches?dispatch_number=DISP-999999',
+            ['Authorization' => "Bearer $token"]
+        )->assertOk();
+
+        expect($response->json('data.dispatches'))->toBeEmpty();
+    });
+
+    it('does not expose another dealer\'s dispatch even when dispatch_number matches', function () {
+        [$dealerUser, $token] = dispatchUser('dealer');
+        dispatchDealer($dealerUser); // this dealer has no dispatches
+
+        // Dispatch belonging to a different dealer.
+        $otherUser   = User::factory()->create(['status' => 1]);
+        $otherDealer = dispatchDealer($otherUser);
+        $order       = dispatchOrder(['dealer_id' => $otherDealer->id]);
+        $item        = dispatchItem($order);
+        $d           = dispatchRecord($order, $item);
+
+        $response = getJson(
+            '/api/v1/dispatches?dispatch_number=DISP-' . str_pad((string) $d->id, 6, '0', STR_PAD_LEFT),
+            ['Authorization' => "Bearer $token"]
+        )->assertOk();
+
+        // The scoped query must return nothing — the ID exists but belongs to another dealer.
+        expect($response->json('data.dispatches'))->toBeEmpty();
+    });
 });

@@ -1010,9 +1010,9 @@ request.setValue("application/json", forHTTPHeaderField: "Accept")
 Returns a paginated, filterable list of dispatch records for the authenticated Dealer or Broker user.  
 Role-based visibility mirrors `DispatchManagementController::index()` using `SalesScope::scopeDispatches()`.
 
-Each dispatch record includes the parent order (with broker, brand, dealer), the dispatched product (with unit price),
-the transporter details, and **order-item quantity context** (`ordered_qty`, `total_dispatched_qty`, `pending_qty`)
-so the mobile app can display fulfilment progress without additional API calls.
+Each dispatch record contains the complete financial and logistical picture the mobile app needs without
+additional calls: parent order (broker, brand, dealer, delivery address), dispatched product with unit price,
+transporter details, order-item quantity context, and a payment receivable summary per dispatch.
 
 #### Authentication
 
@@ -1030,6 +1030,7 @@ so the mobile app can display fulfilment progress without additional API calls.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
+| `dispatch_number` | string | Exact dispatch lookup — accepts `DISP-000042`, `DISP-42`, or bare `42` |
 | `order_number` | string | Partial match on parent order's `unique_order_id` |
 | `status` | string | Payment status: `unpaid` \| `paid` \| `partial` |
 | `date_from` | date (Y-m-d) | Dispatch date lower bound (inclusive) |
@@ -1039,6 +1040,8 @@ so the mobile app can display fulfilment progress without additional API calls.
 | `dealer_id` | integer | Filter by dealer (Broker only; silently ignored for Dealers) |
 | `per_page` | integer (1–100) | Records per page; default `15` |
 | `page` | integer | Page number; default `1` |
+
+> **Note — filters not present in this application:** The dispatch schema does not include supplier, delivery status, invoice, or city/state links. Those fields have no DB columns in this version and are not supported as filters.
 
 #### Success response — 200
 
@@ -1057,16 +1060,23 @@ so the mobile app can display fulfilment progress without additional API calls.
         "total_dispatched_qty": 7,
         "pending_qty": 3,
         "is_item_complete": false,
-        "payment_status": "paid",
+        "payment_status": "unpaid",
         "partial_paid_amount": null,
         "accrued_late_fee": "0.00",
         "late_fee_last_accrued_on": null,
+        "payment_receivable": {
+          "base_amount": "500.00",
+          "total_receivable": "500.00",
+          "amount_paid": "0.00",
+          "balance_due": "500.00"
+        },
         "truck_number": "GJ01AB1234",
         "driver_contact": "9999999999",
         "order": {
           "id": 3,
           "order_number": "ORD/2025/0010",
           "order_date": "2025-03-15",
+          "delivery_address": "42 Farm Road, Ahmedabad",
           "broker": { "id": 4, "name": "Broker Name" },
           "brand": { "id": 1, "name": "Brand A" },
           "dealer": {
@@ -1114,6 +1124,11 @@ so the mobile app can display fulfilment progress without additional API calls.
 | `is_item_complete` | boolean | `true` when `total_dispatched_qty >= ordered_qty` |
 | `payment_status` | string | Payment state of this dispatch: `unpaid` / `paid` / `partial` |
 | `accrued_late_fee` | string | Late fee accrued on this dispatch (decimal string) |
+| `payment_receivable.base_amount` | string | `unit_price × no_of_bags` — value of goods in this dispatch |
+| `payment_receivable.total_receivable` | string | `base_amount + accrued_late_fee` |
+| `payment_receivable.amount_paid` | string | `0.00` (unpaid) · `partial_paid_amount` (partial) · `total_receivable` (paid) |
+| `payment_receivable.balance_due` | string | Outstanding balance; `0.00` when fully paid |
+| `order.delivery_address` | string\|null | Delivery address text as entered on the order |
 | `order.broker` | object\|null | Broker who placed/manages the parent order |
 | `product.unit_price` | string | Unit price per bag at time of order (from order item) |
 
@@ -1131,33 +1146,86 @@ so the mobile app can display fulfilment progress without additional API calls.
 |------|----------|-----------|
 | `401` | Token missing, invalid, or revoked | `Unauthenticated.` |
 | `403` | Valid token but user is not dealer/broker | `Access denied. This endpoint is restricted to Dealer and Broker accounts.` |
-| `422` | Invalid filter parameter (bad date, wrong enum) | `Validation failed.` + field errors in `data` |
+| `422` | Invalid filter parameter (bad date, wrong enum, per_page > 100) | `Validation failed.` + field errors in `data` |
+
+#### `dispatch_number` filter format
+
+The filter accepts any of these inputs — all resolve to the same dispatch:
+
+| Input | Matches |
+|-------|---------|
+| `DISP-000042` | Dispatch with `id = 42` |
+| `DISP-42` | Dispatch with `id = 42` |
+| `42` | Dispatch with `id = 42` |
+| `DISP-ABC` | No matches (non-numeric) |
+
+The role-based scope is still applied — searching by dispatch number will not expose records belonging to another dealer or broker.
 
 #### Performance notes
 
 - All relations (`order`, `order.brand`, `order.dealer`, `order.broker`, `product`, `transporter`, `orderItem`) are eager-loaded in a single batch to avoid N+1 queries.
 - `orderItem` is loaded with `withSum('dispatches','no_of_bags')` — a single subquery per item computes `total_dispatched_qty` without loading every dispatch record.
+- `payment_receivable` values are computed inline in `DispatchResource` from already-loaded data — no extra queries per row.
 - `brand_id` and `dealer_id` filters are silently ignored for Dealer accounts (SalesScope already limits their view).
 - Pagination default is 15 records; maximum is 100.
 
-#### Postman (XAMPP)
+#### Postman testing guide
+
+1. Set collection variable `access_token` by running the `/auth/login` → `/auth/otp/verify` flow.
+2. Send authenticated requests:
 
 ```
+# List all dispatches (default page 1, 15 per page)
 GET http://localhost/Mayank_Cattle_Food_CRM/public/api/v1/dispatches
 Authorization: Bearer {{access_token}}
 Accept: application/json
+
+# Filter by dispatch number
+GET .../api/v1/dispatches?dispatch_number=DISP-000012
+
+# Filter by payment status and date range
+GET .../api/v1/dispatches?status=unpaid&date_from=2025-01-01&date_to=2025-12-31
+
+# Filter by product and paginate
+GET .../api/v1/dispatches?product_id=7&per_page=5&page=2
+
+# Broker: filter by dealer
+GET .../api/v1/dispatches?dealer_id=2
 ```
+
+3. Verify role isolation: login as a different dealer and confirm their dispatch numbers return `[]`.
 
 #### Android integration
 
 ```kotlin
+data class PaymentReceivable(
+    val base_amount: String,
+    val total_receivable: String,
+    val amount_paid: String,
+    val balance_due: String
+)
+
+data class DispatchOrder(
+    val id: Int,
+    val order_number: String,
+    val order_date: String?,
+    val delivery_address: String?,
+    val broker: Map<String, Any>?,
+    val brand: Map<String, Any>?,
+    val dealer: Map<String, Any>?
+)
+
 @GET("api/v1/dispatches")
 suspend fun getDispatches(
     @Header("Authorization") token: String,
+    @Query("dispatch_number") dispatchNumber: String? = null,
+    @Query("order_number") orderNumber: String? = null,
     @Query("status") status: String? = null,
     @Query("date_from") dateFrom: String? = null,
     @Query("date_to") dateTo: String? = null,
     @Query("product_id") productId: Int? = null,
+    @Query("dealer_id") dealerId: Int? = null,
+    @Query("brand_id") brandId: Int? = null,
     @Query("per_page") perPage: Int = 15,
     @Query("page") page: Int = 1
 ): DispatchListResponse
@@ -1170,6 +1238,11 @@ var components = URLComponents(string: "\(baseURL)/api/v1/dispatches")!
 components.queryItems = [
     URLQueryItem(name: "per_page", value: "15"),
     URLQueryItem(name: "page", value: "1"),
+    // Optional filters:
+    // URLQueryItem(name: "dispatch_number", value: "DISP-000012"),
+    // URLQueryItem(name: "status", value: "unpaid"),
+    // URLQueryItem(name: "date_from", value: "2025-01-01"),
+    // URLQueryItem(name: "date_to", value: "2025-12-31"),
 ]
 var request = URLRequest(url: components.url!)
 request.setValue("Bearer \(savedToken)", forHTTPHeaderField: "Authorization")
@@ -1418,4 +1491,4 @@ Include:
 
 ---
 
-*Last updated: Mobile API v1 — auth/login, auth/otp/verify, auth/otp/resend, auth/forgot-password, auth/me (dealer/broker check), orders (paginated listing), dispatches (dispatch listing with quantity context, API 9), system/health-check*
+*Last updated: Mobile API v1 — auth/login, auth/otp/verify, auth/otp/resend, auth/forgot-password, auth/me (dealer/broker check), orders (paginated listing), dispatches (dispatch listing with quantity context, payment receivable, dispatch_number filter, delivery address — API 9), system/health-check*
