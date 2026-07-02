@@ -92,6 +92,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ------------------------------------------------------------------ */
     Route::get('dealer/quick-create-form', [DealerManagementController::class, 'quickCreateForm'])
         ->name('dealer.quickCreateForm')->middleware('permission:add-dealer');
+    Route::get('dealer/export', [DealerManagementController::class, 'export'])
+        ->name('dealer.export')->middleware('permission:export-dealer');
     Route::resource('dealer', DealerManagementController::class)->except(['store', 'update', 'destroy']);
     Route::post('dealer', [DealerManagementController::class, 'store'])
         ->name('dealer.store')->middleware('permission:add-dealer');
@@ -99,8 +101,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('dealer.update')->middleware('permission:edit-dealer');
     Route::delete('dealer/{dealer}', [DealerManagementController::class, 'destroy'])
         ->name('dealer.destroy')->middleware('permission:delete-dealer');
-    Route::get('/dealer/export', [DealerManagementController::class, 'export'])
-        ->name('dealer.export')->middleware('permission:export-dealer');
     Route::post('/get-cities', [DealerManagementController::class, 'getCitiesByState'])->name('get.cities');
     Route::get('/get-dealers', [DealerManagementController::class, 'getDealersByBrokerBrand'])->name('get.dealers');
 
@@ -183,7 +183,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     /* ------------------------------------------------------------------ */
-    /*  State Management  (type: state)                                     */
+    /*  State Management  (type: state)                                   */
     /* ------------------------------------------------------------------ */
     Route::resource('state', StateManagementController::class)->except(['store', 'update', 'destroy']);
     Route::post('state', [StateManagementController::class, 'store'])

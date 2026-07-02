@@ -32,13 +32,13 @@ class RawMaterialController extends Controller
             return DataTables::of($query)
                 ->skipAutoFilter()
                 ->addIndexColumn()
-                ->addColumn('category_name', fn ($row) => e($row->category?->name ?? '—'))
-                ->editColumn('raw_material_unique_id', fn ($row) => e($row->raw_material_unique_id))
-                ->editColumn('total_stock', fn ($row) => number_format($row->total_stock, 2) . ' ' . $row->unit)
-                ->editColumn('available_stock', fn ($row) => number_format($row->available_stock, 2) . ' ' . $row->unit)
-                ->editColumn('last_purchase_price', fn ($row) => '₹ ' . number_format($row->last_purchase_price, 2))
-                ->editColumn('average_price', fn ($row) => '₹ ' . number_format($row->average_price, 2))
-                ->editColumn('status', fn ($row) => $row->statusBadge())
+                ->addColumn('category_name', fn($row) => e($row->category?->name ?? '—'))
+                ->editColumn('raw_material_unique_id', fn($row) => e($row->raw_material_unique_id))
+                ->editColumn('total_stock', fn($row) => number_format($row->total_stock, 2) . ' ' . $row->unit)
+                ->editColumn('available_stock', fn($row) => number_format($row->available_stock, 2) . ' ' . $row->unit)
+                ->editColumn('last_purchase_price', fn($row) => '₹ ' . number_format($row->last_purchase_price, 2))
+                ->editColumn('average_price', fn($row) => '₹ ' . number_format($row->average_price, 2))
+                ->editColumn('status', fn($row) => $row->statusBadge())
                 ->addColumn('action', function ($row) use ($canView, $canEdit, $canDelete) {
                     $view = $canView
                         ? '<a href="' . route('raw-material.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>'

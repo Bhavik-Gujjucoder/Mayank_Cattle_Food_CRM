@@ -48,6 +48,54 @@ expect()->extend('toBeOne', function () {
 |
 */
 
+function authUser(array $attrs = []): \App\Models\User
+{
+    return \App\Models\User::factory()->create(array_merge([
+        'status'            => 1,
+        'email_verified_at' => now(),
+    ], $attrs));
+}
+
+function loginEmailStep(\App\Models\User $user, string $password = 'password', bool $remember = false): \Illuminate\Testing\TestResponse
+{
+    return \Pest\Laravel\post('/login', [
+        'email'    => $user->email,
+        'password' => $password,
+        'remember' => $remember,
+    ]);
+}
+
+function verifyLoginOtp(\App\Models\User $user, ?string $otp = null): \Illuminate\Testing\TestResponse
+{
+    $user->refresh();
+
+    return \Pest\Laravel\post(route('verify.otp'), [
+        'otp_combined' => $otp ?? (string) $user->otp_code,
+    ]);
+}
+
+function completeEmailLogin(\App\Models\User $user, string $password = 'password', bool $remember = false): \Illuminate\Testing\TestResponse
+{
+    loginEmailStep($user, $password, $remember)->assertRedirect(route('verify.otp.form'));
+
+    return verifyLoginOtp($user);
+}
+
+function createDealerUser(array $attrs = []): \App\Models\User
+{
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'dealer', 'guard_name' => 'web']);
+
+    $user = \App\Models\User::factory()->create(array_merge([
+        'phone_no'          => '9876543210',
+        'status'            => 1,
+        'email_verified_at' => now(),
+    ], $attrs));
+
+    $user->assignRole('dealer');
+
+    return $user;
+}
+
 function grantPermissions(\App\Models\User $user, array $permissionNames): \App\Models\User
 {
     app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();

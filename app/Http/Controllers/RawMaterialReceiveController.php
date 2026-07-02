@@ -36,13 +36,13 @@ class RawMaterialReceiveController extends Controller
             return DataTables::of($query)
                 ->skipAutoFilter()
                 ->addIndexColumn()
-                ->addColumn('order_unique_id', fn ($row) => e($row->order?->order_unique_id ?? '—'))
-                ->addColumn('supplier_order_id', fn ($row) => e($row->order?->supplier_order_id ?: '—'))
-                ->addColumn('category_name', fn ($row) => e($row->rawMaterial?->category?->name ?? '—'))
-                ->addColumn('material_name', fn ($row) => e($row->rawMaterial?->name ?? '—'))
-                ->editColumn('freight', fn ($row) => RawMaterialCacheService::receiveFreightHtml($row))
-                ->editColumn('received_date', fn ($row) => $row->received_date?->format('d M Y') ?? '—')
-                ->editColumn('status', fn ($row) => $row->statusBadge())
+                ->addColumn('order_unique_id', fn($row) => e($row->order?->order_unique_id ?? '—'))
+                ->addColumn('supplier_order_id', fn($row) => e($row->order?->supplier_order_id ?: '—'))
+                ->addColumn('category_name', fn($row) => e($row->rawMaterial?->category?->name ?? '—'))
+                ->addColumn('material_name', fn($row) => e($row->rawMaterial?->name ?? '—'))
+                ->editColumn('freight', fn($row) => RawMaterialCacheService::receiveFreightHtml($row))
+                ->editColumn('received_date', fn($row) => $row->received_date?->format('d M Y') ?? '—')
+                ->editColumn('status', fn($row) => $row->statusBadge())
                 ->addColumn('action', function ($row) use ($canView, $canEdit, $canDelete) {
                     $view   = $canView
                         ? '<a href="' . route('raw-material.receive.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>'

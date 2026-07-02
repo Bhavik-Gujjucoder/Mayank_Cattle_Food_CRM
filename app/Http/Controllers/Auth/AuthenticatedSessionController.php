@@ -54,7 +54,7 @@ class AuthenticatedSessionController extends Controller
 
         $user = User::where('email', $email)->first();
 
-        if (!$user || !Auth::validate(['email' => $email, 'password' => $request->password])) {
+        if (! $this->userCanAuthenticate($user) || ! Auth::validate(['email' => $email, 'password' => $request->password])) {
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
             ]);
@@ -97,9 +97,15 @@ class AuthenticatedSessionController extends Controller
         /* 2. Check if the mobile number exists in the system */
         $user = User::where('phone_no', $phone)->first();
 
-        if (!$user) {
+        if (! $user) {
             throw ValidationException::withMessages([
                 'email' => 'This mobile number is not registered in the system.',
+            ]);
+        }
+
+        if (! $this->userCanAuthenticate($user)) {
+            throw ValidationException::withMessages([
+                'email' => __('auth.failed'),
             ]);
         }
 
@@ -128,6 +134,15 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard', absolute: false));
+    }
+
+    private function userCanAuthenticate(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return (int) $user->status === 1 && $user->deleted_at === null;
     }
 
     /**

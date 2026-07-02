@@ -39849,6 +39849,24 @@ tr.dispatch-row-complete>td:first-child {
   background-color: #f7b84b !important;
 }
 
+.card.total-raw-materials {
+  border-bottom: 2px solid #198754;
+  background-color: #d1e7dd;
+}
+
+.card.total-raw-materials .avatar {
+  background-color: #198754 !important;
+}
+
+.card.total-raw-material-orders {
+  border-bottom: 2px solid #6610f2;
+  background-color: #e2d9f3;
+}
+
+.card.total-raw-material-orders .avatar {
+  background-color: #6610f2 !important;
+}
+
 form .btn-light {
   background-color: #c11a06 !important;
   border: 1px solid #c11a06 !important;

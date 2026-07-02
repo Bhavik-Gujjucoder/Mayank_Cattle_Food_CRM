@@ -31,8 +31,8 @@ class RawMaterialCategoryController extends Controller
             return DataTables::of($query)
                 ->skipAutoFilter()
                 ->addIndexColumn()
-                ->editColumn('category_unique_id', fn ($row) => e($row->category_unique_id))
-                ->editColumn('status', fn ($row) => $row->statusBadge())
+                ->editColumn('category_unique_id', fn($row) => e($row->category_unique_id))
+                ->editColumn('status', fn($row) => $row->statusBadge())
                 ->addColumn('action', function ($row) use ($canView, $canEdit, $canDelete) {
                     $view = $canView
                         ? '<a href="' . route('raw-material.category.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>'

@@ -3,6 +3,20 @@
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
+use function Pest\Laravel\assertGuest;
+use function Pest\Laravel\get;
+use function Pest\Laravel\put;
+
+test('guest is redirected from password update', function () {
+    put('/password', [
+        'current_password'      => 'password',
+        'password'              => 'new-password',
+        'password_confirmation' => 'new-password',
+    ])->assertRedirect(route('login'));
+
+    assertGuest();
+});
+
 test('password can be updated', function () {
     $user = User::factory()->create();
 

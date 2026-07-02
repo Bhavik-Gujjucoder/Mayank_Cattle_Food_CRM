@@ -44,7 +44,7 @@
                             <!-- Heading -->
                             <div class="mb-4">
                                 <h4 class="mb-2 fs-20">Sign In</h4>
-                                <p>Access the Nanogen panel using your email and passcode.</p>
+                                <p>Access the Mayank Cattle Food panel using your email and passcode.</p>
                             </div>
 
                             <!-- Session Status -->

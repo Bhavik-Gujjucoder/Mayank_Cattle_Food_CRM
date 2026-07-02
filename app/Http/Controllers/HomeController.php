@@ -6,6 +6,9 @@ use App\Exports\RawMaterialDailySummaryExport;
 use App\Models\DealerManagement;
 use App\Models\DispatchManagement;
 use App\Models\OrderManagement;
+use App\Models\RawMaterial;
+use App\Models\RawMaterialOrder;
+use App\Models\RawMaterialReceive;
 use App\Models\User;
 use App\Services\RawMaterial\RawMaterialDailySummaryService;
 use App\Support\SalesScope;
@@ -25,8 +28,7 @@ class HomeController extends Controller
     /* ------------------------------------------------------------------ */
     public function dashboard(Request $request)
     {
-
-        $data['login_user']       = auth()->user();
+        $data['login_user']       = $request->user();
         $data['role']             = $data['login_user']->roles->first()->name ?? '';
         $data['user_name']        = $data['login_user']->name;
         $data['page_title']       = ucfirst($data['role']) . ' Dashboard';
@@ -58,6 +60,18 @@ class HomeController extends Controller
             ->get();
         $data['total_dispatch_order'] = SalesScope::scopeDispatches(DispatchManagement::query())->count();
 
+        /* ── Raw Materials ── */
+        $data['raw_materials']       = RawMaterial::with('category')->latest()->take(10)->get();
+        $data['total_raw_materials'] = RawMaterial::count();
+
+        /* ── Raw Material Orders ── */
+        $data['raw_material_orders']       = RawMaterialOrder::with(['supplierBroker', 'supplier'])->latest()->take(10)->get();
+        $data['total_raw_material_orders'] = RawMaterialOrder::count();
+
+        /* ── Raw Material Received ── */
+        $data['raw_material_receives'] = RawMaterialReceive::with(['rawMaterial', 'order'])->where('status', 0)->latest()->take(10)->get();
+        // $data['total_raw_material_receives'] = RawMaterialReceive::count();
+
         // $data['total_dispatch_order'] = $data['role'] == 'broker' ? $data['dispatch_order']->where('broker_id', $data['login_user']->id)->count() : $data['dispatch_order']->count();
 
         /* ── Orders for dashboard dispatch modal (not fully dispatched) ── */
@@ -68,7 +82,7 @@ class HomeController extends Controller
             );
 
             $data['dispatch_form_orders'] = $orderQuery->get()
-                ->filter(fn ($o) => ! $o->isFullyDispatched())
+                ->filter(fn($o) => ! $o->isFullyDispatched())
                 ->values();
         }
 
