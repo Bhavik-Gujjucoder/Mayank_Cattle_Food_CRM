@@ -10,7 +10,7 @@ if (!function_exists('forgetGeneralSettingsCache')) {
     }
 }
 
-if (!function_exists('getSetting')) {
+if (! function_exists('getSetting')) {
     function getSetting($key)
     {
         $settings = Cache::remember('general_settings_all', 3600, function () {
@@ -35,20 +35,21 @@ if (!function_exists('companyLogoUrl')) {
 }
 
 /* Raw Material Purchase Status */
-if (!function_exists('rawMaterialPurchaseStatus')) {
-    function rawMaterialPurchaseStatus($status_key='', $status_value='')
+if (! function_exists('rawMaterialPurchaseStatus')) {
+    function rawMaterialPurchaseStatus($status_key = '', $status_value = '')
     {
         $status_list = [
             0 => 'Pending',
             1 => 'Received',
             2 => 'Cancelled',
         ];
-        if($status_key != '' && $status_value == ''){
+        if ($status_key != '' && $status_value == '') {
             return $status_list[$status_key];
-        }else if($status_key == '' && $status_value != ''){
+        } elseif ($status_key == '' && $status_value != '') {
             $key = array_search($status_value, $status_list);
+
             return $status_key;
-        }else{
+        } else {
             return $status_list;
         }
     }
