@@ -9,7 +9,11 @@ class LoginOtpDelivery
 {
     public static function queue(int $otp, User $user): void
     {
-        EmailDelivery::queue(
+        /*EmailDelivery::queue(
+            self::recipients($user),
+            new LoginOtpMail($otp, $user)
+        );*/
+        EmailDelivery::send(
             self::recipients($user),
             new LoginOtpMail($otp, $user)
         );
