@@ -132,6 +132,12 @@ class OrderManagement extends Model
         };
     }
 
+    /** @return list<string> */
+    public static function pendingPaymentStatuses(): array
+    {
+        return ['unpaid', 'partial'];
+    }
+
     /**
      * Sync parent order payment status from dispatch payment rows.
      */

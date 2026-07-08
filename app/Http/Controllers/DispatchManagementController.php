@@ -9,6 +9,7 @@ use App\Models\OrderManagement;
 use App\Models\Product;
 use App\Models\Truck;
 use App\Models\User;
+use App\Support\FinancialYear;
 use App\Support\ProductUnit;
 use App\Support\SalesScope;
 use App\Services\PaymentReceivableService;
@@ -126,25 +127,47 @@ class DispatchManagementController extends Controller
 
                 /* Action dropdown */
                 ->addColumn('action', function ($row) use ($canViewDispatch) {
-                    $historyUrl = route('dispatch.orderHistory', $row->order_id);
-                    // $editUrl    = $historyUrl . '?edit=' . $row->id;
+                    $canDelete = auth()->user()->can('delete-dispatch');
+
+                    if (! $canViewDispatch && ! $canDelete) {
+                        return '—';
+                    }
+
+                    $historyUrl  = route('dispatch.orderHistory', $row->order_id);
+                    $productName   = $row->orderItem?->product?->name ?? '—';
+                    $unit          = $row->orderItem?->product?->unit;
+                    $qtyLabel      = ProductUnit::formatWithUnit((int) $row->no_of_bags, $unit);
+                    $dispatchDate  = $row->dispatch_date?->format('d M Y') ?? '—';
 
                     $btn  = '<div class="dropdown table-action">
                                  <a href="#" class="action-icon" data-bs-toggle="dropdown" aria-expanded="false">
                                      <i class="fa fa-ellipsis-v"></i>
                                  </a>
                                  <div class="dropdown-menu dropdown-menu-right">';
-                    $btn .= '<a href="' . $historyUrl . '" class="dropdown-item">
-                                 <i class="ti ti-history text-info me-1"></i> View History
-                             </a>';
-                    // if (auth()->user()->can('edit-dispatch')) {
-                    //     $btn .= '<a href="' . $editUrl . '" class="dropdown-item">
-                    //                  <i class="ti ti-edit text-warning me-1"></i> Edit
-                    //              </a>';
-                    // }
+
+                    if ($canViewDispatch) {
+                        $btn .= '<a href="' . $historyUrl . '" class="dropdown-item">
+                                     <i class="ti ti-history text-info me-1"></i> View History
+                                 </a>';
+                    }
+
+                    if ($canDelete) {
+                        $btn .= '<a href="javascript:void(0)" class="dropdown-item delete-dispatch-index-btn"
+                                     data-id="' . $row->id . '"
+                                     data-product-name="' . e($productName) . '"
+                                     data-qty-label="' . e($qtyLabel) . '"
+                                     data-dispatch-date="' . e($dispatchDate) . '">
+                                     <i class="ti ti-trash text-danger me-1"></i> Delete
+                                 </a>';
+                        $btn .= '<form action="' . route('dispatch.destroy', $row->id) . '" method="POST"
+                                      id="delete-dispatch-form-' . $row->id . '" class="d-none">'
+                              . csrf_field() . method_field('DELETE') .
+                              '</form>';
+                    }
+
                     $btn .= '</div></div>';
-                    
-                    return $canViewDispatch ? $btn : '';
+
+                    return $btn;
                 })
 
                 ->rawColumns(['unique_order_id', 'action', 'is_complete', 'status'])
@@ -291,10 +314,7 @@ class DispatchManagementController extends Controller
         $orderId = $dispatch->order_id;
         $dispatch->delete();
 
-        $order = OrderManagement::with(['items.dispatches'])->find($orderId);
-        if ($order) {
-            $order->syncPaymentStatusFromDispatches();
-        }
+        $this->syncOrderPaymentFromDispatches($dispatch);
 
         return redirect()
             ->route('dispatch.orderHistory', $orderId)
@@ -644,6 +664,17 @@ class DispatchManagementController extends Controller
      */
     private function applyDispatchIndexFilters(Builder $query, Request $request): Builder
     {
+        $hasDateFilter = $request->filled('date_from') || $request->filled('date_to');
+
+        if (! $hasDateFilter) {
+            $query = FinancialYear::applyDefaultListingFilter(
+                $query,
+                DispatchManagement::pendingPaymentStatuses(),
+                'status',
+                'dispatch_date'
+            );
+        }
+
         if ($request->filled('date_from')) {
             $query->whereDate('dispatch_date', '>=', $request->date_from);
         }

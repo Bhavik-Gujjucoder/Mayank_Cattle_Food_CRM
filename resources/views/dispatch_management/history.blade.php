@@ -357,19 +357,22 @@
                                                 </button>
                                             @endcan
 
-                                            {{-- @can('delete-dispatch')
-                                        <form action="{{ route('dispatch.destroy', $dispatch->id) }}"
-                                              method="POST"
-                                              class="delete-dispatch-form d-inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="button"
-                                                    class="btn btn-sm btn-outline-danger delete-dispatch-btn"
-                                                    title="Delete">
-                                                <i class="ti ti-trash"></i>
-                                            </button>
-                                        </form>
-                                        @endcan --}}
+                                            @can('delete-dispatch')
+                                                <form action="{{ route('dispatch.destroy', $dispatch->id) }}"
+                                                    method="POST" class="delete-dispatch-form d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-danger delete-dispatch-btn"
+                                                        title="Delete"
+                                                        data-product-name="{{ $item->product?->name ?? '' }}"
+                                                        data-dispatch-date="{{ $dispatch->dispatch_date?->format('d M Y') ?? '' }}"
+                                                        data-no-of-bags="{{ $dispatch->no_of_bags }}"
+                                                        data-product-unit="{{ $item->product?->unit ?? '' }}">
+                                                        <i class="ti ti-trash"></i>
+                                                    </button>
+                                                </form>
+                                            @endcan
 
                                         </div>
                                     </td>
@@ -1567,20 +1570,42 @@
             ════════════════════════════════════════════════════════════ */
 
             $(document).on('click', '.delete-dispatch-btn', function() {
-                var $form = $(this).closest('.delete-dispatch-form');
+                var $btn = $(this);
+                var $form = $btn.closest('.delete-dispatch-form');
+                var productName = $btn.data('product-name') || 'this product';
+                var dispatchDate = $btn.data('dispatch-date') || '';
+                var noOfBags = $btn.data('no-of-bags') || '';
+                var productUnit = $btn.data('product-unit') || '';
+                var qtyLabel = productUnit ? (noOfBags + ' ' + productUnit) : noOfBags;
+                var detailParts = [productName];
+
+                if (qtyLabel) {
+                    detailParts.push(qtyLabel);
+                }
+                if (dispatchDate) {
+                    detailParts.push(dispatchDate);
+                }
+
                 Swal.fire({
                     title: 'Are you sure?',
-                    text: 'This dispatch entry will be deleted.',
+                    html: 'You want to remove this dispatch entry?<br><strong>' +
+                        $('<span>').text(detailParts.join(' · ')).html() +
+                        '</strong><br><span class="text-muted">Once deleted, it cannot be recovered.</span>',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonText: 'Yes, delete it!',
                     cancelButtonText: 'Cancel',
                     customClass: {
+                        popup: 'my-custom-popup',
+                        title: 'my-custom-title',
                         confirmButton: 'btn btn-primary',
                         cancelButton: 'btn btn-secondary',
-                    }
+                        icon: 'my-custom-icon swal2-warning',
+                    },
                 }).then(function(result) {
-                    if (result.isConfirmed) $form.submit();
+                    if (result.isConfirmed) {
+                        $form.submit();
+                    }
                 });
             });
 

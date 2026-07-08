@@ -8,6 +8,7 @@ use App\Models\OrderManagement;
 use App\Models\Product;
 use App\Models\Truck;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 // ─────────────────────────────────────────────
@@ -338,6 +339,43 @@ describe('index', function () {
             ->assertOk();
 
         expect($response->json('recordsTotal'))->toBe(1);
+    });
+
+    it('defaults listing to current financial year by dispatch_date plus older pending dispatches', function () {
+        Carbon::setTestNow('2026-07-08 12:00:00');
+
+        $s      = disSetup();
+        $actor  = disActor(['view-dispatch']);
+        $order2 = disOrder($s['broker']->id, $s['brand']->id, $s['dealer']->id);
+        $item2  = disOrderItem($order2->id, $s['product']->id, ['qty' => 10, 'unit_price' => 100]);
+        $order3 = disOrder($s['broker']->id, $s['brand']->id, $s['dealer']->id);
+        $item3  = disOrderItem($order3->id, $s['product']->id, ['qty' => 10, 'unit_price' => 100]);
+
+        mkDis($s['order']->id, $s['orderItem']->id, $s['product']->id, $s['transporter']->id, [
+            'no_of_bags'    => 2,
+            'dispatch_date' => '2026-05-01',
+            'status'        => DispatchManagement::STATUS_PAID,
+        ]);
+
+        mkDis($order2->id, $item2->id, $s['product']->id, $s['transporter']->id, [
+            'no_of_bags'    => 2,
+            'dispatch_date' => '2025-06-01',
+            'status'        => DispatchManagement::STATUS_PAID,
+        ]);
+
+        mkDis($order3->id, $item3->id, $s['product']->id, $s['transporter']->id, [
+            'no_of_bags'    => 2,
+            'dispatch_date' => '2025-06-01',
+            'status'        => DispatchManagement::STATUS_UNPAID,
+        ]);
+
+        $response = $this->actingAs($actor)
+            ->getJson(route('dispatch.index'), ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk();
+
+        expect($response->json('recordsTotal'))->toBe(2);
+
+        Carbon::setTestNow();
     });
 
     it('AJAX action column empty when user lacks view-dispatch', function () {

@@ -274,6 +274,38 @@ withDataTable(function () {
         dispatch_table.draw();
     });
 
+    $(document).on('click', '.delete-dispatch-index-btn', function () {
+        var $btn = $(this);
+        var id = $btn.data('id');
+        var detailParts = [
+            $btn.data('product-name') || 'this product',
+            $btn.data('qty-label') || '',
+            $btn.data('dispatch-date') || '',
+        ].filter(Boolean);
+
+        Swal.fire({
+            title: 'Are you sure?',
+            html: 'You want to remove this dispatch entry?<br><strong>' +
+                $('<span>').text(detailParts.join(' · ')).html() +
+                '</strong><br><span class="text-muted">Once deleted, it cannot be recovered.</span>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel',
+            customClass: {
+                popup: 'my-custom-popup',
+                title: 'my-custom-title',
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-secondary',
+                icon: 'my-custom-icon swal2-warning',
+            },
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                $('#delete-dispatch-form-' + id).submit();
+            }
+        });
+    });
+
 });
 </script>
 @endsection

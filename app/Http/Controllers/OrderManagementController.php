@@ -9,8 +9,10 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
 use App\Support\ActiveDropdownValidation;
+use App\Support\FinancialYear;
 use App\Support\ProductUnit;
 use App\Support\SalesScope;
+use Illuminate\Database\Eloquent\Builder;
 use App\Services\PaymentReceivableService;
 use App\Services\SequentialDispatchService;
 use Illuminate\Http\Request;
@@ -57,12 +59,8 @@ class OrderManagementController extends Controller
                     $query->where('broker_id', $brokerId);
                 }
             }
-            if ($request->filled('date_from')) {
-                $query->where('order_date', '>=', $request->date_from);
-            }
-            if ($request->filled('date_to')) {
-                $query->where('order_date', '<=', $request->date_to);
-            }
+            $query = $this->applyOrderIndexFilters($query, $request);
+
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('expand_control', function ($row) {
@@ -651,5 +649,33 @@ class OrderManagementController extends Controller
             'price.*.required'                => 'Unit price is required.',
             'price.*.min'                     => 'Unit price cannot be negative.',
         ]);
+    }
+
+    /**
+     * @param  Builder<OrderManagement>  $query
+     * @return Builder<OrderManagement>
+     */
+    private function applyOrderIndexFilters(Builder $query, Request $request): Builder
+    {
+        $hasDateFilter = $request->filled('date_from') || $request->filled('date_to');
+
+        if (! $hasDateFilter) {
+            $query = FinancialYear::applyDefaultListingFilter(
+                $query,
+                OrderManagement::pendingPaymentStatuses(),
+                'payment_status',
+                'order_date'
+            );
+        }
+
+        if ($request->filled('date_from')) {
+            $query->where('order_date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->where('order_date', '<=', $request->date_to);
+        }
+
+        return $query;
     }
 }

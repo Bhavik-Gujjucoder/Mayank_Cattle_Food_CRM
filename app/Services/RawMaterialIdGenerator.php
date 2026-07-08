@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\RawMaterial;
 use App\Models\RawMaterialCategory;
 use App\Models\RawMaterialOrder;
+use App\Support\FinancialYear;
 
 class RawMaterialIdGenerator
 {
@@ -24,10 +25,7 @@ class RawMaterialIdGenerator
 
     public static function financialYear(?\DateTimeInterface $date = null): string
     {
-        $date      = $date ? \Carbon\Carbon::parse($date) : now();
-        $startYear = $date->month >= 4 ? $date->year : $date->year - 1;
-
-        return $startYear . '-' . substr((string) ($startYear + 1), -2);
+        return FinancialYear::label($date);
     }
 
     public static function nextOrderId(?\DateTimeInterface $orderDate = null): string

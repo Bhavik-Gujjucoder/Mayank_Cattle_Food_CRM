@@ -7,6 +7,7 @@ use App\Models\OrderItem;
 use App\Models\OrderManagement;
 use App\Models\Product;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -401,6 +402,38 @@ describe('index', function () {
             ->assertOk();
 
         expect($response->json('recordsTotal'))->toBe(1);
+    });
+
+    it('defaults listing to current financial year by order_date plus older pending orders', function () {
+        Carbon::setTestNow('2026-07-08 12:00:00');
+
+        $brand  = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $actor  = ordActor(['view-order']);
+
+        mkOrder($broker->id, $brand->id, $dealer->id, [
+            'order_date'       => '2026-05-01',
+            'payment_status'   => 'paid',
+        ]);
+
+        mkOrder($broker->id, $brand->id, $dealer->id, [
+            'order_date'       => '2025-06-01',
+            'payment_status'   => 'paid',
+        ]);
+
+        mkOrder($broker->id, $brand->id, $dealer->id, [
+            'order_date'       => '2025-06-01',
+            'payment_status'   => 'unpaid',
+        ]);
+
+        $response = actingAs($actor)
+            ->getJson(route('order.index'), ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk();
+
+        expect($response->json('recordsTotal'))->toBe(2);
+
+        Carbon::setTestNow();
     });
 
     it('AJAX filters orders by date_to', function () {
