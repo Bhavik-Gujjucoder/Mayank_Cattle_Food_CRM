@@ -72,6 +72,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ------------------------------------------------------------------ */
     Route::get('users/broker/quick-create-form', [UserController::class, 'brokerQuickCreateForm'])
         ->name('users.broker.quickCreateForm')->middleware('permission:add-broker');
+    Route::get('users/transporter/quick-create-form', [UserController::class, 'transporterQuickCreateForm'])
+        ->name('users.transporter.quickCreateForm')->middleware('permission:add-transporter');
     Route::get('users/{type}', [UserController::class, 'index'])->name('users.index');
     Route::get('users/{type}/create', [UserController::class, 'create'])->name('users.create');
     Route::get('users/{type}/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
@@ -382,6 +384,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ------------------------------------------------------------------ */
     /*  Truck Management                                                    */
     /* ------------------------------------------------------------------ */
+    Route::get('truck/quick-create-form', [TruckManagementController::class, 'quickCreateForm'])
+        ->name('truck.quickCreateForm')->middleware('permission:add-truck');
     Route::resource('truck', TruckManagementController::class)->except(['store', 'update', 'destroy']);
     Route::post('truck', [TruckManagementController::class, 'store'])
         ->name('truck.store')->middleware('permission:add-truck');

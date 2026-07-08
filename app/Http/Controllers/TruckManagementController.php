@@ -10,6 +10,26 @@ use Yajra\DataTables\DataTables;
 class TruckManagementController extends Controller
 {
     /* ------------------------------------------------------------------ */
+    /*  QUICK CREATE FORM (modal from Dispatch)                             */
+    /* ------------------------------------------------------------------ */
+    public function quickCreateForm(Request $request)
+    {
+        $request->validate([
+            'transporter_id' => 'required|exists:users,id',
+        ], [
+            'transporter_id.required' => 'Please select a transporter first.',
+            'transporter_id.exists'   => 'Selected transporter is invalid.',
+        ]);
+
+        $transporter = User::findOrFail($request->transporter_id);
+
+        return view('truck.partials.quick-create-form', [
+            'transporterId'   => $transporter->id,
+            'transporterName' => $transporter->name,
+        ]);
+    }
+
+    /* ------------------------------------------------------------------ */
     /*  INDEX                                                               */
     /* ------------------------------------------------------------------ */
     public function index(Request $request)
@@ -95,13 +115,20 @@ class TruckManagementController extends Controller
             'status.required'         => 'Status is required.',
         ]);
 
-        Truck::create([
+        $truck = Truck::create([
             'transporter_id' => $request->transporter_id,
             'truck_number'   => strtoupper(trim($request->truck_number)),
             'status'         => $request->status,
         ]);
 
-        return response()->json(['success' => true, 'message' => 'Truck added successfully.']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Truck added successfully.',
+            'truck'   => [
+                'id'           => $truck->id,
+                'truck_number' => $truck->truck_number,
+            ],
+        ]);
     }
 
     /* ------------------------------------------------------------------ */

@@ -150,6 +150,11 @@ class UserController extends Controller
         return view('users.partials.quick-create-broker-form');
     }
 
+    public function transporterQuickCreateForm()
+    {
+        return view('users.partials.quick-create-transporter-form');
+    }
+
     /* ------------------------------------------------------------------ */
     /*  CREATE                                                            */
     /* ------------------------------------------------------------------ */
@@ -226,14 +231,25 @@ class UserController extends Controller
          }*/
 
         if ($request->expectsJson()) {
-            return response()->json([
+            $payload = [
                 'success' => true,
                 'message' => ucfirst($type) . ' created successfully.',
-                'broker'  => [
+            ];
+
+            if ($type === 'broker') {
+                $payload['broker'] = [
                     'id'   => $user->id,
                     'name' => $user->name,
-                ],
-            ]);
+                ];
+            } elseif ($type === 'transporter') {
+                $payload['transporter'] = [
+                    'id'       => $user->id,
+                    'name'     => $user->name,
+                    'phone_no' => $user->phone_no,
+                ];
+            }
+
+            return response()->json($payload);
         }
 
         return redirect()->route('users.index', $type)->with('success', ucfirst($type) . ' created successfully.');

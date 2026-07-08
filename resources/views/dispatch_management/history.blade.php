@@ -483,6 +483,12 @@
                                         @endforelse
                                     </select>
                                     <span class="field-error" id="transport_id-error"></span>
+                                    @can('add-transporter')
+                                        <a href="javascript:void(0)" id="dispatchAddTransporterLink"
+                                            class="text-primary fw-semibold small d-inline-block mt-1">
+                                            <i class="ti ti-plus me-1"></i>Add Transporter
+                                        </a>
+                                    @endcan
                                 </div>
 
                                 {{-- ── Truck Number (dynamic dropdown) ─────────── --}}
@@ -494,6 +500,13 @@
                                         <option value="">-- Select Transporter First --</option>
                                     </select>
                                     <span class="field-error" id="truck_number-error"></span>
+                                    @can('add-truck')
+                                        <a href="javascript:void(0)" id="dispatchAddTruckLink"
+                                            class="text-primary fw-semibold small d-inline-block mt-1"
+                                            style="display: none;">
+                                            <i class="ti ti-plus me-1"></i>Add Truck
+                                        </a>
+                                    @endcan
                                 </div>
 
                                 {{-- ── Driver Contact (auto-filled from transporter) --}}
@@ -602,6 +615,12 @@
                                         @endforelse
                                     </select>
                                     <span class="field-error" id="edit_transport_id-error"></span>
+                                    @can('add-transporter')
+                                        <a href="javascript:void(0)" id="editAddTransporterLink"
+                                            class="text-primary fw-semibold small d-inline-block mt-1">
+                                            <i class="ti ti-plus me-1"></i>Add Transporter
+                                        </a>
+                                    @endcan
                                 </div>
 
                                 {{-- ── Truck Number (dynamic dropdown) ─────────── --}}
@@ -613,6 +632,13 @@
                                         <option value="">-- Loading trucks... --</option>
                                     </select>
                                     <span class="field-error" id="edit_truck_number-error"></span>
+                                    @can('add-truck')
+                                        <a href="javascript:void(0)" id="editAddTruckLink"
+                                            class="text-primary fw-semibold small d-inline-block mt-1"
+                                            style="display: none;">
+                                            <i class="ti ti-plus me-1"></i>Add Truck
+                                        </a>
+                                    @endcan
                                 </div>
 
                                 {{-- ── Driver Contact ────────────────────────────── --}}
@@ -652,6 +678,63 @@
                         </div>
                     </form>
 
+                </div>
+            </div>
+        </div>
+    @endcan
+
+    {{-- Quick-add modals for transporter & truck --}}
+    @can('add-transporter')
+        <div class="modal fade" id="quickTransporterModal" tabindex="-1" aria-labelledby="quickTransporterModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="quickTransporterModalLabel">
+                            <i class="ti ti-user-plus me-2"></i>Add Transporter
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="quickTransporterModalBody">
+                        <div class="text-center text-muted py-5">
+                            <i class="ti ti-loader-2 ti-spin fs-3"></i>
+                            <p class="mb-0 mt-2">Loading form…</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="quickTransporterSubmitBtn">
+                            <i class="ti ti-check me-1"></i>Save Transporter
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endcan
+
+    @can('add-truck')
+        <div class="modal fade" id="quickTruckModal" tabindex="-1" aria-labelledby="quickTruckModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="quickTruckModalLabel">
+                            <i class="ti ti-truck me-2"></i>Add Truck
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="quickTruckModalBody">
+                        <div class="text-center text-muted py-5">
+                            <i class="ti ti-loader-2 ti-spin fs-3"></i>
+                            <p class="mb-0 mt-2">Loading form…</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="quickTruckSubmitBtn">
+                            <i class="ti ti-check me-1"></i>Save Truck
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -700,14 +783,62 @@
             ════════════════════════════════════════════════════════════ */
             var TRUCKS_URL = @json(route('dispatch.transporterTrucks', ':id'));
 
+            function toggleAddTruckLink($transportSelect, $addTruckLink) {
+                if (!$addTruckLink.length) {
+                    return;
+                }
+
+                if ($transportSelect.val()) {
+                    $addTruckLink.show();
+                } else {
+                    $addTruckLink.hide();
+                }
+            }
+
+            function appendTransporterOption(id, name) {
+                ['#dispatchTransport', '#editTransport'].forEach(function (selector) {
+                    var $select = $(selector);
+                    if (!$select.length) {
+                        return;
+                    }
+
+                    if (!$select.find('option[value="' + id + '"]').length) {
+                        $select.append($('<option>', { value: id, text: name }));
+                    }
+                });
+            }
+
+            function appendTruckOption($truckSelect, truckNumber) {
+                if (!$truckSelect.length || !truckNumber) {
+                    return;
+                }
+
+                if ($truckSelect.find('option[value="' + truckNumber + '"]').length === 0) {
+                    $truckSelect.append(
+                        $('<option>', { value: truckNumber, text: truckNumber })
+                    );
+                }
+
+                $truckSelect.prop('disabled', false).val(truckNumber);
+            }
+
             function loadTrucksForTransporter(transporterId, $truckSelect, $contactInput, opts) {
                 opts = opts || {};
+                var $transportSelect = opts.transportSelect || null;
+                var $addTruckLink = opts.addTruckLink || null;
 
                 if (!transporterId) {
                     $truckSelect
                         .html('<option value="">-- Select Transporter First --</option>')
                         .prop('disabled', true);
+                    if ($transportSelect && $addTruckLink) {
+                        toggleAddTruckLink($transportSelect, $addTruckLink);
+                    }
                     return;
+                }
+
+                if ($transportSelect && $addTruckLink) {
+                    toggleAddTruckLink($transportSelect, $addTruckLink);
                 }
 
                 /* Show loading state */
@@ -796,7 +927,11 @@
                     transporterId,
                     $('#dispatchTruckNumber'),
                     $('#dispatchDriverContact'),
-                    { autoFillContact: true }
+                    {
+                        autoFillContact: true,
+                        transportSelect: $('#dispatchTransport'),
+                        addTruckLink: $('#dispatchAddTruckLink'),
+                    }
                 );
             });
 
@@ -806,6 +941,7 @@
                 $('#dispatchTruckNumber')
                     .html('<option value="">-- Select Transporter First --</option>')
                     .prop('disabled', true);
+                $('#dispatchAddTruckLink').hide();
             });
 
             /* ── Custom rule: bags ≤ pending (Add form) ─────────────────── */
@@ -889,6 +1025,8 @@
                             {
                                 setTruckNumber: addOld.truck_number || null,
                                 setDriverContact: addOld.driver_contact || null,
+                                transportSelect: $('#dispatchTransport'),
+                                addTruckLink: $('#dispatchAddTruckLink'),
                             }
                         );
                     }
@@ -1025,7 +1163,11 @@
                     transporterId,
                     $('#editTruckNumber'),
                     $('#editDriverContact'),
-                    { autoFillContact: true }
+                    {
+                        autoFillContact: true,
+                        transportSelect: $('#editTransport'),
+                        addTruckLink: $('#editAddTruckLink'),
+                    }
                 );
             });
 
@@ -1089,7 +1231,9 @@
                     $('#editDriverContact'),
                     {
                         setTruckNumber:  truckNumber,
-                        setDriverContact: driverContact  /* keep stored contact, not transporter phone */
+                        setDriverContact: driverContact,
+                        transportSelect: $('#editTransport'),
+                        addTruckLink: $('#editAddTruckLink'),
                     }
                 );
 
@@ -1168,6 +1312,254 @@
                     console.error('Failed to reopen edit dispatch modal', e);
                 }
             })();
+
+
+            /* ════════════════════════════════════════════════════════════
+               QUICK ADD — Transporter & Truck
+            ════════════════════════════════════════════════════════════ */
+
+            var quickTruckContext = {
+                transportSelect: '#dispatchTransport',
+                truckSelect: '#dispatchTruckNumber',
+            };
+
+            function initQuickTransporterForm() {
+                var $form = $('#quickTransporterForm');
+                if (!$form.length) {
+                    return;
+                }
+
+                $form.find('.qt-profile-input').off('change.qt').on('change.qt', function (event) {
+                    var file = event.target.files[0];
+                    if (!file) {
+                        return;
+                    }
+
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#qt_profilePreview').attr('src', e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                $('#quickTransporterModal').off('click.qt', '.qt-toggle-pw').on('click.qt', '.qt-toggle-pw', function () {
+                    var $input = $(this).siblings('input');
+                    var $icon = $(this).find('i');
+                    if ($input.attr('type') === 'password') {
+                        $input.attr('type', 'text');
+                        $icon.removeClass('ti-eye-off').addClass('ti-eye');
+                    } else {
+                        $input.attr('type', 'password');
+                        $icon.removeClass('ti-eye').addClass('ti-eye-off');
+                    }
+                });
+            }
+
+            function clearQuickTransporterErrors() {
+                $('#quickTransporterForm .is-invalid').removeClass('is-invalid');
+                $('#quickTransporterForm .qt-field-error').text('');
+            }
+
+            function showQuickTransporterErrors(errors) {
+                clearQuickTransporterErrors();
+                $.each(errors, function (field, messages) {
+                    $('#quickTransporterForm [name="' + field + '"]').addClass('is-invalid');
+                    $('#quickTransporterForm .qt-field-error[data-field="' + field + '"]').text(messages[0]);
+                });
+            }
+
+            function clearQuickTruckErrors() {
+                $('#quickTruckForm .is-invalid').removeClass('is-invalid');
+                $('#quickTruckForm .qt-truck-field-error').text('');
+            }
+
+            function showQuickTruckErrors(errors) {
+                clearQuickTruckErrors();
+                $.each(errors, function (field, messages) {
+                    $('#quickTruckForm [name="' + field + '"]').addClass('is-invalid');
+                    $('#quickTruckForm .qt-truck-field-error[data-field="' + field + '"]').text(messages[0]);
+                });
+            }
+
+            var quickTransporterTargetSelect = '#dispatchTransport';
+
+            var quickTransporterModalEl = document.getElementById('quickTransporterModal');
+            if (quickTransporterModalEl) {
+                var quickTransporterModal = new bootstrap.Modal(quickTransporterModalEl);
+
+                function openQuickTransporterModal(targetSelect) {
+                    quickTransporterTargetSelect = targetSelect;
+                    $('#quickTransporterModalBody').html(
+                        '<div class="text-center text-muted py-5">' +
+                        '<i class="ti ti-loader-2 ti-spin fs-3"></i>' +
+                        '<p class="mb-0 mt-2">Loading form…</p></div>'
+                    );
+                    quickTransporterModal.show();
+
+                    $.get(@json(route('users.transporter.quickCreateForm')))
+                        .done(function (html) {
+                            $('#quickTransporterModalBody').html(html);
+                            initQuickTransporterForm();
+                        })
+                        .fail(function () {
+                            $('#quickTransporterModalBody').html(
+                                '<div class="alert alert-danger mb-0">Failed to load transporter form. Please try again.</div>'
+                            );
+                        });
+                }
+
+                $('#dispatchAddTransporterLink, #editAddTransporterLink').on('click', function () {
+                    openQuickTransporterModal(
+                        $(this).attr('id') === 'editAddTransporterLink' ? '#editTransport' : '#dispatchTransport'
+                    );
+                });
+
+                $('#quickTransporterSubmitBtn').on('click', function () {
+                    var $form = $('#quickTransporterForm');
+                    if (!$form.length) {
+                        return;
+                    }
+
+                    var $btn = $(this);
+                    var formData = new FormData($form[0]);
+                    $btn.prop('disabled', true);
+
+                    $.ajax({
+                        url: $form.attr('action'),
+                        method: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                        },
+                        success: function (res) {
+                            quickTransporterModal.hide();
+                            show_success(res.message || 'Transporter created successfully.');
+
+                            var transporter = res.transporter;
+                            if (!transporter) {
+                                return;
+                            }
+
+                            appendTransporterOption(String(transporter.id), transporter.name);
+
+                            var $target = $(quickTransporterTargetSelect);
+                            $target.val(String(transporter.id)).trigger('change');
+
+                            if (transporter.phone_no && $target.attr('id') === 'dispatchTransport') {
+                                $('#dispatchDriverContact').val(transporter.phone_no);
+                            } else if (transporter.phone_no && $target.attr('id') === 'editTransport') {
+                                $('#editDriverContact').val(transporter.phone_no);
+                            }
+                        },
+                        error: function (xhr) {
+                            if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                                showQuickTransporterErrors(xhr.responseJSON.errors);
+                                show_error('Please correct the highlighted fields.');
+                            } else {
+                                show_error('Failed to create transporter. Please try again.');
+                            }
+                        },
+                        complete: function () {
+                            $btn.prop('disabled', false);
+                        },
+                    });
+                });
+            }
+
+            var quickTruckModalEl = document.getElementById('quickTruckModal');
+            if (quickTruckModalEl) {
+                var quickTruckModal = new bootstrap.Modal(quickTruckModalEl);
+
+                function openQuickTruckModal(context) {
+                    quickTruckContext = context;
+                    var transporterId = $(context.transportSelect).val();
+
+                    if (!transporterId) {
+                        show_error('Please select a transporter first.');
+                        return;
+                    }
+
+                    $('#quickTruckModalBody').html(
+                        '<div class="text-center text-muted py-5">' +
+                        '<i class="ti ti-loader-2 ti-spin fs-3"></i>' +
+                        '<p class="mb-0 mt-2">Loading form…</p></div>'
+                    );
+                    quickTruckModal.show();
+
+                    $.get(@json(route('truck.quickCreateForm')), { transporter_id: transporterId })
+                        .done(function (html) {
+                            $('#quickTruckModalBody').html(html);
+                        })
+                        .fail(function (xhr) {
+                            var message = 'Failed to load truck form. Please try again.';
+                            if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.message) {
+                                message = xhr.responseJSON.message;
+                            }
+                            $('#quickTruckModalBody').html(
+                                '<div class="alert alert-danger mb-0">' + $('<span>').text(message).html() + '</div>'
+                            );
+                        });
+                }
+
+                $('#dispatchAddTruckLink').on('click', function () {
+                    openQuickTruckModal({
+                        transportSelect: '#dispatchTransport',
+                        truckSelect: '#dispatchTruckNumber',
+                    });
+                });
+
+                $('#editAddTruckLink').on('click', function () {
+                    openQuickTruckModal({
+                        transportSelect: '#editTransport',
+                        truckSelect: '#editTruckNumber',
+                    });
+                });
+
+                $('#quickTruckSubmitBtn').on('click', function () {
+                    var $form = $('#quickTruckForm');
+                    if (!$form.length) {
+                        return;
+                    }
+
+                    var $btn = $(this);
+                    $btn.prop('disabled', true);
+
+                    $.ajax({
+                        url: $form.attr('action'),
+                        method: 'POST',
+                        data: $form.serialize(),
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                        },
+                        success: function (res) {
+                            quickTruckModal.hide();
+                            show_success(res.message || 'Truck added successfully.');
+
+                            var truck = res.truck;
+                            if (!truck || !truck.truck_number) {
+                                return;
+                            }
+
+                            appendTruckOption($(quickTruckContext.truckSelect), truck.truck_number);
+                        },
+                        error: function (xhr) {
+                            if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                                showQuickTruckErrors(xhr.responseJSON.errors);
+                                show_error('Please correct the highlighted fields.');
+                            } else {
+                                show_error('Failed to create truck. Please try again.');
+                            }
+                        },
+                        complete: function () {
+                            $btn.prop('disabled', false);
+                        },
+                    });
+                });
+            }
 
 
             /* ════════════════════════════════════════════════════════════
