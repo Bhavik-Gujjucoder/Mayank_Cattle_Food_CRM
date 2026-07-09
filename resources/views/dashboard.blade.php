@@ -206,6 +206,7 @@
         border-bottom: none;
     }
 </style>
+@include('weekly_report.partials.confirmed-row-styles')
 @endsection
 
 @section('content')
@@ -356,6 +357,10 @@
     @endcan
 </div>
 {{-- {{dd(Auth::user()->getPermissionsViaRoles())}} --}}
+@can('view-weekly-report')
+    @include('dashboard.partials.current_day_report_widget')
+@endcan
+
 @can('raw-material-daily-summary')
     @if ($rm_daily_summary)
         @include('dashboard.partials.rm_daily_summary_widget')

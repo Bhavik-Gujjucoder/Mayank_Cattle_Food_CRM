@@ -5,6 +5,7 @@ use App\Http\Controllers\CityManagementController;
 use App\Http\Controllers\DealerManagementController;
 use App\Http\Controllers\DeliveryPendingPaymentsController;
 use App\Http\Controllers\DispatchManagementController;
+use App\Http\Controllers\WeeklyReportController;
 use App\Http\Controllers\GeneralSettingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MachineInventoryController;
@@ -181,6 +182,35 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('delivery-pending-payments', [DeliveryPendingPaymentsController::class, 'index'])
         ->name('delivery-pending-payments.index')
         ->middleware('permission:view-dispatch-pending-payments');
+
+
+    /* ------------------------------------------------------------------ */
+    /*  Weekly Report (dispatch prediction)  (type: weekly-report)        */
+    /* ------------------------------------------------------------------ */
+    Route::get('weekly-report/pending-items', [WeeklyReportController::class, 'searchPendingItems'])
+        ->name('weekly-report.pendingItems');
+    Route::post('weekly-report/{weeklyReport}/already-produced', [WeeklyReportController::class, 'updateAlreadyProduced'])
+        ->name('weekly-report.alreadyProduced');
+    Route::post('weekly-report/{weeklyReport}/items', [WeeklyReportController::class, 'storeItem'])
+        ->name('weekly-report.items.store');
+    Route::put('weekly-report/{weeklyReport}/items/reorder', [WeeklyReportController::class, 'reorderItems'])
+        ->name('weekly-report.items.reorder');
+    Route::match(['put', 'patch'], 'weekly-report/{weeklyReport}/items/{weeklyReportItem}', [WeeklyReportController::class, 'updateItem'])
+        ->name('weekly-report.items.update');
+    Route::delete('weekly-report/{weeklyReport}/items/{weeklyReportItem}', [WeeklyReportController::class, 'destroyItem'])
+        ->name('weekly-report.items.destroy');
+    Route::post('weekly-report/{weeklyReport}/items/{weeklyReportItem}/confirm', [WeeklyReportController::class, 'confirmItem'])
+        ->name('weekly-report.items.confirm');
+    Route::get('weekly-report/create', [WeeklyReportController::class, 'create'])
+        ->name('weekly-report.create');
+    Route::post('weekly-report', [WeeklyReportController::class, 'store'])
+        ->name('weekly-report.store');
+    Route::get('weekly-report/{weeklyReport}', [WeeklyReportController::class, 'show'])
+        ->name('weekly-report.show');
+    Route::delete('weekly-report/{weeklyReport}', [WeeklyReportController::class, 'destroy'])
+        ->name('weekly-report.destroy');
+    Route::get('weekly-report', [WeeklyReportController::class, 'index'])
+        ->name('weekly-report.index');
 
 
     /* ------------------------------------------------------------------ */

@@ -82,6 +82,12 @@ class ModulePageRegistry
                 'permissions' => ['view-dispatch-pending-payments'],
             ],
             [
+                'path'        => '/weekly-report',
+                'selector'    => '#weekly_report_table',
+                'text'        => 'Weekly Report',
+                'permissions' => ['view-weekly-report', 'add-weekly-report', 'edit-weekly-report', 'delete-weekly-report'],
+            ],
+            [
                 'path'        => '/oil',
                 'selector'    => '.card-body',
                 'text'        => 'Comming Soon',
@@ -193,7 +199,7 @@ class ModulePageRegistry
     {
         return array_values(array_filter(
             static::definitions(),
-            fn (array $page) => in_array($page['path'], ['/order', '/dispatch', '/delivery-pending-payments'], true)
+            fn (array $page) => in_array($page['path'], ['/order', '/dispatch', '/delivery-pending-payments', '/weekly-report'], true)
         ));
     }
 

@@ -12,6 +12,7 @@ use Database\Seeders\RawMaterialPermissionSeeder;
 use Database\Seeders\SalesPermissionSeeder;
 use Database\Seeders\SupplierBrokerPermissionSeeder;
 use Database\Seeders\TruckPermissionSeeder;
+use Database\Seeders\WeeklyReportPermissionSeeder;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
@@ -61,6 +62,7 @@ class E2eTestUserSeeder extends Seeder
             TruckPermissionSeeder::class,
             RawMaterialPermissionSeeder::class,
             SalesPermissionSeeder::class,
+            WeeklyReportPermissionSeeder::class,
             AdminModulePermissionSeeder::class,
         ] as $seederClass) {
             (new $seederClass)->run();

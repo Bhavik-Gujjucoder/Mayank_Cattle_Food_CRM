@@ -161,16 +161,17 @@
                         /*  Sales submenu (Soda / Order + Dispatch)
                         /* ------------------------------------------------------------------ --}}
                         @canany(['view-order', 'add-order', 'edit-order', 'delete-order', 'view-dispatch', 'add-dispatch', 'edit-dispatch',
-                            'delete-dispatch', 'view-dispatch-pending-payments'])
+                            'delete-dispatch', 'view-dispatch-pending-payments', 'view-weekly-report', 'add-weekly-report',
+                            'edit-weekly-report', 'delete-weekly-report'])
                             <li class="submenu">
                                 <a href="javascript:void(0);"
-                                    class="@if (request()->routeIs('order*') || request()->routeIs('dispatch*') || request()->routeIs('delivery-pending-payments*')) active subdrop @endif">
+                                    class="@if (request()->routeIs('order*') || request()->routeIs('dispatch*') || request()->routeIs('delivery-pending-payments*') || request()->routeIs('weekly-report*')) active subdrop @endif">
                                     <i class="ti ti-list-check"></i>
                                     <span>Sales</span>
                                     <span class="menu-arrow"></span>
                                 </a>
 
-                                <ul style="display: @if (request()->routeIs('order*') || request()->routeIs('dispatch*') || request()->routeIs('delivery-pending-payments*')) block @else none @endif;">
+                                <ul style="display: @if (request()->routeIs('order*') || request()->routeIs('dispatch*') || request()->routeIs('delivery-pending-payments*') || request()->routeIs('weekly-report*')) block @else none @endif;">
 
                                     {{-- ------------------------------------------------------------------ */
                                     /*  Soda / Order (type: soda-order)
@@ -204,6 +205,18 @@
                                             <a href="{{ route('delivery-pending-payments.index') }}"
                                                 class="@if (request()->routeIs('delivery-pending-payments*')) active @endif">
                                                 <span>Payment Receivable</span>
+                                            </a>
+                                        </li>
+                                    @endcan
+
+                                    {{-- ------------------------------------------------------------------ */
+                                    /*  Weekly Report (dispatch prediction)
+                                    /* ------------------------------------------------------------------ --}}
+                                    @can('view-weekly-report')
+                                        <li>
+                                            <a href="{{ route('weekly-report.index') }}"
+                                                class="@if (request()->routeIs('weekly-report*')) active @endif">
+                                                <span>Weekly Report</span>
                                             </a>
                                         </li>
                                     @endcan

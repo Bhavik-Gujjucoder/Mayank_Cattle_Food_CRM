@@ -15,6 +15,9 @@ use App\Models\StateManagement;
 use App\Models\Supplier;
 use App\Models\SupplierBroker;
 use App\Models\User;
+use App\Models\WeeklyReport;
+use App\Models\WeeklyReportItem;
+use Database\Seeders\WeeklyReportPermissionSeeder;
 use Illuminate\Support\Facades\DB;
 
 use function Pest\Laravel\actingAs;
@@ -159,6 +162,35 @@ function dashRmSummaryFixture(): array
     return compact('material', 'supplier', 'supplierBroker', 'order');
 }
 
+function wrDashboardWeeklyFixture(): array
+{
+    (new WeeklyReportPermissionSeeder)->run();
+
+    $broker = User::factory()->create(['status' => 1]);
+    $broker->assignRole(\Spatie\Permission\Models\Role::firstOrCreate(['name' => 'broker', 'guard_name' => 'web']));
+
+    $order = dashSetupOrder($broker, null, 50);
+    $order->items->first()->product->update(['name' => 'Cattle Feed Dash']);
+
+    $report = WeeklyReport::create([
+        'report_date'      => now()->toDateString(),
+        'already_produced' => 0,
+        'created_by'       => null,
+    ]);
+
+    WeeklyReportItem::create([
+        'weekly_report_id' => $report->id,
+        'sort_order'       => 1,
+        'order_id'         => $order->id,
+        'order_item_id'    => $order->items->first()->id,
+        'product_id'       => $order->items->first()->product_id,
+        'quantity'         => 10,
+        'status'           => WeeklyReportItem::STATUS_PENDING,
+    ]);
+
+    return compact('order', 'report');
+}
+
 // ─────────────────────────────────────────────
 
 beforeEach(function () {
@@ -218,7 +250,8 @@ describe('view data', function () {
             ->assertViewHas('rm_summary_materials')
             ->assertViewHas('rm_material_filter')
             ->assertViewHas('rm_date_from')
-            ->assertViewHas('rm_date_to');
+            ->assertViewHas('rm_date_to')
+            ->assertViewHas('today_weekly_report');
     });
 
     it('sets login_user and user_name from the authenticated user', function () {
@@ -354,6 +387,45 @@ describe('view data', function () {
             ->get(route('dashboard'))
             ->assertOk()
             ->assertDontSee('Daily Raw Material Summary');
+    });
+
+    it('today_weekly_report is null when user lacks view-weekly-report permission', function () {
+        $response = actingAs(dashActor())->get(route('dashboard'));
+        expect($response->viewData('today_weekly_report'))->toBeNull();
+    });
+
+    it('shows current day report widget before daily raw material summary', function () {
+        $actor = dashActor();
+        grantPermissions($actor, ['view-weekly-report', 'raw-material-daily-summary']);
+        dashRmSummaryFixture();
+
+        $content = actingAs($actor)->get(route('dashboard'))->assertOk()->getContent();
+        $currentDayPos = strpos($content, 'Current Day Report');
+        $rmSummaryPos = strpos($content, 'Daily Raw Material Summary');
+
+        expect($currentDayPos)->not->toBeFalse()
+            ->and($rmSummaryPos)->not->toBeFalse()
+            ->and($currentDayPos)->toBeLessThan($rmSummaryPos);
+    });
+
+    it('shows today weekly report rows when report exists for current date', function () {
+        $actor = dashActor();
+        grantPermissions($actor, ['view-weekly-report']);
+        $fixture = wrDashboardWeeklyFixture();
+
+        actingAs($actor)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Current Day Report')
+            ->assertSee($fixture['order']->unique_order_id)
+            ->assertSee('Cattle Feed Dash');
+    });
+
+    it('hides current day report widget without permission', function () {
+        actingAs(dashActor())
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('Current Day Report');
     });
 
     it('total_dealers reflects correct count', function () {

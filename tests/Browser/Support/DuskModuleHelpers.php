@@ -11,6 +11,7 @@ use Database\Seeders\RawMaterialPermissionSeeder;
 use Database\Seeders\SalesPermissionSeeder;
 use Database\Seeders\SupplierBrokerPermissionSeeder;
 use Database\Seeders\TruckPermissionSeeder;
+use Database\Seeders\WeeklyReportPermissionSeeder;
 use Laravel\Dusk\Browser;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -42,6 +43,7 @@ class DuskModuleHelpers
             TruckPermissionSeeder::class,
             RawMaterialPermissionSeeder::class,
             SalesPermissionSeeder::class,
+            WeeklyReportPermissionSeeder::class,
             AdminModulePermissionSeeder::class,
         ] as $seederClass) {
             (new $seederClass)->run();

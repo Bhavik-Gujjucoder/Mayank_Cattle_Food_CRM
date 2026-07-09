@@ -10,6 +10,7 @@ use App\Models\RawMaterial;
 use App\Models\RawMaterialOrder;
 use App\Models\RawMaterialReceive;
 use App\Models\User;
+use App\Models\WeeklyReport;
 use App\Services\RawMaterial\RawMaterialDailySummaryService;
 use App\Services\RawMaterialCacheService;
 use App\Services\SequentialDispatchService;
@@ -65,6 +66,21 @@ class HomeController extends Controller
         $data['rm_material_filter'] = 'all';
         $data['rm_date_from'] = null;
         $data['rm_date_to'] = null;
+        $data['today_weekly_report'] = null;
+
+        if ($loginUser->can('view-weekly-report')) {
+            $data['today_weekly_report'] = WeeklyReport::query()
+                ->with([
+                    'items.product:id,name,unit',
+                    'items.order:id,unique_order_id,dealer_id',
+                    'items.order.dealer:id,user_id,firm_shop_name,city_id',
+                    'items.order.dealer.user:id,name',
+                    'items.order.dealer.city:id,city_name',
+                    'items.transporter:id,name',
+                ])
+                ->whereDate('report_date', now()->toDateString())
+                ->first();
+        }
 
         if ($loginUser->can('raw-material-daily-summary')) {
             $filters = $this->dailySummaryFilters($request);

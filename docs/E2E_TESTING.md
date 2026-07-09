@@ -191,7 +191,7 @@ Use a **dedicated monitoring user** on staging, not a real staff account.
 ### Production
 
 ```bash
-set E2E_PROD_URL=https://your-live-domain.com
+set E2E_PROD_URL=https://app.mayankcattlefood.com
 npm run test:e2e:prod
 ```
 
@@ -221,9 +221,9 @@ Add these under **Settings → Secrets and variables → Actions**:
 
 | Secret | Required for | Example |
 |--------|--------------|---------|
-| `E2E_PROD_URL` | Production smoke | `https://crm.your-domain.com` |
-| `E2E_STAGING_URL` | Staging smoke | `https://staging.your-domain.com` |
-| `E2E_STAGING_EMAIL` | Optional staging auth tests | `monitor@staging.example.com` |
+| `E2E_PROD_URL` | Production smoke | `https://app.mayankcattlefood.com` |
+| `E2E_STAGING_URL` | Staging smoke | `https://app.mayankcattlefood.com` |
+| `E2E_STAGING_EMAIL` | Optional staging auth tests | `abhayl.gc@gmail.com` |
 | `E2E_STAGING_PASSWORD` | Optional staging auth tests | dedicated monitor password |
 | `E2E_STAGING_OTP` | Optional full staging login in CI | only when using manual dispatch with auth enabled |
 

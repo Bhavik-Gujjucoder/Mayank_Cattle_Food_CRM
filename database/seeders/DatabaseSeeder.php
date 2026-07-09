@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             TruckPermissionSeeder::class,
             RawMaterialPermissionSeeder::class,
             SalesPermissionSeeder::class,
+            WeeklyReportPermissionSeeder::class,
             AdminModulePermissionSeeder::class,
         ]);
 

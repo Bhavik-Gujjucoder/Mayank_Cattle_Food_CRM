@@ -90,6 +90,29 @@ describe('formatWithUnit', function () {
 
 // ─────────────────────────────────────────────
 
+describe('toBags', function () {
+    it('keeps Bag quantity as-is', function () {
+        expect(ProductUnit::toBags(375, 'Bag'))->toBe(375.0);
+    });
+
+    it('converts Ton to bags using 1000kg / 60kg', function () {
+        expect(ProductUnit::toBags(1, 'Ton'))->toBe(1000 / 60);
+        expect(ProductUnit::toBags(25, 'Ton'))->toBe(25 * (1000 / 60));
+    });
+
+    it('converts KG to bags using / 60', function () {
+        expect(ProductUnit::toBags(60, 'KG'))->toBe(1.0);
+        expect(ProductUnit::toBags(120, 'KG'))->toBe(2.0);
+    });
+
+    it('defaults unknown/null unit to raw quantity', function () {
+        expect(ProductUnit::toBags(10, null))->toBe(10.0);
+        expect(ProductUnit::toBags(10, 'Quintal'))->toBe(10.0);
+    });
+});
+
+// ─────────────────────────────────────────────
+
 describe('dispatchedSuffix', function () {
     it('returns bag(s) for Bag unit', function () {
         expect(ProductUnit::dispatchedSuffix('Bag'))->toBe('bag(s)');

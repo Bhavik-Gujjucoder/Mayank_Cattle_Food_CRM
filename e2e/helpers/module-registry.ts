@@ -73,6 +73,12 @@ export const MODULE_PAGES: ModulePage[] = [
         permissions: ['view-dispatch-pending-payments'],
     },
     {
+        path: '/weekly-report',
+        selector: '#weekly_report_table',
+        text: 'Weekly Report',
+        permissions: ['view-weekly-report', 'add-weekly-report', 'edit-weekly-report', 'delete-weekly-report'],
+    },
+    {
         path: '/oil',
         selector: '.card-body',
         text: 'Comming Soon',
