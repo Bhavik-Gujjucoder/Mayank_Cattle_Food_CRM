@@ -13,15 +13,19 @@ use App\Support\FinancialYear;
 use App\Support\ProductUnit;
 use App\Support\SalesScope;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\WeeklyReportItem;
 use App\Services\PaymentReceivableService;
 use App\Services\SequentialDispatchService;
+use App\Services\WeeklyReportService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\DataTables;
 
 class OrderManagementController extends Controller
 {
-    public function __construct()
-    {
+    public function __construct(
+        private WeeklyReportService $weeklyReportService,
+    ) {
         $this->middleware('permission:view-order')->only(['index', 'listItemsDetail', 'show']);
         $this->middleware('permission:add-order')->only(['create']);
         $this->middleware('permission:edit-order')->only(['edit']);
@@ -360,6 +364,21 @@ class OrderManagementController extends Controller
             }
         }
 
+        /* ── Guard 3: cannot remove an item with a confirmed weekly report row ─ */
+        foreach ($toDelete as $deleteId) {
+            $item = $existingItemsMap->get($deleteId);
+            if (! $item) continue;
+
+            if ($this->weeklyReportService->orderItemHasConfirmedItems((int) $deleteId)) {
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'product_id' => 'Product "' . ($item->product?->name ?? 'Unknown')
+                            . '" cannot be removed — it has a confirmed weekly report row.',
+                    ]);
+            }
+        }
+
         /* ── Guard 2: qty cannot fall below already-dispatched qty ────────
            Prevents making the ordered qty smaller than what has already
            been sent out, which would produce a negative pending balance.
@@ -419,9 +438,10 @@ class OrderManagementController extends Controller
             }
         }
 
-        /* Soft-delete only the rows the user removed from the form */
-        if (!empty($toDelete)) {
-            OrderItem::whereIn('id', $toDelete)->delete();
+        /* Soft-delete weekly-report rows, then soft-delete removed order lines */
+        if (! empty($toDelete)) {
+            $this->weeklyReportService->deleteItemsForOrderItems(array_values($toDelete));
+            $order->items()->whereIn('id', $toDelete)->delete();
         }
 
         $order->update([
@@ -468,9 +488,12 @@ class OrderManagementController extends Controller
             })
             ->values();
 
+        $hasConfirmedWeekly = $this->weeklyReportService->orderHasConfirmedItems((int) $order->id);
+
         return response()->json([
-            'can_delete'       => $dispatchedItems->isEmpty(),
-            'dispatched_items' => $dispatchedItems,
+            'can_delete'             => $dispatchedItems->isEmpty() && ! $hasConfirmedWeekly,
+            'dispatched_items'       => $dispatchedItems,
+            'has_confirmed_weekly'   => $hasConfirmedWeekly,
         ]);
     }
 
@@ -491,8 +514,16 @@ class OrderManagementController extends Controller
                 ->with('error', 'This order cannot be deleted because it has dispatched product items.');
         }
 
-        $order->items()->delete();  // soft-delete line items first
-        $order->delete();
+        if ($this->weeklyReportService->orderHasConfirmedItems((int) $order->id)) {
+            return redirect()->route('order.index')
+                ->with('error', 'This order cannot be deleted because it has confirmed weekly report rows.');
+        }
+
+        DB::transaction(function () use ($order) {
+            $this->weeklyReportService->deleteItemsForOrder((int) $order->id);
+            $order->items()->delete();
+            $order->delete();
+        });
 
         return redirect()->route('order.index')
             ->with('success', 'Order deleted successfully.');
@@ -540,24 +571,41 @@ class OrderManagementController extends Controller
         )->get();
 
         /* Block if any selected order has dispatched items */
-        $blockedIds = $orders
-            ->filter(fn($o) => $o->items->some(fn($item) => $item->dispatches->sum('no_of_bags') > 0))
+        $dispatchedBlocked = $orders
+            ->filter(fn ($o) => $o->items->some(fn ($item) => $item->dispatches->sum('no_of_bags') > 0))
             ->pluck('unique_order_id')
             ->all();
 
-        if (!empty($blockedIds)) {
+        if (! empty($dispatchedBlocked)) {
             return response()->json([
                 'blocked'        => true,
-                'blocked_orders' => $blockedIds,
+                'blocked_orders' => $dispatchedBlocked,
                 'message'        => 'Cannot delete: the following order(s) have dispatched items — '
-                    . implode(', ', $blockedIds) . '.',
+                    . implode(', ', $dispatchedBlocked) . '.',
             ], 422);
         }
 
-        foreach ($orders as $order) {
-            $order->items()->delete();
-            $order->delete();
+        $weeklyBlocked = $orders
+            ->filter(fn ($o) => $this->weeklyReportService->orderHasConfirmedItems((int) $o->id))
+            ->pluck('unique_order_id')
+            ->all();
+
+        if (! empty($weeklyBlocked)) {
+            return response()->json([
+                'blocked'        => true,
+                'blocked_orders' => $weeklyBlocked,
+                'message'        => 'Cannot delete: the following order(s) have confirmed weekly report rows — '
+                    . implode(', ', $weeklyBlocked) . '.',
+            ], 422);
         }
+
+        DB::transaction(function () use ($orders) {
+            foreach ($orders as $order) {
+                $this->weeklyReportService->deleteItemsForOrder((int) $order->id);
+                $order->items()->delete();
+                $order->delete();
+            }
+        });
 
         return response()->json(['message' => 'Selected orders deleted successfully.']);
     }

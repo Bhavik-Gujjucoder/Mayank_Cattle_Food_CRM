@@ -9,6 +9,7 @@ use App\Models\WeeklyReportItem;
 use App\Services\WeeklyReportService;
 use App\Support\ProductUnit;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Yajra\DataTables\DataTables;
 
@@ -231,7 +232,7 @@ class WeeklyReportController extends Controller
     public function storeItem(Request $request, WeeklyReport $weeklyReport)
     {
         $validated = $request->validate([
-            'order_item_id'  => 'required|exists:order_items,id',
+            'order_item_id'  => ['required', Rule::exists('order_items', 'id')->whereNull('deleted_at')],
             'quantity'       => 'required|integer|min:1',
             'transport_id'   => 'nullable|exists:users,id',
             'truck_number'   => 'nullable|string|max:100',

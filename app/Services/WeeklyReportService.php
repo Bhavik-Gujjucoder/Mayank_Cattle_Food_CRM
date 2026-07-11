@@ -113,6 +113,41 @@ class WeeklyReportService
         return (int) $query->sum('quantity');
     }
 
+    public function orderHasConfirmedItems(int $orderId): bool
+    {
+        return WeeklyReportItem::query()
+            ->where('order_id', $orderId)
+            ->where('status', WeeklyReportItem::STATUS_CONFIRMED)
+            ->exists();
+    }
+
+    public function orderItemHasConfirmedItems(int $orderItemId): bool
+    {
+        return WeeklyReportItem::query()
+            ->where('order_item_id', $orderItemId)
+            ->where('status', WeeklyReportItem::STATUS_CONFIRMED)
+            ->exists();
+    }
+
+    /** @param  list<int>  $orderItemIds */
+    public function deleteItemsForOrderItems(array $orderItemIds): void
+    {
+        if ($orderItemIds === []) {
+            return;
+        }
+
+        WeeklyReportItem::query()
+            ->whereIn('order_item_id', $orderItemIds)
+            ->delete();
+    }
+
+    public function deleteItemsForOrder(int $orderId): void
+    {
+        WeeklyReportItem::query()
+            ->where('order_id', $orderId)
+            ->delete();
+    }
+
     /**
      * Remaining qty that can still be planned on weekly reports for this order line.
      * = order pending (after dispatches) − other pending weekly-report reservations.

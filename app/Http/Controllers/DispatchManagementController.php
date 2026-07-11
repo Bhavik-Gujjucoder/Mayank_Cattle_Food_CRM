@@ -17,6 +17,7 @@ use App\Services\SequentialDispatchService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Yajra\DataTables\DataTables;
 
 class DispatchManagementController extends Controller
@@ -238,7 +239,7 @@ class DispatchManagementController extends Controller
     {
         $validated = $request->validate([
             'order_id'       => 'required|exists:order_management,id',
-            'order_item_id'  => 'required|exists:order_items,id',
+            'order_item_id'  => ['required', Rule::exists('order_items', 'id')->whereNull('deleted_at')],
             'product_id'     => 'required|exists:products,id',
             'no_of_bags'     => 'required|integer|min:1',
             'dispatch_date'  => 'required|date',

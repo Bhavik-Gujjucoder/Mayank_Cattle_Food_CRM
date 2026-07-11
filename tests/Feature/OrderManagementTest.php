@@ -7,6 +7,8 @@ use App\Models\OrderItem;
 use App\Models\OrderManagement;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\WeeklyReport;
+use App\Models\WeeklyReportItem;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
@@ -1090,7 +1092,7 @@ describe('update-persistence', function () {
         expect((float) $order->grand_total)->toBe(1500.0);
     });
 
-    it('removes un-submitted item from order (hard-delete)', function () {
+    it('removes un-submitted item from order (soft-delete)', function () {
         $brand = mkOrdBrand();
         $broker = mkOrdBroker();
         $dealer = mkOrdDealer($broker->id, $brand->id);
@@ -1112,7 +1114,88 @@ describe('update-persistence', function () {
 
         actingAs($actor)->put(route('order.update', $order), $payload);
 
-        assertDatabaseMissing('order_items', ['id' => $item2->id]);
+        assertSoftDeleted('order_items', ['id' => $item2->id]);
+    });
+
+    it('removes pending weekly report rows when order line is removed on update', function () {
+        $brand = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $product1 = mkOrdProduct($brand->id);
+        $product2 = mkOrdProduct($brand->id);
+        $order = mkOrder($broker->id, $brand->id, $dealer->id);
+        $item1 = mkOrderItem($order->id, $product1->id);
+        $item2 = mkOrderItem($order->id, $product2->id);
+        $actor = ordActor(['edit-order']);
+        $report = WeeklyReport::create([
+            'report_date' => '2026-07-09',
+            'already_produced' => 0,
+            'created_by' => $actor->id,
+        ]);
+        $weeklyItem = WeeklyReportItem::create([
+            'weekly_report_id' => $report->id,
+            'sort_order' => 1,
+            'order_id' => $order->id,
+            'order_item_id' => $item2->id,
+            'product_id' => $product2->id,
+            'quantity' => 5,
+            'status' => WeeklyReportItem::STATUS_PENDING,
+        ]);
+
+        $payload = ordPayload($broker->id, $brand->id, $dealer->id, $product1->id, [
+            'unique_order_id' => $order->unique_order_id,
+            'item_id' => [$item1->id],
+            'product_id' => [$product1->id],
+            'qty' => [10],
+            'price' => ['100.00'],
+        ]);
+
+        actingAs($actor)->put(route('order.update', $order), $payload);
+
+        assertSoftDeleted('weekly_report_items', ['id' => $weeklyItem->id]);
+        assertSoftDeleted('order_items', ['id' => $item2->id]);
+    });
+
+    it('blocks removing order line with confirmed weekly report row', function () {
+        $brand = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $product1 = mkOrdProduct($brand->id);
+        $product2 = mkOrdProduct($brand->id);
+        $order = mkOrder($broker->id, $brand->id, $dealer->id);
+        $item1 = mkOrderItem($order->id, $product1->id);
+        $item2 = mkOrderItem($order->id, $product2->id);
+        $actor = ordActor(['edit-order']);
+        $report = WeeklyReport::create([
+            'report_date' => '2026-07-09',
+            'already_produced' => 0,
+            'created_by' => $actor->id,
+        ]);
+        WeeklyReportItem::create([
+            'weekly_report_id' => $report->id,
+            'sort_order' => 1,
+            'order_id' => $order->id,
+            'order_item_id' => $item2->id,
+            'product_id' => $product2->id,
+            'quantity' => 5,
+            'status' => WeeklyReportItem::STATUS_CONFIRMED,
+        ]);
+
+        $payload = ordPayload($broker->id, $brand->id, $dealer->id, $product1->id, [
+            'unique_order_id' => $order->unique_order_id,
+            'item_id' => [$item1->id],
+            'product_id' => [$product1->id],
+            'qty' => [10],
+            'price' => ['100.00'],
+        ]);
+
+        actingAs($actor)
+            ->from(route('order.edit', $order))
+            ->put(route('order.update', $order), $payload)
+            ->assertRedirect(route('order.edit', $order))
+            ->assertSessionHasErrors('product_id');
+
+        assertDatabaseHas('order_items', ['id' => $item2->id]);
     });
 
     it('redirects to order.index after successful update', function () {
@@ -1215,7 +1298,7 @@ describe('destroy', function () {
         assertSoftDeleted('order_management', ['id' => $order->id]);
     });
 
-    it('hard-deletes the order items when order is destroyed', function () {
+    it('soft-deletes the order items when order is destroyed', function () {
         $brand = mkOrdBrand();
         $broker = mkOrdBroker();
         $dealer = mkOrdDealer($broker->id, $brand->id);
@@ -1226,7 +1309,7 @@ describe('destroy', function () {
 
         actingAs($actor)->delete(route('order.destroy', $order));
 
-        assertDatabaseMissing('order_items', ['id' => $item->id]);
+        assertSoftDeleted('order_items', ['id' => $item->id]);
     });
 
     it('blocks deletion when order has dispatched items', function () {
@@ -1269,6 +1352,65 @@ describe('destroy', function () {
         actingAs($actor)
             ->delete(route('order.destroy', $order))
             ->assertRedirect(route('order.index'));
+    });
+
+    it('deletes pending weekly report rows when order is destroyed', function () {
+        $brand = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $product = mkOrdProduct($brand->id);
+        $order = mkOrder($broker->id, $brand->id, $dealer->id);
+        $item = mkOrderItem($order->id, $product->id);
+        $actor = ordActor(['delete-order']);
+        $report = WeeklyReport::create([
+            'report_date' => '2026-07-09',
+            'already_produced' => 0,
+            'created_by' => $actor->id,
+        ]);
+        $weeklyItem = WeeklyReportItem::create([
+            'weekly_report_id' => $report->id,
+            'sort_order' => 1,
+            'order_id' => $order->id,
+            'order_item_id' => $item->id,
+            'product_id' => $product->id,
+            'quantity' => 10,
+            'status' => WeeklyReportItem::STATUS_PENDING,
+        ]);
+
+        actingAs($actor)->delete(route('order.destroy', $order));
+
+        assertSoftDeleted('weekly_report_items', ['id' => $weeklyItem->id]);
+        assertSoftDeleted('order_items', ['id' => $item->id]);
+    });
+
+    it('blocks deletion when order has confirmed weekly report rows', function () {
+        $brand = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $product = mkOrdProduct($brand->id);
+        $order = mkOrder($broker->id, $brand->id, $dealer->id);
+        $item = mkOrderItem($order->id, $product->id);
+        $actor = ordActor(['delete-order']);
+        $report = WeeklyReport::create([
+            'report_date' => '2026-07-09',
+            'already_produced' => 0,
+            'created_by' => $actor->id,
+        ]);
+        WeeklyReportItem::create([
+            'weekly_report_id' => $report->id,
+            'sort_order' => 1,
+            'order_id' => $order->id,
+            'order_item_id' => $item->id,
+            'product_id' => $product->id,
+            'quantity' => 10,
+            'status' => WeeklyReportItem::STATUS_CONFIRMED,
+        ]);
+
+        actingAs($actor)
+            ->delete(route('order.destroy', $order))
+            ->assertRedirect(route('order.index'));
+
+        expect(OrderManagement::find($order->id))->not->toBeNull();
     });
 });
 
