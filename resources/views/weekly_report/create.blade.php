@@ -25,10 +25,10 @@
                 <button class="nav-link active" id="tab-day-btn" data-bs-toggle="tab" data-bs-target="#tab-day"
                     type="button" role="tab">Single Day</button>
             </li>
-            <li class="nav-item" role="presentation">
+            <!--<li class="nav-item" role="presentation">
                 <button class="nav-link" id="tab-week-btn" data-bs-toggle="tab" data-bs-target="#tab-week"
                     type="button" role="tab">Full Week (Thu–Wed)</button>
-            </li>
+            </li>-->
         </ul>
 
         <div class="tab-content">
