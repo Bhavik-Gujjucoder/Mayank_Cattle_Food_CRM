@@ -20,16 +20,16 @@
     </div>
 
     <div class="card-body">
-        <ul class="nav nav-tabs mb-3" role="tablist">
+        <!--<ul class="nav nav-tabs mb-3" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="tab-day-btn" data-bs-toggle="tab" data-bs-target="#tab-day"
                     type="button" role="tab">Single Day</button>
             </li>
-            <!--<li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tab-week-btn" data-bs-toggle="tab" data-bs-target="#tab-week"
                     type="button" role="tab">Full Week (Thu–Wed)</button>
-            </li>-->
-        </ul>
+            </li>
+        </ul>-->
 
         <div class="tab-content">
             <div class="tab-pane fade show active" id="tab-day" role="tabpanel">
