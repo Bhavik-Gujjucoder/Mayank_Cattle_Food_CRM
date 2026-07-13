@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Auth\AuthCheckController;
 use App\Http\Controllers\Api\V1\Auth\ForgotPasswordController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
+use App\Http\Controllers\Api\V1\Auth\LogoutController;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
 use App\Http\Controllers\Api\V1\Dispatches\DispatchListingController;
 use App\Http\Controllers\Api\V1\Orders\OrderController;
@@ -23,7 +24,7 @@ use Illuminate\Support\Facades\Route;
 |                  Phone login:  password → Sanctum token (immediate).
 |
 | Prefix reference:
-|   auth/*          — Public authentication endpoints (login, otp, future logout/reset)
+|   auth/*          — Public authentication endpoints (login, otp, forgot-password)
 |   system/*        — Connectivity / health checks (no auth required)
 |   profile/*       — Authenticated user profile (future, auth:sanctum)
 |   notifications/* — Push / in-app notifications (future)
@@ -87,8 +88,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     |----------------------------------------------------------------------
     | All routes here require: Authorization: Bearer {sanctum_token}
     |
-    | GET  auth/me  — Verify token; return role + permissions (Dealer/Broker only).
-    | GET  orders   — Paginated, filterable order list (Dealer/Broker only).
+    | GET  auth/me     — Verify token; return role + permissions (Dealer/Broker only).
+    | POST auth/logout — Revoke the current Bearer token.
+    | GET  orders      — Paginated, filterable order list (Dealer/Broker only).
     */
     Route::middleware('auth:sanctum')->group(function () {
 
@@ -97,7 +99,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('me', [AuthCheckController::class, 'show'])
                 ->name('me');
 
-            // Route::post('logout', ...)->name('logout'); // Revoke current token
+            Route::post('logout', [LogoutController::class, 'store'])
+                ->name('logout');
         });
 
         // Soda/Order listing — Dealer and Broker roles only.
