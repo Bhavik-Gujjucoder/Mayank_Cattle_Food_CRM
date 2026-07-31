@@ -636,4 +636,37 @@
             width: 100%;
         }
     }
+
+    .weekly-report-module .wr-export-print-actions .btn {
+        min-height: 38px;
+    }
+
+    @media print {
+        .weekly-report-module .wr-filter-bar,
+        .weekly-report-module .wr-header-toolbar,
+        .weekly-report-module .wr-add-panel,
+        .weekly-report-module .wr-row-actions,
+        .weekly-report-module .wr-scroll-hint,
+        .weekly-report-module .save-footer-btn,
+        .weekly-report-module .wr-export-print-actions,
+        .weekly-report-module .modal,
+        .weekly-report-module form[id$="FilterForm"],
+        .weekly-report-module .wr-day-hint {
+            display: none !important;
+        }
+
+        .weekly-report-module .wr-table-wrap {
+            overflow: visible !important;
+            border: none !important;
+        }
+
+        .weekly-report-module .weekly-report-items-table {
+            min-width: 100% !important;
+        }
+
+        .weekly-report-module .wr-day-section {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+    }
 </style>

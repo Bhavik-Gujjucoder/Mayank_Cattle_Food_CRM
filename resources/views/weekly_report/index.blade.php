@@ -89,6 +89,9 @@
                             class="btn btn-danger btn-sm">
                             <i class="ti ti-refresh me-1"></i>Reset
                         </a>
+                        @include('weekly_report.partials.export-print-actions', [
+                            'exportQuery' => $exportQuery ?? [],
+                        ])
                     </div>
                 </div>
                 {{-- Generate Week — hidden for now

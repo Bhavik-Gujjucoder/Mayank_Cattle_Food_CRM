@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\WeeklyReportExport;
 use App\Models\User;
 use App\Models\WeeklyReport;
 use App\Models\WeeklyReportItem;
@@ -9,8 +10,12 @@ use App\Services\WeeklyReportService;
 use App\Support\ProductUnit;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Yajra\DataTables\DataTables;
 
 class WeeklyReportController extends Controller
@@ -19,7 +24,7 @@ class WeeklyReportController extends Controller
         private WeeklyReportService $weeklyReports,
     ) {
         $this->middleware('permission:view-weekly-report')->only([
-            'index', 'show', 'searchPendingItems',
+            'index', 'show', 'searchPendingItems', 'export', 'print',
         ]);
         $this->middleware('permission:add-weekly-report')->only([
             'create', 'store',
@@ -128,7 +133,53 @@ class WeeklyReportController extends Controller
             'transporters' => $this->transporters(),
             'prevDate'     => $focusDate?->copy()->subDay()->toDateString(),
             'nextDate'     => $focusDate?->copy()->addDay()->toDateString(),
+            'exportQuery'  => $this->exportQueryFromFilters($filters, false),
         ]));
+    }
+
+    public function export(Request $request): BinaryFileResponse|RedirectResponse
+    {
+        try {
+            ['filters' => $filters, 'days' => $days] = $this->workspaceContext(
+                $request,
+                WeeklyReportService::MAX_WORKSPACE_DAYS,
+            );
+        } catch (ValidationException $e) {
+            return redirect()
+                ->route('weekly-report.index', ['date' => now()->toDateString()])
+                ->with('error', collect($e->errors())->flatten()->first());
+        }
+
+        if ($days === []) {
+            return redirect()
+                ->route('weekly-report.index', $this->exportQueryFromFilters($filters, false))
+                ->with('error', 'No records found to export for the current filters.');
+        }
+
+        $filename = $this->exportFilename($filters);
+
+        return Excel::download(new WeeklyReportExport($days, $filters), $filename);
+    }
+
+    public function print(Request $request): View|RedirectResponse
+    {
+        try {
+            ['filters' => $filters, 'days' => $days] = $this->workspaceContext(
+                $request,
+                WeeklyReportService::MAX_WORKSPACE_DAYS,
+            );
+        } catch (ValidationException $e) {
+            return redirect()
+                ->route('weekly-report.index', ['date' => now()->toDateString()])
+                ->with('error', collect($e->errors())->flatten()->first());
+        }
+
+        return view('weekly_report.print', [
+            'page_title' => 'Weekly Report — Print',
+            'filters'    => $filters,
+            'days'       => $days,
+            'autoPrint'  => $request->boolean('auto_print'),
+        ]);
     }
 
     public function create()
@@ -417,6 +468,56 @@ class WeeklyReportController extends Controller
         if ((int) $item->weekly_report_id !== (int) $report->id) {
             abort(404);
         }
+    }
+
+    /**
+     * @return array{filters: array, days: list<array{date: Carbon, report: WeeklyReport|null}>}
+     */
+    private function workspaceContext(Request $request, int $maxDays): array
+    {
+        $filters = $this->weeklyReports->resolveWorkspaceFilters(
+            $request->input('date') ?? $request->input('wr_date'),
+            $request->input('date_from') ?? $request->input('wr_date_from'),
+            $request->input('date_to') ?? $request->input('wr_date_to'),
+        );
+
+        $days = $this->weeklyReports->workspaceDays($filters, false, $maxDays);
+
+        return compact('filters', 'days');
+    }
+
+    /**
+     * @param  array{mode: string, date: string|null, date_from: string|null, date_to: string|null}  $filters
+     * @return array<string, string>
+     */
+    private function exportQueryFromFilters(array $filters, bool $dashboard): array
+    {
+        if (($filters['mode'] ?? 'single') === 'range') {
+            return array_filter([
+                $dashboard ? 'wr_date_from' : 'date_from' => $filters['date_from'] ?? null,
+                $dashboard ? 'wr_date_to' : 'date_to'     => $filters['date_to'] ?? null,
+            ]);
+        }
+
+        return array_filter([
+            $dashboard ? 'wr_date' : 'date' => $filters['date'] ?? null,
+        ]);
+    }
+
+    /**
+     * @param  array{mode: string, date: string|null, date_from: string|null, date_to: string|null}  $filters
+     */
+    private function exportFilename(array $filters): string
+    {
+        if (($filters['mode'] ?? 'single') === 'range') {
+            return 'weekly-report-'
+                . Carbon::parse($filters['date_from'])->format('Y-m-d')
+                . '-to-'
+                . Carbon::parse($filters['date_to'])->format('Y-m-d')
+                . '.xlsx';
+        }
+
+        return 'weekly-report-' . Carbon::parse($filters['date'] ?? now())->format('Y-m-d') . '.xlsx';
     }
 
     /** @return \Illuminate\Database\Eloquent\Collection<int, User> */

@@ -357,3 +357,79 @@ it('locks confirmed rows from quantity update', function () {
         ])
         ->assertSessionHasErrors('item');
 });
+
+it('exports weekly report excel with current date filter', function () {
+    $admin = wrAdmin();
+    $ctx = wrPendingLine();
+
+    $report = WeeklyReport::create([
+        'report_date' => '2026-07-09',
+        'already_produced' => 0,
+        'bags_per_hour' => 135,
+        'created_by' => $admin->id,
+    ]);
+
+    WeeklyReportItem::create([
+        'weekly_report_id' => $report->id,
+        'sort_order' => 1,
+        'order_id' => $ctx['order']->id,
+        'order_item_id' => $ctx['orderItem']->id,
+        'product_id' => $ctx['product']->id,
+        'quantity' => 10,
+        'status' => WeeklyReportItem::STATUS_PENDING,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get(route('weekly-report.export', ['date' => '2026-07-09']));
+
+    $response->assertOk();
+    $response->assertDownload('weekly-report-2026-07-09.xlsx');
+});
+
+it('renders weekly report print view with filtered days', function () {
+    $admin = wrAdmin();
+    $ctx = wrPendingLine();
+
+    $report = WeeklyReport::create([
+        'report_date' => '2026-07-09',
+        'already_produced' => 5,
+        'bags_per_hour' => 135,
+        'created_by' => $admin->id,
+    ]);
+
+    WeeklyReportItem::create([
+        'weekly_report_id' => $report->id,
+        'sort_order' => 1,
+        'order_id' => $ctx['order']->id,
+        'order_item_id' => $ctx['orderItem']->id,
+        'product_id' => $ctx['product']->id,
+        'quantity' => 10,
+        'status' => WeeklyReportItem::STATUS_CONFIRMED,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('weekly-report.print', ['date' => '2026-07-09', 'auto_print' => 1]))
+        ->assertOk()
+        ->assertViewIs('weekly_report.print')
+        ->assertViewHas('days')
+        ->assertViewHas('filters')
+        ->assertSee('09 Jul 2026')
+        ->assertSee('Confirmed')
+        ->assertSee('Production summary');
+});
+
+it('exports weekly report using dashboard filter param names', function () {
+    $admin = wrAdmin();
+
+    WeeklyReport::create([
+        'report_date' => '2026-07-10',
+        'already_produced' => 0,
+        'bags_per_hour' => 135,
+        'created_by' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('weekly-report.export', ['wr_date' => '2026-07-10']))
+        ->assertOk()
+        ->assertDownload('weekly-report-2026-07-10.xlsx');
+});

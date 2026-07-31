@@ -99,6 +99,13 @@
                                 <a href="{{ route('dashboard') }}" class="btn btn-danger btn-sm">
                                     <i class="ti ti-refresh me-1"></i>Reset
                                 </a>
+                                @include('weekly_report.partials.export-print-actions', [
+                                    'exportQuery' => array_filter([
+                                        'wr_date' => $isRange ? null : ($filters['date'] ?? $today->toDateString()),
+                                        'wr_date_from' => $filters['date_from'] ?? null,
+                                        'wr_date_to' => $filters['date_to'] ?? null,
+                                    ]),
+                                ])
                             </div>
                         </div>
                     </div>

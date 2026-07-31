@@ -189,6 +189,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /* ------------------------------------------------------------------ */
     Route::get('weekly-report/pending-items', [WeeklyReportController::class, 'searchPendingItems'])
         ->name('weekly-report.pendingItems');
+    Route::get('weekly-report/export', [WeeklyReportController::class, 'export'])
+        ->name('weekly-report.export');
+    Route::get('weekly-report/print', [WeeklyReportController::class, 'print'])
+        ->name('weekly-report.print');
     Route::post('weekly-report/{weeklyReport}/already-produced', [WeeklyReportController::class, 'updateAlreadyProduced'])
         ->name('weekly-report.alreadyProduced');
     Route::post('weekly-report/{weeklyReport}/items', [WeeklyReportController::class, 'storeItem'])
