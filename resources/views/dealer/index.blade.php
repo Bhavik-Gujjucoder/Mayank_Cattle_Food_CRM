@@ -39,7 +39,7 @@
                             <div class="icon-form">
                                 <span class="form-icon"><i class="ti ti-calendar-check"></i></span>
                                 <input type="text" name="start_date" value="{{ old('start_date') }}" id="startDate"
-                                    class="form-control" placeholder="DD/MM/YY" onchange="applyFilter()">
+                                    class="form-control flatpickr" placeholder="DD-MM-YYYY" autocomplete="off">
                             </div>
                         </div>
 
@@ -48,7 +48,7 @@
                             <div class="icon-form">
                                 <span class="form-icon"><i class="ti ti-calendar-check"></i></span>
                                 <input type="text" name="end_date" value="{{ old('end_date') }}" id="endDate"
-                                    class="form-control" placeholder="DD/MM/YY" onchange="applyFilter()">
+                                    class="form-control flatpickr" placeholder="DD-MM-YYYY" autocomplete="off">
                             </div>
                         </div>
                     @else
@@ -112,7 +112,7 @@
                             <div class="icon-form">
                                 <span class="form-icon"><i class="ti ti-calendar-check"></i></span>
                                 <input type="text" name="start_date" value="{{ old('start_date') }}" id="startDate"
-                                    class="form-control" placeholder="DD/MM/YY" onchange="applyFilter()">
+                                    class="form-control flatpickr" placeholder="DD-MM-YYYY" autocomplete="off">
                             </div>
                         </div>
                     </div>
@@ -123,7 +123,7 @@
                             <div class="icon-form">
                                 <span class="form-icon"><i class="ti ti-calendar-check"></i></span>
                                 <input type="text" name="end_date" value="{{ old('end_date') }}" id="endDate"
-                                    class="form-control" placeholder="DD/MM/YY" onchange="applyFilter()">
+                                    class="form-control flatpickr" placeholder="DD-MM-YYYY" autocomplete="off">
                             </div>
                         </div>
                     </div>
@@ -522,15 +522,21 @@
 
         /*** datepicker ***/
         $(document).ready(function() {
-            const startPicker = flatpickr("#startDate", {
-                dateFormat: "d-m-Y",
+            function removeTodayHighlight(selectedDates, dateStr, instance) {
+                const todayElem = instance.calendarContainer.querySelector(".flatpickr-day.today");
+                if (todayElem && !todayElem.classList.contains("selected")) {
+                    todayElem.classList.remove("today");
+                }
+            }
+
+            const endPicker = flatpickr('#endDate', {
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'd-m-Y',
+                allowInput: true,
                 disableMobile: true,
-                // maxDate: "today",
-                // defaultDate: "{{ old('start_date', isset($detail) ? \Carbon\Carbon::parse($detail->start_date)->format('d-m-Y') : now()->format('d-m-Y')) }}",
-                onChange: function(selectedDates, dateStr, instance) {
-                    // Set selected start date as minDate for end date
-                    endPicker.set('minDate', dateStr);
-                    removeTodayHighlight(selectedDates, dateStr, instance);
+                onChange: function () {
+                    dealerTable.draw();
                 },
                 onReady: removeTodayHighlight,
                 onMonthChange: removeTodayHighlight,
@@ -538,45 +544,24 @@
                 onOpen: removeTodayHighlight
             });
 
-            const endPicker = flatpickr("#endDate", {
-                dateFormat: "d-m-Y",
+            flatpickr('#startDate', {
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'd-m-Y',
+                allowInput: true,
                 disableMobile: true,
-                // maxDate: "today",
-                // defaultDate: "{{ old('end_date', isset($detail) ? \Carbon\Carbon::parse($detail->end_date)->format('d-m-Y') : now()->format('d-m-Y')) }}",
+                onChange: function (selectedDates, dateStr, instance) {
+                    endPicker.set('minDate', dateStr || null);
+                    removeTodayHighlight(selectedDates, dateStr, instance);
+                    dealerTable.draw();
+                },
                 onReady: removeTodayHighlight,
                 onMonthChange: removeTodayHighlight,
                 onYearChange: removeTodayHighlight,
                 onOpen: removeTodayHighlight
             });
-
-            function removeTodayHighlight(selectedDates, dateStr, instance) {
-                const todayElem = instance.calendarContainer.querySelector(".flatpickr-day.today");
-                if (todayElem && !todayElem.classList.contains("selected")) {
-                    todayElem.classList.remove("today");
-                }
-            }
         });
         /*** END ***/
-
-        /* Flatpickr date pickers */
-        $(document).ready(function() {
-            const endPicker = flatpickr('#endDate', {
-                dateFormat: 'd-m-Y',
-                disableMobile: true,
-                onChange: function(_, dateStr) {
-                    dealerTable.draw();
-                }
-            });
-
-            flatpickr('#startDate', {
-                dateFormat: 'd-m-Y',
-                disableMobile: true,
-                onChange: function(_, dateStr) {
-                    endPicker.set('minDate', dateStr);
-                    dealerTable.draw();
-                }
-            });
-        });
     });
     </script>
 @endsection

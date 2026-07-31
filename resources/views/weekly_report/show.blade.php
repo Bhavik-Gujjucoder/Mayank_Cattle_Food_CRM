@@ -20,7 +20,7 @@
         <div>
             <div class="dispatch-index-eyebrow">Dispatch Prediction</div>
             <h5 class="mb-0">
-                {{ $report->report_date->format('d/m/Y') }}
+                {{ $report->report_date->format('d M Y') }}
                 — {{ strtoupper($report->report_date->format('l')) }}
             </h5>
             <p class="text-muted small mb-0 mt-1">

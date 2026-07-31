@@ -38,8 +38,9 @@
                     <input type="hidden" name="mode" value="day">
                     <div class="col-12">
                         <label class="col-form-label">Report Date <span class="text-danger">*</span></label>
-                        <input type="date" name="report_date" class="form-control"
-                            value="{{ old('report_date', now()->toDateString()) }}" required>
+                        <input type="text" name="report_date" class="form-control flatpickr"
+                            value="{{ old('report_date', now()->toDateString()) }}"
+                            placeholder="DD-MM-YYYY" autocomplete="off" required>
                         @error('report_date')
                             <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
@@ -60,8 +61,9 @@
                         <label class="col-form-label">
                             Any date in the week <span class="text-danger">*</span>
                         </label>
-                        <input type="date" name="week_start" class="form-control"
-                            value="{{ old('week_start', now()->toDateString()) }}" required>
+                        <input type="text" name="week_start" class="form-control flatpickr"
+                            value="{{ old('week_start', now()->toDateString()) }}"
+                            placeholder="DD-MM-YYYY" autocomplete="off" required>
                         <small class="text-muted">
                             Week is calculated from the Thursday on or before this date through the following Wednesday.
                             Existing day reports are skipped.
@@ -81,4 +83,17 @@
     </div>
 </div>
 
+@endsection
+
+@section('script')
+<script>
+$(function () {
+    flatpickr('.flatpickr', {
+        dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'd-m-Y',
+        allowInput: true,
+    });
+});
+</script>
 @endsection

@@ -400,7 +400,7 @@ describe('view data', function () {
         dashRmSummaryFixture();
 
         $content = actingAs($actor)->get(route('dashboard'))->assertOk()->getContent();
-        $currentDayPos = strpos($content, 'Current Day Report');
+        $currentDayPos = strpos($content, 'Weekly Report');
         $rmSummaryPos = strpos($content, 'Daily Raw Material Summary');
 
         expect($currentDayPos)->not->toBeFalse()
@@ -416,7 +416,7 @@ describe('view data', function () {
         actingAs($actor)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Current Day Report')
+            ->assertSee('Dispatch prediction')
             ->assertSee($fixture['order']->unique_order_id)
             ->assertSee('Cattle Feed Dash');
     });
@@ -425,7 +425,7 @@ describe('view data', function () {
         actingAs(dashActor())
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertDontSee('Current Day Report');
+            ->assertDontSee('Open Full Page');
     });
 
     it('total_dealers reflects correct count', function () {

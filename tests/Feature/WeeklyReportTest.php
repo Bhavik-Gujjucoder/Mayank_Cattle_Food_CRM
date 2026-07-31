@@ -82,7 +82,7 @@ function wrPendingLine(string $unit = 'Bag', int $qty = 100): array
     return compact('brand', 'dealer', 'product', 'order', 'orderItem');
 }
 
-it('blocks a second report for the same date', function () {
+it('reuses existing report when storing the same date again', function () {
     $admin = wrAdmin();
 
     $this->actingAs($admin)
@@ -95,12 +95,14 @@ it('blocks a second report for the same date', function () {
     expect(WeeklyReport::whereDate('report_date', '2026-07-09')->count())->toBe(1);
 
     $this->actingAs($admin)
-        ->from(route('weekly-report.create'))
         ->post(route('weekly-report.store'), [
             'mode' => 'day',
             'report_date' => '2026-07-09',
         ])
-        ->assertSessionHasErrors('report_date');
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect(WeeklyReport::whereDate('report_date', '2026-07-09')->count())->toBe(1);
 });
 
 it('creates week shells thursday through wednesday skipping existing', function () {
@@ -180,6 +182,43 @@ it('keeps difference equal to total when ready stock is zero', function () {
     expect(round($report->calculatedProductionHours(), 4))->toBe(round(100 / 135, 4));
 });
 
+it('uses stored bags per hour for production hours and persists changes', function () {
+    $admin = wrAdmin();
+    $this->actingAs($admin);
+    $ctx = wrPendingLine('Bag', 100);
+    $service = app(\App\Services\WeeklyReportService::class);
+
+    $report = WeeklyReport::create([
+        'report_date' => '2026-07-10',
+        'already_produced' => 0,
+        'bags_per_hour' => 150,
+        'created_by' => $admin->id,
+    ]);
+
+    WeeklyReportItem::create([
+        'weekly_report_id' => $report->id,
+        'sort_order' => 1,
+        'order_id' => $ctx['order']->id,
+        'order_item_id' => $ctx['orderItem']->id,
+        'product_id' => $ctx['product']->id,
+        'quantity' => 100,
+        'status' => WeeklyReportItem::STATUS_PENDING,
+    ]);
+
+    $report->load('items.product');
+
+    expect($report->bagsPerHour())->toBe(150.0);
+    expect(round($report->calculatedProductionHours(), 4))->toBe(round(100 / 150, 4));
+
+    $updated = $service->updateFooter($report->fresh(['items.product']), [
+        'already_produced' => 25,
+        'bags_per_hour' => 200,
+    ]);
+
+    expect((float) $updated->bags_per_hour)->toBe(200.0);
+    expect(round($updated->calculatedProductionHours(), 4))->toBe(round(75 / 200, 4));
+});
+
 it('rejects ready stock greater than total quantity', function () {
     $admin = wrAdmin();
     $this->actingAs($admin);
@@ -240,7 +279,59 @@ it('limits weekly report qty by remaining after other pending reservations', fun
     expect($service->availableWeeklyQty($ctx['orderItem']->fresh(['dispatches'])))->toBe(0);
 });
 
-it('locks confirmed rows from update', function () {
+it('loads workspace for today on index', function () {
+    $admin = wrAdmin(['view-weekly-report', 'add-weekly-report', 'edit-weekly-report']);
+
+    $this->actingAs($admin)
+        ->get(route('weekly-report.index'))
+        ->assertOk()
+        ->assertSee('Weekly Report')
+        ->assertSee(now()->format('d M Y'));
+});
+
+it('redirects legacy show route to workspace date', function () {
+    $admin = wrAdmin(['view-weekly-report']);
+    $report = WeeklyReport::create([
+        'report_date' => '2026-07-11',
+        'already_produced' => 0,
+        'created_by' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('weekly-report.show', $report->id))
+        ->assertRedirect(route('weekly-report.index', ['date' => '2026-07-11']));
+});
+
+it('allows order number update on confirmed rows', function () {
+    $admin = wrAdmin(['view-weekly-report', 'edit-weekly-report']);
+    $ctx = wrPendingLine();
+
+    $report = WeeklyReport::create([
+        'report_date' => '2026-07-09',
+        'already_produced' => 0,
+        'created_by' => $admin->id,
+    ]);
+
+    $item = WeeklyReportItem::create([
+        'weekly_report_id' => $report->id,
+        'sort_order' => 1,
+        'order_id' => $ctx['order']->id,
+        'order_item_id' => $ctx['orderItem']->id,
+        'product_id' => $ctx['product']->id,
+        'quantity' => 10,
+        'status' => WeeklyReportItem::STATUS_CONFIRMED,
+    ]);
+
+    $this->actingAs($admin)
+        ->put(route('weekly-report.items.update', [$report->id, $item->id]), [
+            'sort_order' => 5,
+        ])
+        ->assertRedirect();
+
+    expect($item->fresh()->sort_order)->toBe(5);
+});
+
+it('locks confirmed rows from quantity update', function () {
     $admin = wrAdmin();
     $ctx = wrPendingLine();
 

@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DispatchManagement;
 use App\Models\User;
 use App\Models\WeeklyReport;
 use App\Models\WeeklyReportItem;
 use App\Services\WeeklyReportService;
 use App\Support\ProductUnit;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -53,7 +53,7 @@ class WeeklyReportController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->editColumn('report_date', fn (WeeklyReport $row) => $row->report_date?->format('d/m/Y')
+                ->editColumn('report_date', fn (WeeklyReport $row) => $row->report_date?->format('d M Y')
                     . ' — ' . strtoupper($row->report_date?->format('l') ?? ''))
                 ->addColumn('items_summary', function (WeeklyReport $row) {
                     return (int) $row->items_count . ' row(s), '
@@ -64,7 +64,7 @@ class WeeklyReportController extends Controller
                 ->addColumn('difference', fn (WeeklyReport $row) => number_format($row->differenceInBags(), 2))
                 ->addColumn('hours', fn (WeeklyReport $row) => number_format($row->productionHours(), 2))
                 ->addColumn('action', function (WeeklyReport $row) use ($canDelete) {
-                    $view = '<a href="' . route('weekly-report.show', $row->id) . '" class="dropdown-item">
+                    $view = '<a href="' . route('weekly-report.index', ['date' => $row->report_date->toDateString()]) . '" class="dropdown-item">
                                <i class="ti ti-eye text-info"></i> Open
                            </a>';
 
@@ -96,14 +96,44 @@ class WeeklyReportController extends Controller
                 ->make(true);
         }
 
-        return view('weekly_report.index', $data);
+        try {
+            $filters = $this->weeklyReports->resolveWorkspaceFilters(
+                $request->input('date'),
+                $request->input('date_from'),
+                $request->input('date_to'),
+            );
+        } catch (ValidationException $e) {
+            return redirect()
+                ->route('weekly-report.index', ['date' => now()->toDateString()])
+                ->with('error', collect($e->errors())->flatten()->first());
+        }
+
+        try {
+            $autoCreate = auth()->user()->can('add-weekly-report');
+            $days = $this->weeklyReports->workspaceDays($filters, $autoCreate);
+        } catch (ValidationException $e) {
+            return redirect()
+                ->route('weekly-report.index', ['date' => now()->toDateString()])
+                ->with('error', collect($e->errors())->flatten()->first());
+        }
+
+        $focusDate = $filters['mode'] === 'single'
+            ? Carbon::parse($filters['date'])
+            : null;
+
+        return view('weekly_report.index', array_merge($data, [
+            'filters'      => $filters,
+            'days'         => $days,
+            'focusDate'    => $focusDate,
+            'transporters' => $this->transporters(),
+            'prevDate'     => $focusDate?->copy()->subDay()->toDateString(),
+            'nextDate'     => $focusDate?->copy()->addDay()->toDateString(),
+        ]));
     }
 
     public function create()
     {
-        return view('weekly_report.create', [
-            'page_title' => 'Generate Weekly Report',
-        ]);
+        return redirect()->route('weekly-report.index', ['date' => now()->toDateString()]);
     }
 
     public function store(Request $request)
@@ -125,7 +155,10 @@ class WeeklyReportController extends Controller
             }
 
             return redirect()
-                ->route('weekly-report.show', $first->id)
+                ->route('weekly-report.index', [
+                    'date_from' => $first->report_date->toDateString(),
+                    'date_to'   => $result['created']->sortByDesc('report_date')->first()->report_date->toDateString(),
+                ])
                 ->with('success', $msg);
         }
 
@@ -135,38 +168,17 @@ class WeeklyReportController extends Controller
             'report_date.required' => 'Please select a report date.',
         ]);
 
-        $report = $this->weeklyReports->createDayReport($validated['report_date']);
+        $report = $this->weeklyReports->findOrCreateDayReport($validated['report_date']);
 
         return redirect()
-            ->route('weekly-report.show', $report->id)
-            ->with('success', 'Weekly report created for ' . $report->report_date->format('d/m/Y') . '.');
+            ->route('weekly-report.index', ['date' => $report->report_date->toDateString()])
+            ->with('success', 'Weekly report ready for ' . $report->report_date->format('d M Y') . '.');
     }
 
     public function show(WeeklyReport $weeklyReport)
     {
-        $weeklyReport->load([
-            'items.product:id,name,unit',
-            'items.order:id,unique_order_id,dealer_id',
-            'items.order.dealer:id,user_id,firm_shop_name,city_id',
-            'items.order.dealer.user:id,name',
-            'items.order.dealer.city:id,city_name',
-            'items.transporter:id,name,phone_no',
-            'items.dispatch:id',
-        ]);
-
-        $transporters = User::whereHas('roles', fn ($q) => $q->where('name', 'transporter'))
-            ->where('status', 1)
-            ->orderBy('name')
-            ->get(['id', 'name', 'phone_no']);
-
-        return view('weekly_report.show', [
-            'page_title'   => 'Weekly Report — ' . $weeklyReport->report_date->format('d/m/Y'),
-            'report'       => $weeklyReport,
-            'transporters' => $transporters,
-            'bagsPerHour'  => WeeklyReport::BAGS_PER_HOUR,
-            'totalBags'    => $weeklyReport->totalQuantityInBags(),
-            'difference'   => $weeklyReport->differenceInBags(),
-            'hours'        => $weeklyReport->productionHours(),
+        return redirect()->route('weekly-report.index', [
+            'date' => $weeklyReport->report_date->toDateString(),
         ]);
     }
 
@@ -190,6 +202,7 @@ class WeeklyReportController extends Controller
         $validated = $request->validate([
             'already_produced' => 'required|numeric|min:0',
             'production_hours' => 'nullable|numeric|min:0',
+            'bags_per_hour'    => 'nullable|numeric|min:0.01',
         ]);
 
         try {
@@ -208,15 +221,16 @@ class WeeklyReportController extends Controller
             $weeklyReport->load('items.product:id,unit');
 
             return response()->json([
-                'success'    => true,
-                'total'      => $weeklyReport->totalQuantityInBags(),
-                'difference' => $weeklyReport->differenceInBags(),
-                'hours'      => $weeklyReport->productionHours(),
+                'success'       => true,
+                'total'         => $weeklyReport->totalQuantityInBags(),
+                'difference'    => $weeklyReport->differenceInBags(),
+                'hours'         => $weeklyReport->productionHours(),
+                'bags_per_hour' => $weeklyReport->bagsPerHour(),
             ]);
         }
 
         return redirect()
-            ->route('weekly-report.show', $weeklyReport->id)
+            ->route('weekly-report.index', ['date' => $weeklyReport->report_date->toDateString()])
             ->with('success', 'Footer values updated.');
     }
 
@@ -265,7 +279,7 @@ class WeeklyReportController extends Controller
         }
 
         return redirect()
-            ->route('weekly-report.show', $weeklyReport->id)
+            ->route('weekly-report.index', ['date' => $weeklyReport->report_date->toDateString()])
             ->with('success', 'Row added to report.');
     }
 
@@ -273,14 +287,21 @@ class WeeklyReportController extends Controller
     {
         $this->assertItemBelongsToReport($weeklyReport, $weeklyReportItem);
 
-        $validated = $request->validate([
-            'quantity'       => 'required|integer|min:1',
-            'transport_id'   => 'nullable|exists:users,id',
-            'truck_number'   => 'nullable|string|max:100',
-            'driver_contact' => 'nullable|string|max:20',
-            'note'           => 'nullable|string|max:2000',
-            'sort_order'     => 'nullable|integer|min:0',
-        ]);
+        $rules = [
+            'sort_order' => 'nullable|integer|min:0',
+        ];
+
+        if (! $weeklyReportItem->isLocked()) {
+            $rules = array_merge($rules, [
+                'quantity'       => 'required|integer|min:1',
+                'transport_id'   => 'nullable|exists:users,id',
+                'truck_number'   => 'nullable|string|max:100',
+                'driver_contact' => 'nullable|string|max:20',
+                'note'           => 'nullable|string|max:2000',
+            ]);
+        }
+
+        $validated = $request->validate($rules);
 
         try {
             $this->weeklyReports->updateItem($weeklyReportItem, $validated);
@@ -307,7 +328,7 @@ class WeeklyReportController extends Controller
         }
 
         return redirect()
-            ->route('weekly-report.show', $weeklyReport->id)
+            ->route('weekly-report.index', ['date' => $weeklyReport->report_date->toDateString()])
             ->with('success', 'Row updated.');
     }
 
@@ -332,12 +353,12 @@ class WeeklyReportController extends Controller
             $this->weeklyReports->deleteItem($weeklyReportItem);
         } catch (ValidationException $e) {
             return redirect()
-                ->route('weekly-report.show', $weeklyReport->id)
+                ->route('weekly-report.index', ['date' => $weeklyReport->report_date->toDateString()])
                 ->with('error', collect($e->errors())->flatten()->first());
         }
 
         return redirect()
-            ->route('weekly-report.show', $weeklyReport->id)
+            ->route('weekly-report.index', ['date' => $weeklyReport->report_date->toDateString()])
             ->with('success', 'Row removed.');
     }
 
@@ -357,7 +378,7 @@ class WeeklyReportController extends Controller
             'partial_paid_amount.required_if' => 'Please enter the paid amount.',
         ]);
 
-        $validated['partial_paid_amount'] = (int) $validated['status'] === DispatchManagement::STATUS_PARTIAL
+        $validated['partial_paid_amount'] = (int) $validated['status'] === \App\Models\DispatchManagement::STATUS_PARTIAL
             ? $validated['partial_paid_amount']
             : null;
 
@@ -372,7 +393,7 @@ class WeeklyReportController extends Controller
             }
 
             return redirect()
-                ->route('weekly-report.show', $weeklyReport->id)
+                ->route('weekly-report.index', ['date' => $weeklyReport->report_date->toDateString()])
                 ->withInput()
                 ->withErrors($e->errors())
                 ->with('error', collect($e->errors())->flatten()->first());
@@ -387,7 +408,7 @@ class WeeklyReportController extends Controller
         }
 
         return redirect()
-            ->route('weekly-report.show', $weeklyReport->id)
+            ->route('weekly-report.index', ['date' => $weeklyReport->report_date->toDateString()])
             ->with('success', 'Dispatch entry created. Row is now locked.');
     }
 
@@ -396,5 +417,14 @@ class WeeklyReportController extends Controller
         if ((int) $item->weekly_report_id !== (int) $report->id) {
             abort(404);
         }
+    }
+
+    /** @return \Illuminate\Database\Eloquent\Collection<int, User> */
+    private function transporters()
+    {
+        return User::whereHas('roles', fn ($q) => $q->where('name', 'transporter'))
+            ->where('status', 1)
+            ->orderBy('name')
+            ->get(['id', 'name', 'phone_no']);
     }
 }

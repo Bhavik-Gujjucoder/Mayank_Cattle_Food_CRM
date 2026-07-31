@@ -1087,4 +1087,37 @@ withDataTable(function($) {
         });
     </script>
 @endcan
+
+@can('view-weekly-report')
+    @include('weekly_report.partials.workspace-scripts')
+    @include('weekly_report.partials.quick-add-scripts')
+    <script>
+    $(function () {
+        if ($('.wr-dash-flatpickr').length && typeof flatpickr !== 'undefined') {
+            flatpickr('.wr-dash-flatpickr', {
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'd-m-Y',
+                allowInput: true,
+            });
+        }
+
+        if ($('#wrDashSingleDate').length && typeof flatpickr !== 'undefined') {
+            flatpickr('#wrDashSingleDate', {
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'd-m-Y',
+                allowInput: true,
+            });
+
+            $('#wrDashSingleDate').on('change', function () {
+                var val = $(this).val();
+                if (val) {
+                    window.location.href = "{{ route('dashboard') }}?wr_date=" + encodeURIComponent(val);
+                }
+            });
+        }
+    });
+    </script>
+@endcan
 @endsection

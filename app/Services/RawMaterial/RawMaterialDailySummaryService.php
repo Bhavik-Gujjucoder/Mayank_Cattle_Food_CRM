@@ -99,7 +99,7 @@ class RawMaterialDailySummaryService
             'order_id'              => (int) ($item->order?->id ?? 0),
             'order_item_id'         => (int) $item->id,
             'order_unique_id'       => $item->order?->order_unique_id ?? '—',
-            'order_date'            => $item->order?->order_date?->format('d.m.Y') ?? '—',
+            'order_date'            => $item->order?->order_date?->format('d M Y') ?? '—',
             'order_date_sort'       => $item->order?->order_date?->format('Y-m-d') ?? '',
             'supplier_broker_name'  => $item->order?->supplierBroker?->name ?? '—',
             'party_name'            => $this->formatPartyName($item),

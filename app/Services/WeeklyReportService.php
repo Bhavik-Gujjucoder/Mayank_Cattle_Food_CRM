@@ -42,6 +42,140 @@ class WeeklyReportService
         return $dates;
     }
 
+    public const MAX_WORKSPACE_DAYS = 31;
+
+    public const MAX_DASHBOARD_DAYS = 7;
+
+    /**
+     * @return array{mode: string, date: string|null, date_from: string|null, date_to: string|null}
+     */
+    public function resolveWorkspaceFilters(
+        ?string $date = null,
+        ?string $dateFrom = null,
+        ?string $dateTo = null,
+    ): array {
+        $today = now()->toDateString();
+
+        if ($dateFrom || $dateTo) {
+            $from = $dateFrom ?: $dateTo ?: $today;
+            $to = $dateTo ?: $dateFrom ?: $today;
+
+            return [
+                'mode'      => 'range',
+                'date'      => null,
+                'date_from' => Carbon::parse($from)->toDateString(),
+                'date_to'   => Carbon::parse($to)->toDateString(),
+            ];
+        }
+
+        return [
+            'mode'      => 'single',
+            'date'      => Carbon::parse($date ?: $today)->toDateString(),
+            'date_from' => null,
+            'date_to'   => null,
+        ];
+    }
+
+    /**
+     * @return list<string> Y-m-d dates in order
+     */
+    public function datesForWorkspace(array $filters, int $maxDays = self::MAX_WORKSPACE_DAYS): array
+    {
+        if ($filters['mode'] === 'range') {
+            $from = Carbon::parse($filters['date_from'])->startOfDay();
+            $to = Carbon::parse($filters['date_to'])->startOfDay();
+
+            if ($to->lt($from)) {
+                [$from, $to] = [$to, $from];
+            }
+
+            $dayCount = $from->diffInDays($to) + 1;
+            if ($dayCount > $maxDays) {
+                throw ValidationException::withMessages([
+                    'date_to' => 'Maximum ' . $maxDays . ' days allowed in one view.',
+                ]);
+            }
+
+            $dates = [];
+            for ($d = $from->copy(); $d->lte($to); $d->addDay()) {
+                $dates[] = $d->toDateString();
+            }
+
+            return $dates;
+        }
+
+        return [Carbon::parse($filters['date'])->toDateString()];
+    }
+
+    public function findOrCreateDayReport(string $reportDate, ?int $createdBy = null): WeeklyReport
+    {
+        $date = Carbon::parse($reportDate)->toDateString();
+
+        $existing = WeeklyReport::whereDate('report_date', $date)->first();
+        if ($existing) {
+            return $existing;
+        }
+
+        return WeeklyReport::create([
+            'report_date'      => $date,
+            'already_produced' => 0,
+            'bags_per_hour'    => WeeklyReport::BAGS_PER_HOUR,
+            'created_by'       => $createdBy ?? auth()->id(),
+        ]);
+    }
+
+    /**
+     * @return list<array{date: Carbon, report: WeeklyReport|null}>
+     */
+    public function workspaceDays(array $filters, bool $autoCreate = false, int $maxDays = self::MAX_WORKSPACE_DAYS): array
+    {
+        $dates = $this->datesForWorkspace($filters, $maxDays);
+
+        if ($autoCreate) {
+            foreach ($dates as $dateStr) {
+                $this->findOrCreateDayReport($dateStr);
+            }
+        }
+
+        $query = WeeklyReport::query()
+            ->with($this->reportRelations());
+
+        if (count($dates) === 1) {
+            $query->whereDate('report_date', $dates[0]);
+        } else {
+            $query->whereDate('report_date', '>=', $dates[0])
+                ->whereDate('report_date', '<=', $dates[array_key_last($dates)]);
+        }
+
+        $reports = $query
+            ->orderBy('report_date')
+            ->get()
+            ->keyBy(fn (WeeklyReport $report) => $report->report_date->toDateString());
+
+        return collect($dates)->map(function (string $dateStr) use ($reports) {
+            return [
+                'date'   => Carbon::parse($dateStr)->startOfDay(),
+                'report' => $reports->get($dateStr),
+            ];
+        })->all();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function reportRelations(): array
+    {
+        return [
+            'items.product:id,name,unit',
+            'items.order:id,unique_order_id,dealer_id',
+            'items.order.dealer:id,user_id,firm_shop_name,city_id',
+            'items.order.dealer.user:id,name',
+            'items.order.dealer.city:id,city_name',
+            'items.transporter:id,name,phone_no',
+            'items.dispatch:id',
+        ];
+    }
+
     /**
      * Create a single-day report. Throws if date already exists.
      */
@@ -58,6 +192,7 @@ class WeeklyReportService
         return WeeklyReport::create([
             'report_date'      => $date,
             'already_produced' => 0,
+            'bags_per_hour'    => WeeklyReport::BAGS_PER_HOUR,
             'created_by'       => $createdBy ?? auth()->id(),
         ]);
     }
@@ -83,6 +218,7 @@ class WeeklyReportService
             $created->push(WeeklyReport::create([
                 'report_date'      => $dateStr,
                 'already_produced' => 0,
+                'bags_per_hour'    => WeeklyReport::BAGS_PER_HOUR,
                 'created_by'       => $createdBy ?? auth()->id(),
             ]));
         }
@@ -158,7 +294,7 @@ class WeeklyReportService
     }
 
     /**
-     * @param  array{already_produced: float|int|string, production_hours?: float|int|string|null}  $data
+     * @param  array{already_produced: float|int|string, production_hours?: float|int|string|null, bags_per_hour?: float|int|string|null}  $data
      */
     public function updateFooter(WeeklyReport $report, array $data): WeeklyReport
     {
@@ -177,7 +313,25 @@ class WeeklyReportService
             && $data['production_hours'] !== null
             && $data['production_hours'] !== '';
 
+        $hasBagsPerHourInput = array_key_exists('bags_per_hour', $data)
+            && $data['bags_per_hour'] !== null
+            && $data['bags_per_hour'] !== '';
+
+        if ($hasBagsPerHourInput) {
+            $bagsPerHour = (float) $data['bags_per_hour'];
+            if ($bagsPerHour <= 0) {
+                throw ValidationException::withMessages([
+                    'bags_per_hour' => 'Bags per hour must be greater than zero.',
+                ]);
+            }
+            $report->bags_per_hour = $bagsPerHour;
+        }
+
         $payload = ['already_produced' => $produced];
+
+        if ($hasBagsPerHourInput) {
+            $payload['bags_per_hour'] = $report->bags_per_hour;
+        }
 
         if ($hasHoursInput) {
             $payload['production_hours'] = max(0, (float) $data['production_hours']);
@@ -248,6 +402,12 @@ class WeeklyReportService
     public function updateItem(WeeklyReportItem $item, array $data): WeeklyReportItem
     {
         if ($item->isLocked()) {
+            if (array_key_exists('sort_order', $data)) {
+                $item->update(['sort_order' => (int) $data['sort_order']]);
+
+                return $item->refresh();
+            }
+
             throw ValidationException::withMessages([
                 'item' => 'Confirmed rows cannot be edited.',
             ]);
@@ -290,7 +450,6 @@ class WeeklyReportService
             foreach ($orders as $row) {
                 WeeklyReportItem::where('weekly_report_id', $report->id)
                     ->where('id', $row['id'])
-                    ->where('status', WeeklyReportItem::STATUS_PENDING)
                     ->update(['sort_order' => (int) $row['sort_order']]);
             }
         });

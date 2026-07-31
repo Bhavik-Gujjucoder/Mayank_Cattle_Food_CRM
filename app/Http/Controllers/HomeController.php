@@ -14,6 +14,7 @@ use App\Models\WeeklyReport;
 use App\Services\RawMaterial\RawMaterialDailySummaryService;
 use App\Services\RawMaterialCacheService;
 use App\Services\SequentialDispatchService;
+use App\Services\WeeklyReportService;
 use App\Support\ProductUnit;
 use App\Support\SalesScope;
 use Illuminate\Http\JsonResponse;
@@ -29,7 +30,8 @@ class HomeController extends Controller
 
     public function __construct(
         protected RawMaterialDailySummaryService $rawMaterialDailySummaryService,
-        protected SequentialDispatchService $sequentialDispatch
+        protected SequentialDispatchService $sequentialDispatch,
+        protected WeeklyReportService $weeklyReportService,
     ) {}
 
     /* ------------------------------------------------------------------ */
@@ -67,19 +69,43 @@ class HomeController extends Controller
         $data['rm_date_from'] = null;
         $data['rm_date_to'] = null;
         $data['today_weekly_report'] = null;
+        $data['wr_filters'] = null;
+        $data['wr_days'] = [];
+        $data['wr_transporters'] = collect();
 
         if ($loginUser->can('view-weekly-report')) {
-            $data['today_weekly_report'] = WeeklyReport::query()
-                ->with([
-                    'items.product:id,name,unit',
-                    'items.order:id,unique_order_id,dealer_id',
-                    'items.order.dealer:id,user_id,firm_shop_name,city_id',
-                    'items.order.dealer.user:id,name',
-                    'items.order.dealer.city:id,city_name',
-                    'items.transporter:id,name',
-                ])
-                ->whereDate('report_date', now()->toDateString())
-                ->first();
+            $wrFilters = $this->weeklyReportService->resolveWorkspaceFilters(
+                $request->input('wr_date', now()->toDateString()),
+                $request->input('wr_date_from'),
+                $request->input('wr_date_to'),
+            );
+
+            try {
+                $autoCreate = $loginUser->can('add-weekly-report');
+                $data['wr_days'] = $this->weeklyReportService->workspaceDays(
+                    $wrFilters,
+                    $autoCreate,
+                    WeeklyReportService::MAX_DASHBOARD_DAYS,
+                );
+                $data['wr_filters'] = $wrFilters;
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                $data['wr_filter_error'] = collect($e->errors())->flatten()->first();
+                $wrFilters = $this->weeklyReportService->resolveWorkspaceFilters(now()->toDateString(), null, null);
+                $data['wr_days'] = $this->weeklyReportService->workspaceDays(
+                    $wrFilters,
+                    $loginUser->can('add-weekly-report'),
+                    WeeklyReportService::MAX_DASHBOARD_DAYS,
+                );
+                $data['wr_filters'] = $wrFilters;
+            }
+
+            $data['wr_transporters'] = User::whereHas('roles', fn ($q) => $q->where('name', 'transporter'))
+                ->where('status', 1)
+                ->orderBy('name')
+                ->get(['id', 'name', 'phone_no']);
+
+            $data['today_weekly_report'] = collect($data['wr_days'])
+                ->first(fn (array $day) => $day['date']->isToday())['report'] ?? null;
         }
 
         if ($loginUser->can('raw-material-daily-summary')) {

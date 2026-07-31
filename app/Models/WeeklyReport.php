@@ -20,6 +20,7 @@ class WeeklyReport extends Model
         'report_date'       => 'date',
         'already_produced'  => 'decimal:2',
         'production_hours'  => 'decimal:4',
+        'bags_per_hour'     => 'decimal:2',
     ];
 
     /* ── Relationships ───────────────────────────────────────────── */
@@ -62,10 +63,20 @@ class WeeklyReport extends Model
         return max(0, $this->totalQuantityInBags() - (float) $this->already_produced);
     }
 
-    /** Auto hours from difference ÷ 135. */
+    /** Effective bags-per-hour divisor for this report. */
+    public function bagsPerHour(): float
+    {
+        $value = $this->bags_per_hour;
+
+        return ($value !== null && (float) $value > 0)
+            ? (float) $value
+            : self::BAGS_PER_HOUR;
+    }
+
+    /** Auto hours from difference ÷ bags per hour. */
     public function calculatedProductionHours(): float
     {
-        return $this->differenceInBags() / self::BAGS_PER_HOUR;
+        return $this->differenceInBags() / $this->bagsPerHour();
     }
 
     /**
