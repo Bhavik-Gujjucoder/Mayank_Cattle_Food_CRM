@@ -8,6 +8,7 @@ use App\Models\WeeklyReport;
 use App\Models\WeeklyReportItem;
 use App\Services\WeeklyReportService;
 use App\Support\ProductUnit;
+use App\Support\SalesScope;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -39,7 +40,7 @@ class WeeklyReportController extends Controller
 
     public function index(Request $request)
     {
-        $data['page_title'] = 'Weekly Report';
+        $data['page_title'] = 'Daily Dispatch';
 
         if ($request->ajax()) {
             $canDelete = auth()->user()->can('delete-weekly-report');
@@ -131,6 +132,7 @@ class WeeklyReportController extends Controller
             'days'         => $days,
             'focusDate'    => $focusDate,
             'transporters' => $this->transporters(),
+            'dealers'      => SalesScope::filterableDealers(),
             'prevDate'     => $focusDate?->copy()->subDay()->toDateString(),
             'nextDate'     => $focusDate?->copy()->addDay()->toDateString(),
             'exportQuery'  => $this->exportQueryFromFilters($filters, false),
@@ -175,7 +177,7 @@ class WeeklyReportController extends Controller
         }
 
         return view('weekly_report.print', [
-            'page_title' => 'Weekly Report — Print',
+            'page_title' => 'Daily Dispatch — Print',
             'filters'    => $filters,
             'days'       => $days,
             'autoPrint'  => $request->boolean('auto_print'),
@@ -223,7 +225,7 @@ class WeeklyReportController extends Controller
 
         return redirect()
             ->route('weekly-report.index', ['date' => $report->report_date->toDateString()])
-            ->with('success', 'Weekly report ready for ' . $report->report_date->format('d M Y') . '.');
+            ->with('success', 'Daily Dispatch ready for ' . $report->report_date->format('d M Y') . '.');
     }
 
     public function show(WeeklyReport $weeklyReport)
@@ -245,7 +247,7 @@ class WeeklyReportController extends Controller
 
         return redirect()
             ->route('weekly-report.index')
-            ->with('success', 'Weekly report deleted successfully.');
+            ->with('success', 'Daily Dispatch deleted successfully.');
     }
 
     public function updateAlreadyProduced(Request $request, WeeklyReport $weeklyReport)
@@ -288,9 +290,22 @@ class WeeklyReportController extends Controller
     public function searchPendingItems(Request $request)
     {
         $term = $request->input('q', $request->input('term'));
+        $dealerId = $request->filled('dealer_id') ? (int) $request->input('dealer_id') : null;
+
+        if (SalesScope::showDealerFilter()) {
+            if (! $dealerId) {
+                return response()->json(['results' => []]);
+            }
+
+            if (! SalesScope::userCanFilterByDealer($dealerId)) {
+                return response()->json(['results' => []], 403);
+            }
+        } else {
+            $dealerId = null;
+        }
 
         return response()->json([
-            'results' => $this->weeklyReports->searchPendingOrderItems($term),
+            'results' => $this->weeklyReports->searchPendingOrderItems($term, 50, $dealerId),
         ]);
     }
 
@@ -299,6 +314,7 @@ class WeeklyReportController extends Controller
         $validated = $request->validate([
             'order_item_id'  => ['required', Rule::exists('order_items', 'id')->whereNull('deleted_at')],
             'quantity'       => 'required|integer|min:1',
+            'no_of_entries'  => 'nullable|integer|min:1|max:100',
             'transport_id'   => 'nullable|exists:users,id',
             'truck_number'   => 'nullable|string|max:100',
             'driver_contact' => 'nullable|string|max:20',
@@ -307,10 +323,14 @@ class WeeklyReportController extends Controller
             'order_item_id.required' => 'Please select a pending order line.',
             'quantity.required'      => ProductUnit::requiredMessage(),
             'quantity.min'           => ProductUnit::minMessage(),
+            'no_of_entries.min'      => 'No. of Entries must be at least 1.',
+            'no_of_entries.max'      => 'No. of Entries cannot exceed 100.',
         ]);
 
+        $validated['no_of_entries'] = (int) ($validated['no_of_entries'] ?? 1);
+
         try {
-            $item = $this->weeklyReports->addItem($weeklyReport, $validated);
+            $items = $this->weeklyReports->addItem($weeklyReport, $validated);
         } catch (ValidationException $e) {
             if ($request->expectsJson()) {
                 return response()->json([
@@ -321,17 +341,21 @@ class WeeklyReportController extends Controller
             throw $e;
         }
 
+        $count = $items->count();
+        $message = $count === 1 ? 'Row added.' : $count . ' rows added.';
+
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Row added.',
-                'item_id' => $item->id,
+                'message' => $message,
+                'item_id' => $items->first()?->id,
+                'count'   => $count,
             ]);
         }
 
         return redirect()
             ->route('weekly-report.index', ['date' => $weeklyReport->report_date->toDateString()])
-            ->with('success', 'Row added to report.');
+            ->with('success', $count === 1 ? 'Row added to report.' : $count . ' rows added to report.');
     }
 
     public function updateItem(Request $request, WeeklyReport $weeklyReport, WeeklyReportItem $weeklyReportItem)
@@ -510,14 +534,14 @@ class WeeklyReportController extends Controller
     private function exportFilename(array $filters): string
     {
         if (($filters['mode'] ?? 'single') === 'range') {
-            return 'weekly-report-'
+            return 'daily-dispatch-'
                 . Carbon::parse($filters['date_from'])->format('Y-m-d')
                 . '-to-'
                 . Carbon::parse($filters['date_to'])->format('Y-m-d')
                 . '.xlsx';
         }
 
-        return 'weekly-report-' . Carbon::parse($filters['date'] ?? now())->format('Y-m-d') . '.xlsx';
+        return 'daily-dispatch-' . Carbon::parse($filters['date'] ?? now())->format('Y-m-d') . '.xlsx';
     }
 
     /** @return \Illuminate\Database\Eloquent\Collection<int, User> */

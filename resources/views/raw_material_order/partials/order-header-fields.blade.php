@@ -70,4 +70,11 @@
         </select>
         <span class="text-danger small price_basis_error">@error('price_basis'){{ $message }}@enderror</span>
     </div>
+    <div class="col-12 col-md-4 mb-3">
+        <label class="col-form-label">Advance Payment (₹)</label>
+        <input type="number" name="advance_payment" id="advance_payment" step="0.01" min="0"
+               value="{{ old('advance_payment', isset($order) ? number_format((float) ($order->advance_payment ?? 0), 2, '.', '') : '0.00') }}"
+               class="form-control" placeholder="0.00">
+        <span class="text-danger small advance_payment_error">@error('advance_payment'){{ $message }}@enderror</span>
+    </div>
 </div>

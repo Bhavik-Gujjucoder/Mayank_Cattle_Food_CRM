@@ -72,6 +72,7 @@ class HomeController extends Controller
         $data['wr_filters'] = null;
         $data['wr_days'] = [];
         $data['wr_transporters'] = collect();
+        $data['wr_dealers'] = collect();
 
         if ($loginUser->can('view-weekly-report')) {
             $wrFilters = $this->weeklyReportService->resolveWorkspaceFilters(
@@ -103,6 +104,8 @@ class HomeController extends Controller
                 ->where('status', 1)
                 ->orderBy('name')
                 ->get(['id', 'name', 'phone_no']);
+
+            $data['wr_dealers'] = SalesScope::filterableDealers();
 
             $data['today_weekly_report'] = collect($data['wr_days'])
                 ->first(fn (array $day) => $day['date']->isToday())['report'] ?? null;

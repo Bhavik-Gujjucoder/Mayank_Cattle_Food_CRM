@@ -53,6 +53,7 @@ class RawMaterialOrderController extends Controller
                 ->editColumn('order_date', fn($row) => $row->order_date?->format('d M Y') ?? '—')
                 ->editColumn('total_qty', fn($row) => number_format($row->total_qty) . ' tons')
                 ->editColumn('total_price', fn($row) => '₹ ' . number_format($row->total_price, 2))
+                ->editColumn('advance_payment', fn($row) => '₹ ' . number_format((float) $row->advance_payment, 2))
                 ->editColumn('total_freight', fn($row) => '₹ ' . number_format($row->total_freight, 2))
                 ->editColumn('status', fn($row) => $row->statusBadge())
                 ->addColumn('action', function ($row) use ($canView, $canEdit, $canExport, $canDelete) {
@@ -102,6 +103,7 @@ class RawMaterialOrderController extends Controller
                 'supplier_order_id'  => self::normalizeSupplierOrderId($request),
                 'order_date'         => $request->order_date,
                 'price_basis'        => $request->price_basis,
+                'advance_payment'    => $request->input('advance_payment', 0) ?? 0,
             ]);
 
             foreach ($request->raw_material_id as $i => $materialId) {
@@ -162,6 +164,7 @@ class RawMaterialOrderController extends Controller
                 'supplier_order_id'  => self::normalizeSupplierOrderId($request),
                 'order_date'         => $request->order_date,
                 'price_basis'        => $request->price_basis,
+                'advance_payment'    => $request->input('advance_payment', 0) ?? 0,
             ]);
 
             $raw_material_order->items()->forceDelete();
@@ -202,6 +205,23 @@ class RawMaterialOrderController extends Controller
         $raw_material_order->items()->update(['status' => 3]);
 
         return redirect()->back()->with('success', 'Order cancelled successfully.');
+    }
+
+    public function updateAdvancePayment(Request $request, RawMaterialOrder $raw_material_order)
+    {
+        if ((int) $raw_material_order->status === 3) {
+            return redirect()->back()->with('error', 'Cannot update advance payment on a cancelled order.');
+        }
+
+        $validated = $request->validate([
+            'advance_payment' => 'nullable|numeric|min:0',
+        ]);
+
+        $raw_material_order->update([
+            'advance_payment' => $validated['advance_payment'] ?? 0,
+        ]);
+
+        return redirect()->back()->with('success', 'Advance payment updated successfully.');
     }
 
     public function orderItems(RawMaterialOrder $raw_material_order)

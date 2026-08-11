@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
 use Yajra\DataTables\DataTables;
@@ -175,16 +176,18 @@ class UserController extends Controller
     /* ------------------------------------------------------------------ */
     public function store(Request $request, $type)
     {
+        $isTransporter = $type === 'transporter';
+
         $request->validate([
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Image validation
             'name'     => 'required|string|max:255|unique:users,name,NULL,id,deleted_at,NULL',
-            'email'    => 'required|email|unique:users,email,NULL,id,deleted_at,NULL',
+            'email'    => ($isTransporter ? 'nullable' : 'required') . '|email|unique:users,email,NULL,id,deleted_at,NULL',
             'role'     => [
                 'nullable',
                 Rule::exists('roles', 'id')->whereNot('name', 'super admin') // Exclude super admin
             ],
-            'phone_no' => 'required|digits_between:10,11|unique:users,phone_no,NULL,id,deleted_at,NULL',
-            'password' => 'required|min:6|confirmed',
+            'phone_no' => ($isTransporter ? 'nullable' : 'required') . '|digits_between:10,11|unique:users,phone_no,NULL,id,deleted_at,NULL',
+            'password' => ($isTransporter ? 'nullable' : 'required') . '|min:6|confirmed',
             'status'   => 'nullable|in:1,0'
         ], [
             'profile_picture.image' => 'The profile picture must be an image.',
@@ -196,9 +199,9 @@ class UserController extends Controller
 
         $user = User::create([
             'name'     => $request->name,
-            'email'    => $request->email ?? null,
-            'phone_no' => $request->phone_no,
-            'password' => Hash::make($request->password),
+            'email'    => $request->email ?: null,
+            'phone_no' => $request->phone_no ?: null,
+            'password' => Hash::make($request->filled('password') ? $request->password : Str::random(32)),
             'status'   => $request->input('status', 1),
         ]);
 
@@ -364,11 +367,13 @@ class UserController extends Controller
     public function update(Request $request, $type = null, $id = null)
     {
         $user = User::find($id);
+        $isTransporter = $type === 'transporter';
+
         $request->validate([
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Image validation
             'name'            => 'required|string|max:255|unique:users,name,' . $user->id . ',id,deleted_at,NULL',
-            'email'           => 'required|email|unique:users,email,' . $user->id . ',id,deleted_at,NULL',
-            'phone_no'        => 'required|numeric|digits_between:10,11|unique:users,phone_no,' . $user->id . ',id,deleted_at,NULL',
+            'email'           => ($isTransporter ? 'nullable' : 'required') . '|email|unique:users,email,' . $user->id . ',id,deleted_at,NULL',
+            'phone_no'        => ($isTransporter ? 'nullable' : 'required') . '|numeric|digits_between:10,11|unique:users,phone_no,' . $user->id . ',id,deleted_at,NULL',
             'role'            => 'exists:roles,name',
             'password'        => ['nullable', 'string', 'min:6', 'confirmed'],
             'status'          => 'required|in:0,1',
@@ -378,8 +383,8 @@ class UserController extends Controller
 
         $user->update([
             'name'     => $request->name,
-            'email'    => $request->email ?? null,
-            'phone_no' => $request->phone_no,
+            'email'    => $request->email ?: null,
+            'phone_no' => $request->phone_no ?: null,
             'status'   => $request->status,
         ]);
 

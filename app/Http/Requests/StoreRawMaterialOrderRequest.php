@@ -24,6 +24,7 @@ class StoreRawMaterialOrderRequest extends FormRequest
             'supplier_order_id'   => 'nullable|string|max:100',
             'order_date'          => 'required|date|before_or_equal:today',
             'price_basis'         => ['required', Rule::in(RawMaterialOrderPriceBasis::options())],
+            'advance_payment'     => 'nullable|numeric|min:0',
             'raw_material_id'     => 'required|array|min:1',
             'raw_material_id.*'   => 'required|exists:raw_materials,id',
             'total_qty'           => 'required|array|min:1',

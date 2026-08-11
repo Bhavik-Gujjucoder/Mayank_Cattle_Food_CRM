@@ -118,6 +118,7 @@
                         <th scope="col">Order Date</th>
                         <th scope="col">Total Qty</th>
                         <th scope="col">Total Price</th>
+                        <th scope="col">Advance Payment</th>
                         <th scope="col">Total Freight</th>
                         <th scope="col">Status</th>
                         @canany(['edit-raw-material-purchas-order', 'delete-raw-material-purchas-order'])
@@ -186,6 +187,7 @@ withDataTable(function () {
             { data: 'order_date', name: 'order_date', searchable: false },
             { data: 'total_qty', name: 'total_qty', searchable: false },
             { data: 'total_price', name: 'total_price', searchable: false },
+            { data: 'advance_payment', name: 'advance_payment', searchable: false },
             { data: 'total_freight', name: 'total_freight', searchable: false },
             { data: 'status', name: 'status', orderable: false, searchable: false },
             { data: 'action', name: 'action', orderable: false, searchable: false, visible: isShowAction },

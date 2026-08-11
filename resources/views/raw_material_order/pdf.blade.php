@@ -79,6 +79,14 @@
             <td class="value">{{ number_format($order->total_price, 2) }}</td>
         </tr>
         <tr>
+            <td class="label">Advance Payment (₹)</td>
+            <td class="value">{{ number_format((float) $order->advance_payment, 2) }}</td>
+        </tr>
+        <tr>
+            <td class="label">Remaining (₹)</td>
+            <td class="value">{{ number_format($order->remainingAmount(), 2) }}</td>
+        </tr>
+        <tr>
             <td class="label">Total Freight (₹)</td>
             <td class="value">{{ number_format($order->total_freight, 2) }}</td>
         </tr>

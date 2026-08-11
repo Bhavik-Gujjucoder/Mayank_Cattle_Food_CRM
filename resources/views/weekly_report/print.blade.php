@@ -9,7 +9,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $page_title ?? 'Weekly Report' }}</title>
+    <title>{{ $page_title ?? 'Daily Dispatch' }}</title>
     <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
     <style>
         body {
@@ -206,7 +206,7 @@
     </div>
 
     <div class="wr-print-header">
-        <h1 class="wr-print-title">Weekly Report — Dispatch Prediction</h1>
+        <h1 class="wr-print-title">Daily Dispatch — Dispatch Prediction</h1>
         <p class="wr-print-meta">
             @if ($isRange)
                 {{ count($days) }} day(s):

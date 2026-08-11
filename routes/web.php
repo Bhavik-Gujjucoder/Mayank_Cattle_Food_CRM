@@ -185,7 +185,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     /* ------------------------------------------------------------------ */
-    /*  Weekly Report (dispatch prediction)  (type: weekly-report)        */
+    /*  Daily Dispatch (dispatch prediction)  (type: weekly-report)       */
     /* ------------------------------------------------------------------ */
     Route::get('weekly-report/pending-items', [WeeklyReportController::class, 'searchPendingItems'])
         ->name('weekly-report.pendingItems');
@@ -341,6 +341,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->name('items')->middleware('permission:view-raw-material-purchas-order');
             Route::patch('{raw_material_order}/cancel', [RawMaterialOrderController::class, 'cancel'])
                 ->name('cancel')->middleware('permission:edit-raw-material-purchas-order');
+            Route::patch('{raw_material_order}/advance-payment', [RawMaterialOrderController::class, 'updateAdvancePayment'])
+                ->name('update-advance-payment')->middleware('permission:edit-raw-material-purchas-order');
             Route::get('/', [RawMaterialOrderController::class, 'index'])
                 ->name('index')->middleware('permission:view-raw-material-purchas-order');
             Route::get('create', [RawMaterialOrderController::class, 'create'])

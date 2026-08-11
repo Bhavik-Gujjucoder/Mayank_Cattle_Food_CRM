@@ -106,6 +106,7 @@ function rmoPayload(int $brokerId, int $supplierId, int $materialId, array $over
         'supplier_order_id'  => null,
         'order_date'         => now()->toDateString(),
         'price_basis'        => RawMaterialOrderPriceBasis::FOR_GST,
+        'advance_payment'    => '0',
         'raw_material_id'    => [$materialId],
         'total_qty'          => [10],
         'price'              => ['500.00'],
@@ -453,6 +454,57 @@ describe('store-persistence', function () {
 
         expect(RawMaterialOrder::where('order_unique_id', $orderId)->value('supplier_order_id'))->toBeNull();
     });
+
+    it('stores advance_payment on create', function () {
+        $broker   = mkRmoBroker();
+        $supplier = mkRmoSupplier($broker->id);
+        $material = mkRmoMaterial(mkRmoCategory()->id);
+        $orderId  = 'ORD-ADV-' . uniqid();
+
+        actingAs(rmoActor(['add-raw-material-purchas-order']))
+            ->post(route('raw-material.order.store'), rmoPayload($broker->id, $supplier->id, $material->id, [
+                'order_unique_id' => $orderId,
+                'advance_payment' => '15000.75',
+            ]))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        assertDatabaseHas('raw_material_orders', [
+            'order_unique_id' => $orderId,
+            'advance_payment' => 15000.75,
+        ]);
+    });
+
+    it('defaults advance_payment to zero when omitted', function () {
+        $broker   = mkRmoBroker();
+        $supplier = mkRmoSupplier($broker->id);
+        $material = mkRmoMaterial(mkRmoCategory()->id);
+        $orderId  = 'ORD-ADV0-' . uniqid();
+
+        $payload = rmoPayload($broker->id, $supplier->id, $material->id, [
+            'order_unique_id' => $orderId,
+        ]);
+        unset($payload['advance_payment']);
+
+        actingAs(rmoActor(['add-raw-material-purchas-order']))
+            ->post(route('raw-material.order.store'), $payload)
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        expect((float) RawMaterialOrder::where('order_unique_id', $orderId)->value('advance_payment'))->toBe(0.0);
+    });
+
+    it('rejects negative advance_payment', function () {
+        $broker   = mkRmoBroker();
+        $supplier = mkRmoSupplier($broker->id);
+        $material = mkRmoMaterial(mkRmoCategory()->id);
+
+        actingAs(rmoActor(['add-raw-material-purchas-order']))
+            ->post(route('raw-material.order.store'), rmoPayload($broker->id, $supplier->id, $material->id, [
+                'advance_payment' => '-1',
+            ]))
+            ->assertSessionHasErrors(['advance_payment']);
+    });
 });
 
 // ─────────────────────────────────────────────
@@ -549,6 +601,53 @@ describe('update', function () {
         $items = $s['order']->fresh()->items;
         expect($items)->toHaveCount(1)
             ->and($items->first()->raw_material_id)->toBe($newMaterial->id);
+    });
+
+    it('updates advance_payment on pending order', function () {
+        $s = rmoSetup();
+
+        actingAs(rmoActor(['edit-raw-material-purchas-order']))
+            ->put(route('raw-material.order.update', $s['order']), rmoPayload(
+                $s['broker']->id,
+                $s['supplier']->id,
+                $s['material']->id,
+                ['advance_payment' => '25000.00']
+            ))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        expect((float) $s['order']->fresh()->advance_payment)->toBe(25000.0);
+    });
+});
+
+// ─────────────────────────────────────────────
+
+describe('updateAdvancePayment', function () {
+    it('updates advance payment on a partially received order', function () {
+        $s = rmoSetup();
+        $s['order']->update(['status' => 1, 'total_price' => 100000, 'advance_payment' => 0]);
+
+        actingAs(rmoActor(['edit-raw-material-purchas-order']))
+            ->patch(route('raw-material.order.update-advance-payment', $s['order']), [
+                'advance_payment' => '40000.50',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        expect((float) $s['order']->fresh()->advance_payment)->toBe(40000.5)
+            ->and($s['order']->fresh()->remainingAmount())->toBe(59999.5);
+    });
+
+    it('blocks advance payment update on cancelled order', function () {
+        $s = rmoSetup();
+        $s['order']->update(['status' => 3]);
+
+        actingAs(rmoActor(['edit-raw-material-purchas-order']))
+            ->patch(route('raw-material.order.update-advance-payment', $s['order']), [
+                'advance_payment' => '1000',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
     });
 });
 

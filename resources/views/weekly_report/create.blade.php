@@ -8,7 +8,7 @@
     <div class="card-header d-flex align-items-center justify-content-between">
         <div>
             <div class="dispatch-index-eyebrow">Sales</div>
-            <h5 class="mb-0">Generate Weekly Report</h5>
+            <h5 class="mb-0">Generate Daily Dispatch</h5>
             <p class="text-muted small mb-0 mt-1">
                 Create one day report, or generate shells for a full week (Thursday → Wednesday).
                 Only one report is allowed per date.

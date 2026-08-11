@@ -34,7 +34,7 @@
                             @endforeach --}}
                             @foreach ($permissions as $type => $items)
                                 <div class="mb-3 mt-3">
-                                    <label class="fw-bold">{{ ucwords(str_replace('-', ' ', $type)) }}</label>
+                                    <label class="fw-bold">{{ str_replace('Weekly Report', 'Daily Dispatch', ucwords(str_replace('-', ' ', $type))) }}</label>
 
                                     <div class="row mt-1">
                                         @foreach ($items as $permission)
@@ -43,7 +43,7 @@
                                                     <input type="checkbox" name="permissions[]" class="form-check-input"
                                                         value="{{ $permission->id }}">
 
-                                                    {{ ucwords(str_replace('-', ' ', $permission->name)) }}
+                                                    {{ str_replace('Weekly Report', 'Daily Dispatch', ucwords(str_replace('-', ' ', $permission->name))) }}
                                                 </label>
                                             </div>
                                         @endforeach

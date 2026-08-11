@@ -185,7 +185,7 @@ class WeeklyReportService
 
         if (WeeklyReport::whereDate('report_date', $date)->exists()) {
             throw ValidationException::withMessages([
-                'report_date' => 'A weekly report already exists for this date.',
+                'report_date' => 'A Daily Dispatch already exists for this date.',
             ]);
         }
 
@@ -352,15 +352,19 @@ class WeeklyReportService
     }
 
     /**
+     * Create one or more pending planned rows for the same order line.
+     *
      * @param  array<string, mixed>  $data
+     * @return Collection<int, WeeklyReportItem>
      */
-    public function addItem(WeeklyReport $report, array $data): WeeklyReportItem
+    public function addItem(WeeklyReport $report, array $data): Collection
     {
         $orderItem = OrderItem::with(['product', 'order', 'dispatches'])->findOrFail($data['order_item_id']);
         SalesScope::authorizeOrderAccess($orderItem->order);
 
         $available = $this->availableWeeklyQty($orderItem);
         $qty = (int) $data['quantity'];
+        $entries = max(1, (int) ($data['no_of_entries'] ?? 1));
 
         if ($qty < 1) {
             throw ValidationException::withMessages([
@@ -368,32 +372,60 @@ class WeeklyReportService
             ]);
         }
 
-        if ($available < 1) {
+        if ($entries < 1) {
             throw ValidationException::withMessages([
-                'quantity' => 'No remaining pending quantity for this order line (already planned on weekly reports).',
+                'no_of_entries' => 'No. of Entries must be at least 1.',
             ]);
         }
 
-        if ($qty > $available) {
+        if ($entries > 100) {
+            throw ValidationException::withMessages([
+                'no_of_entries' => 'No. of Entries cannot exceed 100.',
+            ]);
+        }
+
+        if ($available < 1) {
+            throw ValidationException::withMessages([
+                'quantity' => 'No remaining pending quantity for this order line (already planned on Daily Dispatch).',
+            ]);
+        }
+
+        $totalQty = $qty * $entries;
+
+        if ($totalQty > $available) {
+            if ($entries > 1) {
+                throw ValidationException::withMessages([
+                    'no_of_entries' => 'Qty × No. of Entries (' . $qty . ' × ' . $entries . ' = ' . $totalQty
+                        . ') cannot exceed the remaining pending quantity (' . $available . ').',
+                ]);
+            }
+
             throw ValidationException::withMessages([
                 'quantity' => 'The entered quantity cannot exceed the remaining pending quantity (' . $available . ').',
             ]);
         }
 
-        $maxSort = (int) $report->items()->max('sort_order');
+        return DB::transaction(function () use ($report, $orderItem, $data, $qty, $entries) {
+            $maxSort = (int) $report->items()->max('sort_order');
+            $created = collect();
 
-        return $report->items()->create([
-            'sort_order'     => $maxSort + 1,
-            'order_id'       => $orderItem->order_id,
-            'order_item_id'  => $orderItem->id,
-            'product_id'     => $orderItem->product_id,
-            'quantity'       => $qty,
-            'transport_id'   => $data['transport_id'] ?? null,
-            'truck_number'   => $data['truck_number'] ?? null,
-            'driver_contact' => $data['driver_contact'] ?? null,
-            'note'           => $data['note'] ?? null,
-            'status'         => WeeklyReportItem::STATUS_PENDING,
-        ]);
+            for ($i = 1; $i <= $entries; $i++) {
+                $created->push($report->items()->create([
+                    'sort_order'     => $maxSort + $i,
+                    'order_id'       => $orderItem->order_id,
+                    'order_item_id'  => $orderItem->id,
+                    'product_id'     => $orderItem->product_id,
+                    'quantity'       => $qty,
+                    'transport_id'   => $data['transport_id'] ?? null,
+                    'truck_number'   => $data['truck_number'] ?? null,
+                    'driver_contact' => $data['driver_contact'] ?? null,
+                    'note'           => $data['note'] ?? null,
+                    'status'         => WeeklyReportItem::STATUS_PENDING,
+                ]));
+            }
+
+            return $created;
+        });
     }
 
     /**
@@ -562,22 +594,28 @@ class WeeklyReportService
 
     /**
      * Pending order line items for manual pick (AJAX search).
+     * When dealer_id is provided, only that dealer's unpaid/partial orders are returned.
      *
      * @return list<array<string, mixed>>
      */
-    public function searchPendingOrderItems(?string $term = null, int $limit = 30): array
+    public function searchPendingOrderItems(?string $term = null, int $limit = 30, ?int $dealerId = null): array
     {
         $query = OrderItem::query()
             ->with([
                 'product:id,name,unit',
-                'order:id,unique_order_id,dealer_id',
+                'order:id,unique_order_id,dealer_id,payment_status',
                 'order.dealer:id,user_id,firm_shop_name,city_id',
                 'order.dealer.user:id,name',
                 'order.dealer.city:id,city_name',
                 'dispatches',
             ])
-            ->whereHas('order', function ($q) {
+            ->whereHas('order', function ($q) use ($dealerId) {
                 SalesScope::scopeOrders($q);
+                $q->whereIn('payment_status', OrderManagement::pendingPaymentStatuses());
+
+                if ($dealerId) {
+                    $q->where('dealer_id', $dealerId);
+                }
             })
             ->whereRaw(
                 'order_items.qty > (

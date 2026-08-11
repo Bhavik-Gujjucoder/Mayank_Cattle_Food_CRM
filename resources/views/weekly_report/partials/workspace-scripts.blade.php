@@ -89,17 +89,33 @@
         });
     }
 
-    function loadPendingOptions($select) {
-        $select.html('<option value="">Loading…</option>');
-        $.get(pendingItemsUrl, function (res) {
+    function loadPendingOptions($select, dealerId) {
+        var $form = $select.closest('.wr-add-item-form');
+        var $hint = $form.find('.wr-add-pending-hint');
+        var $qty = $form.find('.wr-add-quantity');
+
+        $hint.text('');
+        $qty.removeAttr('max').val('');
+
+        if ($form.find('.wr-add-dealer').length && !dealerId) {
+            $select.prop('disabled', true)
+                .html('<option value="">— Select dealer first —</option>');
+            return;
+        }
+
+        $select.prop('disabled', true).html('<option value="">Loading…</option>');
+        $.get(pendingItemsUrl, { dealer_id: dealerId || '' }, function (res) {
             var html = '<option value="">— Select pending order line —</option>';
             (res.results || []).forEach(function (r) {
                 html += '<option value="' + r.order_item_id + '" data-pending="' + r.pending_qty + '" data-unit="' + (r.product_unit || '') + '">'
                     + r.label + '</option>';
             });
-            $select.html(html);
+            if (!(res.results || []).length) {
+                html = '<option value="">— No pending orders for this dealer —</option>';
+            }
+            $select.html(html).prop('disabled', false);
         }).fail(function () {
-            $select.html('<option value="">Failed to load pending orders</option>');
+            $select.html('<option value="">Failed to load pending orders</option>').prop('disabled', false);
         });
     }
 
@@ -122,8 +138,19 @@
 
         var $addForm = $block.find('.wr-add-item-form');
         if ($addForm.length) {
-            loadPendingOptions($addForm.find('.wr-add-order-item'));
+            var $dealer = $addForm.find('.wr-add-dealer');
+            if ($dealer.length) {
+                loadPendingOptions($addForm.find('.wr-add-order-item'), $dealer.val());
+            } else {
+                loadPendingOptions($addForm.find('.wr-add-order-item'), null);
+            }
         }
+
+        $block.on('change', '.wr-add-dealer', function () {
+            var $form = $(this).closest('.wr-add-item-form');
+            $form.find('.dealer_id_error, .order_item_id_error, .quantity_error, .no_of_entries_error').text('');
+            loadPendingOptions($form.find('.wr-add-order-item'), $(this).val());
+        });
 
         $block.on('change', '.wr-transport-select', function () {
             var $scope = $(this).closest('tr, .wr-add-item-form');
@@ -146,18 +173,45 @@
             var unit = $(this).find(':selected').data('unit') || '';
             var $hint = $block.find('.wr-add-pending-hint');
             var $qty = $block.find('.wr-add-quantity');
+            var $entries = $block.find('.wr-add-entries');
             if (pending) {
                 $hint.text('Remaining: ' + pending + (unit ? ' ' + unit : ''));
                 $qty.attr('max', pending).val(pending);
+                if (!$entries.val() || parseInt($entries.val(), 10) < 1) {
+                    $entries.val(1);
+                }
             } else {
                 $hint.text('');
             }
+            $block.find('.quantity_error, .no_of_entries_error').text('');
         });
 
         $block.on('submit', '.wr-add-item-form', function (e) {
             e.preventDefault();
             var $form = $(this);
-            $form.find('.order_item_id_error, .quantity_error').text('');
+            $form.find('.dealer_id_error, .order_item_id_error, .quantity_error, .no_of_entries_error').text('');
+
+            var $dealer = $form.find('.wr-add-dealer');
+            if ($dealer.length && !$dealer.val()) {
+                $form.find('.dealer_id_error').text('Please select a dealer.');
+                return;
+            }
+
+            var qty = parseInt($form.find('.wr-add-quantity').val(), 10) || 0;
+            var entries = parseInt($form.find('.wr-add-entries').val(), 10) || 0;
+            var pending = parseInt($form.find('.wr-add-order-item :selected').data('pending'), 10) || 0;
+
+            if (entries < 1) {
+                $form.find('.no_of_entries_error').text('No. of Entries must be at least 1.');
+                return;
+            }
+            if (pending > 0 && qty * entries > pending) {
+                var msg = 'Qty × No. of Entries (' + qty + ' × ' + entries + ' = ' + (qty * entries)
+                    + ') cannot exceed the remaining pending quantity (' + pending + ').';
+                $form.find('.no_of_entries_error').text(msg);
+                return;
+            }
+
             $.ajax({
                 url: $form.attr('action'),
                 method: 'POST',

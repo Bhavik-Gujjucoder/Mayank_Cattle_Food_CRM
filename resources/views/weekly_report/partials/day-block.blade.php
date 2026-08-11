@@ -49,6 +49,7 @@
                 @include('weekly_report.partials.add-row-form', [
                     'report' => $report,
                     'transporters' => $transporters,
+                    'dealers' => $dealers ?? collect(),
                     'blockId' => $blockId,
                 ])
             @endif

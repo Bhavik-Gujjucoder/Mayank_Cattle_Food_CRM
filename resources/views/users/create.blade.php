@@ -45,7 +45,7 @@
                     <!-- Email Field -->
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="col-form-label">Email <span class="text-danger">*</span></label>
+                            <label class="col-form-label">Email @if($type !== 'transporter')<span class="text-danger">*</span>@endif</label>
                             <input type="text" class="form-control @error('email') is-invalid @enderror"
                                 name="email" value="{{ old('email') }}" placeholder="Email" maxlength="255">
                             @error('email')
@@ -80,7 +80,7 @@
                     <!-- Phone Field -->
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="col-form-label">Phone <span class="text-danger">*</span></label>
+                            <label class="col-form-label">Phone @if($type !== 'transporter')<span class="text-danger">*</span>@endif</label>
                             <input type="number" class="form-control @error('phone_no') is-invalid @enderror"
                                 name="phone_no" value="{{ old('phone_no') }}" placeholder="Phone"
                                 oninput="this.value = this.value.slice(0, 10)">
@@ -93,7 +93,7 @@
                     <!-- Password Field -->
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="col-form-label">Password <span class="text-danger">*</span></label>
+                            <label class="col-form-label">Password @if($type !== 'transporter')<span class="text-danger">*</span>@endif</label>
                             <div class="icon-form-end">
                                 <span class="form-icon gc-icon-set"><i class="ti ti-eye-off"></i></span>
                                 <input type="password" class="form-control icone @error('password') is-invalid @enderror"
@@ -108,7 +108,7 @@
                     <!-- Confirm Password Field -->
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="col-form-label">Confirm Password <span class="text-danger">*</span></label>
+                            <label class="col-form-label">Confirm Password @if($type !== 'transporter')<span class="text-danger">*</span>@endif</label>
                             <div class="icon-form-end">
                                 <span class="form-icon"><i class="ti ti-eye-off"></i></span>
                                 <input type="password"

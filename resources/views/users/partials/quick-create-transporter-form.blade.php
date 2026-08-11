@@ -29,20 +29,20 @@
         </div>
 
         <div class="col-md-6 mb-3">
-            <label class="col-form-label">Email <span class="text-danger">*</span></label>
+            <label class="col-form-label">Email</label>
             <input type="text" name="email" class="form-control qt-input" placeholder="Email" maxlength="255">
             <span class="text-danger small qt-field-error" data-field="email"></span>
         </div>
 
         <div class="col-md-6 mb-3">
-            <label class="col-form-label">Phone <span class="text-danger">*</span></label>
+            <label class="col-form-label">Phone</label>
             <input type="number" name="phone_no" class="form-control qt-input" placeholder="Phone"
                 oninput="this.value = this.value.slice(0, 10)">
             <span class="text-danger small qt-field-error" data-field="phone_no"></span>
         </div>
 
         <div class="col-md-6 mb-3">
-            <label class="col-form-label">Password <span class="text-danger">*</span></label>
+            <label class="col-form-label">Password</label>
             <div class="icon-form-end">
                 <span class="form-icon qt-toggle-pw" style="cursor:pointer;"><i class="ti ti-eye-off"></i></span>
                 <input type="password" name="password" class="form-control qt-input" placeholder="Password">
@@ -51,7 +51,7 @@
         </div>
 
         <div class="col-md-6 mb-3">
-            <label class="col-form-label">Confirm Password <span class="text-danger">*</span></label>
+            <label class="col-form-label">Confirm Password</label>
             <div class="icon-form-end">
                 <span class="form-icon qt-toggle-pw" style="cursor:pointer;"><i class="ti ti-eye-off"></i></span>
                 <input type="password" name="password_confirmation" class="form-control qt-input"

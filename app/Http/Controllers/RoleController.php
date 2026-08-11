@@ -38,7 +38,7 @@ class RoleController extends Controller
                 // Add permission_name column
                 ->addColumn('permission_name', function ($row) {
                     return $row->permissions->map(function ($permission) {
-                        return '<span class="badge bg-info">' . e(ucwords(str_replace('-', ' ', $permission->name))) . '</span>';
+                        return '<span class="badge bg-info">' . e(str_replace('Weekly Report', 'Daily Dispatch', ucwords(str_replace('-', ' ', $permission->name)))) . '</span>';
                     })->implode(' ');
                 })
                 ->addColumn('action', function ($row) {

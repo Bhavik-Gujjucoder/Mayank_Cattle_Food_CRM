@@ -21,6 +21,7 @@ class RawMaterialOrderListExport
             'Order Date',
             'Total Qty (tons)',
             'Total Price (₹)',
+            'Advance Payment (₹)',
             'Total Freight (₹)',
             'Status',
         ]);
@@ -40,6 +41,7 @@ class RawMaterialOrderListExport
             $order->order_date?->format('d-m-Y') ?? '—',
             $order->total_qty,
             number_format((float) $order->total_price, 2),
+            number_format((float) $order->advance_payment, 2),
             number_format((float) $order->total_freight, 2),
             RawMaterialFilterService::orderStatusLabel((int) $order->status),
         ]);

@@ -210,13 +210,13 @@
                                     @endcan
 
                                     {{-- ------------------------------------------------------------------ */
-                                    /*  Weekly Report (dispatch prediction)
+                                    /*  Daily Dispatch (dispatch prediction)
                                     /* ------------------------------------------------------------------ --}}
                                     @can('view-weekly-report')
                                         <li>
                                             <a href="{{ route('weekly-report.index') }}"
                                                 class="@if (request()->routeIs('weekly-report*')) active @endif">
-                                                <span>Weekly Report</span>
+                                                <span>Daily Dispatch</span>
                                             </a>
                                         </li>
                                     @endcan

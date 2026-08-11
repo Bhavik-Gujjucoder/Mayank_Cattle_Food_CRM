@@ -1,5 +1,5 @@
 <style>
-    /* ── Weekly Report module (compact, theme #3e6eaf) ─────────────── */
+    /* ── Daily Dispatch module (compact, theme #3e6eaf) ────────────── */
     .weekly-report-module {
         max-width: 100%;
         min-width: 0;
@@ -98,6 +98,7 @@
     }
 
     .weekly-report-module .wr-add-panel .wr-add-quantity,
+    .weekly-report-module .wr-add-panel .wr-add-entries,
     .weekly-report-module .wr-add-panel .wr-add-contact {
         min-height: 32px;
         height: 32px;
@@ -116,6 +117,14 @@
 
     .weekly-report-module .wr-add-panel .wr-add-qty-col {
         min-width: 72px;
+    }
+
+    .weekly-report-module .wr-add-panel .wr-add-entries-col {
+        min-width: 88px;
+    }
+
+    .weekly-report-module .wr-add-panel .wr-add-entries-col .col-form-label {
+        white-space: nowrap;
     }
 
     .weekly-report-module .wr-add-panel .wr-add-submit-col {

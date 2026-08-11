@@ -10,6 +10,7 @@
             <th>Order Date</th>
             <th class="text-right">Total Qty (tons)</th>
             <th class="text-right">Total Price (₹)</th>
+            <th class="text-right">Advance Payment (₹)</th>
             <th class="text-right">Total Freight (₹)</th>
             <th>Status</th>
         </tr>
@@ -26,6 +27,7 @@
                 <td>{{ $order->order_date?->format('d M Y') ?? '—' }}</td>
                 <td class="text-right">{{ $order->total_qty }}</td>
                 <td class="text-right">{{ number_format((float) $order->total_price, 2) }}</td>
+                <td class="text-right">{{ number_format((float) $order->advance_payment, 2) }}</td>
                 <td class="text-right">{{ number_format((float) $order->total_freight, 2) }}</td>
                 <td>{{ \App\Services\RawMaterial\RawMaterialFilterService::orderStatusLabel((int) $order->status) }}</td>
             </tr>

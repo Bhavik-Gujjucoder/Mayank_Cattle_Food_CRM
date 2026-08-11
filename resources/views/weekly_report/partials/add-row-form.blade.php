@@ -1,3 +1,8 @@
+@php
+    use App\Support\SalesScope;
+    $dealers = $dealers ?? collect();
+    $showDealerFilter = SalesScope::showDealerFilter();
+@endphp
 <div class="wr-add-panel">
     <div class="wr-section-label">
         <i class="ti ti-square-rounded-plus"></i> Add order line
@@ -8,10 +13,27 @@
         data-block-id="{{ $blockId }}">
         @csrf
         <div class="row g-2 wr-add-form-grid">
-            <div class="col-12 col-lg-5">
+            @if ($showDealerFilter)
+                <div class="col-12 col-md-6 col-lg-2">
+                    <label class="col-form-label">Dealer <span class="text-danger">*</span></label>
+                    <select class="form-select form-select-sm wr-add-dealer" required>
+                        <option value="">— Select dealer —</option>
+                        @foreach ($dealers as $dealer)
+                            <option value="{{ $dealer->id }}">
+                                {{ $dealer->user?->name ?? $dealer->firm_shop_name ?? '—' }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <span class="text-danger small d-block dealer_id_error"></span>
+                </div>
+            @endif
+            <div class="col-12 {{ $showDealerFilter ? 'col-md-6 col-lg-3' : 'col-lg-4' }}">
                 <label class="col-form-label">Pending order line <span class="text-danger">*</span></label>
-                <select name="order_item_id" class="form-select form-select-sm wr-add-order-item" required>
-                    <option value="">— Select a pending order —</option>
+                <select name="order_item_id" class="form-select form-select-sm wr-add-order-item" required
+                    @if ($showDealerFilter) disabled @endif>
+                    <option value="">
+                        {{ $showDealerFilter ? '— Select dealer first —' : '— Select a pending order —' }}
+                    </option>
                 </select>
                 <small class="text-muted wr-add-pending-hint"></small>
                 <span class="text-danger small d-block order_item_id_error"></span>
@@ -20,6 +42,12 @@
                 <label class="col-form-label">Qty <span class="text-danger">*</span></label>
                 <input type="number" name="quantity" class="form-control form-control-sm wr-add-quantity" min="1" required>
                 <span class="text-danger small d-block quantity_error"></span>
+            </div>
+            <div class="col-6 col-md-4 col-lg-1 wr-add-entries-col">
+                <label class="col-form-label">No. of Entries <span class="text-danger">*</span></label>
+                <input type="number" name="no_of_entries" class="form-control form-control-sm wr-add-entries"
+                    min="1" max="100" value="1" required>
+                <span class="text-danger small d-block no_of_entries_error"></span>
             </div>
             <div class="col-6 col-md-4 col-lg-2">
                 @include('weekly_report.partials.transport-field', [
@@ -35,7 +63,7 @@
                     'disabled' => true,
                 ])
             </div>
-            <div class="col-6 col-md-4 col-lg-2">
+            <div class="col-6 col-md-4 col-lg-{{ $showDealerFilter ? '1' : '2' }}">
                 <label class="col-form-label">Contact</label>
                 <input type="text" name="driver_contact" class="form-control form-control-sm wr-add-contact">
             </div>

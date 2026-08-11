@@ -15,7 +15,7 @@
             <label class="text-muted small">Permissions</label>
             <div class="d-flex flex-wrap gap-2 mb-3">
                 @forelse ($role->permissions as $permission)
-                    <span class="badge bg-info">{{ ucwords(str_replace('-', ' ', $permission->name)) }}</span>
+                    <span class="badge bg-info">{{ str_replace('Weekly Report', 'Daily Dispatch', ucwords(str_replace('-', ' ', $permission->name))) }}</span>
                 @empty
                     <span class="text-muted">No permissions assigned.</span>
                 @endforelse

@@ -275,12 +275,18 @@
                             <small class="text-muted" id="addPendingHint"></small>
                             <span class="text-danger small d-block order_item_id_error"></span>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="col-form-label">Quantity <span class="text-danger">*</span></label>
                             <input type="number" name="quantity" id="addQuantity" class="form-control" min="1" required>
                             <span class="text-danger small d-block quantity_error"></span>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <label class="col-form-label">No. of Entries <span class="text-danger">*</span></label>
+                            <input type="number" name="no_of_entries" id="addNoOfEntries" class="form-control"
+                                min="1" max="100" value="1" required>
+                            <span class="text-danger small d-block no_of_entries_error"></span>
+                        </div>
+                        <div class="col-md-3">
                             <label class="col-form-label">Transport</label>
                             <select name="transport_id" id="addTransport" class="form-select">
                                 <option value="">— Select —</option>
@@ -448,9 +454,10 @@
 
     $('#openAddItemModal').on('click', function () {
         $('#addItemForm')[0].reset();
+        $('#addNoOfEntries').val(1);
         $('#addOrderItemId').html('<option value="">Loading…</option>');
         $('#addTruck').prop('disabled', true).html('<option value="">— Select transporter first —</option>');
-        $('.order_item_id_error, .quantity_error').text('');
+        $('.order_item_id_error, .quantity_error, .no_of_entries_error').text('');
         $.get(pendingItemsUrl, function (res) {
             var html = '<option value="">— Select pending order line —</option>';
             (res.results || []).forEach(function (r) {
@@ -468,9 +475,13 @@
         if (pending) {
             $('#addPendingHint').text('Remaining: ' + pending + (unit ? ' ' + unit : ''));
             $('#addQuantity').attr('max', pending).val(pending);
+            if (!$('#addNoOfEntries').val() || parseInt($('#addNoOfEntries').val(), 10) < 1) {
+                $('#addNoOfEntries').val(1);
+            }
         } else {
             $('#addPendingHint').text('');
         }
+        $('.quantity_error, .no_of_entries_error').text('');
     });
 
     $('#addTransport').on('change', function () {
@@ -482,7 +493,23 @@
     $('#addItemForm').on('submit', function (e) {
         e.preventDefault();
         var $form = $(this);
-        $('.order_item_id_error, .quantity_error').text('');
+        $('.order_item_id_error, .quantity_error, .no_of_entries_error').text('');
+
+        var qty = parseInt($('#addQuantity').val(), 10) || 0;
+        var entries = parseInt($('#addNoOfEntries').val(), 10) || 0;
+        var pending = parseInt($('#addOrderItemId :selected').data('pending'), 10) || 0;
+
+        if (entries < 1) {
+            $('.no_of_entries_error').text('No. of Entries must be at least 1.');
+            return;
+        }
+        if (pending > 0 && qty * entries > pending) {
+            var msg = 'Qty × No. of Entries (' + qty + ' × ' + entries + ' = ' + (qty * entries)
+                + ') cannot exceed the remaining pending quantity (' + pending + ').';
+            $('.no_of_entries_error').text(msg);
+            return;
+        }
+
         $.ajax({
             url: $form.attr('action'),
             method: 'POST',

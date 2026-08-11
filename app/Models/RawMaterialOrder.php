@@ -13,7 +13,16 @@ class RawMaterialOrder extends Model
 
     protected $guarded = [];
 
-    protected $casts = ['order_date' => 'date'];
+    protected $casts = [
+        'order_date'      => 'date',
+        'advance_payment' => 'decimal:2',
+    ];
+
+    /** Remaining payable against order material total (excludes freight). */
+    public function remainingAmount(): float
+    {
+        return max(0, (float) $this->total_price - (float) $this->advance_payment);
+    }
 
     public function supplier(): BelongsTo
     {

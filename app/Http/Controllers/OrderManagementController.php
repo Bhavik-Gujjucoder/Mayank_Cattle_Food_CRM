@@ -374,7 +374,7 @@ class OrderManagementController extends Controller
                     ->withInput()
                     ->withErrors([
                         'product_id' => 'Product "' . ($item->product?->name ?? 'Unknown')
-                            . '" cannot be removed — it has a confirmed weekly report row.',
+                            . '" cannot be removed — it has a confirmed Daily Dispatch row.',
                     ]);
             }
         }
@@ -516,7 +516,7 @@ class OrderManagementController extends Controller
 
         if ($this->weeklyReportService->orderHasConfirmedItems((int) $order->id)) {
             return redirect()->route('order.index')
-                ->with('error', 'This order cannot be deleted because it has confirmed weekly report rows.');
+                ->with('error', 'This order cannot be deleted because it has confirmed Daily Dispatch rows.');
         }
 
         DB::transaction(function () use ($order) {
@@ -594,7 +594,7 @@ class OrderManagementController extends Controller
             return response()->json([
                 'blocked'        => true,
                 'blocked_orders' => $weeklyBlocked,
-                'message'        => 'Cannot delete: the following order(s) have confirmed weekly report rows — '
+                'message'        => 'Cannot delete: the following order(s) have confirmed Daily Dispatch rows — '
                     . implode(', ', $weeklyBlocked) . '.',
             ], 422);
         }

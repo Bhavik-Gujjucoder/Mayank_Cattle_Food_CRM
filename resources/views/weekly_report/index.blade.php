@@ -23,7 +23,7 @@
                     </div>
                     <div class="min-w-0">
                         <div class="dispatch-index-eyebrow">Sales</div>
-                        <div class="dispatch-index-title">Weekly Report</div>
+                        <div class="dispatch-index-title">Daily Dispatch</div>
                         <p class="text-muted small mb-0 mt-1">
                             Dispatch prediction
                             @if ($isRange)
@@ -139,6 +139,7 @@
             @include('weekly_report.partials.day-block', [
                 'day' => $day,
                 'transporters' => $transporters,
+                'dealers' => $dealers ?? collect(),
             ])
         @empty
             <div class="wr-empty-state">

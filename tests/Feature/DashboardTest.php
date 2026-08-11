@@ -400,7 +400,7 @@ describe('view data', function () {
         dashRmSummaryFixture();
 
         $content = actingAs($actor)->get(route('dashboard'))->assertOk()->getContent();
-        $currentDayPos = strpos($content, 'Weekly Report');
+        $currentDayPos = strpos($content, 'Daily Dispatch');
         $rmSummaryPos = strpos($content, 'Daily Raw Material Summary');
 
         expect($currentDayPos)->not->toBeFalse()

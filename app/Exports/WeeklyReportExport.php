@@ -43,7 +43,7 @@ class WeeklyReportExport implements FromArray, WithStyles, WithEvents
 
         $line = 1;
 
-        $this->pushRow(['Sales — Weekly Report (Dispatch Prediction)'], $line++, 'title');
+        $this->pushRow(['Sales — Daily Dispatch (Dispatch Prediction)'], $line++, 'title');
         $this->pushRow([$this->filterLabel() . ' — Exported ' . now()->format('d M Y, h:i A')], $line++, 'subtitle');
         $this->pushSpacer($line);
 

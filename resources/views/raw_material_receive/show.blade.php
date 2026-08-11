@@ -52,6 +52,14 @@
                 <div class="fw-semibold">{{ $receive->order?->supplier_order_id ?: '—' }}</div>
             </div>
             <div class="col-12 col-sm-6 col-md-4 mb-3">
+                <label class="col-form-label text-muted">Advance Payment</label>
+                <div class="fw-semibold">₹ {{ number_format((float) ($receive->order?->advance_payment ?? 0), 2) }}</div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
+                <label class="col-form-label text-muted">Remaining</label>
+                <div class="fw-semibold">₹ {{ number_format($receive->order?->remainingAmount() ?? 0, 2) }}</div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Category</label>
                 <div class="fw-semibold">{{ $receive->rawMaterial?->category?->name ?? '—' }}</div>
             </div>

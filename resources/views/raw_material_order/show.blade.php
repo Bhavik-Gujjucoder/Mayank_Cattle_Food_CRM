@@ -64,6 +64,33 @@
                 <div class="fw-semibold">₹ {{ number_format($order->total_price ?? 0, 2) }}</div>
             </div>
             <div class="col-12 col-sm-6 col-md-3 mb-3">
+                <label class="col-form-label text-muted">Advance Payment</label>
+                @if ((int) $order->status !== 3 && auth()->user()->can('edit-raw-material-purchas-order'))
+                    <form action="{{ route('raw-material.order.update-advance-payment', $order->id) }}" method="POST" class="d-flex gap-2 align-items-start">
+                        @csrf
+                        @method('PATCH')
+                        <div class="flex-grow-1">
+                            <input type="number" name="advance_payment" step="0.01" min="0"
+                                   value="{{ old('advance_payment', number_format((float) ($order->advance_payment ?? 0), 2, '.', '')) }}"
+                                   class="form-control form-control-sm @error('advance_payment') is-invalid @enderror"
+                                   placeholder="0.00">
+                            @error('advance_payment')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">
+                            <i class="ti ti-device-floppy"></i>
+                        </button>
+                    </form>
+                @else
+                    <div class="fw-semibold">₹ {{ number_format($order->advance_payment ?? 0, 2) }}</div>
+                @endif
+            </div>
+            <div class="col-12 col-sm-6 col-md-3 mb-3">
+                <label class="col-form-label text-muted">Remaining</label>
+                <div class="fw-semibold">₹ {{ number_format($order->remainingAmount(), 2) }}</div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Total Freight</label>
                 <div class="fw-semibold">₹ {{ number_format($order->total_freight ?? 0, 2) }}</div>
             </div>

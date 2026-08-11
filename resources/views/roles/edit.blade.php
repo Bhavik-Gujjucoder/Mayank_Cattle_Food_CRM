@@ -56,7 +56,7 @@
 
                     @foreach ($permissions as $type => $items)
                         <div class="mb-3 mt-4">
-                            <strong>{{ ucwords(str_replace('-', ' ', $type)) }}</strong>
+                            <strong>{{ str_replace('Weekly Report', 'Daily Dispatch', ucwords(str_replace('-', ' ', $type))) }}</strong>
 
                             <div class="row mt-1">
                                 @foreach ($items as $permission)
@@ -66,7 +66,7 @@
                                                 class="form-check-input all-checkbox" value="{{ $permission->id }}"
                                                 {{ $role->hasPermissionTo($permission->name) ? 'checked' : '' }}>
 
-                                            {{ ucwords(str_replace('-', ' ', $permission->name)) }}
+                                            {{ str_replace('Weekly Report', 'Daily Dispatch', ucwords(str_replace('-', ' ', $permission->name))) }}
                                         </label>
                                     </div>
                                 @endforeach

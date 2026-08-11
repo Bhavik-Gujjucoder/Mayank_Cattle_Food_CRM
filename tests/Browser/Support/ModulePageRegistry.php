@@ -84,7 +84,7 @@ class ModulePageRegistry
             [
                 'path'        => '/weekly-report',
                 'selector'    => '#weekly_report_table',
-                'text'        => 'Weekly Report',
+                'text'        => 'Daily Dispatch',
                 'permissions' => ['view-weekly-report', 'add-weekly-report', 'edit-weekly-report', 'delete-weekly-report'],
             ],
             [

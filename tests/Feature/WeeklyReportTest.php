@@ -279,13 +279,145 @@ it('limits weekly report qty by remaining after other pending reservations', fun
     expect($service->availableWeeklyQty($ctx['orderItem']->fresh(['dispatches'])))->toBe(0);
 });
 
+it('creates multiple pending rows from no_of_entries', function () {
+    $admin = wrAdmin();
+    $this->actingAs($admin);
+
+    $ctx = wrPendingLine('Bag', 125);
+    $service = app(\App\Services\WeeklyReportService::class);
+
+    $report = WeeklyReport::create([
+        'report_date' => '2026-07-09',
+        'already_produced' => 0,
+        'created_by' => $admin->id,
+    ]);
+
+    $items = $service->addItem($report, [
+        'order_item_id' => $ctx['orderItem']->id,
+        'quantity' => 25,
+        'no_of_entries' => 5,
+    ]);
+
+    expect($items)->toHaveCount(5);
+    expect($items->every(fn ($item) => (int) $item->quantity === 25))->toBeTrue();
+    expect(WeeklyReportItem::where('weekly_report_id', $report->id)->count())->toBe(5);
+    expect($service->availableWeeklyQty($ctx['orderItem']->fresh(['dispatches'])))->toBe(0);
+});
+
+it('rejects no_of_entries when qty times entries exceeds remaining', function () {
+    $admin = wrAdmin();
+    $this->actingAs($admin);
+
+    $ctx = wrPendingLine('Bag', 125);
+    $service = app(\App\Services\WeeklyReportService::class);
+
+    $report = WeeklyReport::create([
+        'report_date' => '2026-07-09',
+        'already_produced' => 0,
+        'created_by' => $admin->id,
+    ]);
+
+    expect(fn () => $service->addItem($report, [
+        'order_item_id' => $ctx['orderItem']->id,
+        'quantity' => 25,
+        'no_of_entries' => 6,
+    ]))->toThrow(\Illuminate\Validation\ValidationException::class);
+
+    expect(WeeklyReportItem::where('weekly_report_id', $report->id)->count())->toBe(0);
+});
+
+it('caps qty update after multi-entry create against remaining bags', function () {
+    $admin = wrAdmin(['view-weekly-report', 'edit-weekly-report']);
+    $this->actingAs($admin);
+
+    $ctx = wrPendingLine('Bag', 125);
+    $service = app(\App\Services\WeeklyReportService::class);
+
+    $report = WeeklyReport::create([
+        'report_date' => '2026-07-09',
+        'already_produced' => 0,
+        'created_by' => $admin->id,
+    ]);
+
+    $items = $service->addItem($report, [
+        'order_item_id' => $ctx['orderItem']->id,
+        'quantity' => 25,
+        'no_of_entries' => 5,
+    ]);
+
+    $first = $items->first();
+
+    expect(fn () => $service->updateItem($first, [
+        'quantity' => 26,
+    ]))->toThrow(\Illuminate\Validation\ValidationException::class);
+
+    $service->updateItem($first, [
+        'quantity' => 25,
+    ]);
+
+    expect((int) $first->fresh()->quantity)->toBe(25);
+});
+
+it('stores multiple rows via storeItem with no_of_entries', function () {
+    $admin = wrAdmin(['view-weekly-report', 'edit-weekly-report']);
+    $ctx = wrPendingLine('Bag', 125);
+
+    $report = WeeklyReport::create([
+        'report_date' => '2026-07-09',
+        'already_produced' => 0,
+        'created_by' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->postJson(route('weekly-report.items.store', $report->id), [
+            'order_item_id' => $ctx['orderItem']->id,
+            'quantity' => 25,
+            'no_of_entries' => 5,
+        ])
+        ->assertOk()
+        ->assertJson([
+            'success' => true,
+            'count' => 5,
+            'message' => '5 rows added.',
+        ]);
+
+    expect(WeeklyReportItem::where('weekly_report_id', $report->id)->count())->toBe(5);
+});
+
+it('filters pending items by dealer and excludes paid orders', function () {
+    $admin = wrAdmin(['view-weekly-report', 'edit-weekly-report']);
+    $this->actingAs($admin);
+
+    $ctxA = wrPendingLine('Bag', 100);
+    $ctxB = wrPendingLine('Bag', 80);
+    $ctxPaid = wrPendingLine('Bag', 50);
+    $ctxPaid['order']->update(['payment_status' => 'paid']);
+
+    $service = app(\App\Services\WeeklyReportService::class);
+
+    $forDealerA = $service->searchPendingOrderItems(null, 50, (int) $ctxA['dealer']->id);
+    expect(collect($forDealerA)->pluck('order_item_id')->all())
+        ->toContain($ctxA['orderItem']->id)
+        ->not->toContain($ctxB['orderItem']->id)
+        ->not->toContain($ctxPaid['orderItem']->id);
+
+    $this->getJson(route('weekly-report.pendingItems', ['dealer_id' => $ctxB['dealer']->id]))
+        ->assertOk()
+        ->assertJsonPath('results.0.order_item_id', $ctxB['orderItem']->id);
+
+    $this->getJson(route('weekly-report.pendingItems'))
+        ->assertOk()
+        ->assertJsonPath('results', []);
+});
+
 it('loads workspace for today on index', function () {
     $admin = wrAdmin(['view-weekly-report', 'add-weekly-report', 'edit-weekly-report']);
 
     $this->actingAs($admin)
         ->get(route('weekly-report.index'))
         ->assertOk()
-        ->assertSee('Weekly Report')
+        ->assertSee('Daily Dispatch')
+        ->assertSee('Dealer')
         ->assertSee(now()->format('d M Y'));
 });
 
@@ -383,7 +515,7 @@ it('exports weekly report excel with current date filter', function () {
         ->get(route('weekly-report.export', ['date' => '2026-07-09']));
 
     $response->assertOk();
-    $response->assertDownload('weekly-report-2026-07-09.xlsx');
+    $response->assertDownload('daily-dispatch-2026-07-09.xlsx');
 });
 
 it('renders weekly report print view with filtered days', function () {
@@ -431,5 +563,5 @@ it('exports weekly report using dashboard filter param names', function () {
     $this->actingAs($admin)
         ->get(route('weekly-report.export', ['wr_date' => '2026-07-10']))
         ->assertOk()
-        ->assertDownload('weekly-report-2026-07-10.xlsx');
+        ->assertDownload('daily-dispatch-2026-07-10.xlsx');
 });

@@ -38,6 +38,7 @@ test('order list export columns match listing table', function () {
         'Order Date',
         'Total Qty (tons)',
         'Total Price (₹)',
+        'Advance Payment (₹)',
         'Total Freight (₹)',
         'Status',
     ]);
@@ -52,7 +53,35 @@ test('order list export columns match listing table', function () {
         '01-06-2026',
         50,
         '100,000.00',
+        '0.00',
         '5,000.00',
         'Pending',
     ]);
+});
+
+test('order list export includes advance payment amount', function () {
+    $broker = SupplierBroker::create(['name' => 'Broker B', 'status' => 1]);
+    $supplier = Supplier::create([
+        'name' => 'Supplier B',
+        'supplier_broker_id' => $broker->id,
+        'status' => 1,
+    ]);
+
+    $order = RawMaterialOrder::create([
+        'order_unique_id' => 'RMO-LIST-ADV',
+        'supplier_broker_id' => $broker->id,
+        'supplier_id' => $supplier->id,
+        'supplier_order_id' => 'SO-200',
+        'price_basis' => 'FOR + GST',
+        'order_date' => '2026-06-01',
+        'total_qty' => 20,
+        'total_price' => 50000,
+        'advance_payment' => 12000.5,
+        'total_freight' => 1000,
+        'status' => 0,
+    ]);
+
+    $order->load(['supplier', 'supplierBroker']);
+
+    expect(RawMaterialOrderListExport::row($order, 1)[9])->toBe('12,000.50');
 });
