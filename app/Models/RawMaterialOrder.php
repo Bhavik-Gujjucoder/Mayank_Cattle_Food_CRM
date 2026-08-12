@@ -18,10 +18,19 @@ class RawMaterialOrder extends Model
         'advance_payment' => 'decimal:2',
     ];
 
-    /** Remaining payable against order material total (excludes freight). */
+    /** Remaining payable against order material total including extra qty (excludes freight). */
     public function remainingAmount(): float
     {
         return max(0, (float) $this->total_price - (float) $this->advance_payment);
+    }
+
+    public function extraQtyTotal(): int
+    {
+        if ($this->relationLoaded('items')) {
+            return (int) $this->items->sum('extra_qty');
+        }
+
+        return (int) $this->items()->sum('extra_qty');
     }
 
     public function supplier(): BelongsTo

@@ -44,6 +44,7 @@
                         <th>Order ID</th>
                         <th>Material</th>
                         <th class="text-right">Total Qty</th>
+                        <th class="text-right">Extra Qty</th>
                         <th class="text-right">Pending</th>
                         <th class="text-right">Received</th>
                         <th class="text-right">Price/kg</th>
@@ -61,12 +62,13 @@
                             <td>{{ $item->order?->order_unique_id ?? '—' }}</td>
                             <td>{{ $item->rawMaterial?->name ?? '—' }}</td>
                             <td class="text-right">{{ $item->total_qty }}</td>
+                            <td class="text-right">{{ $item->extra_qty }}</td>
                             <td class="text-right">{{ $item->pending_qty }}</td>
                             <td class="text-right">{{ $item->received_qty }}</td>
                             <td class="text-right">{{ number_format($item->price, 2) }}</td>
                             <td class="text-right">{{ number_format($item->price_avg, 2) }}</td>
-                            <td class="text-right">{{ number_format($item->total_price, 2) }}</td>
-                            <td class="text-right">{{ number_format($item->pending_price, 2) }}</td>
+                            <td class="text-right">{{ number_format(\App\Services\RawMaterialCacheService::itemTotalAmount($item), 2) }}</td>
+                            <td class="text-right">{{ number_format(\App\Services\RawMaterialCacheService::itemPendingAmount($item), 2) }}</td>
                             <td class="text-right">{{ number_format($item->received_price, 2) }}</td>
                             <td class="text-right">{{ number_format($item->total_freight, 2) }}</td>
                             <td>{{ \App\Services\RawMaterial\RawMaterialFilterService::orderItemStatusLabel((int) $item->status) }}</td>

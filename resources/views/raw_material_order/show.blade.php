@@ -60,6 +60,10 @@
                 <div class="fw-semibold">{{ $order->total_qty ?? 0 }} tons</div>
             </div>
             <div class="col-12 col-sm-6 col-md-3 mb-3">
+                <label class="col-form-label text-muted">Extra Qty</label>
+                <div class="fw-semibold">{{ $order->extraQtyTotal() }} tons</div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Total Price</label>
                 <div class="fw-semibold">₹ {{ number_format($order->total_price ?? 0, 2) }}</div>
             </div>
@@ -109,6 +113,7 @@
                         <th>Category</th>
                         <th>Material</th>
                         <th>Total Qty (tons)</th>
+                        <th>Extra Qty</th>
                         <th>Pending Qty</th>
                         <th>Received Qty</th>
                         <th>Price/kg</th>
@@ -128,20 +133,21 @@
                             <td>{{ $item->rawMaterial?->category?->name ?? '—' }}</td>
                             <td>{{ $item->rawMaterial?->name ?? '—' }}</td>
                             <td>{{ $item->total_qty }}</td>
+                            <td>{{ $item->extra_qty }}</td>
                             <td>{{ $item->pending_qty }}</td>
                             <td>{{ $item->received_qty }}</td>
                             <td>₹ {{ number_format($item->price, 2) }}</td>
                             <td>₹ {{ number_format($item->price_avg, 2) }}</td>
-                            <td>₹ {{ number_format($item->total_price, 2) }}</td>
+                            <td>₹ {{ number_format($item->totalAmount(), 2) }}</td>
                             <td>₹ {{ number_format($item->other_expense, 2) }}</td>
-                            <td>₹ {{ number_format($item->pending_price, 2) }}</td>
+                            <td>₹ {{ number_format($item->pendingAmount(), 2) }}</td>
                             <td>₹ {{ number_format($item->received_price, 2) }}</td>
                             <td>₹ {{ number_format($item->total_freight, 2) }}</td>
                             <td>{!! $item->statusBadge() !!}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="14" class="text-center text-muted py-4">No items found.</td>
+                            <td colspan="15" class="text-center text-muted py-4">No items found.</td>
                         </tr>
                     @endforelse
                 </tbody>

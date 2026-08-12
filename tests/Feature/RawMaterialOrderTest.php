@@ -756,14 +756,60 @@ describe('orderItems', function () {
             ->assertJsonStructure([['id', 'label', 'raw_material_id', 'pending_qty']]);
     });
 
-    it('excludes items with zero pending_qty', function () {
+    it('excludes items when ordered qty is fully covered by receives', function () {
         $s = rmoSetup();
-        $s['item']->update(['pending_qty' => 0]);
+        RawMaterialReceive::create([
+            'raw_material_order_id'      => $s['order']->id,
+            'raw_material_order_item_id' => $s['item']->id,
+            'raw_material_id'            => $s['material']->id,
+            'qty'                        => 10,
+            'freight'                    => 0,
+            'status'                     => 0,
+            'received_date'              => now()->toDateString(),
+        ]);
 
         $response = actingAs(rmoActor(['view-raw-material-purchas-order']))
             ->getJson(route('raw-material.order.items', $s['order']));
 
         expect($response->json())->toBeEmpty();
+    });
+
+    it('shows pending in label after subtracting on-road and received qty', function () {
+        $s = rmoSetup(10);
+        RawMaterialReceive::create([
+            'raw_material_order_id'      => $s['order']->id,
+            'raw_material_order_item_id' => $s['item']->id,
+            'raw_material_id'            => $s['material']->id,
+            'qty'                        => 3,
+            'freight'                    => 0,
+            'status'                     => 0,
+            'received_date'              => now()->toDateString(),
+        ]);
+
+        $response = actingAs(rmoActor(['view-raw-material-purchas-order']))
+            ->getJson(route('raw-material.order.items', $s['order']))
+            ->assertOk();
+
+        expect($response->json())->toHaveCount(1)
+            ->and($response->json()[0]['pending_qty'])->toBe(7)
+            ->and($response->json()[0]['ordered_remaining'])->toBe(7)
+            ->and($response->json()[0]['label'])->toContain('Pending: 7 tons');
+    });
+
+    it('still lists items with open ordered remaining even if pending_qty column is zero', function () {
+        $s = rmoSetup();
+        $s['item']->update([
+            'pending_qty'  => 0,
+            'received_qty' => 0,
+            'status'       => 0,
+        ]);
+
+        $response = actingAs(rmoActor(['view-raw-material-purchas-order']))
+            ->getJson(route('raw-material.order.items', $s['order']));
+
+        expect($response->json())->toHaveCount(1)
+            ->and($response->json()[0]['ordered_remaining'])->toBe(10)
+            ->and($response->json()[0]['pending_qty'])->toBe(10);
     });
 
     it('excludes cancelled line items', function () {

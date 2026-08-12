@@ -10,6 +10,8 @@ use App\Models\RawMaterial;
 use App\Models\RawMaterialOrder;
 use App\Models\RawMaterialOrderItem;
 use App\Models\RawMaterialReceive;
+use App\Models\Supplier;
+use App\Models\SupplierBroker;
 use App\Services\RawMaterial\RawMaterialFilterService;
 use App\Services\RawMaterialCacheService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -69,8 +71,7 @@ class RawMaterialReceiveController extends Controller
     public function create()
     {
         $data['page_title'] = 'Add Received Entry';
-        $data['orders']     = RawMaterialOrder::with('supplier')->whereIn('status', [0, 1])
-            ->orderByDesc('id')->get();
+        $data = array_merge($data, $this->receiveFormLookups());
 
         return view('raw_material_receive.create', $data);
     }
@@ -107,15 +108,66 @@ class RawMaterialReceiveController extends Controller
                 ->with('error', 'Only on-road entries can be edited.');
         }
 
+        $raw_material_receive->load(['order.supplier', 'order.supplierBroker']);
+
         $data['page_title'] = 'Edit Received Entry';
         $data['receive']    = $raw_material_receive;
-        $data['orders']     = RawMaterialOrder::with('supplier')->whereIn('status', [0, 1])->orderByDesc('id')->get();
+        $data = array_merge($data, $this->receiveFormLookups($raw_material_receive));
         $data['order_items'] = RawMaterialOrderItem::with('rawMaterial')
             ->where('raw_material_order_id', $raw_material_receive->raw_material_order_id)
-            ->whereIn('status', [0, 1])
-            ->get();
+            ->whereIn('status', [0, 1, 2])
+            ->get()
+            ->filter(function (RawMaterialOrderItem $item) use ($raw_material_receive) {
+                if ((int) $item->id === (int) $raw_material_receive->raw_material_order_item_id) {
+                    return true;
+                }
+
+                return RawMaterialCacheService::itemHasOrderedRemaining($item);
+            })
+            ->values();
 
         return view('raw_material_receive.edit', $data);
+    }
+
+    /** @return array{supplier_brokers: \Illuminate\Support\Collection, suppliers: \Illuminate\Support\Collection, receivable_orders: \Illuminate\Support\Collection} */
+    protected function receiveFormLookups(?RawMaterialReceive $editingReceive = null): array
+    {
+        $orders = RawMaterialCacheService::receivableOrders($editingReceive);
+
+        return [
+            'supplier_brokers' => SupplierBroker::query()
+                ->where('status', 1)
+                ->orderBy('name')
+                ->get(['id', 'name']),
+            'suppliers' => Supplier::query()
+                ->where('status', 1)
+                ->orderBy('name')
+                ->get(['id', 'name', 'supplier_broker_id'])
+                ->map(function (Supplier $supplier) {
+                    return [
+                        'id'                 => (int) $supplier->id,
+                        'name'               => $supplier->name,
+                        'supplier_broker_id' => (int) $supplier->supplier_broker_id,
+                    ];
+                })
+                ->values(),
+            'receivable_orders' => $orders->map(function (RawMaterialOrder $order) {
+                $label = $order->order_unique_id;
+                if (filled($order->supplier_order_id)) {
+                    $label .= ' | ' . $order->supplier_order_id;
+                }
+                if ($order->supplier) {
+                    $label .= ' | ' . $order->supplier->name;
+                }
+
+                return [
+                    'id'                 => (int) $order->id,
+                    'label'              => $label,
+                    'supplier_id'        => (int) $order->supplier_id,
+                    'supplier_broker_id' => (int) $order->supplier_broker_id,
+                ];
+            })->values(),
+        ];
     }
 
     public function update(UpdateRawMaterialReceiveRequest $request, RawMaterialReceive $raw_material_receive)

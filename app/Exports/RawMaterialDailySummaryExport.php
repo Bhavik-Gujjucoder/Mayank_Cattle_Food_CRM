@@ -29,6 +29,7 @@ class RawMaterialDailySummaryExport implements FromCollection, WithHeadings, Wit
                 $row['party_name'],
                 $row['material_name'],
                 $row['total_qty'],
+                $row['extra_qty'],
                 $row['on_road_qty'],
                 $row['unloading_qty'],
                 $row['pending_qty'],
@@ -44,9 +45,9 @@ class RawMaterialDailySummaryExport implements FromCollection, WithHeadings, Wit
 
         return $rows->concat([
             [],
-            ['', '', '', 'PENDING', '', $totals['pending']['qty'], '', '', '', '', number_format($totals['pending']['average'], 3, '.', ''), number_format($totals['pending']['amount'], 2, '.', ''), '', ''],
-            ['', '', '', 'RECEIVED', '', $totals['received']['qty'], '', '', '', '', number_format($totals['received']['average'], 3, '.', ''), '', number_format($totals['received']['amount'], 2, '.', ''), ''],
-            ['', '', '', 'TOTAL', '', $totals['grand']['qty'], '', '', '', '', number_format($totals['grand']['average'], 3, '.', ''), number_format($totals['pending']['amount'], 2, '.', ''), number_format($totals['received']['amount'], 2, '.', ''), ''],
+            ['', '', '', 'PENDING', '', $totals['pending']['qty'], $totals['extra_qty'] ?? 0, '', '', '', '', number_format($totals['pending']['average'], 3, '.', ''), number_format($totals['pending']['amount'], 2, '.', ''), '', ''],
+            ['', '', '', 'RECEIVED', '', $totals['received']['qty'], '', '', '', '', '', number_format($totals['received']['average'], 3, '.', ''), '', number_format($totals['received']['amount'], 2, '.', ''), ''],
+            ['', '', '', 'TOTAL', '', $totals['grand']['qty'], $totals['extra_qty'] ?? 0, '', '', '', '', number_format($totals['grand']['average'], 3, '.', ''), number_format($totals['pending']['amount'], 2, '.', ''), number_format($totals['received']['amount'], 2, '.', ''), ''],
         ]);
     }
 
@@ -59,6 +60,7 @@ class RawMaterialDailySummaryExport implements FromCollection, WithHeadings, Wit
             'Party Name',
             'Material',
             'Total Qty (tons)',
+            'Extra Qty',
             'On Road',
             'Unloading',
             'Pending',

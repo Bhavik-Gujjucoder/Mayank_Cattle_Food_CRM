@@ -143,6 +143,7 @@
                                 <th>Party Name</th>
                                 <th>Material</th>
                                 <th class="text-end">Total Qty</th>
+                                <th class="text-end">Extra Qty</th>
                                 <th class="text-end">On Road</th>
                                 <th class="text-end">Unloading</th>
                                 <th class="text-end">Pending</th>
@@ -161,6 +162,7 @@
                                 <td class="text-end text-muted">—</td>
                                 <td class="text-end text-muted">—</td>
                                 <td class="text-end text-muted">—</td>
+                                <td class="text-end text-muted">—</td>
                                 <td class="text-end"><strong id="rmFootPendingAvg">0.000</strong></td>
                                 <td class="text-end"><strong id="rmFootPendingAmt">0.00</strong></td>
                                 <td class="text-end text-muted">—</td>
@@ -173,6 +175,7 @@
                                 <td class="text-end text-muted">—</td>
                                 <td class="text-end text-muted">—</td>
                                 <td class="text-end text-muted">—</td>
+                                <td class="text-end text-muted">—</td>
                                 <td class="text-end"><strong id="rmFootReceivedAvg">0.000</strong></td>
                                 <td class="text-end text-muted">—</td>
                                 <td class="text-end"><strong id="rmFootReceivedAmt">0.00</strong></td>
@@ -181,6 +184,7 @@
                             <tr class="rm-summary-footer rm-summary-footer--total">
                                 <td colspan="5"><strong>TOTAL</strong></td>
                                 <td class="text-end"><strong id="rmFootGrandQty">0</strong></td>
+                                <td class="text-end"><strong id="rmFootExtraQty">0</strong></td>
                                 <td class="text-end text-muted">—</td>
                                 <td class="text-end text-muted">—</td>
                                 <td class="text-end text-muted">—</td>

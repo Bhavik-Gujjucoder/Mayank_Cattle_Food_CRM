@@ -302,7 +302,38 @@ describe('create', function () {
             ->get(route('raw-material.receive.create'))
             ->assertOk()
             ->assertViewIs('raw_material_receive.create')
-            ->assertViewHas('orders');
+            ->assertViewHas('supplier_brokers')
+            ->assertViewHas('suppliers')
+            ->assertViewHas('receivable_orders');
+    });
+
+    it('hides orders whose total qty is already fully covered', function () {
+        $open = rmrSetup(10);
+        $full = rmrSetup(5);
+        rmrReceive($full, ['qty' => 5, 'status' => 0]);
+
+        $response = actingAs(rmrActor(['add-raw-material-receive']))
+            ->get(route('raw-material.receive.create'))
+            ->assertOk();
+
+        $orderIds = collect($response->viewData('receivable_orders'))->pluck('id');
+
+        expect($orderIds)->toContain($open['order']->id)
+            ->and($orderIds)->not->toContain($full['order']->id);
+    });
+
+    it('create form includes active supplier broker cascade data', function () {
+        $s = rmrSetup();
+
+        $response = actingAs(rmrActor(['add-raw-material-receive']))
+            ->get(route('raw-material.receive.create'))
+            ->assertOk()
+            ->assertSee('Supplier Broker', false)
+            ->assertSee('id="receive_supplier_broker_id"', false)
+            ->assertSee('id="receive_supplier_id"', false);
+
+        $brokerIds = $response->viewData('supplier_brokers')->pluck('id');
+        expect($brokerIds)->toContain($s['broker']->id);
     });
 });
 
@@ -330,11 +361,15 @@ describe('store-validation', function () {
             ->assertSessionHasErrors(['qty']);
     });
 
-    it('rejects qty exceeding pending_qty', function () {
+    it('allows qty exceeding pending_qty and tracks extra qty', function () {
         $s = rmrSetup(5);
+
         actingAs(rmrActor(['add-raw-material-receive']))
-            ->post(route('raw-material.receive.store'), rmrPayload($s, ['qty' => 99]))
-            ->assertSessionHasErrors(['qty']);
+            ->post(route('raw-material.receive.store'), rmrPayload($s, ['qty' => 8, 'status' => 0]))
+            ->assertRedirect(route('raw-material.receive.index'))
+            ->assertSessionHasNoErrors();
+
+        expect((int) $s['item']->fresh()->extra_qty)->toBe(3);
     });
 
     it('rejects missing received_date', function () {
@@ -472,7 +507,8 @@ describe('edit', function () {
             ->assertOk()
             ->assertViewIs('raw_material_receive.edit')
             ->assertViewHas('receive')
-            ->assertViewHas('orders')
+            ->assertViewHas('receivable_orders')
+            ->assertViewHas('supplier_brokers')
             ->assertViewHas('order_items');
     });
 

@@ -75,6 +75,10 @@
             <td class="value">{{ $order->total_qty }}</td>
         </tr>
         <tr>
+            <td class="label">Extra Qty (tons)</td>
+            <td class="value">{{ $order->extraQtyTotal() }}</td>
+        </tr>
+        <tr>
             <td class="label">Total Price (₹)</td>
             <td class="value">{{ number_format($order->total_price, 2) }}</td>
         </tr>

@@ -313,6 +313,7 @@ class HomeController extends Controller
                 return $name;
             })
             ->addColumn('total_qty_fmt', fn ($row) => number_format((int) data_get($row, 'total_qty', 0)))
+            ->addColumn('extra_qty_fmt', fn ($row) => number_format((int) data_get($row, 'extra_qty', 0)))
             ->addColumn('on_road_qty_fmt', fn ($row) => number_format((int) data_get($row, 'on_road_qty', 0)))
             ->addColumn('unloading_qty_fmt', fn ($row) => number_format((int) data_get($row, 'unloading_qty', 0)))
             ->addColumn('pending_qty_fmt', fn ($row) => number_format((int) data_get($row, 'pending_qty', 0)))

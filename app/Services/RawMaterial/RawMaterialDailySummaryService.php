@@ -92,6 +92,7 @@ class RawMaterialDailySummaryService
         $pendingQty = (int) $item->pending_qty;
         $displayPendingQty = max(0, $pendingQty - $onRoadQty);
         $totalQty = (int) $item->total_qty;
+        $extraQty = (int) $item->extra_qty;
         $rate = round((float) $item->price, 2);
         $freight = round((float) $item->total_freight, 2);
 
@@ -106,13 +107,14 @@ class RawMaterialDailySummaryService
             'material_id'           => (int) ($item->raw_material_id ?? 0),
             'material_name'         => $item->rawMaterial?->name ?? '—',
             'total_qty'             => $totalQty,
+            'extra_qty'             => $extraQty,
             'on_road_qty'           => $onRoadQty,
             'unloading_qty'         => $receivedQty,
             'pending_qty'           => $displayPendingQty,
             'pipeline_pending_qty'  => $pendingQty,
             'rate'                  => $rate,
             'average'               => $this->displayAverage($rate, (float) $item->price_avg, $freight),
-            'pending_amount'        => round((float) $item->pending_price, 2),
+            'pending_amount'        => round(\App\Services\RawMaterialCacheService::itemPendingAmount($item), 2),
             'received_amount'       => round((float) $item->received_price, 2),
             'freight'               => $freight,
         ];
@@ -150,6 +152,7 @@ class RawMaterialDailySummaryService
         $onRoadQty = (int) $rows->sum('on_road_qty');
         $receivedQty = (int) $rows->sum('unloading_qty');
         $totalQty = (int) $rows->sum('total_qty');
+        $extraQty = (int) $rows->sum('extra_qty');
         $pendingAmount = round((float) $rows->sum('pending_amount'), 2);
         $receivedAmount = round((float) $rows->sum('received_amount'), 2);
         $grandAmount = round($pendingAmount + $receivedAmount, 2);
@@ -157,6 +160,7 @@ class RawMaterialDailySummaryService
 
         return [
             'ordered_qty'           => $totalQty,
+            'extra_qty'             => $extraQty,
             'on_road_qty'           => $onRoadQty,
             'unloading_qty'         => $receivedQty,
             'pending_not_on_road'   => $pendingNotOnRoadQty,
