@@ -7,7 +7,10 @@
 <span class="dpp-day-chips {{ $modifier }}">
     @foreach ($items as $item)
         @php
-            $level = DeliveryPendingPaymentsReportService::dayAgingLevelFor((int) $item['days']);
+            $level = DeliveryPendingPaymentsReportService::dayAgingLevelFor(
+                (int) $item['days'],
+                (string) ($item['payment_type'] ?? 'cash')
+            );
         @endphp
         <span class="dpp-day-chip dpp-day-chip--{{ $level }}">
             <span class="dpp-day-chip-num">{{ $item['days'] }}</span>

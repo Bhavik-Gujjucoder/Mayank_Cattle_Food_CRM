@@ -94,11 +94,11 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
         $this->pushSpacer($line, 'spacer-lg');
 
         $this->pushRow([
-            'Pending Payment Days: Days from dispatch date to today. Aging uses payment due days from General Settings.',
+            'Pending Payment Days: Days from dispatch date to today. Aging uses Cash/Credit due days from General Settings based on order Payment Type.',
         ], $line++, 'footnote');
 
         $this->pushRow([
-            'Late Fee: Daily accrued charge after due period (rate × qty per dispatch). Balance Due = base + late fee − partial payment.',
+            'Late Fee: Daily accrued charge after due period for that payment type (rate × qty per dispatch). Balance Due = base + late fee − partial payment.',
         ], $line++, 'footnote');
 
         $this->pushRow([
@@ -280,7 +280,10 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
 
             $sheet->mergeCells($range);
 
-            $level = DeliveryPendingPaymentsReportService::dayAgingLevelFor((int) $item['days']);
+            $level = DeliveryPendingPaymentsReportService::dayAgingLevelFor(
+                (int) $item['days'],
+                (string) ($item['payment_type'] ?? 'cash')
+            );
             $colors = DeliveryPendingPaymentsReportService::dayAgingColors($level);
 
             $rich = new RichText();

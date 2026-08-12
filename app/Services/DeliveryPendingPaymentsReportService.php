@@ -25,7 +25,7 @@ class DeliveryPendingPaymentsReportService
             ->whereIn('status', DispatchManagement::pendingPaymentStatuses())
             ->whereHas('order', fn ($q) => $q->whereNull('deleted_at'))
             ->with([
-                'order:id,unique_order_id,brand_id,dealer_id,broker_id',
+                'order:id,unique_order_id,brand_id,dealer_id,broker_id,payment_type',
                 'order.brand:id,name',
                 'order.dealer:id,city_id,user_id,firm_shop_name',
                 'order.dealer.city:id,city_name',
@@ -42,9 +42,11 @@ class DeliveryPendingPaymentsReportService
                     return null;
                 }
 
+                $paymentType = $this->receivableService->paymentTypeFor($order);
+
                 $pendingDaysItems = $dispatches
                     ->filter(fn ($d) => $d->dispatch_date !== null)
-                    ->map(function ($d) use ($today) {
+                    ->map(function ($d) use ($today, $paymentType) {
                         $summary = $this->receivableService->summarizeDispatch($d, $today);
 
                         return [
@@ -56,6 +58,7 @@ class DeliveryPendingPaymentsReportService
                             'accrued_late_fee' => $summary['accrued_late_fee'],
                             'total_receivable' => $summary['total_receivable'],
                             'balance_due'      => $summary['balance_due'],
+                            'payment_type'     => $paymentType,
                         ];
                     })
                     ->sortByDesc('days')
@@ -75,11 +78,12 @@ class DeliveryPendingPaymentsReportService
                     'dealer_name'           => $dealer?->user?->name ?? $dealer?->firm_shop_name ?? '—',
                     'order_id'              => (int) $order->id,
                     'order_label'           => $order->unique_order_id,
+                    'payment_type'          => $paymentType,
                     'pending_days_items'    => $pendingDaysItems->all(),
                     'pending_days_display'  => $pendingDaysItems->pluck('days')->implode(' - '),
                     'pending_days_label'    => self::formatPendingDaysLabel($pendingDaysItems->all()),
                     'max_pending_days'      => $maxDays,
-                    'days_emphasis_class'   => $this->daysEmphasisClass($maxDays),
+                    'days_emphasis_class'   => $this->daysEmphasisClass($maxDays, $paymentType),
                     'total_late_fee'        => round($pendingDaysItems->sum('accrued_late_fee'), 2),
                     'total_balance_due'     => round($pendingDaysItems->sum('balance_due'), 2),
                 ];
@@ -137,12 +141,13 @@ class DeliveryPendingPaymentsReportService
         }
 
         $maxDays = (int) $items[0]['days'];
+        $paymentType = $row['payment_type'] ?? ($items[0]['payment_type'] ?? 'cash');
 
         $row['pending_days_items']   = $items;
         $row['pending_days_display'] = collect($items)->pluck('days')->implode(' - ');
         $row['pending_days_label']   = self::formatPendingDaysLabel($items);
         $row['max_pending_days']     = $maxDays;
-        $row['days_emphasis_class']  = $this->daysEmphasisClass($maxDays);
+        $row['days_emphasis_class']  = $this->daysEmphasisClass($maxDays, $paymentType);
         $row['total_late_fee']       = round(collect($items)->sum('accrued_late_fee'), 2);
         $row['total_balance_due']    = round(collect($items)->sum('balance_due'), 2);
 
@@ -176,9 +181,9 @@ class DeliveryPendingPaymentsReportService
     }
 
     /** Bootstrap text class from max days (row summary / mobile badge). */
-    protected function daysEmphasisClass(int $maxDays): string
+    protected function daysEmphasisClass(int $maxDays, string $paymentType = 'cash'): string
     {
-        return match ($this->dayAgingLevel($maxDays)) {
+        return match ($this->dayAgingLevel($maxDays, $paymentType)) {
             'low'  => 'text-success',
             'mid'  => 'text-warning',
             default => 'text-danger',
@@ -186,13 +191,13 @@ class DeliveryPendingPaymentsReportService
     }
 
     /**
-     * Aging band for per-dispatch styling based on general settings payment_due_days.
+     * Aging band for per-dispatch styling based on Cash/Credit due days settings.
      *
      * @return 'low'|'mid'|'high'
      */
-    public function dayAgingLevel(int $days): string
+    public function dayAgingLevel(int $days, string $paymentType = 'cash'): string
     {
-        return $this->receivableService->dayAgingLevel($days);
+        return $this->receivableService->dayAgingLevel($days, $paymentType);
     }
 
     /**
@@ -200,9 +205,9 @@ class DeliveryPendingPaymentsReportService
      *
      * @return 'low'|'mid'|'high'
      */
-    public static function dayAgingLevelFor(int $days): string
+    public static function dayAgingLevelFor(int $days, string $paymentType = 'cash'): string
     {
-        return app(self::class)->dayAgingLevel($days);
+        return app(self::class)->dayAgingLevel($days, $paymentType);
     }
 
     /**
@@ -234,8 +239,19 @@ class DeliveryPendingPaymentsReportService
         };
     }
 
-    public function paymentDueDays(): int
+    public function paymentDueDays(string $paymentType = 'cash'): int
     {
-        return $this->receivableService->paymentDueDays();
+        return $this->receivableService->paymentDueDays($paymentType);
+    }
+
+    /**
+     * @return array{cash: int, credit: int}
+     */
+    public function paymentDueDaysByType(): array
+    {
+        return [
+            'cash'   => $this->paymentDueDays('cash'),
+            'credit' => $this->paymentDueDays('credit'),
+        ];
     }
 }

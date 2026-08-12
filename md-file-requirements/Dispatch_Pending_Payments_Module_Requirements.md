@@ -57,11 +57,13 @@ Unpaid/partial dispatches past the configured grace period accrue daily late fee
 ### Settings (`general_settings`)
 | Key | Purpose |
 |---|---|
-| `payment_due_days` | Grace days after `dispatch_date` before late fees start |
-| `payment_due_amount` | Daily rate per bag (`rate × no_of_bags`) |
+| `cash_due_days` | Cash grace days after `dispatch_date` before late fees start |
+| `cash_due_amount` | Cash daily rate per bag (`rate × no_of_bags`) |
+| `credit_due_days` | Credit grace days after `dispatch_date` before late fees start |
+| `credit_due_amount` | Credit daily rate per bag (`rate × no_of_bags`) |
 | `company_email` | CC recipient on payment-pending reminder |
 
-Late fees disabled when `payment_due_days` or `payment_due_amount` is zero.
+Late fees for a dispatch use the parent order `payment_type` (`cash` \| `credit`). Disabled for that type when its days or amount is zero.
 
 ### Accrual
 - Command: `php artisan payment:accrue-late-fees`

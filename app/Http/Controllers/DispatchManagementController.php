@@ -330,7 +330,7 @@ class DispatchManagementController extends Controller
         SalesScope::authorizeDispatchAccess($dispatch);
 
         $dispatch->loadMissing([
-            'order:id,unique_order_id,brand_id,dealer_id',
+            'order:id,unique_order_id,brand_id,dealer_id,payment_type',
             'order.brand:id,name',
             'order.dealer:id,user_id,firm_shop_name',
             'order.dealer.user:id,name',
@@ -361,13 +361,15 @@ class DispatchManagementController extends Controller
                 'amount_paid'      => $summary['amount_paid'],
                 'balance_due'      => $summary['balance_due'],
                 'overdue_days'     => $summary['overdue_days'],
-                'payment_due_days' => $receivableService->paymentDueDays(),
+                'payment_due_days' => $receivableService->paymentDueDays($dispatch),
+                'payment_type'     => $summary['payment_type'],
             ],
             'order' => [
                 'id'            => (int) ($dispatch->order?->id ?? 0),
                 'unique_order_id' => $dispatch->order?->unique_order_id ?? '—',
                 'brand_name'    => $dispatch->order?->brand?->name ?? '—',
                 'dealer_name'   => $dispatch->order?->dealer?->user?->name ?? $dispatch->order?->dealer?->firm_shop_name ?? '—',
+                'payment_type'  => $receivableService->paymentTypeFor($dispatch),
             ],
             'product' => [
                 'name' => $dispatch->product?->name ?? '—',

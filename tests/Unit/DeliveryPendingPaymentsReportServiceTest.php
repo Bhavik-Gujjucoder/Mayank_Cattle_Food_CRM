@@ -92,10 +92,18 @@ beforeEach(function () {
     foreach (['super admin', 'admin', 'broker', 'dealer', 'transporter'] as $r) {
         \Spatie\Permission\Models\Role::firstOrCreate(['name' => $r, 'guard_name' => 'web']);
     }
-    DB::table('general_settings')->insert([
-        ['key' => 'payment_due_days',   'value' => '3', 'created_at' => now(), 'updated_at' => now()],
-        ['key' => 'payment_due_amount', 'value' => '10', 'created_at' => now(), 'updated_at' => now()],
-    ]);
+    $now = now();
+    foreach ([
+        'cash_due_days' => '3',
+        'cash_due_amount' => '10',
+        'credit_due_days' => '3',
+        'credit_due_amount' => '10',
+    ] as $key => $value) {
+        DB::table('general_settings')->updateOrInsert(
+            ['key' => $key],
+            ['value' => $value, 'created_at' => $now, 'updated_at' => $now]
+        );
+    }
 });
 
 // ─────────────────────────────────────────────

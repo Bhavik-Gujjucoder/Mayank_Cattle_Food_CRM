@@ -6,7 +6,10 @@
     <span class="dpp-days-screen">
         @foreach ($items as $index => $item)
             @php
-                $level = \App\Services\DeliveryPendingPaymentsReportService::dayAgingLevelFor((int) $item['days']);
+                $level = \App\Services\DeliveryPendingPaymentsReportService::dayAgingLevelFor(
+                    (int) $item['days'],
+                    (string) ($item['payment_type'] ?? $row['payment_type'] ?? 'cash')
+                );
             @endphp
             @if ($index > 0)<span class="dpp-days-sep"> - </span>@endif
             <span class="dpp-day-pill dpp-day-pill--{{ $level }}"

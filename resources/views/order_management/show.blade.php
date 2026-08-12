@@ -46,6 +46,10 @@
                     <label class="text-muted small">Payment Status</label>
                     <div>{!! $order->paymentBadge() !!}</div>
                 </div>
+                <div class="col-md-3 mt-3">
+                    <label class="text-muted small">Payment Type</label>
+                    <div>{!! $order->paymentTypeBadge() !!}</div>
+                </div>
             </div>
         </div>
     </div>

@@ -70,8 +70,10 @@ class DemoFoundationSeeder extends Seeder
         $now = now();
 
         foreach ([
-            'payment_due_days'   => '7',
-            'payment_due_amount' => '5',
+            'cash_due_days'      => '7',
+            'cash_due_amount'    => '5',
+            'credit_due_days'    => '7',
+            'credit_due_amount'  => '5',
         ] as $key => $value) {
             DB::table('general_settings')->updateOrInsert(
                 ['key' => $key],

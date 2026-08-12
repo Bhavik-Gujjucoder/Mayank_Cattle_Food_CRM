@@ -96,10 +96,18 @@ beforeEach(function () {
     foreach (['super admin', 'admin', 'broker', 'dealer', 'transporter'] as $r) {
         \Spatie\Permission\Models\Role::firstOrCreate(['name' => $r, 'guard_name' => 'web']);
     }
-    DB::table('general_settings')->insert([
-        ['key' => 'payment_due_days',   'value' => '0', 'created_at' => now(), 'updated_at' => now()],
-        ['key' => 'payment_due_amount', 'value' => '0', 'created_at' => now(), 'updated_at' => now()],
-    ]);
+    $now = now();
+    foreach ([
+        'cash_due_days' => '',
+        'cash_due_amount' => '',
+        'credit_due_days' => '',
+        'credit_due_amount' => '',
+    ] as $key => $value) {
+        DB::table('general_settings')->updateOrInsert(
+            ['key' => $key],
+            ['value' => $value, 'created_at' => $now, 'updated_at' => $now]
+        );
+    }
 });
 
 // ─────────────────────────────────────────────
@@ -148,7 +156,7 @@ describe('index', function () {
             ->assertViewHas('brands')
             ->assertViewHas('brandSections')
             ->assertViewHas('brandFilter')
-            ->assertViewHas('paymentDueDays');
+            ->assertViewHas('paymentDueDaysByType');
     });
 
     it('default brandFilter is "all" when no brand_id query param', function () {

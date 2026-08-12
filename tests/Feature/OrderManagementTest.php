@@ -139,6 +139,7 @@ function ordPayload(int $brokerId, int $brandId, int $dealerId, int $productId, 
         'order_date' => '2026-01-01',
         'delivery_address' => 'Test Delivery Address',
         'payment_status' => 'unpaid',
+        'payment_type' => 'cash',
         'product_id' => [$productId],
         'qty' => [10],
         'price' => ['100.00'],
@@ -151,10 +152,18 @@ beforeEach(function () {
     foreach (['super admin', 'admin', 'broker', 'dealer'] as $r) {
         Role::firstOrCreate(['name' => $r, 'guard_name' => 'web']);
     }
-    DB::table('general_settings')->insert([
-        ['key' => 'payment_due_days',   'value' => '0', 'created_at' => now(), 'updated_at' => now()],
-        ['key' => 'payment_due_amount', 'value' => '0', 'created_at' => now(), 'updated_at' => now()],
-    ]);
+    $now = now();
+    foreach ([
+        'cash_due_days' => '',
+        'cash_due_amount' => '',
+        'credit_due_days' => '',
+        'credit_due_amount' => '',
+    ] as $key => $value) {
+        DB::table('general_settings')->updateOrInsert(
+            ['key' => $key],
+            ['value' => $value, 'created_at' => $now, 'updated_at' => $now]
+        );
+    }
 });
 
 // ─────────────────────────────────────────────
@@ -633,6 +642,32 @@ describe('store-validation', function () {
             ->assertSessionHasErrors(['payment_status']);
     });
 
+    it('fails when payment_type is invalid', function () {
+        $brand = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $product = mkOrdProduct($brand->id);
+        $actor = ordActor(['add-order']);
+
+        actingAs($actor)
+            ->post(route('order.store'), ordPayload($broker->id, $brand->id, $dealer->id, $product->id, ['payment_type' => 'cheque']))
+            ->assertSessionHasErrors(['payment_type']);
+    });
+
+    it('stores payment_type on create', function () {
+        $brand = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $product = mkOrdProduct($brand->id);
+        $actor = ordActor(['add-order']);
+
+        actingAs($actor)->post(route('order.store'), ordPayload($broker->id, $brand->id, $dealer->id, $product->id, [
+            'payment_type' => 'credit',
+        ]))->assertRedirect(route('order.index'));
+
+        expect(OrderManagement::latest('id')->first()->payment_type)->toBe('credit');
+    });
+
     it('fails when payment_status=partial and partial_paid_amount is missing', function () {
         $brand = mkOrdBrand();
         $broker = mkOrdBroker();
@@ -942,6 +977,41 @@ describe('update-validation', function () {
         actingAs($actor)
             ->put(route('order.update', $order), $payload)
             ->assertSessionHasErrors(['broker_id']);
+    });
+
+    it('fails when trying to change payment_type on order that has dispatched items', function () {
+        $brand = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $product = mkOrdProduct($brand->id);
+        $order = mkOrder($broker->id, $brand->id, $dealer->id, ['payment_type' => 'cash']);
+        $item = mkOrderItem($order->id, $product->id);
+        $transporter = User::factory()->create(['status' => 1]);
+        DispatchManagement::create([
+            'order_id' => $order->id,
+            'order_item_id' => $item->id,
+            'product_id' => $product->id,
+            'no_of_bags' => 5,
+            'dispatch_date' => '2026-01-15',
+            'transport_id' => $transporter->id,
+            'truck_number' => 'GJ01AA1234',
+            'driver_contact' => '9876543210',
+            'status' => 0,
+            'accrued_late_fee' => 0,
+        ]);
+        $actor = ordActor(['edit-order']);
+
+        $payload = ordPayload($broker->id, $brand->id, $dealer->id, $product->id, [
+            'unique_order_id' => $order->unique_order_id,
+            'item_id' => [$item->id],
+            'payment_type' => 'credit',
+        ]);
+
+        actingAs($actor)
+            ->put(route('order.update', $order), $payload)
+            ->assertSessionHasErrors(['payment_type']);
+
+        expect($order->fresh()->payment_type)->toBe('cash');
     });
 
     it('fails when trying to reduce qty below dispatched qty', function () {

@@ -19,7 +19,7 @@ class DispatchEmailPresenter
     public function forDispatch(DispatchManagement $dispatch, array $extras = []): array
     {
         $dispatch->loadMissing([
-            'order:id,unique_order_id,brand_id,dealer_id,order_date,payment_status,partial_paid_amount,grand_total',
+            'order:id,unique_order_id,brand_id,dealer_id,order_date,payment_status,payment_type,partial_paid_amount,grand_total',
             'order.brand:id,name',
             'order.dealer:id,user_id,firm_shop_name',
             'order.dealer.user:id,name,email',
@@ -51,6 +51,7 @@ class DispatchEmailPresenter
                 'order_date'          => $order?->order_date?->format('d M Y') ?? '—',
                 'brand_name'          => $order?->brand?->name ?? '—',
                 'payment_status'      => $this->orderPaymentLabel($order?->payment_status),
+                'payment_type'        => PaymentReceivableService::paymentTypeLabel($order?->payment_type),
                 'grand_total'         => PaymentReceivableService::formatMoney((float) ($order?->grand_total ?? 0)),
             ],
             'line_item' => [

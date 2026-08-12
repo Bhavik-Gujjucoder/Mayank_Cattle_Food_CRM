@@ -495,52 +495,62 @@ describe('company details tab — persistence', function () {
  ══════════════════════════════════════════════════════════════════════ */
 describe('sales tab — validation', function () {
 
-    test('payment_due_days must be an integer — decimal fails', function () {
+    test('cash_due_days must be an integer — decimal fails', function () {
         actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
-                'payment_due_days'   => 1.5,
-                'payment_due_amount' => 100,
+                'cash_due_days'      => 1.5,
+                'cash_due_amount'    => 100,
+                'credit_due_days'    => 30,
+                'credit_due_amount'  => 100,
             ])
-            ->assertSessionHasErrors('payment_due_days');
+            ->assertSessionHasErrors('cash_due_days');
     });
 
-    test('payment_due_days must not be negative', function () {
+    test('cash_due_days must not be negative', function () {
         actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
-                'payment_due_days'   => -1,
-                'payment_due_amount' => 100,
+                'cash_due_days'      => -1,
+                'cash_due_amount'    => 100,
+                'credit_due_days'    => 30,
+                'credit_due_amount'  => 100,
             ])
-            ->assertSessionHasErrors('payment_due_days');
+            ->assertSessionHasErrors('cash_due_days');
     });
 
-    test('payment_due_amount must be numeric — string fails', function () {
+    test('credit_due_amount must be numeric — string fails', function () {
         actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
-                'payment_due_days'   => 30,
-                'payment_due_amount' => 'not-a-number',
+                'cash_due_days'      => 30,
+                'cash_due_amount'    => 100,
+                'credit_due_days'    => 30,
+                'credit_due_amount'  => 'not-a-number',
             ])
-            ->assertSessionHasErrors('payment_due_amount');
+            ->assertSessionHasErrors('credit_due_amount');
     });
 
-    test('payment_due_amount must not be negative', function () {
+    test('credit_due_amount must not be negative', function () {
         actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
-                'payment_due_days'   => 30,
-                'payment_due_amount' => -0.01,
+                'cash_due_days'      => 30,
+                'cash_due_amount'    => 100,
+                'credit_due_days'    => 30,
+                'credit_due_amount'  => -0.01,
             ])
-            ->assertSessionHasErrors('payment_due_amount');
+            ->assertSessionHasErrors('credit_due_amount');
     });
 
-    test('zero is valid for payment_due_days (min:0 boundary)', function () {
+    test('zero is valid for cash and credit due fields (min:0 boundary)', function () {
         actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
-                'payment_due_days'   => 0,
-                'payment_due_amount' => 0,
+                'cash_due_days'      => 0,
+                'cash_due_amount'    => 0,
+                'credit_due_days'    => 0,
+                'credit_due_amount'  => 0,
             ])
             ->assertSessionHasNoErrors();
     });
@@ -553,22 +563,26 @@ describe('sales tab — validation', function () {
             ->assertSessionHasNoErrors();
     });
 
-    test('decimal payment_due_amount passes validation', function () {
+    test('decimal cash_due_amount passes validation', function () {
         actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
-                'payment_due_days'   => 7,
-                'payment_due_amount' => 12.75,
+                'cash_due_days'      => 7,
+                'cash_due_amount'    => 12.75,
+                'credit_due_days'    => 7,
+                'credit_due_amount'  => 12.75,
             ])
             ->assertSessionHasNoErrors();
     });
 
-    test('large integer payment_due_days passes validation', function () {
+    test('large integer cash_due_days passes validation', function () {
         actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
-                'payment_due_days'   => 365,
-                'payment_due_amount' => 9999.99,
+                'cash_due_days'      => 365,
+                'cash_due_amount'    => 9999.99,
+                'credit_due_days'    => 365,
+                'credit_due_amount'  => 9999.99,
             ])
             ->assertSessionHasNoErrors();
     });
@@ -580,78 +594,104 @@ describe('sales tab — validation', function () {
  ══════════════════════════════════════════════════════════════════════ */
 describe('sales tab — persistence', function () {
 
-    test('payment_due_days and payment_due_amount are persisted', function () {
+    test('cash and credit due settings are persisted', function () {
         actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
-                'payment_due_days'   => 30,
-                'payment_due_amount' => 500,
+                'cash_due_days'      => 30,
+                'cash_due_amount'    => 500,
+                'credit_due_days'    => 18,
+                'credit_due_amount'  => 2,
             ]);
 
-        assertDatabaseHas('general_settings', ['key' => 'payment_due_days',   'value' => '30']);
-        assertDatabaseHas('general_settings', ['key' => 'payment_due_amount', 'value' => '500']);
+        assertDatabaseHas('general_settings', ['key' => 'cash_due_days',     'value' => '30']);
+        assertDatabaseHas('general_settings', ['key' => 'cash_due_amount',   'value' => '500']);
+        assertDatabaseHas('general_settings', ['key' => 'credit_due_days',   'value' => '18']);
+        assertDatabaseHas('general_settings', ['key' => 'credit_due_amount', 'value' => '2']);
     });
 
     test('existing sales settings are updated without duplicating rows', function () {
-        GeneralSetting::create(['key' => 'payment_due_days',   'value' => '10']);
-        GeneralSetting::create(['key' => 'payment_due_amount', 'value' => '100']);
+        foreach ([
+            'cash_due_days' => '10',
+            'cash_due_amount' => '100',
+            'credit_due_days' => '10',
+            'credit_due_amount' => '100',
+        ] as $key => $value) {
+            GeneralSetting::updateOrCreate(['key' => $key], ['value' => $value]);
+        }
 
         actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
-                'payment_due_days'   => 45,
-                'payment_due_amount' => 750,
+                'cash_due_days'      => 45,
+                'cash_due_amount'    => 750,
+                'credit_due_days'    => 20,
+                'credit_due_amount'  => 5,
             ]);
 
-        assertDatabaseHas('general_settings', ['key' => 'payment_due_days',   'value' => '45']);
-        assertDatabaseHas('general_settings', ['key' => 'payment_due_amount', 'value' => '750']);
-        expect(GeneralSetting::where('key', 'payment_due_days')->count())->toBe(1);
-        expect(GeneralSetting::where('key', 'payment_due_amount')->count())->toBe(1);
+        assertDatabaseHas('general_settings', ['key' => 'cash_due_days',     'value' => '45']);
+        assertDatabaseHas('general_settings', ['key' => 'cash_due_amount',   'value' => '750']);
+        assertDatabaseHas('general_settings', ['key' => 'credit_due_days',   'value' => '20']);
+        assertDatabaseHas('general_settings', ['key' => 'credit_due_amount', 'value' => '5']);
+        expect(GeneralSetting::where('key', 'cash_due_days')->count())->toBe(1);
+        expect(GeneralSetting::where('key', 'cash_due_amount')->count())->toBe(1);
+        expect(GeneralSetting::where('key', 'credit_due_days')->count())->toBe(1);
+        expect(GeneralSetting::where('key', 'credit_due_amount')->count())->toBe(1);
     });
 
-    test('empty payment_due_days defaults to 0 in the database', function () {
+    test('empty cash_due_days defaults to 0 in the database', function () {
         actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
-                'payment_due_days'   => '',
-                'payment_due_amount' => 200,
+                'cash_due_days'      => '',
+                'cash_due_amount'    => 200,
+                'credit_due_days'    => 15,
+                'credit_due_amount'  => 200,
             ]);
 
-        assertDatabaseHas('general_settings', ['key' => 'payment_due_days', 'value' => '0']);
+        assertDatabaseHas('general_settings', ['key' => 'cash_due_days', 'value' => '0']);
     });
 
-    test('empty payment_due_amount defaults to 0 in the database', function () {
+    test('empty credit_due_amount defaults to 0 in the database', function () {
         actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
-                'payment_due_days'   => 15,
-                'payment_due_amount' => '',
+                'cash_due_days'      => 15,
+                'cash_due_amount'    => 100,
+                'credit_due_days'    => 15,
+                'credit_due_amount'  => '',
             ]);
 
-        assertDatabaseHas('general_settings', ['key' => 'payment_due_amount', 'value' => '0']);
+        assertDatabaseHas('general_settings', ['key' => 'credit_due_amount', 'value' => '0']);
     });
 
-    test('both fields empty both default to 0', function () {
+    test('all due fields empty all default to 0', function () {
         actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
-                'payment_due_days'   => '',
-                'payment_due_amount' => '',
+                'cash_due_days'      => '',
+                'cash_due_amount'    => '',
+                'credit_due_days'    => '',
+                'credit_due_amount'  => '',
             ]);
 
-        assertDatabaseHas('general_settings', ['key' => 'payment_due_days',   'value' => '0']);
-        assertDatabaseHas('general_settings', ['key' => 'payment_due_amount', 'value' => '0']);
+        assertDatabaseHas('general_settings', ['key' => 'cash_due_days',     'value' => '0']);
+        assertDatabaseHas('general_settings', ['key' => 'cash_due_amount',   'value' => '0']);
+        assertDatabaseHas('general_settings', ['key' => 'credit_due_days',   'value' => '0']);
+        assertDatabaseHas('general_settings', ['key' => 'credit_due_amount', 'value' => '0']);
     });
 
-    test('decimal payment_due_amount is stored correctly', function () {
+    test('decimal cash_due_amount is stored correctly', function () {
         actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
-                'payment_due_days'   => 7,
-                'payment_due_amount' => 12.75,
+                'cash_due_days'      => 7,
+                'cash_due_amount'    => 12.75,
+                'credit_due_days'    => 7,
+                'credit_due_amount'  => 12.75,
             ]);
 
-        $setting = GeneralSetting::where('key', 'payment_due_amount')->first();
+        $setting = GeneralSetting::where('key', 'cash_due_amount')->first();
         expect((float) $setting->value)->toBe(12.75);
     });
 
@@ -659,8 +699,10 @@ describe('sales tab — persistence', function () {
         actingAs(settingsUser())
             ->post(route('generalsetting.store'), [
                 'form_type'          => 'sales',
-                'payment_due_days'   => 30,
-                'payment_due_amount' => 500,
+                'cash_due_days'      => 30,
+                'cash_due_amount'    => 500,
+                'credit_due_days'    => 18,
+                'credit_due_amount'  => 2,
             ])
             ->assertRedirect();
     });
@@ -746,16 +788,20 @@ describe('edge cases and cross-tab behaviour', function () {
 
         actingAs($user)->post(route('generalsetting.store'), [
             'form_type'          => 'sales',
-            'payment_due_days'   => 30,
-            'payment_due_amount' => 500,
+            'cash_due_days'      => 30,
+            'cash_due_amount'    => 500,
+            'credit_due_days'    => 18,
+            'credit_due_amount'  => 2,
         ]);
 
         assertDatabaseHas('general_settings', ['key' => 'copyright_msg']);
         assertDatabaseHas('general_settings', ['key' => 'company_email']);
         assertDatabaseHas('general_settings', ['key' => 'company_phone']);
         assertDatabaseHas('general_settings', ['key' => 'company_address']);
-        assertDatabaseHas('general_settings', ['key' => 'payment_due_days']);
-        assertDatabaseHas('general_settings', ['key' => 'payment_due_amount']);
+        assertDatabaseHas('general_settings', ['key' => 'cash_due_days']);
+        assertDatabaseHas('general_settings', ['key' => 'cash_due_amount']);
+        assertDatabaseHas('general_settings', ['key' => 'credit_due_days']);
+        assertDatabaseHas('general_settings', ['key' => 'credit_due_amount']);
     });
 
     test('form_type field is never persisted as a setting', function () {

@@ -132,6 +132,18 @@ class OrderManagement extends Model
         };
     }
 
+    public function paymentTypeBadge(): string
+    {
+        return $this->payment_type === 'credit'
+            ? '<span class="badge bg-info-light text-info">Credit</span>'
+            : '<span class="badge bg-secondary-light text-secondary">Cash</span>';
+    }
+
+    public function paymentTypeLabel(): string
+    {
+        return PaymentReceivableService::paymentTypeLabel($this->payment_type);
+    }
+
     /** @return list<string> */
     public static function pendingPaymentStatuses(): array
     {

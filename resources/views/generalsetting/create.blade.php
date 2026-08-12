@@ -167,12 +167,12 @@
 
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="col-form-label">Payment Due Days</label>
+                                <label class="col-form-label">Cash Due Days</label>
                                 <input type="number" min="0"
-                                    class="form-control @error('payment_due_days') is-invalid @enderror"
-                                    name="payment_due_days"
-                                    value="{{ old('payment_due_days', getSetting('payment_due_days') !== '' ? getSetting('payment_due_days') : 0) }}">
-                                @error('payment_due_days')
+                                    class="form-control @error('cash_due_days') is-invalid @enderror"
+                                    name="cash_due_days"
+                                    value="{{ old('cash_due_days', getSetting('cash_due_days') !== '' ? getSetting('cash_due_days') : 0) }}">
+                                @error('cash_due_days')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
                             </div>
@@ -180,12 +180,38 @@
 
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="col-form-label">Payment Due Amount (Per Bag / Ton / KG)</label>
+                                <label class="col-form-label">Cash Due Amount (Per Bag / Ton / KG)</label>
                                 <input type="number" min="0" step="0.01"
-                                    class="form-control @error('payment_due_amount') is-invalid @enderror"
-                                    name="payment_due_amount"
-                                    value="{{ old('payment_due_amount', getSetting('payment_due_amount') !== '' ? getSetting('payment_due_amount') : 0) }}">
-                                @error('payment_due_amount')
+                                    class="form-control @error('cash_due_amount') is-invalid @enderror"
+                                    name="cash_due_amount"
+                                    value="{{ old('cash_due_amount', getSetting('cash_due_amount') !== '' ? getSetting('cash_due_amount') : 0) }}">
+                                @error('cash_due_amount')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="col-form-label">Credit Due Days</label>
+                                <input type="number" min="0"
+                                    class="form-control @error('credit_due_days') is-invalid @enderror"
+                                    name="credit_due_days"
+                                    value="{{ old('credit_due_days', getSetting('credit_due_days') !== '' ? getSetting('credit_due_days') : 0) }}">
+                                @error('credit_due_days')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="col-form-label">Credit Due Amount (Per Bag / Ton / KG)</label>
+                                <input type="number" min="0" step="0.01"
+                                    class="form-control @error('credit_due_amount') is-invalid @enderror"
+                                    name="credit_due_amount"
+                                    value="{{ old('credit_due_amount', getSetting('credit_due_amount') !== '' ? getSetting('credit_due_amount') : 0) }}">
+                                @error('credit_due_amount')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
                             </div>

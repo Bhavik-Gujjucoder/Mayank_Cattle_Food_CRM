@@ -148,10 +148,18 @@ describe('raw-material:recalculate-freight', function () {
 
 describe('payment:accrue-late-fees', function () {
     beforeEach(function () {
-        DB::table('general_settings')->insert([
-            ['key' => 'payment_due_days',   'value' => '0', 'created_at' => now(), 'updated_at' => now()],
-            ['key' => 'payment_due_amount', 'value' => '0', 'created_at' => now(), 'updated_at' => now()],
-        ]);
+        $now = now();
+        foreach ([
+            'cash_due_days' => '0',
+            'cash_due_amount' => '0',
+            'credit_due_days' => '0',
+            'credit_due_amount' => '0',
+        ] as $key => $value) {
+            DB::table('general_settings')->updateOrInsert(
+                ['key' => $key],
+                ['value' => $value, 'created_at' => $now, 'updated_at' => $now]
+            );
+        }
     });
 
     it('skips accrual and outputs skip message when late fee is disabled', function () {
@@ -161,8 +169,10 @@ describe('payment:accrue-late-fees', function () {
     });
 
     it('outputs processed stats when late fee is enabled but no dispatches exist', function () {
-        DB::table('general_settings')->where('key', 'payment_due_days')->update(['value' => '3']);
-        DB::table('general_settings')->where('key', 'payment_due_amount')->update(['value' => '10']);
+        DB::table('general_settings')->where('key', 'cash_due_days')->update(['value' => '3']);
+        DB::table('general_settings')->where('key', 'cash_due_amount')->update(['value' => '10']);
+        DB::table('general_settings')->where('key', 'credit_due_days')->update(['value' => '3']);
+        DB::table('general_settings')->where('key', 'credit_due_amount')->update(['value' => '10']);
 
         $this->artisan('payment:accrue-late-fees')
             ->expectsOutputToContain('Processed 0 dispatch(es)')
@@ -172,8 +182,10 @@ describe('payment:accrue-late-fees', function () {
     it('accrues fees and outputs stats for eligible dispatches', function () {
         Mail::fake();
 
-        DB::table('general_settings')->where('key', 'payment_due_days')->update(['value' => '3']);
-        DB::table('general_settings')->where('key', 'payment_due_amount')->update(['value' => '10']);
+        DB::table('general_settings')->where('key', 'cash_due_days')->update(['value' => '3']);
+        DB::table('general_settings')->where('key', 'cash_due_amount')->update(['value' => '10']);
+        DB::table('general_settings')->where('key', 'credit_due_days')->update(['value' => '3']);
+        DB::table('general_settings')->where('key', 'credit_due_amount')->update(['value' => '10']);
 
         foreach (['super admin', 'admin', 'broker', 'dealer', 'transporter'] as $r) {
             \Spatie\Permission\Models\Role::firstOrCreate(['name' => $r, 'guard_name' => 'web']);

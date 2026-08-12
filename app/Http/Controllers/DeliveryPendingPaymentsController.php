@@ -41,7 +41,7 @@ class DeliveryPendingPaymentsController extends Controller
             'brandSections'  => $brandSections,
             'canLinkOrder'   => $canLinkOrder,
             'canUpdateDispatchPayment' => $canUpdateDispatchPayment,
-            'paymentDueDays' => $this->reportService->paymentDueDays(),
+            'paymentDueDaysByType' => $this->reportService->paymentDueDaysByType(),
         ]);
     }
 

@@ -11,19 +11,74 @@ use Illuminate\Support\Facades\DB;
 
 class PaymentReceivableService
 {
-    public function paymentDueDays(): int
+    public const PAYMENT_TYPE_CASH = 'cash';
+
+    public const PAYMENT_TYPE_CREDIT = 'credit';
+
+    public function normalizePaymentType(?string $type): string
     {
-        return max(0, (int) getSetting('payment_due_days'));
+        return $type === self::PAYMENT_TYPE_CREDIT
+            ? self::PAYMENT_TYPE_CREDIT
+            : self::PAYMENT_TYPE_CASH;
     }
 
-    public function paymentDueAmountRate(): float
+    public function paymentTypeFor(DispatchManagement|OrderManagement|string|null $context = null): string
     {
-        return max(0, (float) getSetting('payment_due_amount'));
+        if (is_string($context)) {
+            return $this->normalizePaymentType($context);
+        }
+
+        if ($context instanceof OrderManagement) {
+            return $this->normalizePaymentType($context->payment_type ?? null);
+        }
+
+        if ($context instanceof DispatchManagement) {
+            $context->loadMissing('order:id,payment_type');
+
+            return $this->normalizePaymentType($context->order?->payment_type ?? null);
+        }
+
+        return self::PAYMENT_TYPE_CASH;
     }
 
-    public function isLateFeeEnabled(): bool
+    /**
+     * @return array{days_key: string, amount_key: string}
+     */
+    public function settingKeysFor(DispatchManagement|OrderManagement|string|null $context = null): array
     {
-        return $this->paymentDueDays() > 0 && $this->paymentDueAmountRate() > 0;
+        $type = $this->paymentTypeFor($context);
+
+        return $type === self::PAYMENT_TYPE_CREDIT
+            ? ['days_key' => 'credit_due_days', 'amount_key' => 'credit_due_amount']
+            : ['days_key' => 'cash_due_days', 'amount_key' => 'cash_due_amount'];
+    }
+
+    public function paymentDueDays(DispatchManagement|OrderManagement|string|null $context = null): int
+    {
+        $keys = $this->settingKeysFor($context);
+
+        return max(0, (int) getSetting($keys['days_key']));
+    }
+
+    public function paymentDueAmountRate(DispatchManagement|OrderManagement|string|null $context = null): float
+    {
+        $keys = $this->settingKeysFor($context);
+
+        return max(0, (float) getSetting($keys['amount_key']));
+    }
+
+    public function isLateFeeEnabled(DispatchManagement|OrderManagement|string|null $context = null): bool
+    {
+        return $this->paymentDueDays($context) > 0 && $this->paymentDueAmountRate($context) > 0;
+    }
+
+    /**
+     * Whether any payment type currently has late fees configured.
+     */
+    public function isAnyLateFeeEnabled(): bool
+    {
+        return $this->isLateFeeEnabled(self::PAYMENT_TYPE_CASH)
+            || $this->isLateFeeEnabled(self::PAYMENT_TYPE_CREDIT);
     }
 
     /**
@@ -38,7 +93,7 @@ class PaymentReceivableService
         return $dispatch->dispatch_date
             ->copy()
             ->startOfDay()
-            ->addDays($this->paymentDueDays() + 1);
+            ->addDays($this->paymentDueDays($dispatch) + 1);
     }
 
     public function daysSinceDispatch(DispatchManagement $dispatch, ?Carbon $asOf = null): int
@@ -55,7 +110,7 @@ class PaymentReceivableService
 
     public function overdueDays(DispatchManagement $dispatch, ?Carbon $asOf = null): int
     {
-        return max(0, $this->daysSinceDispatch($dispatch, $asOf) - $this->paymentDueDays());
+        return max(0, $this->daysSinceDispatch($dispatch, $asOf) - $this->paymentDueDays($dispatch));
     }
 
     public function isPastGracePeriod(DispatchManagement $dispatch, ?Carbon $asOf = null): bool
@@ -65,13 +120,13 @@ class PaymentReceivableService
 
     public function dailyChargeAmount(DispatchManagement $dispatch): float
     {
-        if (! $this->isLateFeeEnabled()) {
+        if (! $this->isLateFeeEnabled($dispatch)) {
             return 0.0;
         }
 
         $qty = max(0, (int) $dispatch->no_of_bags);
 
-        return round($this->paymentDueAmountRate() * $qty, 2);
+        return round($this->paymentDueAmountRate($dispatch) * $qty, 2);
     }
 
     public function baseAmount(DispatchManagement $dispatch): float
@@ -128,9 +183,11 @@ class PaymentReceivableService
      *     base_amount: float,
      *     accrued_late_fee: float,
      *     total_receivable: float,
+     *     amount_paid: float,
      *     balance_due: float,
      *     overdue_days: int,
-     *     days_since_dispatch: int
+     *     days_since_dispatch: int,
+     *     payment_type: string
      * }
      */
     public function summarizeDispatch(DispatchManagement $dispatch, ?Carbon $asOf = null): array
@@ -143,15 +200,18 @@ class PaymentReceivableService
             'balance_due'           => $this->balanceDue($dispatch),
             'overdue_days'          => $this->overdueDays($dispatch, $asOf),
             'days_since_dispatch'   => $this->daysSinceDispatch($dispatch, $asOf),
+            'payment_type'          => $this->paymentTypeFor($dispatch),
         ];
     }
 
     /**
      * @return 'low'|'mid'|'high'
      */
-    public function dayAgingLevel(int $daysSinceDispatch): string
-    {
-        $dueDays = $this->paymentDueDays();
+    public function dayAgingLevel(
+        int $daysSinceDispatch,
+        DispatchManagement|OrderManagement|string|null $context = null
+    ): string {
+        $dueDays = $this->paymentDueDays($context);
 
         if ($daysSinceDispatch <= $dueDays) {
             return 'low';
@@ -214,6 +274,11 @@ class PaymentReceivableService
         return '₹ ' . number_format($amount, 2);
     }
 
+    public static function paymentTypeLabel(?string $type): string
+    {
+        return $type === self::PAYMENT_TYPE_CREDIT ? 'Credit' : 'Cash';
+    }
+
     public function isAccrualEligible(DispatchManagement $dispatch, Carbon $asOf): bool
     {
         if (! in_array((int) $dispatch->status, DispatchManagement::pendingPaymentStatuses(), true)) {
@@ -224,7 +289,7 @@ class PaymentReceivableService
             return false;
         }
 
-        if (! $this->isLateFeeEnabled()) {
+        if (! $this->isLateFeeEnabled($dispatch)) {
             return false;
         }
 
@@ -272,7 +337,7 @@ class PaymentReceivableService
 
         $daysAccrued = 0;
         $amountAdded = 0.0;
-        $rate = $this->paymentDueAmountRate();
+        $rate = $this->paymentDueAmountRate($dispatch);
         $qty = max(0, (int) $dispatch->no_of_bags);
 
         DB::transaction(function () use ($dispatch, $asOf, $start, $dailyAmount, $rate, $qty, &$daysAccrued, &$amountAdded) {
@@ -351,6 +416,7 @@ class PaymentReceivableService
             ->whereIn('status', DispatchManagement::pendingPaymentStatuses())
             ->whereNotNull('dispatch_date')
             ->whereHas('order', fn ($q) => $q->whereNull('deleted_at'))
+            ->with('order:id,payment_type')
             ->orderBy('id')
             ->chunkById(100, function ($dispatches) use ($asOf, &$stats) {
                 foreach ($dispatches as $dispatch) {

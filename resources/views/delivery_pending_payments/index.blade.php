@@ -75,7 +75,7 @@
                 </p>
                 @include('delivery_pending_payments.partials.footnotes-legend', [
                     'modifier' => 'd-none d-md-block d-print-block',
-                    'paymentDueDays' => $paymentDueDays ?? 0,
+                    'paymentDueDaysByType' => $paymentDueDaysByType ?? ['cash' => 0, 'credit' => 0],
                 ])
             </div>
         </div>

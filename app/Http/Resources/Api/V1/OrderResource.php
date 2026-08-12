@@ -72,6 +72,7 @@ class OrderResource extends JsonResource
 
             // ── Payment ────────────────────────────────────────────────────────
             'payment_status'      => $this->payment_status,  // unpaid | paid | partial
+            'payment_type'        => $this->payment_type ?? 'cash',  // cash | credit
             'partial_paid_amount' => $this->partial_paid_amount !== null
                 ? (string) $this->partial_paid_amount
                 : null,

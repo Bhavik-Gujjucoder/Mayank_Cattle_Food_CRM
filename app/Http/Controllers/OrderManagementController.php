@@ -250,6 +250,7 @@ class OrderManagementController extends Controller
             'order_date'          => $validated['order_date'],
             'delivery_address'    => $validated['delivery_address'],
             'payment_status'      => $validated['payment_status'],
+            'payment_type'        => $validated['payment_type'],
             'partial_paid_amount' => $validated['payment_status'] === 'partial'
                 ? $validated['partial_paid_amount'] : null,
             'total_order_amount'  => $totalAmount,
@@ -318,6 +319,12 @@ class OrderManagementController extends Controller
                     'dealer_id' => 'Dealer cannot be changed — this order has dispatched product items.',
                 ]);
             }
+            if (($validated['payment_type'] ?? $order->payment_type) !== $order->payment_type) {
+                return back()->withInput()->withErrors([
+                    'payment_type' => 'Payment Type cannot be changed — this order has dispatched product items.',
+                ]);
+            }
+            $validated['payment_type'] = $order->payment_type;
         }
 
         /* IDs that currently exist in the DB for this order */
@@ -452,6 +459,7 @@ class OrderManagementController extends Controller
             'order_date'          => $validated['order_date'],
             'delivery_address'    => $validated['delivery_address'],
             'payment_status'      => $validated['payment_status'],
+            'payment_type'        => $validated['payment_type'],
             'partial_paid_amount' => $validated['payment_status'] === 'partial'
                 ? $validated['partial_paid_amount'] : null,
             'total_order_amount'  => $totalAmount,
@@ -675,6 +683,7 @@ class OrderManagementController extends Controller
             'order_date'          => 'required|date',
             'delivery_address'    => 'required|string',
             'payment_status'      => 'required|in:unpaid,paid,partial',
+            'payment_type'        => 'required|in:cash,credit',
             'partial_paid_amount' => 'nullable|numeric|min:0|required_if:payment_status,partial',
             'product_id'          => 'required|array|min:1',
             'product_id.*'        => 'required|exists:products,id',
@@ -689,6 +698,8 @@ class OrderManagementController extends Controller
             'order_date.required'             => 'Please select an order date.',
             'delivery_address.required'       => 'Delivery address is required.',
             'payment_status.required'         => 'Please select a payment status.',
+            'payment_type.required'           => 'Please select a payment type.',
+            'payment_type.in'                 => 'Payment type must be Cash or Credit.',
             'partial_paid_amount.required_if' => 'Please enter the paid amount.',
             'product_id.required'             => 'At least one product is required.',
             'product_id.*.required'           => 'Please select a product.',

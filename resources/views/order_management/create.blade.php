@@ -273,6 +273,17 @@
             <div class="col-md-6">
                 <p class="form-section-title"><i class="ti ti-credit-card me-1"></i>Payment Status</p>
 
+                <div class="mb-3" style="max-width:260px;">
+                    <label class="col-form-label">Payment Type <span class="text-danger">*</span></label>
+                    <select name="payment_type" id="payment_type" class="form-select @error('payment_type') is-invalid @enderror">
+                        <option value="cash" {{ old('payment_type', 'cash') === 'cash' ? 'selected' : '' }}>Cash</option>
+                        <option value="credit" {{ old('payment_type') === 'credit' ? 'selected' : '' }}>Credit</option>
+                    </select>
+                    <span class="text-danger small payment_type_error">
+                        @error('payment_type'){{ $message }}@enderror
+                    </span>
+                </div>
+
                 <div class="payment-status-group mb-3">
                     <div class="form-check">
                         <input class="form-check-input payment-status-radio" type="radio"

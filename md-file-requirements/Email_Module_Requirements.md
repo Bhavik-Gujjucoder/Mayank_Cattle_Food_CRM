@@ -228,8 +228,8 @@ flowchart TB
 | Key | Usage |
 |---|---|
 | `company_email` | CC on late-fee payment pending reminders |
-| `payment_due_days` | Late-fee grace period (accrual eligibility) |
-| `payment_due_amount` | Daily late-fee rate per bag (accrual amount) |
+| `cash_due_days` / `credit_due_days` | Late-fee grace period by order payment type (accrual eligibility) |
+| `cash_due_amount` / `credit_due_amount` | Daily late-fee rate per bag by order payment type (accrual amount) |
 
 Configured in **General Settings** (`GeneralSettingController`, `getSetting()` helper).
 

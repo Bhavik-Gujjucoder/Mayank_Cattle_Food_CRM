@@ -315,12 +315,12 @@ class SalesBulkSeeder extends Seeder
     {
         $service = app(PaymentReceivableService::class);
 
-        if (! $service->isLateFeeEnabled()) {
+        if (! $service->isLateFeeEnabled($dispatch)) {
             return;
         }
 
         $daysOverdue = fake()->numberBetween(5, 45);
-        $dailyRate = $service->paymentDueAmountRate();
+        $dailyRate = $service->paymentDueAmountRate($dispatch);
         $dailyAmount = round($dailyRate * $bags, 2);
         $accrued = round($dailyAmount * $daysOverdue, 2);
 
@@ -329,7 +329,7 @@ class SalesBulkSeeder extends Seeder
             'late_fee_last_accrued_on' => now()->subDays(fake()->numberBetween(1, 5))->toDateString(),
         ]);
 
-        $chargeStart = $dispatchDate->copy()->addDays($service->paymentDueDays() + 1);
+        $chargeStart = $dispatchDate->copy()->addDays($service->paymentDueDays($dispatch) + 1);
 
         for ($d = 0; $d < min($daysOverdue, 10); $d++) {
             DispatchLateFeeLog::create([

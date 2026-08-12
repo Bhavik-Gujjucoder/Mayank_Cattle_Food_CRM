@@ -38,8 +38,10 @@ class GeneralSettingController extends Controller
             ]);
         } elseif ($request->form_type == 'sales') {
             $request->validate([
-                'payment_due_days'   => 'nullable|integer|min:0',
-                'payment_due_amount' => 'nullable|numeric|min:0',
+                'cash_due_days'       => 'nullable|integer|min:0',
+                'cash_due_amount'     => 'nullable|numeric|min:0',
+                'credit_due_days'     => 'nullable|integer|min:0',
+                'credit_due_amount'   => 'nullable|numeric|min:0',
             ]);
         } else {
             //
@@ -56,8 +58,9 @@ class GeneralSettingController extends Controller
 
             /* Sales defaults */
             if ($request->form_type === 'sales') {
-                $data['payment_due_days'] = ($data['payment_due_days'] ?? '') === '' ? 0 : $data['payment_due_days'];
-                $data['payment_due_amount'] = ($data['payment_due_amount'] ?? '') === '' ? 0 : $data['payment_due_amount'];
+                foreach (['cash_due_days', 'cash_due_amount', 'credit_due_days', 'credit_due_amount'] as $key) {
+                    $data[$key] = ($data[$key] ?? '') === '' ? 0 : $data[$key];
+                }
             }
 
             foreach ($data as $key => $value) {

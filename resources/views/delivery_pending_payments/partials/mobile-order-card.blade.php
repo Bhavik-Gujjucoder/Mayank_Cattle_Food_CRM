@@ -40,7 +40,10 @@
             <div class="dpp-day-chips dpp-day-chips--mobile" role="list">
                 @foreach ($items as $item)
                     @php
-                        $level = DeliveryPendingPaymentsReportService::dayAgingLevelFor((int) $item['days']);
+                        $level = DeliveryPendingPaymentsReportService::dayAgingLevelFor(
+                            (int) $item['days'],
+                            (string) ($item['payment_type'] ?? $row['payment_type'] ?? 'cash')
+                        );
                     @endphp
                     <span class="dpp-day-chip dpp-day-chip--{{ $level }}" role="listitem"
                         @if (!empty($canUpdateDispatchPayment)) data-dispatch-id="{{ $item['dispatch_id'] ?? '' }}" @endif

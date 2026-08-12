@@ -897,6 +897,7 @@ Accept: application/json
         },
         "delivery_address": "123 Delivery Street, City",
         "payment_status": "unpaid",
+        "payment_type": "cash",
         "partial_paid_amount": null,
         "total_order_amount": "5000.00",
         "grand_total": "5000.00",

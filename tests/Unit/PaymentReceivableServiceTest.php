@@ -17,14 +17,20 @@ use Illuminate\Support\Facades\Mail;
 //  Helpers
 // ─────────────────────────────────────────────
 
-function prsUpdateSettings(int $dueDays = 0, float $dueAmount = 0): void
+function prsUpdateSettings(int $dueDays = 0, float $dueAmount = 0, ?int $creditDueDays = null, ?float $creditDueAmount = null): void
 {
     DB::table('general_settings')
-        ->where('key', 'payment_due_days')
+        ->where('key', 'cash_due_days')
         ->update(['value' => (string) $dueDays]);
     DB::table('general_settings')
-        ->where('key', 'payment_due_amount')
+        ->where('key', 'cash_due_amount')
         ->update(['value' => (string) $dueAmount]);
+    DB::table('general_settings')
+        ->where('key', 'credit_due_days')
+        ->update(['value' => (string) ($creditDueDays ?? $dueDays)]);
+    DB::table('general_settings')
+        ->where('key', 'credit_due_amount')
+        ->update(['value' => (string) ($creditDueAmount ?? $dueAmount)]);
 
     forgetGeneralSettingsCache();
 }
@@ -100,23 +106,39 @@ beforeEach(function () {
     foreach (['super admin', 'admin', 'broker', 'dealer', 'transporter'] as $r) {
         \Spatie\Permission\Models\Role::firstOrCreate(['name' => $r, 'guard_name' => 'web']);
     }
-    DB::table('general_settings')->insert([
-        ['key' => 'payment_due_days',   'value' => '0', 'created_at' => now(), 'updated_at' => now()],
-        ['key' => 'payment_due_amount', 'value' => '0', 'created_at' => now(), 'updated_at' => now()],
-    ]);
+    $now = now();
+    foreach ([
+        'cash_due_days' => '',
+        'cash_due_amount' => '',
+        'credit_due_days' => '',
+        'credit_due_amount' => '',
+    ] as $key => $value) {
+        DB::table('general_settings')->updateOrInsert(
+            ['key' => $key],
+            ['value' => $value, 'created_at' => $now, 'updated_at' => $now]
+        );
+    }
 });
 
 // ─────────────────────────────────────────────
 
 describe('settings', function () {
-    it('reads payment_due_days from general settings', function () {
+    it('reads cash_due_days from general settings by default', function () {
         prsUpdateSettings(dueDays: 7, dueAmount: 10);
         expect((new PaymentReceivableService())->paymentDueDays())->toBe(7);
+        expect((new PaymentReceivableService())->paymentDueDays('cash'))->toBe(7);
     });
 
-    it('reads payment_due_amount from general settings', function () {
+    it('reads cash_due_amount from general settings by default', function () {
         prsUpdateSettings(dueDays: 7, dueAmount: 25.5);
         expect((new PaymentReceivableService())->paymentDueAmountRate())->toBe(25.5);
+    });
+
+    it('reads credit settings when payment type is credit', function () {
+        prsUpdateSettings(dueDays: 7, dueAmount: 10, creditDueDays: 18, creditDueAmount: 2);
+        $service = new PaymentReceivableService();
+        expect($service->paymentDueDays('credit'))->toBe(18);
+        expect($service->paymentDueAmountRate('credit'))->toBe(2.0);
     });
 
     it('isLateFeeEnabled returns true when both settings are positive', function () {
@@ -132,6 +154,18 @@ describe('settings', function () {
     it('isLateFeeEnabled returns false when due amount is zero', function () {
         prsUpdateSettings(dueDays: 3, dueAmount: 0);
         expect((new PaymentReceivableService())->isLateFeeEnabled())->toBeFalse();
+    });
+
+    it('uses order payment_type for dispatch late-fee settings', function () {
+        prsUpdateSettings(dueDays: 7, dueAmount: 10, creditDueDays: 18, creditDueAmount: 2);
+        $dispatch = prsMakeDispatch(['dispatch_date' => '2026-01-10']);
+        $dispatch->order->update(['payment_type' => 'credit']);
+        $dispatch->unsetRelation('order');
+
+        $service = new PaymentReceivableService();
+        expect($service->paymentDueDays($dispatch))->toBe(18);
+        expect($service->paymentDueAmountRate($dispatch))->toBe(2.0);
+        expect($service->dailyChargeAmount($dispatch))->toBe(10.0); // 2 * 5 bags
     });
 });
 
