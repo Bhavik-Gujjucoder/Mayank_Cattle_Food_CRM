@@ -226,17 +226,47 @@ class RawMaterialOrderController extends Controller
 
     public function orderItems(RawMaterialOrder $raw_material_order)
     {
+        $excludeReceiveId = (int) request()->integer('exclude_receive_id');
+        $excludeReceive   = $excludeReceiveId > 0
+            ? RawMaterialReceive::query()->find($excludeReceiveId)
+            : null;
+
         $items = $raw_material_order->items()
             ->with('rawMaterial.category')
-            ->whereIn('status', [0, 1])
-            ->where('pending_qty', '>', 0)
+            ->whereIn('status', [0, 1, 2])
             ->get()
-            ->map(fn($item) => [
-                'id'           => $item->id,
-                'label'        => ($item->rawMaterial?->name ?? '—') . ' (Pending: ' . $item->pending_qty . ' tons)',
-                'raw_material_id' => $item->raw_material_id,
-                'pending_qty'  => $item->pending_qty,
-            ]);
+            ->map(function ($item) use ($excludeReceive) {
+                $excludeQty = ($excludeReceive
+                    && (int) $excludeReceive->raw_material_order_item_id === (int) $item->id
+                    && (int) $excludeReceive->raw_material_order_id === (int) $item->raw_material_order_id)
+                    ? (int) $excludeReceive->qty
+                    : 0;
+
+                $pipelineQty      = \App\Services\RawMaterialCacheService::itemPipelineQty($item);
+                $orderedRemaining = \App\Services\RawMaterialCacheService::itemOrderedRemaining($item, $excludeQty);
+
+                return [
+                    'id'                => $item->id,
+                    'label'             => ($item->rawMaterial?->name ?? '—')
+                        . ' (Pending: ' . $orderedRemaining . ' tons)',
+                    'raw_material_id'   => $item->raw_material_id,
+                    'pending_qty'       => $orderedRemaining,
+                    'total_qty'         => (int) $item->total_qty,
+                    'pipeline_qty'      => max(0, $pipelineQty - $excludeQty),
+                    'ordered_remaining' => $orderedRemaining,
+                    'extra_qty'         => (int) $item->extra_qty,
+                ];
+            })
+            ->filter(function (array $row) use ($excludeReceive) {
+                if ($row['ordered_remaining'] > 0) {
+                    return true;
+                }
+
+                // Keep the item currently being edited even if fully covered after this entry.
+                return $excludeReceive
+                    && (int) $excludeReceive->raw_material_order_item_id === (int) $row['id'];
+            })
+            ->values();
 
         return response()->json($items);
     }

@@ -47,16 +47,22 @@
             <td>{{ $order->total_qty }}</td>
         </tr>
         <tr>
+            <td class="label">Extra Qty (tons)</td>
+            <td>{{ $order->extraQtyTotal() }}</td>
             <td class="label">Total Price (₹)</td>
             <td>{{ number_format($order->total_price, 2) }}</td>
-            <td class="label">Advance Payment (₹)</td>
-            <td>{{ number_format((float) $order->advance_payment, 2) }}</td>
         </tr>
         <tr>
+            <td class="label">Advance Payment (₹)</td>
+            <td>{{ number_format((float) $order->advance_payment, 2) }}</td>
             <td class="label">Remaining (₹)</td>
             <td>{{ number_format($order->remainingAmount(), 2) }}</td>
+        </tr>
+        <tr>
             <td class="label">Total Freight (₹)</td>
             <td>{{ number_format($order->total_freight, 2) }}</td>
+            <td class="label"></td>
+            <td></td>
         </tr>
     </table>
 
@@ -70,6 +76,7 @@
                     <th>#</th>
                     <th>Material</th>
                     <th class="text-right">Total Qty</th>
+                    <th class="text-right">Extra Qty</th>
                     <th class="text-right">Pending</th>
                     <th class="text-right">Received</th>
                     <th class="text-right">Price/kg</th>
@@ -87,12 +94,13 @@
                         <td>{{ $index + 1 }}</td>
                         <td>{{ $item->rawMaterial?->name ?? '—' }}</td>
                         <td class="text-right">{{ $item->total_qty }}</td>
+                        <td class="text-right">{{ $item->extra_qty }}</td>
                         <td class="text-right">{{ $item->pending_qty }}</td>
                         <td class="text-right">{{ $item->received_qty }}</td>
                         <td class="text-right">{{ number_format($item->price, 2) }}</td>
                         <td class="text-right">{{ number_format($item->price_avg, 2) }}</td>
-                        <td class="text-right">{{ number_format($item->total_price, 2) }}</td>
-                        <td class="text-right">{{ number_format($item->pending_price, 2) }}</td>
+                        <td class="text-right">{{ number_format($item->totalAmount(), 2) }}</td>
+                        <td class="text-right">{{ number_format($item->pendingAmount(), 2) }}</td>
                         <td class="text-right">{{ number_format($item->received_price, 2) }}</td>
                         <td class="text-right">{{ number_format($item->total_freight, 2) }}</td>
                         <td>{{ \App\Services\RawMaterial\RawMaterialFilterService::orderItemStatusLabel((int) $item->status) }}</td>

@@ -7,24 +7,22 @@
 @endsection
 @section('content')
 
+@php
+    $selectedBrokerId = old('receive_broker_id', '');
+    $selectedSupplierId = old('receive_supplier_id', '');
+    $selectedOrderId = old('raw_material_order_id', '');
+@endphp
+
 <div class="card raw-material-module">
     <div class="card-body">
         <form action="{{ route('raw-material.receive.store') }}" method="POST" id="receiveForm">
             @csrf
             <p class="form-section-title"><i class="ti ti-truck-delivery me-1"></i>Received Entry</p>
             <div class="row">
-                <div class="col-12 col-md-6 mb-3">
-                    <label class="col-form-label">Purchase Order <span class="text-danger">*</span></label>
-                    <select name="raw_material_order_id" id="raw_material_order_id" class="form-select search-select">
-                        <option value="">-- Select Order --</option>
-                        @foreach ($orders as $order)
-                            <option value="{{ $order->id }}" {{ old('raw_material_order_id') == $order->id ? 'selected' : '' }}>
-                                @include('raw_material.partials.order-select-label', ['order' => $order])
-                            </option>
-                        @endforeach
-                    </select>
-                    <span class="text-danger small raw_material_order_id_error">@error('raw_material_order_id'){{ $message }}@enderror</span>
-                </div>
+                @include('raw_material_receive.partials.broker-supplier-order-fields', [
+                    'selectedBrokerId' => $selectedBrokerId,
+                    'selectedSupplierId' => $selectedSupplierId,
+                ])
                 <div class="col-12 col-md-6 mb-3">
                     <label class="col-form-label">Order Item <span class="text-danger">*</span></label>
                     <select name="raw_material_order_item_id" id="raw_material_order_item_id" class="form-select search-select" disabled>
@@ -36,7 +34,11 @@
                     <label class="col-form-label">Quantity (tons) <span class="text-danger">*</span></label>
                     <input type="number" name="qty" id="qty" value="{{ old('qty') }}"
                            class="form-control" min="1" step="1" placeholder="0">
-                    <small class="text-muted pending-qty-hint">Pending: <span id="pendingQtyVal">—</span> tons</small>
+                    <small class="text-muted pending-qty-hint">
+                        Pending: <span id="pendingQtyVal">—</span> tons
+                        <span class="text-muted">(after On Road + Received)</span>
+                    </small>
+                    <small class="text-warning d-none" id="extraQtyHint">Extra qty this entry: <span id="extraQtyVal">0</span> tons</small>
                     <span class="text-danger small qty_error">@error('qty'){{ $message }}@enderror</span>
                 </div>
                 <div class="col-12 col-md-4 mb-3">
@@ -85,6 +87,13 @@
 @endsection
 @section('script')
 @include('raw_material.partials.form-validation-script')
+@include('raw_material_receive.partials.cascade-scripts', [
+    'excludeReceiveId' => null,
+    'initialOrderId' => $selectedOrderId,
+    'initialItemId' => old('raw_material_order_item_id', ''),
+    'receivableOrders' => $receivable_orders,
+    'allSuppliers' => $suppliers,
+])
 <script>
 $(document).ready(function () {
     flatpickr('.flatpickr', {
@@ -94,172 +103,10 @@ $(document).ready(function () {
         allowInput: true
     });
 
-    $('#raw_material_order_id, #raw_material_order_item_id').select2({ width: '100%' });
-
-    var pendingQty = 0;
-
-    function resetOrderItemSelect() {
-        pendingQty = 0;
-        $('#pendingQtyVal').text('—');
-        var $itemSelect = $('#raw_material_order_item_id');
-        $itemSelect.empty().append('<option value="">-- Select Order Item --</option>');
-        $itemSelect.prop('disabled', true).trigger('change.select2');
-    }
-
-    function loadOrderItems(orderId, selectedItemId) {
-        resetOrderItemSelect();
-        if (!orderId) return;
-
-        $.get("{{ route('raw-material.order.items', '__ORDER__') }}".replace('__ORDER__', orderId), function (items) {
-            var $itemSelect = $('#raw_material_order_item_id');
-            $itemSelect.empty().append('<option value="">-- Select Order Item --</option>');
-
-            if (!items.length) {
-                $itemSelect.append('<option value="">No pending items</option>');
-                $itemSelect.prop('disabled', true).trigger('change.select2');
-                return;
-            }
-
-            $.each(items, function (i, item) {
-                var $opt = $('<option>', {
-                    value: item.id,
-                    text: item.label
-                }).data('pending', item.pending_qty);
-                if (selectedItemId && String(selectedItemId) === String(item.id)) {
-                    $opt.prop('selected', true);
-                }
-                $itemSelect.append($opt);
-            });
-
-            $itemSelect.prop('disabled', false).trigger('change.select2');
-
-            if (selectedItemId) {
-                updatePendingQty();
-            }
-        }).fail(function () {
-            if (typeof show_error === 'function') {
-                show_error('Failed to load order items.');
-            }
-        });
-    }
-
-    function updatePendingQty() {
-        var pending = $('#raw_material_order_item_id option:selected').data('pending');
-        pendingQty = parseInt(pending, 10) || 0;
-        $('#pendingQtyVal').text(pendingQty > 0 ? pendingQty : '—');
-        if (pendingQty > 0) {
-            $('#qty').attr('max', pendingQty);
-        } else {
-            $('#qty').removeAttr('max');
-        }
-    }
-
-    function clearFieldErrors() {
-        $('.raw_material_order_id_error, .raw_material_order_item_id_error, .qty_error, .freight_error, .received_date_error, .status_error').text('');
-        rmSetInvalid($('#raw_material_order_id'), false);
-        rmSetInvalid($('#raw_material_order_item_id'), false);
-        rmSetInvalid($('#qty'), false);
-        rmSetInvalid($('#freight'), false);
-        rmSetInvalid($('#received_date'), false);
-    }
-
-    $('#raw_material_order_id').on('change', function () {
-        $(this).removeClass('is-invalid');
-        $('.raw_material_order_id_error').text('');
-        loadOrderItems($(this).val(), null);
+    initReceiveCascadeForm({
+        requireStatus: true,
+        submitBtn: '#submitReceiveBtn'
     });
-
-    $('#raw_material_order_item_id').on('change', function () {
-        $(this).removeClass('is-invalid');
-        $('.raw_material_order_item_id_error').text('');
-        updatePendingQty();
-    });
-
-    $('#qty').on('input', function () {
-        $(this).removeClass('is-invalid');
-        $('.qty_error').text('');
-    });
-
-    $('#freight').on('input', function () {
-        $(this).removeClass('is-invalid');
-        $('.freight_error').text('');
-    });
-
-    $('#received_date').on('change input', function () {
-        $(this).removeClass('is-invalid');
-        $('.received_date_error').text('');
-    });
-
-    $('input[name="status"]').on('change', function () {
-        $('.status_error').text('');
-    });
-
-    function validateForm() {
-        clearFieldErrors();
-        var isValid = true;
-
-        if (!$('#raw_material_order_id').val()) {
-            $('.raw_material_order_id_error').text('Please select a purchase order.');
-            rmSetInvalid($('#raw_material_order_id'), true);
-            isValid = false;
-        }
-
-        if ($('#raw_material_order_item_id').prop('disabled') || !$('#raw_material_order_item_id').val()) {
-            $('.raw_material_order_item_id_error').text('Please select an order item.');
-            rmSetInvalid($('#raw_material_order_item_id'), true);
-            isValid = false;
-        }
-
-        var qtyVal = $.trim($('#qty').val());
-        if (!qtyVal) {
-            $('.qty_error').text('Please enter quantity.');
-            rmSetInvalid($('#qty'), true);
-            isValid = false;
-        } else {
-            var qty = parseInt(qtyVal, 10);
-            if (qty < 1) {
-                $('.qty_error').text('Quantity must be at least 1 ton.');
-                rmSetInvalid($('#qty'), true);
-                isValid = false;
-            } else if (pendingQty > 0 && qty > pendingQty) {
-                $('.qty_error').text('Quantity cannot exceed pending quantity (' + pendingQty + ' tons).');
-                rmSetInvalid($('#qty'), true);
-                isValid = false;
-            }
-        }
-
-        var freightVal = $.trim($('#freight').val());
-        if (freightVal !== '' && parseFloat(freightVal) < 0) {
-            $('.freight_error').text('Freight cannot be negative.');
-            rmSetInvalid($('#freight'), true);
-            isValid = false;
-        }
-
-        if (!$.trim($('#received_date').val())) {
-            $('.received_date_error').text('Please select received date.');
-            rmSetInvalid($('#received_date'), true);
-            isValid = false;
-        }
-
-        if (!$('input[name="status"]:checked').length) {
-            $('.status_error').text('Please select status.');
-            isValid = false;
-        }
-
-        return isValid;
-    }
-
-    $('#submitReceiveBtn').on('click', function () {
-        if (validateForm()) {
-            $('#receiveForm').submit();
-        } else {
-            rmScrollToFirstInvalid('#receiveForm');
-        }
-    });
-
-    @if (old('raw_material_order_id'))
-        loadOrderItems('{{ old('raw_material_order_id') }}', '{{ old('raw_material_order_item_id') }}');
-    @endif
 });
 </script>
 @endsection

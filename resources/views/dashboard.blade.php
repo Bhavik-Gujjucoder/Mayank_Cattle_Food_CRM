@@ -625,6 +625,7 @@ withDataTable(function($) {
         $('#rmFootReceivedAmt').text(Number(received.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
         $('#rmFootGrandQty').text(Number(grand.qty || 0).toLocaleString());
+        $('#rmFootExtraQty').text(Number(top.extra_qty || 0).toLocaleString());
         $('#rmFootGrandAvg').text(Number(grand.average || 0).toFixed(3));
         $('#rmFootGrandPendingAmt').text(Number(pending.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
         $('#rmFootGrandReceivedAmt').text(Number(received.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -693,6 +694,7 @@ withDataTable(function($) {
             { data: 'party_name', title: 'Party Name', name: 'party_name' },
             { data: 'material_name', title: 'Material', name: 'material_name' },
             { data: 'total_qty_fmt', title: 'Total Qty', name: 'total_qty', className: 'text-end' },
+            { data: 'extra_qty_fmt', title: 'Extra Qty', name: 'extra_qty', className: 'text-end' },
             { data: 'on_road_qty_fmt', title: 'On Road', name: 'on_road_qty', className: 'text-end' },
             { data: 'unloading_qty_fmt', title: 'Unloading', name: 'unloading_qty', className: 'text-end' },
             { data: 'pending_qty_fmt', title: 'Pending', name: 'pending_qty', className: 'text-end' },

@@ -37,4 +37,19 @@ class RawMaterialOrderItem extends Model
             default => '<span class="badge badge-pill badge-status bg-warning">Pending</span>',
         };
     }
+
+    public function extraAmount(): float
+    {
+        return \App\Services\RawMaterialCacheService::itemExtraAmount($this);
+    }
+
+    public function pendingAmount(): float
+    {
+        return \App\Services\RawMaterialCacheService::itemPendingAmount($this);
+    }
+
+    public function totalAmount(): float
+    {
+        return \App\Services\RawMaterialCacheService::itemTotalAmount($this);
+    }
 }

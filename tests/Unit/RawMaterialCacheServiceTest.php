@@ -58,6 +58,7 @@ function rcsItem(array $s, array $attrs = []): RawMaterialOrderItem
         'other_expense'         => 0,
         'pending_qty'           => 10,
         'received_qty'          => 0,
+        'extra_qty'             => 0,
         'pending_price'         => 5_000_000,
         'received_price'        => 0,
         'total_price'           => 5_000_000,
@@ -466,5 +467,64 @@ describe('recalculateItemFreightFromReceives', function () {
 
         $item->refresh();
         expect((float) $item->total_freight)->toBe(1100.0);
+    });
+});
+
+describe('extra qty', function () {
+    it('tracks extra qty and adds extra amount to order total when over-received', function () {
+        $s       = rcsSetup();
+        $item    = rcsItem($s, ['total_qty' => 10, 'pending_qty' => 10, 'received_qty' => 0, 'extra_qty' => 0]);
+        $receive = rcsReceive($s, $item, ['qty' => 12, 'freight' => 10, 'status' => 1]);
+
+        RawMaterialCacheService::applyReceive($receive);
+
+        $item->refresh();
+        $s['order']->refresh();
+
+        expect((int) $item->received_qty)->toBe(12)
+            ->and((int) $item->pending_qty)->toBe(0)
+            ->and((int) $item->extra_qty)->toBe(2)
+            ->and((float) $item->total_freight)->toBe(120.0)
+            ->and((float) $s['order']->total_price)->toBe(6_000_000.0); // 5M ordered + 2*1000*500 extra
+    });
+
+    it('sets extra qty from on-road pipeline without changing pending', function () {
+        $s = rcsSetup();
+        $item = rcsItem($s, ['total_qty' => 10, 'pending_qty' => 10, 'received_qty' => 0, 'extra_qty' => 0]);
+        rcsReceive($s, $item, ['qty' => 13, 'freight' => 5, 'status' => 0]);
+
+        RawMaterialCacheService::refreshItemExtraAndOrder($item->id);
+
+        $item->refresh();
+        $s['order']->refresh();
+
+        expect((int) $item->extra_qty)->toBe(3)
+            ->and((int) $item->pending_qty)->toBe(10)
+            ->and((float) $item->pending_price)->toBe(6_500_000.0)
+            ->and((float) $s['order']->total_price)->toBe(6_500_000.0);
+    });
+
+    it('includes extra amount in pending price while over-qty is still on road', function () {
+        $s = rcsSetup();
+        $item = rcsItem($s, [
+            'total_qty'     => 400,
+            'pending_qty'   => 400,
+            'received_qty'  => 0,
+            'extra_qty'     => 0,
+            'price'         => 45,
+            'total_price'   => 18_000_000,
+            'pending_price' => 18_000_000,
+            'received_price'=> 0,
+        ]);
+        rcsReceive($s, $item, ['qty' => 440, 'freight' => 0, 'status' => 0]);
+
+        RawMaterialCacheService::refreshItemExtraAndOrder($item->id);
+
+        $item->refresh();
+
+        expect((int) $item->extra_qty)->toBe(40)
+            ->and(RawMaterialCacheService::itemTotalAmount($item))->toBe(19_800_000.0)
+            ->and(RawMaterialCacheService::itemPendingAmount($item))->toBe(19_800_000.0)
+            ->and((float) $item->pending_price)->toBe(19_800_000.0);
     });
 });

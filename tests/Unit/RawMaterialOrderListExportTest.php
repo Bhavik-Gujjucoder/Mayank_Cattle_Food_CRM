@@ -37,6 +37,7 @@ test('order list export columns match listing table', function () {
         'Price Basis',
         'Order Date',
         'Total Qty (tons)',
+        'Extra Qty',
         'Total Price (₹)',
         'Advance Payment (₹)',
         'Total Freight (₹)',
@@ -52,6 +53,7 @@ test('order list export columns match listing table', function () {
         'FOR + GST',
         '01-06-2026',
         50,
+        0,
         '100,000.00',
         '0.00',
         '5,000.00',
@@ -83,5 +85,5 @@ test('order list export includes advance payment amount', function () {
 
     $order->load(['supplier', 'supplierBroker']);
 
-    expect(RawMaterialOrderListExport::row($order, 1)[9])->toBe('12,000.50');
+    expect(RawMaterialOrderListExport::row($order, 1)[10])->toBe('12,000.50');
 });
