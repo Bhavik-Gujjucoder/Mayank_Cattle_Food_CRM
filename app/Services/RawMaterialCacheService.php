@@ -45,10 +45,50 @@ class RawMaterialCacheService
         return self::receiveFreightRateLabel($receive) . "\n" . self::receiveFreightLineLabel($receive);
     }
 
+    /** Material value: qty (tons) × 1000 × price/kg. */
+    public static function qtyMaterialAmount(int $qty, float $price): float
+    {
+        return round($qty * 1000 * $price, 3);
+    }
+
+    /** Tax amount on material value. */
+    public static function qtyTaxAmount(int $qty, float $price, float $taxPercent): float
+    {
+        return round(self::qtyMaterialAmount($qty, $price) * ($taxPercent / 100), 3);
+    }
+
+    /** Material value plus tax for a qty. */
+    public static function qtyAmountWithTax(int $qty, float $price, float $taxPercent): float
+    {
+        return round(
+            self::qtyMaterialAmount($qty, $price) + self::qtyTaxAmount($qty, $price, $taxPercent),
+            3
+        );
+    }
+
+    /**
+     * Ordered line total: (material + tax + other expense) − TDS, floored at 0.
+     * Extra qty is not included (see itemExtraAmount / itemTotalAmount).
+     */
+    public static function itemLineTotal(RawMaterialOrderItem $item): float
+    {
+        $withTax = self::qtyAmountWithTax(
+            (int) $item->total_qty,
+            (float) $item->price,
+            (float) ($item->tax_percent ?? 0)
+        );
+        $other = round((float) ($item->other_expense ?? 0), 3);
+        $tds   = round((float) ($item->tds_amount ?? 0), 3);
+
+        return max(0, round($withTax + $other - $tds, 3));
+    }
+
     public static function initializeOrderItem(RawMaterialOrderItem $item): void
     {
-        $item->total_price    = round($item->total_qty * 1000 * (float) $item->price, 3);
+        $item->tax_percent    = round((float) ($item->tax_percent ?? 0), 3);
         $item->other_expense  = round((float) ($item->other_expense ?? 0), 3);
+        $item->tds_amount     = round((float) ($item->tds_amount ?? 0), 3);
+        $item->total_price    = self::itemLineTotal($item);
         $item->pending_qty    = $item->total_qty;
         $item->received_qty   = 0;
         $item->extra_qty      = 0;
@@ -59,27 +99,92 @@ class RawMaterialCacheService
         $item->status         = 0;
     }
 
-    /** Material value for qty received above ordered total_qty. */
-    public static function itemExtraAmount(RawMaterialOrderItem $item): float
+    /** Tax rupees on ordered qty plus extra qty. */
+    public static function itemTaxAmount(RawMaterialOrderItem $item): float
     {
-        return round((int) $item->extra_qty * 1000 * (float) $item->price, 3);
-    }
-
-    /** Ordered + extra material value still not in received_price. */
-    public static function itemPendingAmount(RawMaterialOrderItem $item): float
-    {
-        return max(
-            0,
-            round(
-                (float) $item->total_price
-                + self::itemExtraAmount($item)
-                - (float) $item->received_price,
-                3
-            )
+        return round(
+            self::qtyTaxAmount((int) $item->total_qty, (float) $item->price, (float) ($item->tax_percent ?? 0))
+            + self::qtyTaxAmount((int) $item->extra_qty, (float) $item->price, (float) ($item->tax_percent ?? 0)),
+            3
         );
     }
 
-    /** Ordered + extra material value (matches order item Total Price display). */
+    /** Extra qty value including tax (other expense and TDS stay on the ordered line). */
+    public static function itemExtraAmount(RawMaterialOrderItem $item): float
+    {
+        return self::qtyAmountWithTax(
+            (int) $item->extra_qty,
+            (float) $item->price,
+            (float) ($item->tax_percent ?? 0)
+        );
+    }
+
+    /**
+     * Other expense − TDS allocated across ordered tons.
+     * Matches line total when TDS does not floor the line at zero.
+     */
+    public static function itemAllocatableOtherAmount(RawMaterialOrderItem $item): float
+    {
+        $orderedMaterialTax = self::qtyAmountWithTax(
+            (int) $item->total_qty,
+            (float) $item->price,
+            (float) ($item->tax_percent ?? 0)
+        );
+
+        return round(self::itemLineTotal($item) - $orderedMaterialTax, 3);
+    }
+
+    /**
+     * Payable added for a receive: material+tax for all qty, plus a share of
+     * (other expense − TDS) for tons that count toward ordered total_qty.
+     */
+    public static function receivePayableAmount(RawMaterialOrderItem $item, int $qty, int $receivedQtyBefore): float
+    {
+        $qty               = max(0, $qty);
+        $receivedQtyBefore = max(0, $receivedQtyBefore);
+        $materialTax       = self::qtyAmountWithTax(
+            $qty,
+            (float) $item->price,
+            (float) ($item->tax_percent ?? 0)
+        );
+        $totalQty = (int) $item->total_qty;
+        if ($qty <= 0 || $totalQty <= 0) {
+            return $materialTax;
+        }
+
+        $alreadyOrdered = min($receivedQtyBefore, $totalQty);
+        $orderedPart    = min($qty, max(0, $totalQty - $alreadyOrdered));
+        if ($orderedPart <= 0) {
+            return $materialTax;
+        }
+
+        $allocatable  = self::itemAllocatableOtherAmount($item);
+        $newOrdered   = min($alreadyOrdered + $orderedPart, $totalQty);
+        $beforeShare  = $alreadyOrdered <= 0 ? 0.0 : round($allocatable * $alreadyOrdered / $totalQty, 3);
+        $afterShare   = $newOrdered >= $totalQty
+            ? round($allocatable, 3)
+            : round($allocatable * $newOrdered / $totalQty, 3);
+
+        return round($materialTax + ($afterShare - $beforeShare), 3);
+    }
+
+    /** Remaining payable: line total + extra with tax − received_price. */
+    public static function itemPendingAmount(RawMaterialOrderItem $item): float
+    {
+        return max(0, round(self::itemTotalAmount($item) - (float) $item->received_price, 3));
+    }
+
+    /** Material+tax of received qty (excludes other expense and TDS; used for avg price/kg). */
+    public static function itemReceivedMaterialTaxAmount(RawMaterialOrderItem $item): float
+    {
+        return self::qtyAmountWithTax(
+            (int) $item->received_qty,
+            (float) $item->price,
+            (float) ($item->tax_percent ?? 0)
+        );
+    }
+
+    /** Ordered line total plus extra qty with tax (matches order item Total Price display). */
     public static function itemTotalAmount(RawMaterialOrderItem $item): float
     {
         return round((float) $item->total_price + self::itemExtraAmount($item), 3);
@@ -134,12 +239,23 @@ class RawMaterialCacheService
             ->values();
     }
 
-    /** Sync extra_qty and pending_price (pending includes extra amount not yet received). */
+    /** Sync extra_qty and pending_price (pending is remaining payable including extra). */
     public static function syncItemExtraQty(RawMaterialOrderItem $item): void
     {
         $extraQty     = max(0, self::itemPipelineQty($item) - (int) $item->total_qty);
-        $extraAmount  = round($extraQty * 1000 * (float) $item->price, 3);
-        $pendingPrice = max(0, round((float) $item->total_price + $extraAmount - (float) $item->received_price, 3));
+        $pendingPrice = max(
+            0,
+            round(
+                (float) $item->total_price
+                + self::qtyAmountWithTax(
+                    $extraQty,
+                    (float) $item->price,
+                    (float) ($item->tax_percent ?? 0)
+                )
+                - (float) $item->received_price,
+                3
+            )
+        );
 
         if ((int) $item->extra_qty === $extraQty
             && round((float) $item->pending_price, 3) === $pendingPrice) {
@@ -176,7 +292,6 @@ class RawMaterialCacheService
         $order->total_qty     = (int) $order->items->sum('total_qty');
         $order->total_price   = (float) $order->items->sum(
             fn (RawMaterialOrderItem $item) => (float) $item->total_price
-                + (float) $item->other_expense
                 + self::itemExtraAmount($item)
         );
         $order->total_freight = (float) $order->items->sum('total_freight');
@@ -217,7 +332,11 @@ class RawMaterialCacheService
     public static function recalculateItemPriceAvg(RawMaterialOrderItem $item): void
     {
         $item->price_avg = (int) $item->received_qty > 0
-            ? round(((float) $item->received_price + (float) $item->total_freight) / ($item->received_qty * 1000), 3)
+            ? round(
+                (self::itemReceivedMaterialTaxAmount($item) + (float) $item->total_freight)
+                / ($item->received_qty * 1000),
+                3
+            )
             : 0;
         $item->saveQuietly();
     }
@@ -232,9 +351,11 @@ class RawMaterialCacheService
         $lastItem = RawMaterialOrderItem::where('raw_material_id', $rawMaterialId)->orderByDesc('id')->first();
         $material->last_purchase_price = $lastItem ? (float) $lastItem->price : 0;
 
-        $itemsQuery = RawMaterialOrderItem::where('raw_material_id', $rawMaterialId);
-        $sumLanded      = (float) (clone $itemsQuery)->selectRaw('COALESCE(SUM(received_price + total_freight), 0) as total')->value('total');
-        $sumReceivedQty = (int) (clone $itemsQuery)->sum('received_qty');
+        $items = RawMaterialOrderItem::where('raw_material_id', $rawMaterialId)->get();
+        $sumLanded      = (float) $items->sum(
+            fn (RawMaterialOrderItem $item) => self::itemReceivedMaterialTaxAmount($item) + (float) $item->total_freight
+        );
+        $sumReceivedQty = (int) $items->sum('received_qty');
         $material->average_price = $sumReceivedQty > 0
             ? round($sumLanded / ($sumReceivedQty * 1000), 3)
             : 0;
@@ -250,7 +371,7 @@ class RawMaterialCacheService
         }
 
         $qty         = (int) $receive->qty;
-        $priceAmount = $qty * 1000 * (float) $item->price;
+        $priceAmount = self::receivePayableAmount($item, $qty, (int) $item->received_qty);
 
         $item->received_qty   = (int) $item->received_qty + $qty;
         $item->pending_qty    = max(0, (int) $item->total_qty - (int) $item->received_qty);
@@ -294,8 +415,9 @@ class RawMaterialCacheService
             return;
         }
 
-        $qty         = (int) $receive->qty;
-        $priceAmount = $qty * 1000 * (float) $item->price;
+        $qty               = (int) $receive->qty;
+        $receivedQtyBefore = max(0, (int) $item->received_qty - $qty);
+        $priceAmount       = self::receivePayableAmount($item, $qty, $receivedQtyBefore);
 
         $item->received_qty   = max(0, (int) $item->received_qty - $qty);
         $item->pending_qty    = max(0, (int) $item->total_qty - (int) $item->received_qty);
@@ -313,5 +435,28 @@ class RawMaterialCacheService
 
         self::recalculateOrder($item->order);
         self::recalculateMaterialPrices($material->id);
+    }
+
+    /** Rebuild received_price and pending_price from approved receives. */
+    public static function rebuildItemPayables(RawMaterialOrderItem $item): void
+    {
+        $runningQty    = 0;
+        $receivedPrice = 0.0;
+
+        RawMaterialReceive::query()
+            ->where('raw_material_order_item_id', $item->id)
+            ->where('status', 1)
+            ->orderBy('id')
+            ->get()
+            ->each(function (RawMaterialReceive $receive) use ($item, &$runningQty, &$receivedPrice) {
+                $qty = (int) $receive->qty;
+                $receivedPrice += self::receivePayableAmount($item, $qty, $runningQty);
+                $runningQty += $qty;
+            });
+
+        $item->received_price = round($receivedPrice, 3);
+        $item->saveQuietly();
+        self::recalculateItemPriceAvg($item);
+        self::syncItemExtraQty($item);
     }
 }

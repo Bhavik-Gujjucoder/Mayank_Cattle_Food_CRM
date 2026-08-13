@@ -34,6 +34,10 @@ class RawMaterialDailySummaryExport implements FromCollection, WithHeadings, Wit
                 $row['unloading_qty'],
                 $row['pending_qty'],
                 number_format($row['rate'], 2, '.', ''),
+                number_format((float) ($row['tax_percent'] ?? 0), 2, '.', ''),
+                number_format((float) ($row['tax_amount'] ?? 0), 2, '.', ''),
+                number_format((float) ($row['other_expense'] ?? 0), 2, '.', ''),
+                number_format((float) ($row['tds_amount'] ?? 0), 2, '.', ''),
                 number_format($row['average'], 2, '.', ''),
                 number_format($row['pending_amount'], 2, '.', ''),
                 number_format($row['received_amount'], 2, '.', ''),
@@ -45,9 +49,9 @@ class RawMaterialDailySummaryExport implements FromCollection, WithHeadings, Wit
 
         return $rows->concat([
             [],
-            ['', '', '', 'PENDING', '', $totals['pending']['qty'], $totals['extra_qty'] ?? 0, '', '', '', '', number_format($totals['pending']['average'], 3, '.', ''), number_format($totals['pending']['amount'], 2, '.', ''), '', ''],
-            ['', '', '', 'RECEIVED', '', $totals['received']['qty'], '', '', '', '', '', number_format($totals['received']['average'], 3, '.', ''), '', number_format($totals['received']['amount'], 2, '.', ''), ''],
-            ['', '', '', 'TOTAL', '', $totals['grand']['qty'], $totals['extra_qty'] ?? 0, '', '', '', '', number_format($totals['grand']['average'], 3, '.', ''), number_format($totals['pending']['amount'], 2, '.', ''), number_format($totals['received']['amount'], 2, '.', ''), ''],
+            ['', '', '', 'PENDING', '', $totals['pending']['qty'], $totals['extra_qty'] ?? 0, '', '', '', '', '', '', '', '', number_format($totals['pending']['average'], 3, '.', ''), number_format($totals['pending']['amount'], 2, '.', ''), '', ''],
+            ['', '', '', 'RECEIVED', '', $totals['received']['qty'], '', '', '', '', '', '', '', '', '', number_format($totals['received']['average'], 3, '.', ''), '', number_format($totals['received']['amount'], 2, '.', ''), ''],
+            ['', '', '', 'TOTAL', '', $totals['grand']['qty'], $totals['extra_qty'] ?? 0, '', '', '', '', '', number_format((float) ($totals['tax_amount'] ?? 0), 2, '.', ''), number_format((float) ($totals['other_expense'] ?? 0), 2, '.', ''), number_format((float) ($totals['tds_amount'] ?? 0), 2, '.', ''), number_format($totals['grand']['average'], 3, '.', ''), number_format($totals['pending']['amount'], 2, '.', ''), number_format($totals['received']['amount'], 2, '.', ''), ''],
         ]);
     }
 
@@ -65,6 +69,10 @@ class RawMaterialDailySummaryExport implements FromCollection, WithHeadings, Wit
             'Unloading',
             'Pending',
             'Rate/kg',
+            'Tax (%)',
+            'Tax (₹)',
+            'Other Expense',
+            'TDS',
             'Avg/kg',
             'Pending Amt',
             'Received Amt',

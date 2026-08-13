@@ -136,7 +136,9 @@ class RawMaterialBulkSeeder extends Seeder
                 'raw_material_order_id' => $order->id,
                 'total_qty'             => $totalQty,
                 'price'                 => fake()->randomFloat(3, 35, 95),
+                'tax_percent'           => fake()->randomElement([0, 5, 12, 18]),
                 'other_expense'         => fake()->randomFloat(3, 0, 5000),
+                'tds_amount'            => fake()->randomFloat(3, 0, 2000),
             ]);
             RawMaterialCacheService::initializeOrderItem($item);
             $item->saveQuietly();

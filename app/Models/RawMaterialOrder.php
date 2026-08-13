@@ -18,7 +18,7 @@ class RawMaterialOrder extends Model
         'advance_payment' => 'decimal:2',
     ];
 
-    /** Remaining payable against order material total including extra qty (excludes freight). */
+    /** Remaining payable against order total including extra qty with tax (excludes freight). */
     public function remainingAmount(): float
     {
         return max(0, (float) $this->total_price - (float) $this->advance_payment);

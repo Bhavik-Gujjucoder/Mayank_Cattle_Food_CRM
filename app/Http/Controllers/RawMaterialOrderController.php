@@ -111,7 +111,9 @@ class RawMaterialOrderController extends Controller
                     'raw_material_id' => $materialId,
                     'total_qty'       => $request->total_qty[$i],
                     'price'           => $request->price[$i],
+                    'tax_percent'     => $request->tax_percent[$i] ?? 0,
                     'other_expense'   => $request->other_expense[$i] ?? 0,
+                    'tds_amount'      => $request->tds_amount[$i] ?? 0,
                 ]);
             }
         });
@@ -140,11 +142,13 @@ class RawMaterialOrderController extends Controller
             'page_title' => 'Edit Raw Material Order',
             'order'      => $raw_material_order,
             'old_rows'   => $raw_material_order->items->map(fn($item) => [
-                'category_id'  => $item->rawMaterial?->raw_material_category_id,
-                'material_id'  => $item->raw_material_id,
-                'qty'          => $item->total_qty,
-                'price'        => number_format((float) $item->price, 2, '.', ''),
+                'category_id'   => $item->rawMaterial?->raw_material_category_id,
+                'material_id'   => $item->raw_material_id,
+                'qty'           => $item->total_qty,
+                'price'         => number_format((float) $item->price, 2, '.', ''),
+                'tax_percent'   => number_format((float) $item->tax_percent, 2, '.', ''),
                 'other_expense' => number_format((float) $item->other_expense, 2, '.', ''),
+                'tds_amount'    => number_format((float) $item->tds_amount, 2, '.', ''),
             ])->values()->all(),
         ]);
 
@@ -174,7 +178,9 @@ class RawMaterialOrderController extends Controller
                     'raw_material_id' => $materialId,
                     'total_qty'       => $request->total_qty[$i],
                     'price'           => $request->price[$i],
+                    'tax_percent'     => $request->tax_percent[$i] ?? 0,
                     'other_expense'   => $request->other_expense[$i] ?? 0,
+                    'tds_amount'      => $request->tds_amount[$i] ?? 0,
                 ]);
             }
         });
@@ -371,7 +377,7 @@ class RawMaterialOrderController extends Controller
         $filename = 'order-' . Str::slug($order->order_unique_id, '-') . '.pdf';
 
         $pdf = Pdf::loadView('raw_material_order.pdf_order_full', compact('order'))
-            ->setPaper('a4', 'portrait');
+            ->setPaper('a4', 'landscape');
 
         return $pdf->download($filename);
     }

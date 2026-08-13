@@ -31,8 +31,12 @@ class StoreRawMaterialOrderRequest extends FormRequest
             'total_qty.*'         => 'required|integer|min:1',
             'price'               => 'required|array|min:1',
             'price.*'             => 'required|numeric|gt:0',
+            'tax_percent'         => 'required|array|min:1',
+            'tax_percent.*'       => 'nullable|numeric|min:0|max:100',
             'other_expense'       => 'required|array|min:1',
             'other_expense.*'     => 'nullable|numeric|min:0',
+            'tds_amount'          => 'required|array|min:1',
+            'tds_amount.*'        => 'nullable|numeric|min:0',
         ];
     }
 

@@ -104,8 +104,14 @@
             if (rowData.price) {
                 $row.find('.price-field').val(rowData.price);
             }
+            if (rowData.tax_percent !== undefined && rowData.tax_percent !== '') {
+                $row.find('.tax-field').val(rowData.tax_percent);
+            }
             if (rowData.other_expense !== undefined && rowData.other_expense !== '') {
                 $row.find('.other-expense-field').val(rowData.other_expense);
+            }
+            if (rowData.tds_amount !== undefined && rowData.tds_amount !== '') {
+                $row.find('.tds-field').val(rowData.tds_amount);
             }
 
             initCategorySelect($cat);
@@ -134,17 +140,26 @@
             return (parseFloat(qty) || 0) * 1000 * (parseFloat(price) || 0);
         }
 
+        function rowLineTotal(qty, price, taxPercent, other, tds) {
+            var material = rowMaterialTotal(qty, price);
+            var taxAmount = material * ((parseFloat(taxPercent) || 0) / 100);
+            var total = material + taxAmount + (parseFloat(other) || 0) - (parseFloat(tds) || 0);
+            return total > 0 ? total : 0;
+        }
+
         function calculateTotals() {
             var totalQty = 0;
             var grandTotal = 0;
             $('#itemTableBody .item-row').each(function () {
                 var qty = parseFloat($(this).find('.qty-field').val()) || 0;
                 var price = parseFloat($(this).find('.price-field').val()) || 0;
+                var tax = parseFloat($(this).find('.tax-field').val()) || 0;
                 var other = parseFloat($(this).find('.other-expense-field').val()) || 0;
-                var lineTotal = rowMaterialTotal(qty, price);
+                var tds = parseFloat($(this).find('.tds-field').val()) || 0;
+                var lineTotal = rowLineTotal(qty, price, tax, other, tds);
                 $(this).find('.total-field').val(lineTotal > 0 ? lineTotal.toFixed(2) : '');
                 totalQty += qty;
-                grandTotal += lineTotal + other;
+                grandTotal += lineTotal;
             });
             $('#display_total_qty').text(totalQty);
             $('#display_grand_total').text(grandTotal.toFixed(2));
@@ -201,7 +216,7 @@
             calculateTotals();
         });
 
-        $(document).on('input', '.qty-field, .price-field, .other-expense-field', function () {
+        $(document).on('input', '.qty-field, .price-field, .tax-field, .other-expense-field, .tds-field', function () {
             $(this).removeClass('is-invalid');
             var $row = $(this).closest('tr');
             if (!$row.find('.is-invalid').length) {

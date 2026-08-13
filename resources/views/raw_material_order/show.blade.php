@@ -118,8 +118,11 @@
                         <th>Received Qty</th>
                         <th>Price/kg</th>
                         <th>Avg Price/kg</th>
-                        <th>Total Price</th>
+                        <th>Tax (%)</th>
+                        <th>Tax (₹)</th>
                         <th>Other Expense</th>
+                        <th>TDS (amount)</th>
+                        <th>Total Price</th>
                         <th>Pending Price</th>
                         <th>Received Price</th>
                         <th>Freight</th>
@@ -138,8 +141,11 @@
                             <td>{{ $item->received_qty }}</td>
                             <td>₹ {{ number_format($item->price, 2) }}</td>
                             <td>₹ {{ number_format($item->price_avg, 2) }}</td>
-                            <td>₹ {{ number_format($item->totalAmount(), 2) }}</td>
+                            <td>{{ number_format((float) $item->tax_percent, 2) }}%</td>
+                            <td>₹ {{ number_format(\App\Services\RawMaterialCacheService::itemTaxAmount($item), 2) }}</td>
                             <td>₹ {{ number_format($item->other_expense, 2) }}</td>
+                            <td>₹ {{ number_format($item->tds_amount, 2) }}</td>
+                            <td>₹ {{ number_format($item->totalAmount(), 2) }}</td>
                             <td>₹ {{ number_format($item->pendingAmount(), 2) }}</td>
                             <td>₹ {{ number_format($item->received_price, 2) }}</td>
                             <td>₹ {{ number_format($item->total_freight, 2) }}</td>
@@ -147,12 +153,13 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="15" class="text-center text-muted py-4">No items found.</td>
+                            <td colspan="18" class="text-center text-muted py-4">No items found.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
+        <p class="text-muted small mb-0 mt-2">Total Price = (Qty × 1000 × Price/kg) + Tax ₹ + Other Expense − TDS. Extra qty is taxed; Other Expense and TDS apply once on ordered qty.</p>
     </div>
 </div>
 

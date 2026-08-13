@@ -19,6 +19,7 @@
         .totals td { padding: 4px 0; }
         .totals .label { text-align: right; padding-right: 12px; color: #64748b; }
         .totals .value { font-weight: bold; text-align: right; width: 140px; }
+        .formula-note { color: #64748b; font-size: 10px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -53,6 +54,10 @@
                 <th>Material</th>
                 <th class="text-right">Qty (tons)</th>
                 <th class="text-right">Price/kg (₹)</th>
+                <th class="text-right">Tax (%)</th>
+                <th class="text-right">Tax (₹)</th>
+                <th class="text-right">Other Expense (₹)</th>
+                <th class="text-right">TDS (₹)</th>
                 <th class="text-right">Total Price (₹)</th>
             </tr>
         </thead>
@@ -63,11 +68,16 @@
                     <td>{{ $item->rawMaterial?->name ?? '—' }}</td>
                     <td class="text-right">{{ $item->total_qty }}</td>
                     <td class="text-right">{{ number_format($item->price, 2) }}</td>
+                    <td class="text-right">{{ number_format((float) $item->tax_percent, 2) }}</td>
+                    <td class="text-right">{{ number_format(\App\Services\RawMaterialCacheService::itemTaxAmount($item), 2) }}</td>
+                    <td class="text-right">{{ number_format((float) $item->other_expense, 2) }}</td>
+                    <td class="text-right">{{ number_format((float) $item->tds_amount, 2) }}</td>
                     <td class="text-right">{{ number_format($item->total_price, 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
+    <div class="formula-note">Total Price = (Qty × 1000 × Price/kg) + Tax ₹ + Other Expense − TDS. Extra qty is taxed; Other Expense and TDS apply once on ordered qty.</div>
 
     <table class="totals">
         <tr>

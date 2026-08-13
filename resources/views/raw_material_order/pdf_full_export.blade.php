@@ -16,6 +16,7 @@
         .freight-sub { color: #64748b; font-size: 9px; }
         .empty { color: #94a3b8; font-style: italic; padding: 6px 0; }
         .section { page-break-inside: avoid; margin-bottom: 12px; }
+        .formula-note { color: #64748b; font-size: 8px; margin-top: 6px; }
     </style>
 </head>
 <body>
@@ -49,6 +50,10 @@
                         <th class="text-right">Received</th>
                         <th class="text-right">Price/kg</th>
                         <th class="text-right">Avg/kg</th>
+                        <th class="text-right">Tax (%)</th>
+                        <th class="text-right">Tax (₹)</th>
+                        <th class="text-right">Other Expense</th>
+                        <th class="text-right">TDS</th>
                         <th class="text-right">Total Price</th>
                         <th class="text-right">Pending Price</th>
                         <th class="text-right">Received Price</th>
@@ -67,6 +72,10 @@
                             <td class="text-right">{{ $item->received_qty }}</td>
                             <td class="text-right">{{ number_format($item->price, 2) }}</td>
                             <td class="text-right">{{ number_format($item->price_avg, 2) }}</td>
+                            <td class="text-right">{{ number_format((float) $item->tax_percent, 2) }}</td>
+                            <td class="text-right">{{ number_format(\App\Services\RawMaterialCacheService::itemTaxAmount($item), 2) }}</td>
+                            <td class="text-right">{{ number_format((float) $item->other_expense, 2) }}</td>
+                            <td class="text-right">{{ number_format((float) $item->tds_amount, 2) }}</td>
                             <td class="text-right">{{ number_format(\App\Services\RawMaterialCacheService::itemTotalAmount($item), 2) }}</td>
                             <td class="text-right">{{ number_format(\App\Services\RawMaterialCacheService::itemPendingAmount($item), 2) }}</td>
                             <td class="text-right">{{ number_format($item->received_price, 2) }}</td>
@@ -76,6 +85,7 @@
                     @endforeach
                 </tbody>
             </table>
+            <div class="formula-note">Total Price = (Qty × 1000 × Price/kg) + Tax ₹ + Other Expense − TDS. Extra qty is taxed; Other Expense and TDS apply once on ordered qty.</div>
         @endif
     </div>
 
