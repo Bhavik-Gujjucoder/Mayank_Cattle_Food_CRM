@@ -61,7 +61,7 @@
 <script>
 window.rmOrderFormConfig = @json($orderFormConfig);
 </script>
-<script src="{{ asset('assets/js/raw-material-order-form.js') }}"></script>
+<script src="{{ asset('assets/js/raw-material-order-form.js') }}?v={{ filemtime(public_path('assets/js/raw-material-order-form.js')) }}"></script>
 <script>
 $(function () { initRmOrderForm(window.rmOrderFormConfig); });
 </script>

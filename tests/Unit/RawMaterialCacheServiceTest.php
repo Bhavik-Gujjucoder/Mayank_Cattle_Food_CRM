@@ -55,7 +55,9 @@ function rcsItem(array $s, array $attrs = []): RawMaterialOrderItem
         'raw_material_id'       => $s['material']->id,
         'total_qty'             => 10,
         'price'                 => 500,
+        'tax_percent'           => 0,
         'other_expense'         => 0,
+        'tds_amount'            => 0,
         'pending_qty'           => 10,
         'received_qty'          => 0,
         'extra_qty'             => 0,
@@ -183,6 +185,35 @@ describe('initializeOrderItem', function () {
         expect((float) $item->total_price)->toBe(5_000_000.0);
     });
 
+    it('includes tax, other expense and subtracts TDS in total_price', function () {
+        $item = RawMaterialOrderItem::make([
+            'total_qty'     => 10,
+            'price'         => 500,
+            'tax_percent'   => 18,
+            'other_expense' => 1000,
+            'tds_amount'    => 5000,
+        ]);
+        RawMaterialCacheService::initializeOrderItem($item);
+
+        // material 5,000,000 + tax 900,000 + other 1,000 - TDS 5,000 = 5,896,000
+        expect((float) $item->total_price)->toBe(5_896_000.0)
+            ->and((float) $item->pending_price)->toBe(5_896_000.0);
+    });
+
+    it('floors total_price at zero when TDS exceeds material plus tax plus other expense', function () {
+        $item = RawMaterialOrderItem::make([
+            'total_qty'     => 1,
+            'price'         => 1,
+            'tax_percent'   => 0,
+            'other_expense' => 0,
+            'tds_amount'    => 999999,
+        ]);
+        RawMaterialCacheService::initializeOrderItem($item);
+
+        expect((float) $item->total_price)->toBe(0.0)
+            ->and((float) $item->pending_price)->toBe(0.0);
+    });
+
     it('sets received_qty, total_freight, and price_avg to zero', function () {
         $item = RawMaterialOrderItem::make(['total_qty' => 5, 'price' => 100, 'other_expense' => 0]);
         RawMaterialCacheService::initializeOrderItem($item);
@@ -204,6 +235,32 @@ describe('initializeOrderItem', function () {
         RawMaterialCacheService::initializeOrderItem($item);
 
         expect((int) $item->status)->toBe(0);
+    });
+});
+
+describe('itemTaxAmount', function () {
+    it('computes tax rupees on ordered qty', function () {
+        $item = RawMaterialOrderItem::make([
+            'total_qty'   => 500,
+            'extra_qty'   => 0,
+            'price'       => 42,
+            'tax_percent' => 2,
+        ]);
+
+        // 500 × 1000 × 42 × 2% = 420,000
+        expect(RawMaterialCacheService::itemTaxAmount($item))->toBe(420_000.0);
+    });
+
+    it('includes tax on extra qty', function () {
+        $item = RawMaterialOrderItem::make([
+            'total_qty'   => 500,
+            'extra_qty'   => 10,
+            'price'       => 42,
+            'tax_percent' => 2,
+        ]);
+
+        // ordered 420,000 + extra 10 × 1000 × 42 × 2% = 8,400
+        expect(RawMaterialCacheService::itemTaxAmount($item))->toBe(428_400.0);
     });
 });
 
@@ -266,10 +323,10 @@ describe('recalculateOrder', function () {
         expect((int) $order->total_qty)->toBe(15);
     });
 
-    it('updates order total_price as sum of item total_price plus other_expense', function () {
+    it('updates order total_price as sum of item line totals plus extra amount', function () {
         $s    = rcsSetup();
-        // total_price=5_000_000, other_expense=1000 → contributes 5_001_000
-        rcsItem($s, ['total_qty' => 10, 'price' => 500, 'total_price' => 5_000_000, 'other_expense' => 1000]);
+        // line total already includes other_expense: 5,000,000 + 1,000
+        rcsItem($s, ['total_qty' => 10, 'price' => 500, 'total_price' => 5_001_000, 'other_expense' => 1000]);
 
         $order = $s['order']->fresh();
         RawMaterialCacheService::recalculateOrder($order);
@@ -488,6 +545,36 @@ describe('extra qty', function () {
             ->and((float) $s['order']->total_price)->toBe(6_000_000.0); // 5M ordered + 2*1000*500 extra
     });
 
+    it('applies tax percent to extra qty in order total and pending', function () {
+        $s       = rcsSetup();
+        $item    = rcsItem($s, [
+            'total_qty'     => 10,
+            'price'         => 500,
+            'tax_percent'   => 18,
+            'other_expense' => 1000,
+            'tds_amount'    => 5000,
+            'total_price'   => 5_896_000,
+            'pending_price' => 5_896_000,
+            'pending_qty'   => 10,
+            'received_qty'  => 0,
+            'extra_qty'     => 0,
+        ]);
+        $receive = rcsReceive($s, $item, ['qty' => 12, 'freight' => 10, 'status' => 1]);
+
+        RawMaterialCacheService::applyReceive($receive);
+
+        $item->refresh();
+        $s['order']->refresh();
+
+        // extra 2 tons with 18% tax = 1,180,000
+        expect((int) $item->extra_qty)->toBe(2)
+            ->and(RawMaterialCacheService::itemExtraAmount($item))->toBe(1_180_000.0)
+            ->and(RawMaterialCacheService::itemTotalAmount($item))->toBe(7_076_000.0)
+            ->and((float) $s['order']->total_price)->toBe(7_076_000.0)
+            ->and((float) $item->received_price)->toBe(7_076_000.0)
+            ->and((float) $item->pending_price)->toBe(0.0);
+    });
+
     it('sets extra qty from on-road pipeline without changing pending', function () {
         $s = rcsSetup();
         $item = rcsItem($s, ['total_qty' => 10, 'pending_qty' => 10, 'received_qty' => 0, 'extra_qty' => 0]);
@@ -526,5 +613,100 @@ describe('extra qty', function () {
             ->and(RawMaterialCacheService::itemTotalAmount($item))->toBe(19_800_000.0)
             ->and(RawMaterialCacheService::itemPendingAmount($item))->toBe(19_800_000.0)
             ->and((float) $item->pending_price)->toBe(19_800_000.0);
+    });
+});
+
+describe('receive payable with other expense and TDS', function () {
+    it('keeps pending price equal to total price when nothing is received', function () {
+        $item = RawMaterialOrderItem::make([
+            'total_qty'     => 500,
+            'price'         => 42,
+            'tax_percent'   => 2,
+            'other_expense' => 10000,
+            'tds_amount'    => 3000,
+        ]);
+        RawMaterialCacheService::initializeOrderItem($item);
+
+        expect((float) $item->total_price)->toBe(21_427_000.0)
+            ->and((float) $item->pending_price)->toBe(21_427_000.0)
+            ->and(RawMaterialCacheService::itemPendingAmount($item))->toBe(21_427_000.0);
+    });
+
+    it('allocates other expense minus TDS across ordered tons', function () {
+        $item = RawMaterialOrderItem::make([
+            'total_qty'     => 500,
+            'price'         => 42,
+            'tax_percent'   => 2,
+            'other_expense' => 10000,
+            'tds_amount'    => 3000,
+        ]);
+
+        // 250 tons: material+tax 10,710,000 + 3,500 other/TDS share
+        expect(RawMaterialCacheService::receivePayableAmount($item, 250, 0))->toBe(10_713_500.0)
+            ->and(RawMaterialCacheService::receivePayableAmount($item, 250, 250))->toBe(10_713_500.0)
+            ->and(RawMaterialCacheService::receivePayableAmount($item, 500, 0))->toBe(21_427_000.0);
+    });
+
+    it('does not allocate other expense or TDS onto extra qty', function () {
+        $item = RawMaterialOrderItem::make([
+            'total_qty'     => 500,
+            'price'         => 42,
+            'tax_percent'   => 2,
+            'other_expense' => 10000,
+            'tds_amount'    => 3000,
+        ]);
+
+        // Extra 10 tons after ordered qty is fully received: material+tax only
+        expect(RawMaterialCacheService::receivePayableAmount($item, 10, 500))->toBe(428_400.0);
+    });
+
+    it('sets pending to zero after the ordered qty is fully received', function () {
+        $s    = rcsSetup();
+        $item = rcsItem($s, [
+            'total_qty'      => 500,
+            'price'          => 42,
+            'tax_percent'    => 2,
+            'other_expense'  => 10000,
+            'tds_amount'     => 3000,
+            'total_price'    => 21_427_000,
+            'pending_price'  => 21_427_000,
+            'pending_qty'    => 500,
+            'received_qty'   => 0,
+            'received_price' => 0,
+        ]);
+        $receive = rcsReceive($s, $item, ['qty' => 500, 'freight' => 0, 'status' => 1]);
+
+        RawMaterialCacheService::applyReceive($receive);
+
+        $item->refresh();
+
+        expect((float) $item->received_price)->toBe(21_427_000.0)
+            ->and((float) $item->pending_price)->toBe(0.0)
+            ->and(RawMaterialCacheService::itemPendingAmount($item))->toBe(0.0)
+            ->and(RawMaterialCacheService::itemTotalAmount($item))->toBe(21_427_000.0);
+    });
+
+    it('excludes other expense and TDS from average price per kg', function () {
+        $s    = rcsSetup();
+        $item = rcsItem($s, [
+            'total_qty'      => 500,
+            'price'          => 42,
+            'tax_percent'    => 2,
+            'other_expense'  => 10000,
+            'tds_amount'     => 3000,
+            'total_price'    => 21_427_000,
+            'pending_price'  => 21_427_000,
+            'pending_qty'    => 500,
+            'received_qty'   => 0,
+            'received_price' => 0,
+            'total_freight'  => 0,
+        ]);
+        $receive = rcsReceive($s, $item, ['qty' => 500, 'freight' => 0, 'status' => 1]);
+
+        RawMaterialCacheService::applyReceive($receive);
+
+        $item->refresh();
+        // (material+tax) / kg = 42 * 1.02 = 42.84
+        expect((float) $item->price_avg)->toBe(42.84);
     });
 });

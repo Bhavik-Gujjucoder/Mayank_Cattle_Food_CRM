@@ -283,8 +283,9 @@ describe('RawMaterialOrderItemObserver', function () {
         expect((int) $item->received_qty)->toBe(0);
         expect((float) $item->total_freight)->toBe(0.0);
         expect((float) $item->price_avg)->toBe(0.0);
-        // total_price = total_qty * 1000 * price = 10 * 1000 * 500 = 5,000,000
-        expect((float) $item->total_price)->toBe(5_000_000.0);
+        // total_price = (qty * 1000 * price) + tax + other_expense - TDS
+        //            = 5,000,000 + 0 + 2 - 0 = 5,000,002
+        expect((float) $item->total_price)->toBe(5_000_002.0);
     });
 
     it('recalculates order totals after item is created', function () {

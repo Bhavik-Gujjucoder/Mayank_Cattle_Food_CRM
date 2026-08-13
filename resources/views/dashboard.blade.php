@@ -361,6 +361,10 @@
     @include('dashboard.partials.current_day_report_widget')
 @endcan
 
+@can('view-order')
+    @include('dashboard.partials.sales_daily_sheets_widget')
+@endcan
+
 @can('raw-material-daily-summary')
     @if ($rm_daily_summary)
         @include('dashboard.partials.rm_daily_summary_widget')
@@ -721,9 +725,11 @@ withDataTable(function($) {
         if (to) {
             params.set('rm_date_to', to);
         }
-        var base = @json(route('dashboard.raw-material-daily-summary.export'));
+        var excelBase = @json(route('dashboard.raw-material-daily-summary.export'));
+        var pdfBase = @json(route('dashboard.raw-material-daily-summary.export-pdf'));
         var qs = params.toString();
-        $('#rmDailySummaryExportBtn').attr('href', qs ? base + '?' + qs : base);
+        $('#rmDailySummaryExportBtn').attr('href', qs ? excelBase + '?' + qs : excelBase);
+        $('#rmDailySummaryExportPdfBtn').attr('href', qs ? pdfBase + '?' + qs : pdfBase);
     }
 
     var $form = $('#rmDailySummaryFilterForm');

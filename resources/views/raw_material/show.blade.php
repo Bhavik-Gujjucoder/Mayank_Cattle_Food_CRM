@@ -77,6 +77,10 @@
                         <th>Order Date</th>
                         <th>Total Qty (tons)</th>
                         <th>Price/kg</th>
+                        <th>Tax (%)</th>
+                        <th>Tax (₹)</th>
+                        <th>Other Expense</th>
+                        <th>TDS</th>
                         <th>Total Price</th>
                         <th>Status</th>
                     </tr>
@@ -98,12 +102,16 @@
                             <td>{{ $item->order?->order_date?->format('d M Y') ?? '—' }}</td>
                             <td>{{ $item->total_qty }}</td>
                             <td>₹ {{ number_format($item->price, 2) }}</td>
+                            <td>{{ number_format((float) $item->tax_percent, 2) }}%</td>
+                            <td>₹ {{ number_format(\App\Services\RawMaterialCacheService::itemTaxAmount($item), 2) }}</td>
+                            <td>₹ {{ number_format((float) $item->other_expense, 2) }}</td>
+                            <td>₹ {{ number_format((float) $item->tds_amount, 2) }}</td>
                             <td>₹ {{ number_format($item->total_price, 2) }}</td>
                             <td>{!! $item->statusBadge() !!}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-4">No purchase order history found.</td>
+                            <td colspan="12" class="text-center text-muted py-4">No purchase order history found.</td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -416,6 +416,30 @@ describe('view data', function () {
             ->and($currentDayPos)->toBeLessThan($rmSummaryPos);
     });
 
+    it('shows daily sales sheets widget between dispatch and raw material summary', function () {
+        $actor = dashActor();
+        grantPermissions($actor, ['view-weekly-report', 'view-order', 'raw-material-daily-summary']);
+        dashRmSummaryFixture();
+
+        $content = actingAs($actor)->get(route('dashboard'))->assertOk()->getContent();
+        $dispatchPos = strpos($content, 'Daily Dispatch');
+        $salesPos = strpos($content, 'Daily Sales Sheets');
+        $rmPos = strpos($content, 'Daily Raw Material Summary');
+
+        expect($dispatchPos)->not->toBeFalse()
+            ->and($salesPos)->not->toBeFalse()
+            ->and($rmPos)->not->toBeFalse()
+            ->and($dispatchPos)->toBeLessThan($salesPos)
+            ->and($salesPos)->toBeLessThan($rmPos);
+    });
+
+    it('hides daily sales sheets widget without view-order permission', function () {
+        actingAs(dashActor())
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('Daily Sales Sheets');
+    });
+
     it('shows today weekly report rows when report exists for current date', function () {
         $actor = dashActor();
         grantPermissions($actor, ['view-weekly-report']);
@@ -537,5 +561,73 @@ describe('export raw-material daily summary', function () {
             ->get(route('dashboard.raw-material-daily-summary.export'))
             ->assertOk()
             ->assertDownload('raw-material-daily-summary-' . now()->format('Y-m-d') . '.xlsx');
+    });
+
+    it('returns pdf download when summary data exists', function () {
+        $actor = dashActor();
+        grantPermissions($actor, ['export-raw-material-purchas-order']);
+        dashRmSummaryFixture();
+
+        actingAs($actor)
+            ->get(route('dashboard.raw-material-daily-summary.export-pdf'))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertDownload('raw-material-daily-summary-' . now()->format('Y-m-d') . '.pdf');
+    });
+
+    it('returns 403 on pdf export without permission', function () {
+        actingAs(dashActor())
+            ->get(route('dashboard.raw-material-daily-summary.export-pdf'))
+            ->assertForbidden();
+    });
+});
+
+describe('export sales daily sheets', function () {
+    it('redirects guests to login', function () {
+        get(route('dashboard.sales-daily-sheets.export'))
+            ->assertRedirect(route('login'));
+    });
+
+    it('returns 403 when user lacks view-order permission', function () {
+        actingAs(dashActor())
+            ->get(route('dashboard.sales-daily-sheets.export'))
+            ->assertForbidden();
+    });
+
+    it('redirects with error when no pending sales orders exist', function () {
+        $actor = dashActor();
+        grantPermissions($actor, ['view-order']);
+
+        actingAs($actor)
+            ->get(route('dashboard.sales-daily-sheets.export'))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    });
+
+    it('returns spreadsheet download when pending sales orders exist', function () {
+        $actor = dashActor();
+        grantPermissions($actor, ['view-order']);
+        $broker = User::factory()->create(['status' => 1]);
+        $broker->assignRole(\Spatie\Permission\Models\Role::firstOrCreate(['name' => 'broker', 'guard_name' => 'web']));
+        dashSetupOrder($broker);
+
+        actingAs($actor)
+            ->get(route('dashboard.sales-daily-sheets.export'))
+            ->assertOk()
+            ->assertDownload('daily-sales-sheets-' . now()->format('Y-m-d') . '.xlsx');
+    });
+
+    it('returns pdf download when pending sales orders exist', function () {
+        $actor = dashActor();
+        grantPermissions($actor, ['view-order']);
+        $broker = User::factory()->create(['status' => 1]);
+        $broker->assignRole(\Spatie\Permission\Models\Role::firstOrCreate(['name' => 'broker', 'guard_name' => 'web']));
+        dashSetupOrder($broker);
+
+        actingAs($actor)
+            ->get(route('dashboard.sales-daily-sheets.export-pdf'))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertDownload('daily-sales-sheets-' . now()->format('Y-m-d') . '.pdf');
     });
 });

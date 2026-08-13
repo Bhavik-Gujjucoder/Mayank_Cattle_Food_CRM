@@ -102,6 +102,28 @@ function seedDailySummaryFixture(array $overrides = []): array
     return compact('category', 'materialA', 'materialB', 'supplier', 'supplierBroker', 'city', 'order', 'item');
 }
 
+test('daily summary includes tax other expense and tds on each row', function () {
+    seedDailySummaryFixture([
+        'item' => [
+            'tax_percent'   => 2,
+            'other_expense' => 10000,
+            'tds_amount'    => 3000,
+        ],
+    ]);
+
+    $summary = app(RawMaterialDailySummaryService::class)->build();
+    $row = $summary['rows']->first();
+
+    // 200 tons × 1000 × ₹65 × 2% = 260,000
+    expect($row['tax_percent'])->toBe(2.0)
+        ->and($row['tax_amount'])->toBe(260000.0)
+        ->and($row['other_expense'])->toBe(10000.0)
+        ->and($row['tds_amount'])->toBe(3000.0)
+        ->and($summary['totals']['tax_amount'])->toBe(260000.0)
+        ->and($summary['totals']['other_expense'])->toBe(10000.0)
+        ->and($summary['totals']['tds_amount'])->toBe(3000.0);
+});
+
 test('daily summary uses rate as average when freight is zero', function () {
     $fixture = seedDailySummaryFixture();
 

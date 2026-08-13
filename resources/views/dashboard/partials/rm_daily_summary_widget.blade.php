@@ -87,7 +87,11 @@
                                 @can('export-raw-material-purchas-order')
                                     <a href="{{ route('dashboard.raw-material-daily-summary.export', $exportParams) }}"
                                         class="btn btn-outline-primary" id="rmDailySummaryExportBtn">
-                                        <i class="ti ti-file-export me-2"></i>Export Excel
+                                        <i class="ti ti-file-spreadsheet me-2"></i>Export Excel
+                                    </a>
+                                    <a href="{{ route('dashboard.raw-material-daily-summary.export-pdf', $exportParams) }}"
+                                        class="btn btn-outline-secondary" id="rmDailySummaryExportPdfBtn">
+                                        <i class="ti ti-file-type-pdf me-2"></i>Export PDF
                                     </a>
                                 @endcan
                             </div>

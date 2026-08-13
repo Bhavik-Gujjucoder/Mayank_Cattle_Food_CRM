@@ -110,7 +110,9 @@ function rmoPayload(int $brokerId, int $supplierId, int $materialId, array $over
         'raw_material_id'    => [$materialId],
         'total_qty'          => [10],
         'price'              => ['500.00'],
+        'tax_percent'        => ['0'],
         'other_expense'      => ['0'],
+        'tds_amount'         => ['0'],
     ], $overrides);
 }
 
@@ -378,11 +380,18 @@ describe('store-validation', function () {
             ->assertSessionHasErrors(['total_qty.0']);
     });
 
-    it('rejects zero price', function () {
+    it('rejects tax percent above 100', function () {
         $s = rmoSetup();
         actingAs(rmoActor(['add-raw-material-purchas-order']))
-            ->post(route('raw-material.order.store'), rmoPayload($s['broker']->id, $s['supplier']->id, $s['material']->id, ['price' => ['0']]))
-            ->assertSessionHasErrors(['price.0']);
+            ->post(route('raw-material.order.store'), rmoPayload($s['broker']->id, $s['supplier']->id, $s['material']->id, ['tax_percent' => ['101']]))
+            ->assertSessionHasErrors(['tax_percent.0']);
+    });
+
+    it('rejects negative TDS amount', function () {
+        $s = rmoSetup();
+        actingAs(rmoActor(['add-raw-material-purchas-order']))
+            ->post(route('raw-material.order.store'), rmoPayload($s['broker']->id, $s['supplier']->id, $s['material']->id, ['tds_amount' => ['-1']]))
+            ->assertSessionHasErrors(['tds_amount.0']);
     });
 });
 
@@ -417,6 +426,33 @@ describe('store-persistence', function () {
         expect($order)->not->toBeNull()
             ->and($order->items()->count())->toBe(1)
             ->and($order->items()->first()->raw_material_id)->toBe($material->id);
+    });
+
+    it('stores tax, other expense, TDS and computed line total', function () {
+        $broker   = mkRmoBroker();
+        $supplier = mkRmoSupplier($broker->id);
+        $material = mkRmoMaterial(mkRmoCategory()->id);
+        $orderId  = 'ORD-TAX-' . uniqid();
+
+        actingAs(rmoActor(['add-raw-material-purchas-order']))
+            ->post(route('raw-material.order.store'), rmoPayload($broker->id, $supplier->id, $material->id, [
+                'order_unique_id' => $orderId,
+                'total_qty'       => [10],
+                'price'           => ['500'],
+                'tax_percent'     => ['18'],
+                'other_expense'   => ['1000'],
+                'tds_amount'      => ['5000'],
+            ]))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $item = RawMaterialOrder::where('order_unique_id', $orderId)->first()?->items()->first();
+
+        expect($item)->not->toBeNull()
+            ->and((float) $item->tax_percent)->toBe(18.0)
+            ->and((float) $item->other_expense)->toBe(1000.0)
+            ->and((float) $item->tds_amount)->toBe(5000.0)
+            ->and((float) $item->total_price)->toBe(5_896_000.0);
     });
 
     it('accepts Ex-Factory + GST price basis', function () {

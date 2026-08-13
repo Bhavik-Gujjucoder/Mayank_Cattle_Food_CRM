@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\RawMaterialDailySummaryExport;
+use App\Exports\SalesDailySheetsExport;
 use App\Models\DealerManagement;
 use App\Models\DispatchManagement;
 use App\Models\OrderManagement;
@@ -13,13 +14,16 @@ use App\Models\User;
 use App\Models\WeeklyReport;
 use App\Services\RawMaterial\RawMaterialDailySummaryService;
 use App\Services\RawMaterialCacheService;
+use App\Services\SalesDailySheetsService;
 use App\Services\SequentialDispatchService;
 use App\Services\WeeklyReportService;
 use App\Support\ProductUnit;
 use App\Support\SalesScope;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Yajra\DataTables\DataTables;
@@ -30,6 +34,7 @@ class HomeController extends Controller
 
     public function __construct(
         protected RawMaterialDailySummaryService $rawMaterialDailySummaryService,
+        protected SalesDailySheetsService $salesDailySheetsService,
         protected SequentialDispatchService $sequentialDispatch,
         protected WeeklyReportService $weeklyReportService,
     ) {}
@@ -370,6 +375,61 @@ class HomeController extends Controller
         $filename = 'raw-material-daily-summary-' . now()->format('Y-m-d') . '.xlsx';
 
         return Excel::download(new RawMaterialDailySummaryExport($summary), $filename);
+    }
+
+    public function exportRawMaterialDailySummaryPdf(Request $request): Response|RedirectResponse
+    {
+        $filters = $this->dailySummaryFilters($request);
+
+        $summary = $this->rawMaterialDailySummaryService->build(
+            $filters['material_id'],
+            $filters['date_from'],
+            $filters['date_to']
+        );
+
+        if ($summary['rows']->isEmpty()) {
+            return redirect()
+                ->route('dashboard', $this->dailySummaryQueryParams($filters))
+                ->with('error', 'No records found to export for the current filters.');
+        }
+
+        $filename = 'raw-material-daily-summary-' . now()->format('Y-m-d') . '.pdf';
+
+        return Pdf::loadView('dashboard.pdf.raw_material_daily_summary', compact('summary'))
+            ->setPaper('a4', 'landscape')
+            ->download($filename);
+    }
+
+    public function exportSalesDailySheets(): BinaryFileResponse|RedirectResponse
+    {
+        $payload = $this->salesDailySheetsService->build(request()->user());
+
+        if ($this->salesDailySheetsService->isEmpty($payload)) {
+            return redirect()
+                ->route('dashboard')
+                ->with('error', 'No pending sales orders found to export.');
+        }
+
+        $filename = 'daily-sales-sheets-' . now()->format('Y-m-d') . '.xlsx';
+
+        return Excel::download(new SalesDailySheetsExport($payload), $filename);
+    }
+
+    public function exportSalesDailySheetsPdf(): Response|RedirectResponse
+    {
+        $payload = $this->salesDailySheetsService->build(request()->user());
+
+        if ($this->salesDailySheetsService->isEmpty($payload)) {
+            return redirect()
+                ->route('dashboard')
+                ->with('error', 'No pending sales orders found to export.');
+        }
+
+        $filename = 'daily-sales-sheets-' . now()->format('Y-m-d') . '.pdf';
+
+        return Pdf::loadView('dashboard.pdf.sales_daily_sheets', compact('payload'))
+            ->setPaper('a4', 'landscape')
+            ->download($filename);
     }
 
     /**

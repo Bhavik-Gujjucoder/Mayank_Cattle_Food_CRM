@@ -113,6 +113,10 @@ class RawMaterialDailySummaryService
             'pending_qty'           => $displayPendingQty,
             'pipeline_pending_qty'  => $pendingQty,
             'rate'                  => $rate,
+            'tax_percent'           => round((float) ($item->tax_percent ?? 0), 2),
+            'tax_amount'            => round(\App\Services\RawMaterialCacheService::itemTaxAmount($item), 2),
+            'other_expense'         => round((float) ($item->other_expense ?? 0), 2),
+            'tds_amount'            => round((float) ($item->tds_amount ?? 0), 2),
             'average'               => $this->displayAverage($rate, (float) $item->price_avg, $freight),
             'pending_amount'        => round(\App\Services\RawMaterialCacheService::itemPendingAmount($item), 2),
             'received_amount'       => round((float) $item->received_price, 2),
@@ -155,6 +159,9 @@ class RawMaterialDailySummaryService
         $extraQty = (int) $rows->sum('extra_qty');
         $pendingAmount = round((float) $rows->sum('pending_amount'), 2);
         $receivedAmount = round((float) $rows->sum('received_amount'), 2);
+        $taxAmount = round((float) $rows->sum('tax_amount'), 2);
+        $otherExpense = round((float) $rows->sum('other_expense'), 2);
+        $tdsAmount = round((float) $rows->sum('tds_amount'), 2);
         $grandAmount = round($pendingAmount + $receivedAmount, 2);
         $pipelinePendingQty = (int) $rows->sum('pipeline_pending_qty');
 
@@ -179,6 +186,9 @@ class RawMaterialDailySummaryService
                 'amount'  => $grandAmount,
                 'average' => $this->weightedAverage($grandAmount, $totalQty),
             ],
+            'tax_amount'            => $taxAmount,
+            'other_expense'         => $otherExpense,
+            'tds_amount'            => $tdsAmount,
         ];
     }
 
