@@ -53,12 +53,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard/raw-material-daily-summary/export-pdf', [HomeController::class, 'exportRawMaterialDailySummaryPdf'])
         ->name('dashboard.raw-material-daily-summary.export-pdf')
         ->middleware('permission:export-raw-material-purchas-order');
-    Route::get('dashboard/sales-daily-sheets/export', [HomeController::class, 'exportSalesDailySheets'])
-        ->name('dashboard.sales-daily-sheets.export')
-        ->middleware('permission:view-order');
-    Route::get('dashboard/sales-daily-sheets/export-pdf', [HomeController::class, 'exportSalesDailySheetsPdf'])
-        ->name('dashboard.sales-daily-sheets.export-pdf')
-        ->middleware('permission:view-order');
+    Route::get('dashboard/daily-report/export', [HomeController::class, 'exportDailyReportExcel'])
+        ->name('dashboard.daily-report.export');
+    Route::get('dashboard/daily-report/export-pdf', [HomeController::class, 'exportDailyReportPdf'])
+        ->name('dashboard.daily-report.export-pdf');
 
     Route::prefix('dashboard/data')->name('dashboard.data.')->group(function () {
         Route::get('dealers', [HomeController::class, 'dataDealers'])->name('dealers');

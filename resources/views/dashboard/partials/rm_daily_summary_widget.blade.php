@@ -1,10 +1,5 @@
 @php
     $summaryDate = $rm_daily_summary['summary_date'] ?? now();
-    $exportParams = array_filter([
-        'rm_material_id' => $rm_material_filter !== 'all' ? $rm_material_filter : null,
-        'rm_date_from' => $rm_date_from,
-        'rm_date_to' => $rm_date_to,
-    ]);
 @endphp
 
 @include('raw_material.partials.module-responsive')
@@ -82,16 +77,6 @@
                                 @can('view-raw-material-purchas-order')
                                     <a href="{{ route('raw-material.order.index') }}" class="btn btn-light btn-md">
                                         <i class="ti ti-list me-1"></i>View All
-                                    </a>
-                                @endcan
-                                @can('export-raw-material-purchas-order')
-                                    <a href="{{ route('dashboard.raw-material-daily-summary.export', $exportParams) }}"
-                                        class="btn btn-outline-primary" id="rmDailySummaryExportBtn">
-                                        <i class="ti ti-file-spreadsheet me-2"></i>Export Excel
-                                    </a>
-                                    <a href="{{ route('dashboard.raw-material-daily-summary.export-pdf', $exportParams) }}"
-                                        class="btn btn-outline-secondary" id="rmDailySummaryExportPdfBtn">
-                                        <i class="ti ti-file-type-pdf me-2"></i>Export PDF
                                     </a>
                                 @endcan
                             </div>

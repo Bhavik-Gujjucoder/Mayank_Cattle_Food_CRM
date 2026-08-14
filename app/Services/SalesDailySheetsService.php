@@ -90,6 +90,7 @@ class SalesDailySheetsService
             'party_name'      => $this->formatPartyName($item),
             'total'           => $ordered,
             'rate'            => round((float) $item->unit_price, 2),
+            'dispatch'        => $dispatched,
             'pending'         => $pending,
             'last_loading'    => $this->formatLastLoading($item->last_dispatch_date ?? null),
             'brand_name'      => $item->order?->brand?->name ?: '—',
@@ -140,8 +141,9 @@ class SalesDailySheetsService
                     'name'   => $name,
                     'rows'   => $groupRows->values()->all(),
                     'totals' => [
-                        'total'   => (int) $groupRows->sum('total'),
-                        'pending' => (int) $groupRows->sum('pending'),
+                        'total'    => (int) $groupRows->sum('total'),
+                        'dispatch' => (int) $groupRows->sum('dispatch'),
+                        'pending'  => (int) $groupRows->sum('pending'),
                     ],
                 ];
             })

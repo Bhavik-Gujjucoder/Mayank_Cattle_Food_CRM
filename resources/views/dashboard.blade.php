@@ -223,14 +223,26 @@
             </div>
         </div>
     </div>
-    @can('add-order')
-        <div class="d-flex justify-content-end mt-3">
-            <a href="javascript:void(0)" class="btn btn-primary btn-md" data-bs-toggle="modal"
-                data-bs-target="#dashboardDispatchModal">
-                <i class="ti ti-truck me-1"></i>Soda/Order Dispatch
-            </a>
+    @canany(['view-order', 'export-raw-material-purchas-order', 'raw-material-daily-summary', 'add-order'])
+        <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mt-3">
+            @canany(['view-order', 'export-raw-material-purchas-order', 'raw-material-daily-summary'])
+                <a href="{{ route('dashboard.daily-report.export') }}"
+                    class="btn btn-outline-primary btn-md" id="dailyExportExcelBtn">
+                    <i class="ti ti-file-spreadsheet me-1"></i>Daily Report Excel
+                </a>
+                <a href="{{ route('dashboard.daily-report.export-pdf') }}"
+                    class="btn btn-outline-secondary btn-md" id="dailyReportPdfBtn">
+                    <i class="ti ti-file-type-pdf me-1"></i>Daily Report PDF
+                </a>
+            @endcanany
+            @can('add-order')
+                <a href="javascript:void(0)" class="btn btn-primary btn-md" data-bs-toggle="modal"
+                    data-bs-target="#dashboardDispatchModal">
+                    <i class="ti ti-truck me-1"></i>Soda/Order Dispatch
+                </a>
+            @endcan
         </div>
-    @endcan
+    @endcanany
 </div>
 <div class="row detials-gc-user">
 
@@ -359,10 +371,6 @@
 {{-- {{dd(Auth::user()->getPermissionsViaRoles())}} --}}
 @can('view-weekly-report')
     @include('dashboard.partials.current_day_report_widget')
-@endcan
-
-@can('view-order')
-    @include('dashboard.partials.sales_daily_sheets_widget')
 @endcan
 
 @can('raw-material-daily-summary')
@@ -711,30 +719,8 @@ withDataTable(function($) {
     }));
     rmSummaryAjax._bindTable(rmSummaryTable);
 
-    function updateRmExportLink() {
-        var params = new URLSearchParams();
-        var material = $('#rmMaterialFilter').val();
-        if (material && material !== 'all') {
-            params.set('rm_material_id', material);
-        }
-        var from = $('#rmDateFrom').val();
-        if (from) {
-            params.set('rm_date_from', from);
-        }
-        var to = $('#rmDateTo').val();
-        if (to) {
-            params.set('rm_date_to', to);
-        }
-        var excelBase = @json(route('dashboard.raw-material-daily-summary.export'));
-        var pdfBase = @json(route('dashboard.raw-material-daily-summary.export-pdf'));
-        var qs = params.toString();
-        $('#rmDailySummaryExportBtn').attr('href', qs ? excelBase + '?' + qs : excelBase);
-        $('#rmDailySummaryExportPdfBtn').attr('href', qs ? pdfBase + '?' + qs : pdfBase);
-    }
-
     var $form = $('#rmDailySummaryFilterForm');
     $('#rmMaterialFilter').on('change', function() {
-        updateRmExportLink();
         rmSummaryTable.ajax.reload();
     });
 
@@ -746,7 +732,6 @@ withDataTable(function($) {
             allowInput: true,
             defaultDate: @json($rm_date_from),
             onChange: function() {
-                updateRmExportLink();
                 rmSummaryTable.ajax.reload();
             },
         });
@@ -758,13 +743,10 @@ withDataTable(function($) {
             allowInput: true,
             defaultDate: @json($rm_date_to),
             onChange: function() {
-                updateRmExportLink();
                 rmSummaryTable.ajax.reload();
             },
         });
     }
-
-    updateRmExportLink();
     @endif
     @endcan
 });
