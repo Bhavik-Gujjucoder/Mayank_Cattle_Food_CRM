@@ -20,9 +20,9 @@ class SalesDailyGroupedSheet implements FromArray, WithEvents, WithTitle
     /** @var list<list<string|int|float>> */
     protected array $rows = [];
 
-    protected string $lastCol = 'F';
+    protected string $lastCol = 'G';
 
-    protected int $colCount = 6;
+    protected int $colCount = 7;
 
     /**
      * @param  array{title: string, heading: string, groups: list<array<string, mixed>>}  $section
@@ -56,7 +56,7 @@ class SalesDailyGroupedSheet implements FromArray, WithEvents, WithTitle
         foreach ($this->section['groups'] as $group) {
             $this->pushRow([(string) $group['name']], $line++, 'group-header');
             $this->pushRow(
-                ['Date', 'Party Name', 'Total', 'Rate', 'Pending', 'Last Loading'],
+                ['Date', 'Party Name', 'Total', 'Rate', 'Dispatch', 'Pending', 'Last Loading'],
                 $line++,
                 'table-header'
             );
@@ -67,6 +67,7 @@ class SalesDailyGroupedSheet implements FromArray, WithEvents, WithTitle
                     $row['party_name'],
                     $row['total'],
                     $row['rate'],
+                    $row['dispatch'],
                     $row['pending'],
                     $row['last_loading'],
                 ], $line++, $index % 2 === 0 ? 'row-odd' : 'row-even');
@@ -77,6 +78,7 @@ class SalesDailyGroupedSheet implements FromArray, WithEvents, WithTitle
                 'Total',
                 $group['totals']['total'],
                 '',
+                $group['totals']['dispatch'] ?? 0,
                 $group['totals']['pending'],
                 '',
             ], $line++, 'total');
@@ -116,12 +118,12 @@ class SalesDailyGroupedSheet implements FromArray, WithEvents, WithTitle
                     $this->applyRowStyle($sheet, $map['row'], $map['type']);
                 }
 
-                $widths = [14, 42, 12, 12, 12, 16];
+                $widths = [14, 42, 12, 12, 12, 12, 16];
                 foreach ($widths as $index => $width) {
                     $sheet->getColumnDimension(chr(65 + $index))->setWidth($width);
                 }
 
-                $sheet->getStyle('C:E')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet->getStyle('C:F')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             },
         ];
     }

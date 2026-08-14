@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\DailyReportExport;
 use App\Exports\RawMaterialDailySummaryExport;
-use App\Exports\SalesDailySheetsExport;
 use App\Models\DealerManagement;
 use App\Models\DispatchManagement;
 use App\Models\OrderManagement;
@@ -400,36 +400,77 @@ class HomeController extends Controller
             ->download($filename);
     }
 
-    public function exportSalesDailySheets(): BinaryFileResponse|RedirectResponse
+    public function exportDailyReportExcel(Request $request): BinaryFileResponse|RedirectResponse
     {
-        $payload = $this->salesDailySheetsService->build(request()->user());
+        abort_unless($this->canExportDailyReport($request), 403);
 
-        if ($this->salesDailySheetsService->isEmpty($payload)) {
+        [$summary, $payload] = $this->dailyReportDatasets($request);
+
+        if ($this->dailyReportIsEmpty($summary, $payload)) {
             return redirect()
                 ->route('dashboard')
-                ->with('error', 'No pending sales orders found to export.');
+                ->with('error', 'No records found to export for the daily report.');
         }
 
-        $filename = 'daily-sales-sheets-' . now()->format('Y-m-d') . '.xlsx';
+        $filename = 'daily-report-excel-' . now()->format('Y-m-d') . '.xlsx';
 
-        return Excel::download(new SalesDailySheetsExport($payload), $filename);
+        return Excel::download(new DailyReportExport($summary, $payload), $filename);
     }
 
-    public function exportSalesDailySheetsPdf(): Response|RedirectResponse
+    public function exportDailyReportPdf(Request $request): Response|RedirectResponse
     {
-        $payload = $this->salesDailySheetsService->build(request()->user());
+        abort_unless($this->canExportDailyReport($request), 403);
 
-        if ($this->salesDailySheetsService->isEmpty($payload)) {
+        [$summary, $payload] = $this->dailyReportDatasets($request);
+
+        if ($this->dailyReportIsEmpty($summary, $payload)) {
             return redirect()
                 ->route('dashboard')
-                ->with('error', 'No pending sales orders found to export.');
+                ->with('error', 'No records found to export for the daily report.');
         }
 
-        $filename = 'daily-sales-sheets-' . now()->format('Y-m-d') . '.pdf';
+        $filename = 'daily-report-' . now()->format('Y-m-d') . '.pdf';
 
-        return Pdf::loadView('dashboard.pdf.sales_daily_sheets', compact('payload'))
+        return Pdf::loadView('dashboard.pdf.daily_report', compact('summary', 'payload'))
             ->setPaper('a4', 'landscape')
             ->download($filename);
+    }
+
+    protected function canExportDailyReport(Request $request): bool
+    {
+        $user = $request->user();
+
+        return $user->can('view-order')
+            || $user->can('export-raw-material-purchas-order')
+            || $user->can('raw-material-daily-summary');
+    }
+
+    /**
+     * @return array{0: ?array, 1: ?array}
+     */
+    protected function dailyReportDatasets(Request $request): array
+    {
+        $user = $request->user();
+        $summary = null;
+        $payload = null;
+
+        if ($user->can('export-raw-material-purchas-order') || $user->can('raw-material-daily-summary')) {
+            $summary = $this->rawMaterialDailySummaryService->build();
+        }
+
+        if ($user->can('view-order')) {
+            $payload = $this->salesDailySheetsService->build($user);
+        }
+
+        return [$summary, $payload];
+    }
+
+    protected function dailyReportIsEmpty(?array $summary, ?array $payload): bool
+    {
+        $rmEmpty = $summary === null || $summary['rows']->isEmpty();
+        $salesEmpty = $payload === null || $this->salesDailySheetsService->isEmpty($payload);
+
+        return $rmEmpty && $salesEmpty;
     }
 
     /**

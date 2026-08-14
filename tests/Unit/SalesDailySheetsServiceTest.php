@@ -168,8 +168,10 @@ test('fully dispatched items are excluded and last loading uses latest dispatch'
 
     expect($payload['brand']['groups'])->toHaveCount(1)
         ->and($row['total'])->toBe(500)
+        ->and($row['dispatch'])->toBe(150)
         ->and($row['pending'])->toBe(350)
         ->and($row['last_loading'])->toBe('07.08.2026')
+        ->and($payload['brand']['groups'][0]['totals']['dispatch'])->toBe(150)
         ->and($payload['brand']['groups'][0]['totals']['pending'])->toBe(350)
         ->and($payload['brand']['groups'][0]['totals']['total'])->toBe(500);
 });

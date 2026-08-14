@@ -7,10 +7,16 @@ use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithTitle;
 
-class RawMaterialDailySummaryExport implements FromCollection, WithHeadings, WithStyles
+class RawMaterialDailySummaryExport implements FromCollection, WithHeadings, WithStyles, WithTitle
 {
     use StyledExportHeading;
+
+    public function title(): string
+    {
+        return 'Raw Material';
+    }
 
     /**
      * @param  array{rows: Collection<int, array<string, mixed>>, totals: array<string, mixed>}  $summary
