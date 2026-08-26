@@ -135,23 +135,26 @@
                 </div>
 
                 <!-- Status -->
-                {{-- <div class="col-md-6">
+                <div class="col-md-6">
                     <div class="radio-wrap">
                         <label class="col-form-label">Status</label>
                         <div class="d-flex align-items-center">
                             <div class="me-2">
                                 <input type="radio" class="status-radio" id="active1" name="status" value="1"
-                                    {{ $user->status == 1 ? 'checked' : '' }}>
+                                    {{ old('status', $user->status) == 1 ? 'checked' : '' }}>
                                 <label for="active1">Active</label>
                             </div>
                             <div>
                                 <input type="radio" class="status-radio" id="inactive1" name="status"
-                                    value="0" {{ $user->status == 0 ? 'checked' : '' }}>
+                                    value="0" {{ old('status', $user->status) == 0 ? 'checked' : '' }}>
                                 <label for="inactive1">Inactive</label>
                             </div>
                         </div>
+                        @error('status')
+                            <span class="invalid-feedback d-block">{{ $message }}</span>
+                        @enderror
                     </div>
-                </div> --}}
+                </div>
             </div>
         </div>
         <!-- /Basic Info -->
