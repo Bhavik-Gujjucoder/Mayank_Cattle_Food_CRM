@@ -428,6 +428,19 @@ describe('quickCreateForm', function () {
             ->assertJsonValidationErrors(['brand_id']);
     });
 
+    it('returns unlocked dealer form when broker and brand are not provided', function () {
+        $actor = dealerActor(['add-dealer']);
+
+        $this->actingAs($actor)
+            ->get(route('dealer.quickCreateForm'))
+            ->assertOk()
+            ->assertViewIs('dealer.partials.quick-create-form')
+            ->assertViewHas('lockedBrokerId', null)
+            ->assertViewHas('lockedBrandId', null)
+            ->assertSee('-- Select Broker --')
+            ->assertSee('-- Select Brand --');
+    });
+
     it('returns form view with locked broker and brand for authorized non-broker user', function () {
         $broker = makeBroker();
         $brand  = makeDealerBrand();

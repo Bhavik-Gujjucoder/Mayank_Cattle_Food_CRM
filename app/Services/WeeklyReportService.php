@@ -299,15 +299,7 @@ class WeeklyReportService
     public function updateFooter(WeeklyReport $report, array $data): WeeklyReport
     {
         $report->loadMissing('items.product:id,unit');
-        $total = $report->totalQuantityInBags();
         $produced = max(0, (float) $data['already_produced']);
-
-        if ($produced > $total) {
-            throw ValidationException::withMessages([
-                'already_produced' => 'Already produced / ready stock cannot exceed total quantity ('
-                    . number_format($total, 2) . ').',
-            ]);
-        }
 
         $hasHoursInput = array_key_exists('production_hours', $data)
             && $data['production_hours'] !== null

@@ -46,12 +46,7 @@
         var $produced = $block.find('.footer-already-produced');
         var produced = parseFloat($produced.val()) || 0;
         $block.find('.footer-already-produced-error').text('');
-        if (produced > total) {
-            produced = total;
-            $produced.val(total.toFixed(2));
-            $block.find('.footer-already-produced-error').text('Cannot exceed total quantity (' + total.toFixed(2) + ').');
-        }
-        $produced.attr('max', total.toFixed(2));
+        $produced.removeAttr('max');
         var diff = Math.max(0, total - produced);
         var bagsPerHour = getBagsPerHour($block);
         updateHoursLabel($block, bagsPerHour);

@@ -24,7 +24,7 @@
             <div class="wr-footer-card h-100">
                 <label class="wr-footer-label">Already produced / ready stock</label>
                 <input type="number" class="form-control wr-footer-input footer-already-produced"
-                    min="0" step="0.01" max="{{ number_format($totalBags, 2, '.', '') }}"
+                    min="0" step="0.01"
                     value="{{ number_format((float) $report->already_produced, 2, '.', '') }}"
                     {{ $canEdit ? '' : 'readonly' }}>
                 <div class="text-danger small mt-1 footer-already-produced-error"></div>

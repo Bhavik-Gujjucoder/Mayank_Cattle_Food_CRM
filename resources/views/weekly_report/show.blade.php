@@ -204,7 +204,7 @@
                     <div class="wr-footer-card h-100">
                         <label class="wr-footer-label" for="footerAlreadyProduced">Already produced / ready stock</label>
                         <input type="number" class="form-control form-control-lg wr-footer-input" id="footerAlreadyProduced"
-                            min="0" step="0.01" max="{{ number_format($totalBags, 2, '.', '') }}"
+                            min="0" step="0.01"
                             value="{{ number_format((float) $report->already_produced, 2, '.', '') }}"
                             {{ $canEdit ? '' : 'readonly' }}>
                         <div class="text-danger small mt-1" id="footerAlreadyProducedError"></div>
@@ -395,12 +395,7 @@
         });
         var produced = parseFloat($('#footerAlreadyProduced').val()) || 0;
         $('#footerAlreadyProducedError').text('');
-        if (produced > total) {
-            produced = total;
-            $('#footerAlreadyProduced').val(total.toFixed(2));
-            $('#footerAlreadyProducedError').text('Cannot exceed total quantity (' + total.toFixed(2) + ').');
-        }
-        $('#footerAlreadyProduced').attr('max', total.toFixed(2));
+        $('#footerAlreadyProduced').removeAttr('max');
         var diff = Math.max(0, total - produced);
         var hours = opts.preserveHours
             ? (parseFloat($('#footerHours').val()) || 0)

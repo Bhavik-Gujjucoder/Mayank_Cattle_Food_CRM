@@ -219,11 +219,24 @@ it('uses stored bags per hour for production hours and persists changes', functi
     expect(round($updated->calculatedProductionHours(), 4))->toBe(round(75 / 200, 4));
 });
 
-it('rejects ready stock greater than total quantity', function () {
+it('allows ready stock greater than total quantity including when total is zero', function () {
     $admin = wrAdmin();
     $this->actingAs($admin);
     $ctx = wrPendingLine('Bag', 100);
     $service = app(\App\Services\WeeklyReportService::class);
+
+    $emptyReport = WeeklyReport::create([
+        'report_date' => '2026-07-08',
+        'already_produced' => 0,
+        'created_by' => $admin->id,
+    ]);
+
+    $updatedEmpty = $service->updateFooter($emptyReport->fresh(['items.product']), [
+        'already_produced' => 40,
+    ]);
+
+    expect((float) $updatedEmpty->already_produced)->toBe(40.0);
+    expect($updatedEmpty->differenceInBags())->toBe(0.0);
 
     $report = WeeklyReport::create([
         'report_date' => '2026-07-09',
@@ -241,9 +254,12 @@ it('rejects ready stock greater than total quantity', function () {
         'status' => WeeklyReportItem::STATUS_PENDING,
     ]);
 
-    expect(fn () => $service->updateFooter($report->fresh(['items.product']), [
+    $updated = $service->updateFooter($report->fresh(['items.product']), [
         'already_produced' => 150,
-    ]))->toThrow(\Illuminate\Validation\ValidationException::class);
+    ]);
+
+    expect((float) $updated->already_produced)->toBe(150.0);
+    expect($updated->differenceInBags())->toBe(0.0);
 });
 
 it('limits weekly report qty by remaining after other pending reservations', function () {
@@ -411,13 +427,14 @@ it('filters pending items by dealer and excludes paid orders', function () {
 });
 
 it('loads workspace for today on index', function () {
-    $admin = wrAdmin(['view-weekly-report', 'add-weekly-report', 'edit-weekly-report']);
+    $admin = wrAdmin(['view-weekly-report', 'add-weekly-report', 'edit-weekly-report', 'add-dealer']);
 
     $this->actingAs($admin)
         ->get(route('weekly-report.index'))
         ->assertOk()
         ->assertSee('Daily Dispatch')
         ->assertSee('Dealer')
+        ->assertSee('Add Dealer')
         ->assertSee(now()->format('d M Y'));
 });
 

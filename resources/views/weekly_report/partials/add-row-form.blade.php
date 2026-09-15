@@ -16,14 +16,23 @@
             @if ($showDealerFilter)
                 <div class="col-12 col-md-6 col-lg-2">
                     <label class="col-form-label">Dealer <span class="text-danger">*</span></label>
-                    <select class="form-select form-select-sm wr-add-dealer" required>
-                        <option value="">— Select dealer —</option>
-                        @foreach ($dealers as $dealer)
-                            <option value="{{ $dealer->id }}">
-                                {{ $dealer->user?->name ?? $dealer->firm_shop_name ?? '—' }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="wr-dealer-field">
+                        <select class="form-select form-select-sm wr-add-dealer" required>
+                            <option value="">— Select dealer —</option>
+                            @foreach ($dealers as $dealer)
+                                <option value="{{ $dealer->id }}">
+                                    {{ $dealer->user?->name ?? $dealer->firm_shop_name ?? '—' }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @can('add-dealer')
+                            <div class="mt-1">
+                                <a href="javascript:void(0)" class="text-primary wr-quick-add-link wr-quick-add-dealer">
+                                    <i class="ti ti-plus me-1"></i>Add Dealer
+                                </a>
+                            </div>
+                        @endcan
+                    </div>
                     <span class="text-danger small d-block dealer_id_error"></span>
                 </div>
             @endif

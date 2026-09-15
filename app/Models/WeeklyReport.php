@@ -57,6 +57,7 @@ class WeeklyReport extends Model
     /**
      * Remaining to produce: Total − ready stock.
      * When ready stock is 0, difference equals total quantity.
+     * When ready stock exceeds total, difference is 0.
      */
     public function differenceInBags(): float
     {

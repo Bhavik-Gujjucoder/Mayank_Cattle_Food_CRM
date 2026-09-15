@@ -1,8 +1,12 @@
 <form id="quickDealerForm" action="{{ route('dealer.store') }}" method="POST" enctype="multipart/form-data">
     @csrf
 
-    <input type="hidden" name="broker_id" value="{{ $lockedBrokerId }}">
-    <input type="hidden" name="brand_id" value="{{ $lockedBrandId }}">
+    @if ($lockedBrokerId)
+        <input type="hidden" name="broker_id" value="{{ $lockedBrokerId }}">
+    @endif
+    @if ($lockedBrandId)
+        <input type="hidden" name="brand_id" value="{{ $lockedBrandId }}">
+    @endif
 
     <div class="row">
 
@@ -34,12 +38,32 @@
 
         <div class="col-md-4 mb-3">
             <label class="col-form-label">Broker Person <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" value="{{ $broker->name }}" readonly disabled>
+            @if ($lockedBrokerId)
+                <input type="text" class="form-control" value="{{ $broker?->name }}" readonly disabled>
+            @else
+                <select name="broker_id" class="form-select qd-input">
+                    <option value="">-- Select Broker --</option>
+                    @foreach ($brokers ?? [] as $brokerOption)
+                        <option value="{{ $brokerOption->id }}">{{ $brokerOption->name }}</option>
+                    @endforeach
+                </select>
+            @endif
+            <span class="text-danger small qd-field-error" data-field="broker_id"></span>
         </div>
 
         <div class="col-md-4 mb-3">
             <label class="col-form-label">Brand <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" value="{{ $brand->name }}" readonly disabled>
+            @if ($lockedBrandId)
+                <input type="text" class="form-control" value="{{ $brand?->name }}" readonly disabled>
+            @else
+                <select name="brand_id" class="form-select qd-input">
+                    <option value="">-- Select Brand --</option>
+                    @foreach ($brands ?? [] as $brandOption)
+                        <option value="{{ $brandOption->id }}">{{ $brandOption->name }}</option>
+                    @endforeach
+                </select>
+            @endif
+            <span class="text-danger small qd-field-error" data-field="brand_id"></span>
         </div>
 
         <div class="col-md-4 mb-3">

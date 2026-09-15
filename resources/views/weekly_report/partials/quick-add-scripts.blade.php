@@ -2,6 +2,9 @@
 (function ($) {
     var wrQuickTransporterTarget = null;
     var wrQuickTruckContext = null;
+    var wrQuickDealerTarget = null;
+    var wrCitiesUrl = @json(route('get.cities'));
+    var wrCsrf = $('meta[name="csrf-token"]').attr('content');
 
     function wrAppendTransporterOption(id, name, phone) {
         $('.wr-transport-select').each(function () {
@@ -72,6 +75,73 @@
         $.each(errors, function (field, messages) {
             $('#quickTruckForm [name="' + field + '"]').addClass('is-invalid');
             $('#quickTruckForm .qt-truck-field-error[data-field="' + field + '"]').text(messages[0]);
+        });
+    }
+
+    function wrAppendDealerOption(id, name) {
+        $('.wr-add-dealer').each(function () {
+            var $select = $(this);
+            if (!$select.find('option[value="' + id + '"]').length) {
+                $select.append($('<option>', { value: id, text: name }));
+            }
+        });
+    }
+
+    function wrShowDealerErrors(errors) {
+        $('#quickDealerForm .is-invalid').removeClass('is-invalid');
+        $('#quickDealerForm .qd-field-error').text('');
+        $.each(errors, function (field, messages) {
+            $('#quickDealerForm [name="' + field + '"]').addClass('is-invalid');
+            $('#quickDealerForm .qd-field-error[data-field="' + field + '"]').text(messages[0]);
+        });
+    }
+
+    function wrInitQuickDealerForm() {
+        var $form = $('#quickDealerForm');
+        if (!$form.length) return;
+
+        $form.find('.qd-profile-input').off('change.wrqd').on('change.wrqd', function (event) {
+            var file = event.target.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function (e) { $('#qd_profilePreview').attr('src', e.target.result); };
+            reader.readAsDataURL(file);
+        });
+
+        $('#qd_stateDropdown').off('change.wrqd').on('change.wrqd', function () {
+            var stateID = $(this).val();
+            var $city = $('#qd_cityDropdown');
+            $city.html('<option value="">Loading...</option>');
+            if (!stateID) {
+                $city.html('<option value="">Select city</option>');
+                return;
+            }
+            $.ajax({
+                url: wrCitiesUrl,
+                type: 'POST',
+                data: { state_id: stateID, _token: wrCsrf },
+                success: function (data) {
+                    $city.empty().append('<option value="">Select city</option>');
+                    $.each(data, function (key, city) {
+                        $city.append('<option value="' + city.id + '">' + city.city_name + '</option>');
+                    });
+                },
+                error: function () {
+                    $city.html('<option value="">Failed to load cities</option>');
+                }
+            });
+        });
+
+        $('#wrQuickDealerModal').off('click.wrqd', '.qd-toggle-pw').on('click.wrqd', '.qd-toggle-pw', function () {
+            var $input = $(this).siblings('input');
+            var $icon = $(this).find('i');
+            if ($input.attr('type') === 'password') {
+                $input.attr('type', 'text');
+                $icon.removeClass('ti-eye-off').addClass('ti-eye');
+            } else {
+                $input.attr('type', 'password');
+                $icon.removeClass('ti-eye').addClass('ti-eye-off');
+            }
         });
     }
 
@@ -193,6 +263,65 @@
                     show_error('Please correct the highlighted fields.');
                 } else {
                     show_error('Failed to create truck.');
+                }
+            },
+            complete: function () { $btn.prop('disabled', false); }
+        });
+    });
+
+    $(document).on('click', '.wr-quick-add-dealer', function () {
+        wrQuickDealerTarget = $(this).closest('.wr-dealer-field').find('.wr-add-dealer');
+        var modalEl = document.getElementById('wrQuickDealerModal');
+        if (!modalEl) return;
+
+        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        $('#wrQuickDealerModalBody').html(
+            '<div class="text-center text-muted py-4"><i class="ti ti-loader-2 ti-spin fs-3"></i><p class="mb-0 mt-2">Loading…</p></div>'
+        );
+        modal.show();
+
+        $.get(@json(route('dealer.quickCreateForm')))
+            .done(function (html) {
+                $('#wrQuickDealerModalBody').html(html);
+                wrInitQuickDealerForm();
+            })
+            .fail(function (xhr) {
+                var msg = xhr.status === 403
+                    ? 'You are not allowed to add a dealer.'
+                    : 'Failed to load form.';
+                $('#wrQuickDealerModalBody').html('<div class="alert alert-danger mb-0">' + msg + '</div>');
+            });
+    });
+
+    $(document).on('click', '#wrQuickDealerSubmitBtn', function () {
+        var $form = $('#quickDealerForm');
+        if (!$form.length) return;
+        var $btn = $(this);
+        $btn.prop('disabled', true);
+
+        $.ajax({
+            url: $form.attr('action'),
+            method: 'POST',
+            data: new FormData($form[0]),
+            processData: false,
+            contentType: false,
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            success: function (res) {
+                bootstrap.Modal.getInstance(document.getElementById('wrQuickDealerModal')).hide();
+                if (typeof show_success === 'function') show_success(res.message || 'Dealer created.');
+
+                var d = res.dealer;
+                if (!d || !wrQuickDealerTarget) return;
+
+                wrAppendDealerOption(String(d.id), d.name || d.firm_shop_name || 'Dealer');
+                wrQuickDealerTarget.val(String(d.id)).trigger('change');
+            },
+            error: function (xhr) {
+                if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                    wrShowDealerErrors(xhr.responseJSON.errors);
+                    show_error('Please correct the highlighted fields.');
+                } else {
+                    show_error('Failed to create dealer.');
                 }
             },
             complete: function () { $btn.prop('disabled', false); }
