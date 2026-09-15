@@ -214,42 +214,63 @@ class DealerManagementController extends Controller
     /* ------------------------------------------------------------------ */
     public function quickCreateForm(Request $request)
     {
-        $request->validate([
-            'broker_id' => ActiveDropdownValidation::brokerId(),
-            'brand_id'  => ActiveDropdownValidation::brandId(),
-        ]);
+        $hasLockedPair = $request->filled('broker_id') && $request->filled('brand_id');
 
-        $brokerId = (int) $request->broker_id;
-        $brandId  = (int) $request->brand_id;
+        $lockedBrokerId = null;
+        $lockedBrandId = null;
+        $broker = null;
+        $brand = null;
 
-        if (SalesScope::isBroker() && auth()->id() !== $brokerId) {
-            abort(403, 'You can only add dealers for your own broker account.');
-        }
+        if ($hasLockedPair) {
+            $request->validate([
+                'broker_id' => ActiveDropdownValidation::brokerId(),
+                'brand_id'  => ActiveDropdownValidation::brandId(),
+            ]);
 
-        $broker = User::query()
-            ->brokers()
-            ->active()
-            ->findOrFail($brokerId);
+            $lockedBrokerId = (int) $request->broker_id;
+            $lockedBrandId = (int) $request->brand_id;
 
-        $brand = BrandManagement::query()
-            ->where('status', 1)
-            ->findOrFail($brandId);
-
-        if (SalesScope::isBroker()) {
-            $allowedBrandIds = SalesScope::filterableBrands()->pluck('id');
-            if (! $allowedBrandIds->contains($brandId)) {
-                abort(403, 'Selected brand is not assigned to your account.');
+            if (SalesScope::isBroker() && auth()->id() !== $lockedBrokerId) {
+                abort(403, 'You can only add dealers for your own broker account.');
             }
+
+            $broker = User::query()
+                ->brokers()
+                ->active()
+                ->findOrFail($lockedBrokerId);
+
+            $brand = BrandManagement::query()
+                ->where('status', 1)
+                ->findOrFail($lockedBrandId);
+
+            if (SalesScope::isBroker()) {
+                $allowedBrandIds = SalesScope::filterableBrands()->pluck('id');
+                if (! $allowedBrandIds->contains($lockedBrandId)) {
+                    abort(403, 'Selected brand is not assigned to your account.');
+                }
+            }
+        } elseif (SalesScope::isBroker()) {
+            $lockedBrokerId = auth()->id();
+            $broker = User::query()
+                ->brokers()
+                ->active()
+                ->findOrFail($lockedBrokerId);
         }
 
         $nextId  = (DealerManagement::max('id') ?? 0) + 1;
         $codeNo  = 'MCF' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
 
+        $brands = SalesScope::isBroker()
+            ? SalesScope::filterableBrands()
+            : BrandManagement::activeForDropdown();
+
         return view('dealer.partials.quick-create-form', [
-            'lockedBrokerId' => $brokerId,
-            'lockedBrandId'  => $brandId,
+            'lockedBrokerId' => $lockedBrokerId,
+            'lockedBrandId'  => $lockedBrandId,
             'broker'         => $broker,
             'brand'          => $brand,
+            'brokers'        => $lockedBrokerId ? collect() : User::activeBrokersForDropdown(),
+            'brands'         => $brands,
             'code_no'        => $codeNo,
             'states'         => StateManagement::where('status', 1)->get(),
         ]);
