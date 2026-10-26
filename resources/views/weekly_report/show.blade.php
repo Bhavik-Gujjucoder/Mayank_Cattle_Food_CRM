@@ -222,7 +222,7 @@
                     <div class="wr-footer-card h-100">
                         <label class="wr-footer-label" for="footerHours">Production hours (÷ {{ $bagsPerHour }})</label>
                         <input type="number" class="form-control form-control-lg wr-footer-input" id="footerHours"
-                            min="0" step="0.01"
+                            step="0.01"
                             value="{{ number_format($hours, 2, '.', '') }}"
                             {{ $canEdit ? '' : 'readonly' }}>
                         <small class="text-muted">Auto from difference; admin can override</small>
@@ -396,7 +396,7 @@
         var produced = parseFloat($('#footerAlreadyProduced').val()) || 0;
         $('#footerAlreadyProducedError').text('');
         $('#footerAlreadyProduced').removeAttr('max');
-        var diff = Math.max(0, total - produced);
+        var diff = total - produced;
         var hours = opts.preserveHours
             ? (parseFloat($('#footerHours').val()) || 0)
             : (diff / bagsPerHour);

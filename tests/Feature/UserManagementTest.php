@@ -150,7 +150,11 @@ describe('brokerQuickCreateForm', function () {
         $this->actingAs($actor)
             ->get(route('users.broker.quickCreateForm'))
             ->assertOk()
-            ->assertViewIs('users.partials.quick-create-broker-form');
+            ->assertViewIs('users.partials.quick-create-broker-form')
+            ->assertDontSee('Email <span class="text-danger">*</span>', false)
+            ->assertDontSee('Phone <span class="text-danger">*</span>', false)
+            ->assertDontSee('Password <span class="text-danger">*</span>', false)
+            ->assertDontSee('Confirm Password <span class="text-danger">*</span>', false);
     });
 });
 
@@ -368,7 +372,11 @@ describe('create', function () {
             ->get(route('users.create', 'broker'))
             ->assertOk()
             ->assertViewIs('users.create')
-            ->assertViewHas('type', 'broker');
+            ->assertViewHas('type', 'broker')
+            ->assertDontSee('Email <span class="text-danger">*</span>', false)
+            ->assertDontSee('Phone <span class="text-danger">*</span>', false)
+            ->assertDontSee('Password <span class="text-danger">*</span>', false)
+            ->assertDontSee('Confirm Password <span class="text-danger">*</span>', false);
     });
 
     it('returns create view for transporter type', function () {
@@ -443,16 +451,36 @@ describe('store-validation', function () {
         $this->assertDatabaseHas('users', ['name' => 'SoftDelName', 'deleted_at' => null]);
     });
 
-    it('requires email', function () {
+    it('requires email for a normal user', function () {
         $actor = userCtrlActor();
         $this->actingAs($actor)
-            ->post(route('users.store', 'broker'), [
+            ->post(route('users.store', 'user'), [
                 'name'                  => 'NoEmailUser',
                 'phone_no'              => '9876543210',
                 'password'              => 'secret123',
                 'password_confirmation' => 'secret123',
             ])
             ->assertSessionHasErrors('email');
+    });
+
+    it('allows a broker to be stored without an email', function () {
+        userCtrlRole('broker');
+
+        $actor = userCtrlActor();
+        $this->actingAs($actor)
+            ->post(route('users.store', 'broker'), [
+                'name'                  => 'NoEmailBroker',
+                'phone_no'              => '9876543210',
+                'password'              => 'secret123',
+                'password_confirmation' => 'secret123',
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('users.index', 'broker'));
+
+        $this->assertDatabaseHas('users', [
+            'name'  => 'NoEmailBroker',
+            'email' => null,
+        ]);
     });
 
     it('rejects invalid email format', function () {
@@ -483,16 +511,35 @@ describe('store-validation', function () {
             ->assertSessionHasErrors('email');
     });
 
-    it('requires phone_no', function () {
+    it('requires phone_no for a normal user', function () {
         $actor = userCtrlActor();
         $this->actingAs($actor)
-            ->post(route('users.store', 'broker'), [
+            ->post(route('users.store', 'user'), [
                 'name'                  => 'NoPhoneUser',
                 'email'                 => 'nophone@example.com',
                 'password'              => 'secret123',
                 'password_confirmation' => 'secret123',
             ])
             ->assertSessionHasErrors('phone_no');
+    });
+
+    it('allows a broker to be stored without a phone number', function () {
+        userCtrlRole('broker');
+
+        $actor = userCtrlActor();
+        $this->actingAs($actor)
+            ->post(route('users.store', 'broker'), [
+                'name'                  => 'NoPhoneBroker',
+                'email'                 => 'nophonebroker@example.com',
+                'password'              => 'secret123',
+                'password_confirmation' => 'secret123',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('users', [
+            'name'     => 'NoPhoneBroker',
+            'phone_no' => null,
+        ]);
     });
 
     it('rejects phone_no shorter than 10 digits', function () {
@@ -553,15 +600,33 @@ describe('store-validation', function () {
             ->assertSessionHasNoErrors();
     });
 
-    it('requires password', function () {
+    it('requires password for a normal user', function () {
         $actor = userCtrlActor();
         $this->actingAs($actor)
-            ->post(route('users.store', 'broker'), [
+            ->post(route('users.store', 'user'), [
                 'name'     => 'NoPassUser',
                 'email'    => 'nopass@example.com',
                 'phone_no' => '9876543210',
             ])
             ->assertSessionHasErrors('password');
+    });
+
+    it('allows a broker to be stored without a password', function () {
+        userCtrlRole('broker');
+
+        $actor = userCtrlActor();
+        $this->actingAs($actor)
+            ->post(route('users.store', 'broker'), [
+                'name'     => 'NoPassBroker',
+                'email'    => 'nopassbroker@example.com',
+                'phone_no' => '9876543219',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $user = User::where('email', 'nopassbroker@example.com')->first();
+        expect($user)->not->toBeNull();
+        expect($user->password)->not->toBeEmpty();
+        expect($user->hasRole('broker'))->toBeTrue();
     });
 
     it('rejects password shorter than 6 characters', function () {
@@ -864,8 +929,12 @@ describe('edit', function () {
         $r3    = $this->actingAs($actor)->get(route('users.edit', ['type' => 'user', 'id' => $target->id]));
 
         $r1->assertViewHas('page_title', 'Edit Broker');
+        $r1->assertDontSee('Email <span class="text-danger">*</span>', false);
+        $r1->assertDontSee('Phone <span class="text-danger">*</span>', false);
         $r2->assertViewHas('page_title', 'Edit Transporter');
         $r3->assertViewHas('page_title', 'Edit User');
+        $r3->assertSee('Email <span class="text-danger">*</span>', false);
+        $r3->assertSee('Phone <span class="text-danger">*</span>', false);
     });
 
     it('does not throw 404 for non-existent user id (uses find not findOrFail)', function () {
@@ -1222,6 +1291,28 @@ describe('update-persistence', function () {
         $target->refresh();
         expect($target->hasRole('super admin'))->toBeTrue();
         expect($target->hasRole('admin'))->toBeFalse();
+    });
+
+    it('allows clearing email and phone on broker update', function () {
+        $brokerRole = userCtrlRole('broker');
+        $target     = userCtrlTarget([
+            'email'    => 'clearbroker@example.com',
+            'phone_no' => '9123456789',
+        ]);
+        $target->assignRole($brokerRole);
+
+        $actor = userCtrlActor();
+        $this->actingAs($actor)
+            ->put(route('users.update', ['type' => 'broker', 'id' => $target->id]), [
+                'name'   => $target->name,
+                'status' => '1',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $target->refresh();
+        expect($target->email)->toBeNull();
+        expect($target->phone_no)->toBeNull();
+        expect($target->hasRole('broker'))->toBeTrue();
     });
 
     it('broker type always syncs to broker role regardless of request', function () {

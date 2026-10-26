@@ -590,7 +590,7 @@ describe('store-validation', function () {
             ->assertJsonValidationErrors(['code_no']);
     });
 
-    it('fails when applicant_name is missing', function () {
+    it('allows a blank applicant name', function () {
         $state  = makeDealerState();
         $city   = makeDealerCity($state->id);
         $broker = makeBroker();
@@ -598,9 +598,16 @@ describe('store-validation', function () {
         $actor  = dealerActor(['add-dealer']);
 
         $this->actingAs($actor)
-            ->postJson(route('dealer.store'), dealerPayload($broker->id, $brand->id, $state->id, $city->id, ['applicant_name' => '']))
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['applicant_name']);
+            ->postJson(route('dealer.store'), dealerPayload($broker->id, $brand->id, $state->id, $city->id, [
+                'applicant_name' => '',
+                'email'          => 'blank-name@example.com',
+            ]))
+            ->assertOk();
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'blank-name@example.com',
+            'name'  => '',
+        ]);
     });
 
     it('fails when firm_shop_name is missing', function () {
@@ -629,7 +636,7 @@ describe('store-validation', function () {
             ->assertJsonValidationErrors(['firm_shop_address']);
     });
 
-    it('fails when mobile_no is missing', function () {
+    it('allows a blank mobile number', function () {
         $state  = makeDealerState();
         $city   = makeDealerCity($state->id);
         $broker = makeBroker();
@@ -637,9 +644,15 @@ describe('store-validation', function () {
         $actor  = dealerActor(['add-dealer']);
 
         $this->actingAs($actor)
-            ->postJson(route('dealer.store'), dealerPayload($broker->id, $brand->id, $state->id, $city->id, ['mobile_no' => '']))
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['mobile_no']);
+            ->postJson(route('dealer.store'), dealerPayload($broker->id, $brand->id, $state->id, $city->id, [
+                'mobile_no' => '',
+                'email'     => 'blank-mobile@example.com',
+            ]))
+            ->assertOk();
+
+        $dealer = User::where('email', 'blank-mobile@example.com')->first();
+        expect($dealer)->not->toBeNull()
+            ->and($dealer->phone_no)->toBeNull();
     });
 
     it('fails when mobile_no is not exactly 10 digits', function () {
@@ -722,7 +735,7 @@ describe('store-validation', function () {
             ->assertJsonValidationErrors(['email']);
     });
 
-    it('fails when password is missing', function () {
+    it('allows a blank password and stores an unusable hash', function () {
         $state  = makeDealerState();
         $city   = makeDealerCity($state->id);
         $broker = makeBroker();
@@ -731,11 +744,17 @@ describe('store-validation', function () {
 
         $this->actingAs($actor)
             ->postJson(route('dealer.store'), dealerPayload($broker->id, $brand->id, $state->id, $city->id, [
+                'email'                 => 'blank-password@example.com',
                 'password'              => '',
                 'password_confirmation' => '',
             ]))
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['password']);
+            ->assertOk();
+
+        $dealer = User::where('email', 'blank-password@example.com')->first();
+        expect($dealer)->not->toBeNull()
+            ->and($dealer->password)->not->toBeEmpty()
+            ->and(Hash::check('', $dealer->password))->toBeFalse()
+            ->and(Hash::check('secret123', $dealer->password))->toBeFalse();
     });
 
     it('fails when password confirmation does not match', function () {
@@ -1045,7 +1064,7 @@ describe('update-validation', function () {
             ->assertRedirect(route('dealer.index'));
     });
 
-    it('fails when applicant_name is empty on update', function () {
+    it('allows a blank applicant name and mobile number on update', function () {
         $state  = makeDealerState();
         $city   = makeDealerCity($state->id);
         $broker = makeBroker();
@@ -1054,13 +1073,17 @@ describe('update-validation', function () {
         $dealer = makeDealer($broker->id, $brand->id, $state->id, $city->id);
 
         $this->actingAs($actor)
-            ->putJson(route('dealer.update', $dealer), dealerPayload($broker->id, $brand->id, $state->id, $city->id, [
+            ->put(route('dealer.update', $dealer), dealerPayload($broker->id, $brand->id, $state->id, $city->id, [
                 'applicant_name'        => '',
+                'mobile_no'             => '',
                 'password'              => null,
                 'password_confirmation' => null,
             ]))
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['applicant_name']);
+            ->assertRedirect(route('dealer.index'));
+
+        $dealer->user->refresh();
+        expect($dealer->user->name)->toBe('')
+            ->and($dealer->user->phone_no)->toBeNull();
     });
 
     it('fails when mobile_no is not 10 digits on update', function () {
