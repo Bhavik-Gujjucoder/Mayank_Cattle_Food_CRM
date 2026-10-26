@@ -53,7 +53,7 @@
             <div class="wr-footer-card h-100">
                 <label class="wr-footer-label footer-hours-label">Production hours (÷ {{ number_format($bagsPerHour, 0, '.', '') }})</label>
                 <input type="number" class="form-control wr-footer-input footer-hours"
-                    min="0" step="0.01"
+                    step="0.01"
                     value="{{ number_format($hours, 2, '.', '') }}"
                     {{ $canEdit ? '' : 'readonly' }}>
                 <span class="wr-footer-hint">Auto-calculated; you may override</span>

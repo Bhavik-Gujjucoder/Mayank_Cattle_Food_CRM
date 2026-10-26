@@ -326,7 +326,7 @@ class WeeklyReportService
         }
 
         if ($hasHoursInput) {
-            $payload['production_hours'] = max(0, (float) $data['production_hours']);
+            $payload['production_hours'] = (float) $data['production_hours'];
         } else {
             $report->already_produced = $produced;
             $payload['production_hours'] = $report->calculatedProductionHours();

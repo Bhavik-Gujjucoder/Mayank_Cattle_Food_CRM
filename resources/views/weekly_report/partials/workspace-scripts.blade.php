@@ -47,7 +47,7 @@
         var produced = parseFloat($produced.val()) || 0;
         $block.find('.footer-already-produced-error').text('');
         $produced.removeAttr('max');
-        var diff = Math.max(0, total - produced);
+        var diff = total - produced;
         var bagsPerHour = getBagsPerHour($block);
         updateHoursLabel($block, bagsPerHour);
         var hours = opts.preserveHours

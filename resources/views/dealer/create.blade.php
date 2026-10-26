@@ -85,7 +85,7 @@
 
                     {{-- ── Applicant Name ──────────────────────────────── --}}
                     <div class="col-md-4 mb-3">
-                        <label class="col-form-label">Applicant Name <span class="text-danger">*</span></label>
+                        <label class="col-form-label">Applicant Name</label>
                         <input type="text" name="applicant_name" id="applicant_name" value="{{ old('applicant_name') }}"
                             class="form-control @error('applicant_name') is-invalid @enderror"
                             placeholder="Enter applicant name" maxlength="255">
@@ -177,7 +177,7 @@
 
                     {{-- ── Mobile No ───────────────────────────────────── --}}
                     <div class="col-md-4 mb-3">
-                        <label class="col-form-label">Mobile No <span class="text-danger">*</span></label>
+                        <label class="col-form-label">Mobile No</label>
                         <input type="text" name="mobile_no" id="mobile_no" value="{{ old('mobile_no') }}"
                             class="form-control @error('mobile_no') is-invalid @enderror"
                             placeholder="10-digit mobile number" maxlength="10"
@@ -211,7 +211,7 @@
                     <!-- Password Field -->
                     <div class="col-md-4 mb-3">
                         <div class="mb-3">
-                            <label class="col-form-label">Password <span class="text-danger">*</span></label>
+                            <label class="col-form-label">Password</label>
                             <div class="icon-form-end">
                                 <span class="form-icon gc-icon-set"><i class="ti ti-eye-off"></i></span>
                                 <input type="password" name="password"
@@ -231,7 +231,7 @@
                     <!-- Confirm Password Field -->
                     <div class="col-md-4 mb-3">
                         <div class="mb-3">
-                            <label class="col-form-label">Confirm Password <span class="text-danger">*</span></label>
+                            <label class="col-form-label">Confirm Password</label>
                             <div class="icon-form-end">
                                 <span class="form-icon"><i class="ti ti-eye-off"></i></span>
                                 <input type="password" name="password_confirmation"

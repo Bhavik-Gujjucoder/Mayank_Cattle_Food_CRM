@@ -176,18 +176,18 @@ class UserController extends Controller
     /* ------------------------------------------------------------------ */
     public function store(Request $request, $type)
     {
-        $isTransporter = $type === 'transporter';
+        $credentialsOptional = in_array($type, ['transporter', 'broker'], true);
 
         $request->validate([
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Image validation
             'name'     => 'required|string|max:255|unique:users,name,NULL,id,deleted_at,NULL',
-            'email'    => ($isTransporter ? 'nullable' : 'required') . '|email|unique:users,email,NULL,id,deleted_at,NULL',
+            'email'    => ($credentialsOptional ? 'nullable' : 'required') . '|email|unique:users,email,NULL,id,deleted_at,NULL',
             'role'     => [
                 'nullable',
                 Rule::exists('roles', 'id')->whereNot('name', 'super admin') // Exclude super admin
             ],
-            'phone_no' => ($isTransporter ? 'nullable' : 'required') . '|digits_between:10,11|unique:users,phone_no,NULL,id,deleted_at,NULL',
-            'password' => ($isTransporter ? 'nullable' : 'required') . '|min:6|confirmed',
+            'phone_no' => ($credentialsOptional ? 'nullable' : 'required') . '|digits_between:10,11|unique:users,phone_no,NULL,id,deleted_at,NULL',
+            'password' => ($credentialsOptional ? 'nullable' : 'required') . '|min:6|confirmed',
             'status'   => 'nullable|in:1,0'
         ], [
             'profile_picture.image' => 'The profile picture must be an image.',
@@ -367,13 +367,13 @@ class UserController extends Controller
     public function update(Request $request, $type = null, $id = null)
     {
         $user = User::find($id);
-        $isTransporter = $type === 'transporter';
+        $credentialsOptional = in_array($type, ['transporter', 'broker'], true);
 
         $request->validate([
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Image validation
             'name'            => 'required|string|max:255|unique:users,name,' . $user->id . ',id,deleted_at,NULL',
-            'email'           => ($isTransporter ? 'nullable' : 'required') . '|email|unique:users,email,' . $user->id . ',id,deleted_at,NULL',
-            'phone_no'        => ($isTransporter ? 'nullable' : 'required') . '|numeric|digits_between:10,11|unique:users,phone_no,' . $user->id . ',id,deleted_at,NULL',
+            'email'           => ($credentialsOptional ? 'nullable' : 'required') . '|email|unique:users,email,' . $user->id . ',id,deleted_at,NULL',
+            'phone_no'        => ($credentialsOptional ? 'nullable' : 'required') . '|numeric|digits_between:10,11|unique:users,phone_no,' . $user->id . ',id,deleted_at,NULL',
             'role'            => 'exists:roles,name',
             'password'        => ['nullable', 'string', 'min:6', 'confirmed'],
             'status'          => 'required|in:0,1',
