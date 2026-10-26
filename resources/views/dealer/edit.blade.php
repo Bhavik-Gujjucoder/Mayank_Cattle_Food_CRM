@@ -86,7 +86,7 @@
 
                     {{-- ── Applicant Name ──────────────────────────────── --}}
                     <div class="col-md-4 mb-3">
-                        <label class="col-form-label">Applicant Name <span class="text-danger">*</span></label>
+                        <label class="col-form-label">Applicant Name</label>
                         <input type="text" name="applicant_name" id="applicant_name"
                             value="{{ old('applicant_name', $dealer->user->name) }}"
                             class="form-control @error('applicant_name') is-invalid @enderror"
@@ -159,7 +159,7 @@
 
                     {{-- ── Mobile No ───────────────────────────────────── --}}
                     <div class="col-md-4 mb-3">
-                        <label class="col-form-label">Mobile No <span class="text-danger">*</span></label>
+                        <label class="col-form-label">Mobile No</label>
                         <input type="text" name="mobile_no" id="mobile_no"
                             value="{{ old('mobile_no', $dealer->user->phone_no) }}"
                             class="form-control @error('mobile_no') is-invalid @enderror"

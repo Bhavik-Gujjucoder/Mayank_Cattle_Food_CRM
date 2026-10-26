@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Can;
 use Yajra\DataTables\DataTables;
 
@@ -32,16 +33,16 @@ class DealerManagementController extends Controller
             'broker_id'         => ActiveDropdownValidation::brokerId(),
             'brand_id'          => ActiveDropdownValidation::brandId(),
             'code_no'           => 'required|string|max:20|unique:dealer_management,code_no,' . $ignoreId,
-            'applicant_name'    => 'required|string|max:255',
+            'applicant_name'    => 'nullable|string|max:255',
             'firm_shop_name'    => 'required|string|max:255',
             'firm_shop_address' => 'required|string|max:500',
-            'mobile_no'         => 'required|digits:10|unique:users,phone_no,' . $ignoreId . ',id,deleted_at,NULL',
+            'mobile_no'         => 'nullable|digits:10|unique:users,phone_no,' . $ignoreId . ',id,deleted_at,NULL',
             'pancard'           => 'nullable|string|size:10|regex:/^[A-Z]{5}[0-9]{4}[A-Z]$/i',
             'gstin'             => 'nullable|string|size:15',
             'aadhar_card'       => 'nullable|digits:12',
 
             'email'             => 'nullable|email|unique:users,email,' . $ignoreId . ',id,deleted_at,NULL',
-            'password'          => 'required|min:6|confirmed',
+            'password'          => 'nullable|min:6|confirmed',
             'state_id'          => 'required',
             'city_id'           => 'required',
             'postal_code'       => 'nullable|string|max:6',
@@ -58,10 +59,10 @@ class DealerManagementController extends Controller
             'broker_id'         => ActiveDropdownValidation::brokerId(),
             'brand_id'          => ActiveDropdownValidation::brandId(),
             'code_no'           => 'required|string|max:20|unique:dealer_management,code_no,' . $dealerId,
-            'applicant_name'    => 'required|string|max:255',
+            'applicant_name'    => 'nullable|string|max:255',
             'firm_shop_name'    => 'required|string|max:255',
             'firm_shop_address' => 'required|string|max:500',
-            'mobile_no'         => 'required|digits:10|unique:users,phone_no,' . $userId . ',id,deleted_at,NULL',
+            'mobile_no'         => 'nullable|digits:10|unique:users,phone_no,' . $userId . ',id,deleted_at,NULL',
             'pancard'           => 'nullable|string|size:10|regex:/^[A-Z]{5}[0-9]{4}[A-Z]$/i',
             'gstin'             => 'nullable|string|size:15',
             'aadhar_card'       => 'nullable|digits:12',
@@ -311,10 +312,10 @@ class DealerManagementController extends Controller
 
         $user = User::create([
             'profile_picture' => $profileImage,
-            'name'     => $request->applicant_name,
-            'email'    => $request->email ?? null,
-            'phone_no' => $request->mobile_no,
-            'password' => Hash::make($request->password),
+            'name'     => $request->applicant_name ?: '',
+            'email'    => $request->email ?: null,
+            'phone_no' => $request->mobile_no ?: null,
+            'password' => Hash::make($request->filled('password') ? $request->password : Str::random(32)),
             'status'   => 1,
         ]);
         $user->assignRole('dealer');
@@ -402,9 +403,9 @@ class DealerManagementController extends Controller
 
         $user = [
             'profile_picture' => $profileImage,
-            'name'            => $request->applicant_name,
-            'email'           => $request->email,
-            'phone_no'        => $request->mobile_no,
+            'name'            => $request->applicant_name ?: '',
+            'email'           => $request->email ?: null,
+            'phone_no'        => $request->mobile_no ?: null,
         ];
         if ($request->filled('password')) {
             $user['password'] = Hash::make($request->password);

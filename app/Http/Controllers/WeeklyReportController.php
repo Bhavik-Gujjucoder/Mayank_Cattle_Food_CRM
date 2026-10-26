@@ -254,7 +254,7 @@ class WeeklyReportController extends Controller
     {
         $validated = $request->validate([
             'already_produced' => 'required|numeric|min:0',
-            'production_hours' => 'nullable|numeric|min:0',
+            'production_hours' => 'nullable|numeric',
             'bags_per_hour'    => 'nullable|numeric|min:0.01',
         ]);
 

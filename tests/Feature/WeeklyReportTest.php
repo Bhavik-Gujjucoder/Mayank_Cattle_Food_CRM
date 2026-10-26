@@ -236,7 +236,8 @@ it('allows ready stock greater than total quantity including when total is zero'
     ]);
 
     expect((float) $updatedEmpty->already_produced)->toBe(40.0);
-    expect($updatedEmpty->differenceInBags())->toBe(0.0);
+    expect($updatedEmpty->differenceInBags())->toBe(-40.0);
+    expect(round($updatedEmpty->calculatedProductionHours(), 4))->toBe(round(-40 / 135, 4));
 
     $report = WeeklyReport::create([
         'report_date' => '2026-07-09',
@@ -259,7 +260,8 @@ it('allows ready stock greater than total quantity including when total is zero'
     ]);
 
     expect((float) $updated->already_produced)->toBe(150.0);
-    expect($updated->differenceInBags())->toBe(0.0);
+    expect($updated->differenceInBags())->toBe(-50.0);
+    expect(round($updated->calculatedProductionHours(), 4))->toBe(round(-50 / 135, 4));
 });
 
 it('limits weekly report qty by remaining after other pending reservations', function () {
