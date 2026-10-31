@@ -167,7 +167,9 @@ describe('store — persistence', function () {
         $this->actingAs(stateTestUser(['add-state']))
             ->postJson(route('state.store'), ['state_name' => 'Rajasthan', 'status' => 1])
             ->assertOk()
-            ->assertJson(['success' => true, 'message' => 'State created successfully']);
+            ->assertJson(['success' => true, 'message' => 'State created successfully'])
+            ->assertJsonPath('state.state_name', 'Rajasthan')
+            ->assertJsonPath('state.status', 1);
 
         $this->assertDatabaseHas('state_management', ['state_name' => 'Rajasthan', 'status' => 1]);
     });

@@ -391,6 +391,18 @@ describe('create', function () {
             ->assertViewHas('code_no');
     });
 
+    it('shows add state and add city links when the user can create them', function () {
+        $actor = dealerActor(['add-state', 'add-city']);
+
+        $this->actingAs($actor)
+            ->get(route('dealer.create'))
+            ->assertOk()
+            ->assertSee('id="addDealerStateLink"', false)
+            ->assertSee('Add State', false)
+            ->assertSee('id="addDealerCityLink"', false)
+            ->assertSee('Add City', false);
+    });
+
     it('auto-generated code_no follows MCF + 6-digit zero-padded format', function () {
         $actor = dealerActor();
         $response = $this->actingAs($actor)->get(route('dealer.create'));
@@ -1007,6 +1019,23 @@ describe('edit', function () {
             ->get(route('dealer.edit', 99999))
             ->assertNotFound();
     });
+
+    it('shows add state and add city links when the user can create them', function () {
+        $state  = makeDealerState();
+        $city   = makeDealerCity($state->id);
+        $broker = makeBroker();
+        $brand  = makeDealerBrand();
+        $actor  = dealerActor(['add-state', 'add-city']);
+        $dealer = makeDealer($broker->id, $brand->id, $state->id, $city->id);
+
+        $this->actingAs($actor)
+            ->get(route('dealer.edit', $dealer))
+            ->assertOk()
+            ->assertSee('id="addDealerStateLink"', false)
+            ->assertSee('Add State', false)
+            ->assertSee('id="addDealerCityLink"', false)
+            ->assertSee('Add City', false);
+    });
 });
 
 // ─────────────────────────────────────────────
@@ -1421,7 +1450,7 @@ describe('getDealersByBrokerBrand', function () {
 
     it('returns dealer response with expected JSON structure', function () {
         $state  = makeDealerState();
-        $city   = makeDealerCity($state->id);
+        $city   = makeDealerCity($state->id, ['city_name' => 'Ahmedabad']);
         $broker = makeBroker();
         $brand  = makeDealerBrand();
         $actor  = dealerActor();
@@ -1434,6 +1463,7 @@ describe('getDealersByBrokerBrand', function () {
         expect($response->json('0'))->toMatchArray([
             'firm_shop_name'    => 'TestFirm',
             'firm_shop_address' => 'TestAddr',
+            'city_name'         => 'Ahmedabad',
         ]);
     });
 });
