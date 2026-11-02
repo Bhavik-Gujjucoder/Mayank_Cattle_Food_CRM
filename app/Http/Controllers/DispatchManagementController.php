@@ -14,8 +14,10 @@ use App\Support\ProductUnit;
 use App\Support\SalesScope;
 use App\Services\PaymentReceivableService;
 use App\Services\SequentialDispatchService;
+use App\Services\WeeklyReportService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Yajra\DataTables\DataTables;
@@ -23,7 +25,8 @@ use Yajra\DataTables\DataTables;
 class DispatchManagementController extends Controller
 {
     public function __construct(
-        protected SequentialDispatchService $sequentialDispatch
+        protected SequentialDispatchService $sequentialDispatch,
+        protected WeeklyReportService $weeklyReports,
     ) {
         $this->middleware('permission:view-dispatch')->only(['index', 'show']);
         $this->middleware('permission:add-dispatch')->only(['create']);
@@ -313,13 +316,21 @@ class DispatchManagementController extends Controller
         SalesScope::authorizeDispatchAccess($dispatch);
 
         $orderId = $dispatch->order_id;
-        $dispatch->delete();
+        $restoredDailyDispatch = (bool) $dispatch->weekly_report_item_id;
 
-        $this->syncOrderPaymentFromDispatches($dispatch);
+        DB::transaction(function () use ($dispatch) {
+            $this->weeklyReports->recreatePendingFromDeletedDispatch($dispatch);
+            $dispatch->delete();
+            $this->syncOrderPaymentFromDispatches($dispatch);
+        });
+
+        $message = $restoredDailyDispatch
+            ? 'Dispatch entry deleted. The same row was added back to Daily Dispatch as pending.'
+            : 'Dispatch entry deleted successfully.';
 
         return redirect()
             ->route('dispatch.orderHistory', $orderId)
-            ->with('success', 'Dispatch entry deleted successfully.');
+            ->with('success', $message);
     }
 
     /* ------------------------------------------------------------------ */

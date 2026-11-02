@@ -16,6 +16,7 @@ class RawMaterialOrder extends Model
     protected $casts = [
         'order_date'      => 'date',
         'advance_payment' => 'decimal:2',
+        'total_qty'       => 'float',
     ];
 
     /** Remaining payable against order total including extra qty with tax (excludes freight). */
@@ -24,13 +25,13 @@ class RawMaterialOrder extends Model
         return max(0, (float) $this->total_price - (float) $this->advance_payment);
     }
 
-    public function extraQtyTotal(): int
+    public function extraQtyTotal(): float
     {
         if ($this->relationLoaded('items')) {
-            return (int) $this->items->sum('extra_qty');
+            return rmQty($this->items->sum('extra_qty'));
         }
 
-        return (int) $this->items()->sum('extra_qty');
+        return rmQty($this->items()->sum('extra_qty'));
     }
 
     public function supplier(): BelongsTo

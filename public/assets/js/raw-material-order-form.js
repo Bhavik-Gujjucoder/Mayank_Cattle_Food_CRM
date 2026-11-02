@@ -136,6 +136,11 @@
             });
         }
 
+        function formatQtyDisplay(n) {
+            var rounded = Math.round((Number(n) || 0) * 1000) / 1000;
+            return rounded.toLocaleString(undefined, { maximumFractionDigits: 3 });
+        }
+
         function rowMaterialTotal(qty, price) {
             return (parseFloat(qty) || 0) * 1000 * (parseFloat(price) || 0);
         }
@@ -161,7 +166,7 @@
                 totalQty += qty;
                 grandTotal += lineTotal;
             });
-            $('#display_total_qty').text(totalQty);
+            $('#display_total_qty').text(formatQtyDisplay(totalQty));
             $('#display_grand_total').text(grandTotal.toFixed(2));
         }
 
@@ -266,11 +271,12 @@
                 var materialId = $row.find('.material-select').val();
                 var qty = $.trim($row.find('.qty-field').val());
                 var price = $.trim($row.find('.price-field').val());
+                var qtyNum = parseFloat(qty);
 
-                if (!categoryId || !materialId || !qty || !price) {
+                if (!categoryId || !materialId || !qty || !(qtyNum > 0) || !price) {
                     if (!categoryId) rmSetInvalid($row.find('.category-select'), true);
                     if (!materialId) rmSetInvalid($row.find('.material-select'), true);
-                    if (!qty) rmSetInvalid($row.find('.qty-field'), true);
+                    if (!qty || !(qtyNum > 0)) rmSetInvalid($row.find('.qty-field'), true);
                     if (!price) rmSetInvalid($row.find('.price-field'), true);
                     $row.next('.item-row-error').show();
                     isValid = false;

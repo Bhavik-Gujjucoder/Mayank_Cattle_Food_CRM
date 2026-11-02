@@ -38,7 +38,7 @@ class OrderDetailsSheet implements FromCollection, WithHeadings, WithStyles, Wit
             $this->order->supplier_order_id ?? '—',
             $this->order->order_date?->format('d-m-Y') ?? '—',
             $this->order->price_basis ?? '—',
-            $this->order->total_qty,
+            rmQty($this->order->total_qty),
             $this->order->extraQtyTotal(),
             number_format((float) $this->order->total_price, 2),
             number_format((float) $this->order->advance_payment, 2),

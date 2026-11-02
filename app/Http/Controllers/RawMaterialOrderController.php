@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\RawMaterialFullExport;
+use App\Exports\RawMaterialOrderImportSampleExport;
 use App\Exports\RawMaterialOrderSingleExport;
 use App\Exports\RawMaterialOrdersExport;
 use App\Http\Controllers\Concerns\ExportsExcel;
@@ -19,9 +20,11 @@ use App\Models\SupplierBroker;
 use App\Support\RawMaterialOrderPriceBasis;
 use App\Services\RawMaterial\RawMaterialFilterService;
 use App\Services\RawMaterialIdGenerator;
+use App\Services\RawMaterialOrderBulkImportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\DataTables;
@@ -51,7 +54,7 @@ class RawMaterialOrderController extends Controller
                 ->addColumn('supplier_name', fn($row) => e($row->supplier?->name ?? '—'))
                 ->editColumn('price_basis', fn($row) => e($row->price_basis ?: '—'))
                 ->editColumn('order_date', fn($row) => $row->order_date?->format('d M Y') ?? '—')
-                ->editColumn('total_qty', fn($row) => number_format($row->total_qty) . ' tons')
+                ->editColumn('total_qty', fn($row) => rmQtyFormat($row->total_qty) . ' tons')
                 ->editColumn('total_price', fn($row) => '₹ ' . number_format($row->total_price, 2))
                 ->editColumn('advance_payment', fn($row) => '₹ ' . number_format((float) $row->advance_payment, 2))
                 ->editColumn('total_freight', fn($row) => '₹ ' . number_format($row->total_freight, 2))
@@ -93,6 +96,32 @@ class RawMaterialOrderController extends Controller
         return view('raw_material_order.create', $data);
     }
 
+    public function downloadImportSample()
+    {
+        return Excel::download(new RawMaterialOrderImportSampleExport(), 'raw-material-order-import-sample.xlsx');
+    }
+
+    public function import(Request $request, RawMaterialOrderBulkImportService $importer)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+        ], [
+            'file.required' => 'Please choose an Excel file.',
+            'file.mimes' => 'Upload an .xlsx, .xls, or .csv file.',
+        ]);
+
+        try {
+            $result = $importer->import($request->file('file'));
+        } catch (ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->implode("\n"));
+        }
+
+        return redirect()->route('raw-material.order.index')->with(
+            'success',
+            $result['created'] . ' order(s) imported: ' . implode(', ', $result['ids'])
+        );
+    }
+
     public function store(StoreRawMaterialOrderRequest $request)
     {
         DB::transaction(function () use ($request) {
@@ -109,7 +138,7 @@ class RawMaterialOrderController extends Controller
             foreach ($request->raw_material_id as $i => $materialId) {
                 $order->items()->create([
                     'raw_material_id' => $materialId,
-                    'total_qty'       => $request->total_qty[$i],
+                    'total_qty'       => rmQty($request->total_qty[$i]),
                     'price'           => $request->price[$i],
                     'tax_percent'     => $request->tax_percent[$i] ?? 0,
                     'other_expense'   => $request->other_expense[$i] ?? 0,
@@ -144,7 +173,7 @@ class RawMaterialOrderController extends Controller
             'old_rows'   => $raw_material_order->items->map(fn($item) => [
                 'category_id'   => $item->rawMaterial?->raw_material_category_id,
                 'material_id'   => $item->raw_material_id,
-                'qty'           => $item->total_qty,
+                'qty'           => rmQtyInput($item->total_qty),
                 'price'         => number_format((float) $item->price, 2, '.', ''),
                 'tax_percent'   => number_format((float) $item->tax_percent, 2, '.', ''),
                 'other_expense' => number_format((float) $item->other_expense, 2, '.', ''),
@@ -176,7 +205,7 @@ class RawMaterialOrderController extends Controller
             foreach ($request->raw_material_id as $i => $materialId) {
                 $raw_material_order->items()->create([
                     'raw_material_id' => $materialId,
-                    'total_qty'       => $request->total_qty[$i],
+                    'total_qty'       => rmQty($request->total_qty[$i]),
                     'price'           => $request->price[$i],
                     'tax_percent'     => $request->tax_percent[$i] ?? 0,
                     'other_expense'   => $request->other_expense[$i] ?? 0,
@@ -245,7 +274,7 @@ class RawMaterialOrderController extends Controller
                 $excludeQty = ($excludeReceive
                     && (int) $excludeReceive->raw_material_order_item_id === (int) $item->id
                     && (int) $excludeReceive->raw_material_order_id === (int) $item->raw_material_order_id)
-                    ? (int) $excludeReceive->qty
+                    ? rmQty($excludeReceive->qty)
                     : 0;
 
                 $pipelineQty      = \App\Services\RawMaterialCacheService::itemPipelineQty($item);
@@ -254,13 +283,13 @@ class RawMaterialOrderController extends Controller
                 return [
                     'id'                => $item->id,
                     'label'             => ($item->rawMaterial?->name ?? '—')
-                        . ' (Pending: ' . $orderedRemaining . ' tons)',
+                        . ' (Pending: ' . rmQtyFormat($orderedRemaining) . ' tons)',
                     'raw_material_id'   => $item->raw_material_id,
                     'pending_qty'       => $orderedRemaining,
-                    'total_qty'         => (int) $item->total_qty,
-                    'pipeline_qty'      => max(0, $pipelineQty - $excludeQty),
+                    'total_qty'         => rmQty($item->total_qty),
+                    'pipeline_qty'      => max(0, rmQty($pipelineQty - $excludeQty)),
                     'ordered_remaining' => $orderedRemaining,
-                    'extra_qty'         => (int) $item->extra_qty,
+                    'extra_qty'         => rmQty($item->extra_qty),
                 ];
             })
             ->filter(function (array $row) use ($excludeReceive) {

@@ -189,10 +189,10 @@ test('daily summary row qty math matches spreadsheet split', function () {
     $summary = app(RawMaterialDailySummaryService::class)->build();
     $row = $summary['rows']->first();
 
-    expect($row['total_qty'])->toBe(200)
-        ->and($row['on_road_qty'])->toBe(50)
-        ->and($row['pending_qty'])->toBe(150)
-        ->and($row['on_road_qty'] + $row['unloading_qty'] + $row['pending_qty'])->toBe(200);
+    expect($row['total_qty'])->toEqual(200)
+        ->and($row['on_road_qty'])->toEqual(50)
+        ->and($row['pending_qty'])->toEqual(150)
+        ->and($row['on_road_qty'] + $row['unloading_qty'] + $row['pending_qty'])->toEqual(200);
 });
 
 test('daily summary footer totals aggregate open items', function () {
@@ -204,10 +204,10 @@ test('daily summary footer totals aggregate open items', function () {
 
     $summary = app(RawMaterialDailySummaryService::class)->build();
 
-    expect($summary['totals']['ordered_qty'])->toBe(200)
-        ->and($summary['totals']['unloading_qty'])->toBe(50)
-        ->and($summary['totals']['pending']['qty'])->toBe(150)
-        ->and($summary['totals']['received']['qty'])->toBe(50);
+    expect($summary['totals']['ordered_qty'])->toEqual(200)
+        ->and($summary['totals']['unloading_qty'])->toEqual(50)
+        ->and($summary['totals']['pending']['qty'])->toEqual(150)
+        ->and($summary['totals']['received']['qty'])->toEqual(50);
 });
 
 test('daily summary material filter excludes other materials', function () {

@@ -1338,6 +1338,84 @@ describe('deleteCheck', function () {
             ->and($response->json('dispatched_items'))->toHaveCount(1);
     });
 
+    it('returns can_delete=false when a live daily dispatch row exists', function () {
+        $brand = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $product = mkOrdProduct($brand->id);
+        $order = mkOrder($broker->id, $brand->id, $dealer->id);
+        $item = mkOrderItem($order->id, $product->id);
+        $actor = ordActor(['view-order']);
+        $report = WeeklyReport::create([
+            'report_date' => '2026-07-09',
+            'already_produced' => 0,
+            'created_by' => $actor->id,
+        ]);
+        WeeklyReportItem::create([
+            'weekly_report_id' => $report->id,
+            'sort_order' => 1,
+            'order_id' => $order->id,
+            'order_item_id' => $item->id,
+            'product_id' => $product->id,
+            'quantity' => 4,
+            'status' => WeeklyReportItem::STATUS_PENDING,
+        ]);
+
+        $response = actingAs($actor)
+            ->getJson(route('order.deleteCheck', $order))
+            ->assertOk();
+
+        expect($response->json('can_delete'))->toBeFalse()
+            ->and($response->json('has_daily_dispatch'))->toBeTrue()
+            ->and($response->json('dispatched_items'))->toBeEmpty();
+    });
+
+    it('returns can_delete=true when dispatch and daily dispatch rows are soft-deleted', function () {
+        $brand = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $product = mkOrdProduct($brand->id);
+        $order = mkOrder($broker->id, $brand->id, $dealer->id);
+        $item = mkOrderItem($order->id, $product->id);
+        $actor = ordActor(['view-order']);
+        $transporter = User::factory()->create(['status' => 1]);
+        $dispatch = DispatchManagement::create([
+            'order_id' => $order->id,
+            'order_item_id' => $item->id,
+            'product_id' => $product->id,
+            'no_of_bags' => 5,
+            'dispatch_date' => '2026-01-15',
+            'transport_id' => $transporter->id,
+            'truck_number' => 'GJ01AA1234',
+            'driver_contact' => '9876543210',
+            'status' => 0,
+            'accrued_late_fee' => 0,
+        ]);
+        $dispatch->delete();
+        $report = WeeklyReport::create([
+            'report_date' => '2026-07-09',
+            'already_produced' => 0,
+            'created_by' => $actor->id,
+        ]);
+        $weeklyItem = WeeklyReportItem::create([
+            'weekly_report_id' => $report->id,
+            'sort_order' => 1,
+            'order_id' => $order->id,
+            'order_item_id' => $item->id,
+            'product_id' => $product->id,
+            'quantity' => 4,
+            'status' => WeeklyReportItem::STATUS_CONFIRMED,
+        ]);
+        $weeklyItem->delete();
+
+        $response = actingAs($actor)
+            ->getJson(route('order.deleteCheck', $order))
+            ->assertOk();
+
+        expect($response->json('can_delete'))->toBeTrue()
+            ->and($response->json('has_daily_dispatch'))->toBeFalse();
+    });
+
     it('returns 403 when broker tries to check another broker\'s order', function () {
         $brand = mkOrdBrand();
         $broker1 = mkOrdBroker();
@@ -1424,7 +1502,7 @@ describe('destroy', function () {
             ->assertRedirect(route('order.index'));
     });
 
-    it('deletes pending weekly report rows when order is destroyed', function () {
+    it('blocks deletion when order has a live daily dispatch row', function () {
         $brand = mkOrdBrand();
         $broker = mkOrdBroker();
         $dealer = mkOrdDealer($broker->id, $brand->id);
@@ -1447,10 +1525,55 @@ describe('destroy', function () {
             'status' => WeeklyReportItem::STATUS_PENDING,
         ]);
 
+        actingAs($actor)
+            ->delete(route('order.destroy', $order))
+            ->assertRedirect(route('order.index'));
+
+        expect(OrderManagement::find($order->id))->not->toBeNull();
+        expect(WeeklyReportItem::find($weeklyItem->id))->not->toBeNull();
+    });
+
+    it('allows deletion when dispatch and daily dispatch rows are soft-deleted', function () {
+        $brand = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $product = mkOrdProduct($brand->id);
+        $order = mkOrder($broker->id, $brand->id, $dealer->id);
+        $item = mkOrderItem($order->id, $product->id);
+        $actor = ordActor(['delete-order']);
+        $transporter = User::factory()->create(['status' => 1]);
+        $dispatch = DispatchManagement::create([
+            'order_id' => $order->id,
+            'order_item_id' => $item->id,
+            'product_id' => $product->id,
+            'no_of_bags' => 3,
+            'dispatch_date' => '2026-01-15',
+            'transport_id' => $transporter->id,
+            'truck_number' => 'GJ01AA1234',
+            'driver_contact' => '9876543210',
+            'status' => 0,
+            'accrued_late_fee' => 0,
+        ]);
+        $dispatch->delete();
+        $report = WeeklyReport::create([
+            'report_date' => '2026-07-09',
+            'already_produced' => 0,
+            'created_by' => $actor->id,
+        ]);
+        $weeklyItem = WeeklyReportItem::create([
+            'weekly_report_id' => $report->id,
+            'sort_order' => 1,
+            'order_id' => $order->id,
+            'order_item_id' => $item->id,
+            'product_id' => $product->id,
+            'quantity' => 10,
+            'status' => WeeklyReportItem::STATUS_CONFIRMED,
+        ]);
+        $weeklyItem->delete();
+
         actingAs($actor)->delete(route('order.destroy', $order));
 
-        assertSoftDeleted('weekly_report_items', ['id' => $weeklyItem->id]);
-        assertSoftDeleted('order_items', ['id' => $item->id]);
+        assertSoftDeleted('order_management', ['id' => $order->id]);
     });
 
     it('blocks deletion when order has confirmed weekly report rows', function () {
@@ -1821,5 +1944,130 @@ describe('model-methods', function () {
 
         $order = OrderManagement::with('items')->find($order->id);
         expect($order->weightedAvgUnitPrice())->toBe(100.0);
+    });
+});
+
+function orderImportFile(array $rows): \Illuminate\Http\UploadedFile
+{
+    $headings = \App\Exports\OrderImportSampleExport::headings();
+    $sheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $sheet->getActiveSheet()->fromArray(array_merge([$headings], $rows), null, 'A1');
+    $path = tempnam(sys_get_temp_dir(), 'ordimp') . '.xlsx';
+    (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($sheet))->save($path);
+
+    return new \Illuminate\Http\UploadedFile(
+        $path,
+        'soda-orders.xlsx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        null,
+        true
+    );
+}
+
+describe('order import', function () {
+    it('downloads the sample workbook', function () {
+        $actor = ordActor(['add-order']);
+
+        $response = actingAs($actor)
+            ->get(route('order.import-sample'))
+            ->assertOk()
+            ->assertDownload('soda-order-import-sample.xlsx');
+
+        $path = tempnam(sys_get_temp_dir(), 'ordsample');
+        file_put_contents($path, $response->streamedContent());
+        $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path)->getSheetByName('Orders');
+
+        expect($sheet->getComment('C1')->getText()->getPlainText())->toContain('broker name')
+            ->and($sheet->getComment('E1')->getText()->getPlainText())->toContain('dealer code');
+    });
+
+    it('imports two product lines as one order', function () {
+        $brand = mkOrdBrand(['name' => 'Import Brand']);
+        $broker = mkOrdBroker(['name' => 'Import Broker']);
+        $dealer = mkOrdDealer($broker->id, $brand->id, null, ['code_no' => 'IMP-D1']);
+        $feed = mkOrdProduct($brand->id, ['name' => 'Import Feed']);
+        $mash = mkOrdProduct($brand->id, ['name' => 'Import Mash']);
+        $actor = ordActor(['add-order']);
+
+        $file = orderImportFile([
+            ['1', '2026-11-02', 'Import Broker', 'Import Brand', 'IMP-D1', 'Shop road', 'unpaid', 'credit', '', 'Import Feed', 40, 800],
+            ['1', '2026-11-02', 'Import Broker', 'Import Brand', 'IMP-D1', 'Shop road', 'unpaid', 'credit', '', 'Import Mash', 10, 500],
+        ]);
+
+        actingAs($actor)
+            ->post(route('order.import'), ['file' => $file])
+            ->assertRedirect(route('order.index'));
+
+        $order = OrderManagement::first();
+        expect($order)->not->toBeNull()
+            ->and($order->unique_order_id)->toStartWith('ORD/2026-27/')
+            ->and((int) $order->dealer_id)->toBe((int) $dealer->id)
+            ->and($order->items)->toHaveCount(2)
+            ->and((int) $order->items->firstWhere('product_id', $feed->id)->qty)->toBe(40)
+            ->and((float) $order->grand_total)->toBe(37000.0);
+    });
+
+    it('imports nothing when a product name does not match', function () {
+        $brand = mkOrdBrand(['name' => 'Import Brand']);
+        $broker = mkOrdBroker(['name' => 'Import Broker']);
+        mkOrdDealer($broker->id, $brand->id, null, ['code_no' => 'IMP-D1']);
+        mkOrdProduct($brand->id, ['name' => 'Import Feed']);
+        $actor = ordActor(['add-order']);
+
+        $file = orderImportFile([
+            ['1', '2026-11-02', 'Import Broker', 'Import Brand', 'IMP-D1', 'Shop road', 'unpaid', 'cash', '', 'Missing Feed', 5, 100],
+        ]);
+
+        actingAs($actor)
+            ->from(route('order.index'))
+            ->post(route('order.import'), ['file' => $file])
+            ->assertRedirect(route('order.index'))
+            ->assertSessionHas('error');
+
+        expect(OrderManagement::count())->toBe(0);
+    });
+
+    it('allows the same product on two order groups', function () {
+        $brand = mkOrdBrand(['name' => 'Import Brand']);
+        $broker = mkOrdBroker(['name' => 'Import Broker']);
+        mkOrdDealer($broker->id, $brand->id, null, ['code_no' => 'IMP-D1']);
+        $feed = mkOrdProduct($brand->id, ['name' => 'Import Feed']);
+        $actor = ordActor(['add-order']);
+
+        $file = orderImportFile([
+            ['1', '2026-11-02', 'Import Broker', 'Import Brand', 'IMP-D1', 'Shop road', 'unpaid', 'credit', '', 'Import Feed', 40, 800],
+            ['2', '2026-11-03', 'Import Broker', 'Import Brand', 'IMP-D1', 'Other road', 'paid', 'cash', '', 'Import Feed', 5, 700],
+        ]);
+
+        actingAs($actor)
+            ->post(route('order.import'), ['file' => $file])
+            ->assertRedirect(route('order.index'));
+
+        expect(OrderManagement::count())->toBe(2);
+        $lines = \App\Models\OrderItem::where('product_id', $feed->id)->get();
+        expect($lines)->toHaveCount(2)
+            ->and($lines->pluck('order_id')->unique())->toHaveCount(2);
+    });
+
+    it('allows the same product twice inside one order group', function () {
+        $brand = mkOrdBrand(['name' => 'Import Brand']);
+        $broker = mkOrdBroker(['name' => 'Import Broker']);
+        mkOrdDealer($broker->id, $brand->id, null, ['code_no' => 'IMP-D1']);
+        $feed = mkOrdProduct($brand->id, ['name' => 'Import Feed']);
+        $actor = ordActor(['add-order']);
+
+        $file = orderImportFile([
+            ['1', '2026-11-02', 'Import Broker', 'Import Brand', 'IMP-D1', 'Shop road', 'unpaid', 'credit', '', 'Import Feed', 40, 800],
+            ['1', '2026-11-02', 'Import Broker', 'Import Brand', 'IMP-D1', 'Shop road', 'unpaid', 'credit', '', 'Import Feed', 10, 750],
+        ]);
+
+        actingAs($actor)
+            ->post(route('order.import'), ['file' => $file])
+            ->assertRedirect(route('order.index'));
+
+        $order = OrderManagement::with('items')->first();
+        expect(OrderManagement::count())->toBe(1)
+            ->and($order->items)->toHaveCount(2)
+            ->and($order->items->where('product_id', $feed->id))->toHaveCount(2);
     });
 });

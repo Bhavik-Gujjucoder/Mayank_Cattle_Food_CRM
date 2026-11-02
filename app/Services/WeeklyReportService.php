@@ -257,6 +257,54 @@ class WeeklyReportService
             ->exists();
     }
 
+    /** Live Daily Dispatch rows only. Soft-deleted rows are excluded. */
+    public function orderHasLiveItems(int $orderId): bool
+    {
+        return WeeklyReportItem::query()
+            ->where('order_id', $orderId)
+            ->exists();
+    }
+
+    /**
+     * Soft-delete the confirmed Daily Dispatch row that created this dispatch,
+     * then insert the same row again as pending (no new dispatch).
+     */
+    public function recreatePendingFromDeletedDispatch(DispatchManagement $dispatch): void
+    {
+        if (! $dispatch->weekly_report_item_id) {
+            return;
+        }
+
+        $source = WeeklyReportItem::withTrashed()->find($dispatch->weekly_report_item_id);
+        if (! $source) {
+            return;
+        }
+
+        $reportExists = WeeklyReport::withTrashed()->whereKey($source->weekly_report_id)->exists();
+        if (! $reportExists) {
+            return;
+        }
+
+        WeeklyReportItem::create([
+            'weekly_report_id' => $source->weekly_report_id,
+            'sort_order'       => $source->sort_order,
+            'order_id'         => $source->order_id,
+            'order_item_id'    => $source->order_item_id,
+            'product_id'       => $source->product_id,
+            'quantity'         => $source->quantity,
+            'transport_id'     => $source->transport_id,
+            'truck_number'     => $source->truck_number,
+            'driver_contact'   => $source->driver_contact,
+            'note'             => $source->note,
+            'status'           => WeeklyReportItem::STATUS_PENDING,
+            'dispatch_id'      => null,
+        ]);
+
+        if (! $source->trashed()) {
+            $source->delete();
+        }
+    }
+
     public function orderItemHasConfirmedItems(int $orderItemId): bool
     {
         return WeeklyReportItem::query()
@@ -565,9 +613,10 @@ class WeeklyReportService
                 'dispatch_date'       => $item->report->report_date->toDateString(),
                 'transport_id'        => $item->transport_id,
                 'truck_number'        => $item->truck_number,
-                'driver_contact'      => $item->driver_contact,
-                'status'              => $status,
-                'partial_paid_amount' => $partial,
+                'driver_contact'        => $item->driver_contact,
+                'status'                => $status,
+                'partial_paid_amount'   => $partial,
+                'weekly_report_item_id' => $item->id,
             ]);
 
             $item->update([

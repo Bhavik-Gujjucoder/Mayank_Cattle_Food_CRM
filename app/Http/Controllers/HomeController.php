@@ -253,7 +253,7 @@ class HomeController extends Controller
             ->addColumn('supplier_broker_name', fn ($row) => e($row->supplierBroker?->name ?? '—'))
             ->addColumn('supplier_name', fn ($row) => '<span class="fw-semibold">' . e($row->supplier?->name ?? '—') . '</span>')
             ->editColumn('order_date', fn ($row) => $row->order_date?->format('d M Y') ?? '—')
-            ->editColumn('total_qty', fn ($row) => number_format($row->total_qty) . ' tons')
+            ->editColumn('total_qty', fn ($row) => rmQtyFormat($row->total_qty) . ' tons')
             ->rawColumns(['order_ref', 'supplier_name'])
             ->make(true);
     }
@@ -282,7 +282,7 @@ class HomeController extends Controller
             ->addColumn('supplier_order_id', fn ($row) => e($row->order?->supplier_order_id ?? '—'))
             ->addColumn('category_name', fn ($row) => '<span class="fw-semibold">' . e($row->rawMaterial?->category?->name ?? '—') . '</span>')
             ->addColumn('material_name', fn ($row) => e($row->rawMaterial?->name ?? '—'))
-            ->editColumn('qty', fn ($row) => number_format($row->qty))
+            ->editColumn('qty', fn ($row) => rmQtyFormat($row->qty))
             ->addColumn('freight_html', fn ($row) => RawMaterialCacheService::receiveFreightHtml($row))
             ->editColumn('received_date', fn ($row) => $row->received_date?->format('d M Y') ?? '—')
             ->rawColumns(['order_ref', 'category_name', 'freight_html'])
@@ -317,11 +317,11 @@ class HomeController extends Controller
 
                 return $name;
             })
-            ->addColumn('total_qty_fmt', fn ($row) => number_format((int) data_get($row, 'total_qty', 0)))
-            ->addColumn('extra_qty_fmt', fn ($row) => number_format((int) data_get($row, 'extra_qty', 0)))
-            ->addColumn('on_road_qty_fmt', fn ($row) => number_format((int) data_get($row, 'on_road_qty', 0)))
-            ->addColumn('unloading_qty_fmt', fn ($row) => number_format((int) data_get($row, 'unloading_qty', 0)))
-            ->addColumn('pending_qty_fmt', fn ($row) => number_format((int) data_get($row, 'pending_qty', 0)))
+            ->addColumn('total_qty_fmt', fn ($row) => rmQtyFormat(data_get($row, 'total_qty', 0)))
+            ->addColumn('extra_qty_fmt', fn ($row) => rmQtyFormat(data_get($row, 'extra_qty', 0)))
+            ->addColumn('on_road_qty_fmt', fn ($row) => rmQtyFormat(data_get($row, 'on_road_qty', 0)))
+            ->addColumn('unloading_qty_fmt', fn ($row) => rmQtyFormat(data_get($row, 'unloading_qty', 0)))
+            ->addColumn('pending_qty_fmt', fn ($row) => rmQtyFormat(data_get($row, 'pending_qty', 0)))
             ->addColumn('rate_fmt', fn ($row) => number_format((float) data_get($row, 'rate', 0), 2))
             ->addColumn('average_fmt', fn ($row) => number_format((float) data_get($row, 'average', 0), 2))
             ->addColumn('pending_amount_fmt', fn ($row) => number_format((float) data_get($row, 'pending_amount', 0), 2))

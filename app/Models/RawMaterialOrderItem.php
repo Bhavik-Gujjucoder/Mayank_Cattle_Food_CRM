@@ -13,6 +13,13 @@ class RawMaterialOrderItem extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'total_qty'    => 'float',
+        'pending_qty'  => 'float',
+        'received_qty' => 'float',
+        'extra_qty'    => 'float',
+    ];
+
     public function rawMaterial(): BelongsTo
     {
         return $this->belongsTo(RawMaterial::class, 'raw_material_id');

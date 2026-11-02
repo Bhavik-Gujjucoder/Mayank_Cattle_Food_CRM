@@ -70,12 +70,12 @@
                 <div class="col-md-3 mb-3">
                     <label class="col-form-label">Total Stock</label>
                     <input type="text" class="form-control" readonly
-                           value="{{ number_format($raw_material->total_stock, 2) }} {{ $raw_material->unit }}">
+                           value="{{ rmQtyFormat($raw_material->total_stock) }} {{ $raw_material->unit }}">
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="col-form-label">Available Stock</label>
                     <input type="text" class="form-control" readonly
-                           value="{{ number_format($raw_material->available_stock, 2) }} {{ $raw_material->unit }}">
+                           value="{{ rmQtyFormat($raw_material->available_stock) }} {{ $raw_material->unit }}">
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="col-form-label">Last Purchase Price</label>

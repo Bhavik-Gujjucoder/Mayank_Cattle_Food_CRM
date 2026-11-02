@@ -14,11 +14,15 @@ use App\Support\ProductUnit;
 use App\Support\SalesScope;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\WeeklyReportItem;
+use App\Exports\OrderImportSampleExport;
+use App\Services\OrderBulkImportService;
 use App\Services\PaymentReceivableService;
 use App\Services\SequentialDispatchService;
 use App\Services\WeeklyReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\DataTables;
 
 class OrderManagementController extends Controller
@@ -215,6 +219,32 @@ class OrderManagementController extends Controller
         $data['order_id'] = 'ORD/' . $financialYear . '/' . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
 
         return view('order_management.create', $data);
+    }
+
+    public function downloadImportSample()
+    {
+        return Excel::download(new OrderImportSampleExport(), 'soda-order-import-sample.xlsx');
+    }
+
+    public function import(Request $request, OrderBulkImportService $importer)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+        ], [
+            'file.required' => 'Please choose an Excel file.',
+            'file.mimes' => 'Upload an .xlsx, .xls, or .csv file.',
+        ]);
+
+        try {
+            $result = $importer->import($request->file('file'));
+        } catch (ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->implode("\n"));
+        }
+
+        return redirect()->route('order.index')->with(
+            'success',
+            $result['created'] . ' order(s) imported: ' . implode(', ', $result['ids'])
+        );
     }
 
     /* ------------------------------------------------------------------ */
@@ -531,12 +561,13 @@ class OrderManagementController extends Controller
             })
             ->values();
 
-        $hasConfirmedWeekly = $this->weeklyReportService->orderHasConfirmedItems((int) $order->id);
+        $hasDailyDispatch = $this->weeklyReportService->orderHasLiveItems((int) $order->id);
 
         return response()->json([
-            'can_delete'             => $dispatchedItems->isEmpty() && ! $hasConfirmedWeekly,
+            'can_delete'             => $dispatchedItems->isEmpty() && ! $hasDailyDispatch,
             'dispatched_items'       => $dispatchedItems,
-            'has_confirmed_weekly'   => $hasConfirmedWeekly,
+            'has_daily_dispatch'     => $hasDailyDispatch,
+            'has_confirmed_weekly'   => $this->weeklyReportService->orderHasConfirmedItems((int) $order->id),
         ]);
     }
 
@@ -557,9 +588,9 @@ class OrderManagementController extends Controller
                 ->with('error', 'This order cannot be deleted because it has dispatched product items.');
         }
 
-        if ($this->weeklyReportService->orderHasConfirmedItems((int) $order->id)) {
+        if ($this->weeklyReportService->orderHasLiveItems((int) $order->id)) {
             return redirect()->route('order.index')
-                ->with('error', 'This order cannot be deleted because it has confirmed Daily Dispatch rows.');
+                ->with('error', 'This order cannot be deleted because it has Daily Dispatch rows.');
         }
 
         DB::transaction(function () use ($order) {
@@ -629,7 +660,7 @@ class OrderManagementController extends Controller
         }
 
         $weeklyBlocked = $orders
-            ->filter(fn ($o) => $this->weeklyReportService->orderHasConfirmedItems((int) $o->id))
+            ->filter(fn ($o) => $this->weeklyReportService->orderHasLiveItems((int) $o->id))
             ->pluck('unique_order_id')
             ->all();
 
@@ -637,7 +668,7 @@ class OrderManagementController extends Controller
             return response()->json([
                 'blocked'        => true,
                 'blocked_orders' => $weeklyBlocked,
-                'message'        => 'Cannot delete: the following order(s) have confirmed Daily Dispatch rows — '
+                'message'        => 'Cannot delete: the following order(s) have Daily Dispatch rows — '
                     . implode(', ', $weeklyBlocked) . '.',
             ], 422);
         }

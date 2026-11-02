@@ -62,7 +62,7 @@ class OrderReceivesSheet implements FromCollection, WithHeadings, WithStyles, Wi
             }
             $row = array_merge($row, [
                 $receive->rawMaterial?->name ?? '—',
-                $receive->qty,
+                rmQty($receive->qty),
                 RawMaterialCacheService::receiveFreightPlain($receive),
                 $receive->received_date?->format('d-m-Y') ?? '—',
                 RawMaterialFilterService::receiveStatusLabel((int) $receive->status),

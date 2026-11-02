@@ -66,7 +66,7 @@
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $item->rawMaterial?->name ?? '—' }}</td>
-                    <td class="text-right">{{ $item->total_qty }}</td>
+                    <td class="text-right">{{ rmQtyFormat($item->total_qty) }}</td>
                     <td class="text-right">{{ number_format($item->price, 2) }}</td>
                     <td class="text-right">{{ number_format((float) $item->tax_percent, 2) }}</td>
                     <td class="text-right">{{ number_format(\App\Services\RawMaterialCacheService::itemTaxAmount($item), 2) }}</td>
@@ -82,11 +82,11 @@
     <table class="totals">
         <tr>
             <td class="label">Total Qty (tons)</td>
-            <td class="value">{{ $order->total_qty }}</td>
+            <td class="value">{{ rmQtyFormat($order->total_qty) }}</td>
         </tr>
         <tr>
             <td class="label">Extra Qty (tons)</td>
-            <td class="value">{{ $order->extraQtyTotal() }}</td>
+            <td class="value">{{ rmQtyFormat($order->extraQtyTotal()) }}</td>
         </tr>
         <tr>
             <td class="label">Total Price (₹)</td>

@@ -34,8 +34,8 @@
                 </div>
                 <div class="col-12 col-md-4 mb-3">
                     <label class="col-form-label">Quantity (tons) <span class="text-danger">*</span></label>
-                    <input type="number" name="qty" id="qty" value="{{ old('qty', $receive->qty) }}"
-                           class="form-control" min="1" step="1" placeholder="0">
+                    <input type="number" name="qty" id="qty" value="{{ old('qty', rmQtyInput($receive->qty)) }}"
+                           class="form-control" min="0.001" step="0.001" placeholder="0.000">
                     <small class="text-muted pending-qty-hint">
                         Pending: <span id="pendingQtyVal">—</span> tons
                         <span class="text-muted">(after On Road + Received)</span>

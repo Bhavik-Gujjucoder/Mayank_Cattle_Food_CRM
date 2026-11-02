@@ -66,10 +66,10 @@
                         <tr>
                             <td>{{ $item->order?->order_unique_id ?? '—' }}</td>
                             <td>{{ $item->rawMaterial?->name ?? '—' }}</td>
-                            <td class="text-right">{{ $item->total_qty }}</td>
-                            <td class="text-right">{{ $item->extra_qty }}</td>
-                            <td class="text-right">{{ $item->pending_qty }}</td>
-                            <td class="text-right">{{ $item->received_qty }}</td>
+                            <td class="text-right">{{ rmQtyFormat($item->total_qty) }}</td>
+                            <td class="text-right">{{ rmQtyFormat($item->extra_qty) }}</td>
+                            <td class="text-right">{{ rmQtyFormat($item->pending_qty) }}</td>
+                            <td class="text-right">{{ rmQtyFormat($item->received_qty) }}</td>
                             <td class="text-right">{{ number_format($item->price, 2) }}</td>
                             <td class="text-right">{{ number_format($item->price_avg, 2) }}</td>
                             <td class="text-right">{{ number_format((float) $item->tax_percent, 2) }}</td>
@@ -112,7 +112,7 @@
                             <td>{{ $receive->order?->order_unique_id ?? '—' }}</td>
                             <td>{{ $receive->order?->supplier_order_id ?: '—' }}</td>
                             <td>{{ $receive->rawMaterial?->name ?? '—' }}</td>
-                            <td class="text-right">{{ $receive->qty }}</td>
+                            <td class="text-right">{{ rmQtyFormat($receive->qty) }}</td>
                             <td>{!! \App\Services\RawMaterialCacheService::receiveFreightPdfHtml($receive) !!}</td>
                             <td>{{ $receive->received_date?->format('d M Y') ?? '—' }}</td>
                             <td>{{ \App\Services\RawMaterial\RawMaterialFilterService::receiveStatusLabel((int) $receive->status) }}</td>

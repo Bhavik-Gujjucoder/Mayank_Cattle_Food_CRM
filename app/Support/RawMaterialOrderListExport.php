@@ -40,7 +40,7 @@ class RawMaterialOrderListExport
             $order->supplier_order_id ?: '—',
             $order->price_basis ?: '—',
             $order->order_date?->format('d-m-Y') ?? '—',
-            $order->total_qty,
+            rmQty($order->total_qty),
             $order->extraQtyTotal(),
             number_format((float) $order->total_price, 2),
             number_format((float) $order->advance_payment, 2),

@@ -95,6 +95,12 @@
                         </div>
                     @endcan
                     @can('add-raw-material-purchas-order')
+                        <a href="{{ route('raw-material.order.import-sample') }}" class="btn btn-outline-primary">
+                            <i class="ti ti-download me-1"></i>Sample Excel
+                        </a>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#rawMaterialOrderImportModal">
+                            <i class="ti ti-upload me-1"></i>Import
+                        </button>
                         <a href="{{ route('raw-material.order.create') }}" class="btn btn-primary">
                             <i class="ti ti-square-rounded-plus me-2"></i>Add Purchase Order
                         </a>
@@ -312,4 +318,10 @@ withDataTable(function () {
     }
 });
 </script>
+@include('partials.excel-import-modal', [
+    'modalId' => 'rawMaterialOrderImportModal',
+    'title' => 'Import Raw Material Orders',
+    'action' => route('raw-material.order.import'),
+    'sampleUrl' => route('raw-material.order.import-sample'),
+])
 @endsection

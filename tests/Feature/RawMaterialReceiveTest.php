@@ -35,7 +35,7 @@ function rmrActor(array $perms = []): User
 }
 
 /** Build a complete receive scenario: broker → supplier → category → material → order → orderItem */
-function rmrSetup(int $pendingQty = 10): array
+function rmrSetup(float $pendingQty = 10): array
 {
     $broker   = SupplierBroker::create(['name' => 'SBR-' . uniqid(), 'status' => 1]);
     $supplier = Supplier::create([
@@ -453,7 +453,21 @@ describe('store-persistence', function () {
             ->post(route('raw-material.receive.store'), rmrPayload($s, ['qty' => 4, 'status' => 0]))
             ->assertRedirect();
 
-        expect($s['item']->fresh()->pending_qty)->toBe(10);
+        expect($s['item']->fresh()->pending_qty)->toEqual(10);
+    });
+
+    it('stores a decimal received qty and reduces pending by that amount', function () {
+        $s = rmrSetup(10.5);
+
+        actingAs(rmrActor(['add-raw-material-receive']))
+            ->post(route('raw-material.receive.store'), rmrPayload($s, ['qty' => 2.25, 'status' => 1]))
+            ->assertRedirect();
+
+        $item = $s['item']->fresh();
+        expect(RawMaterialReceive::latest()->first()->qty)->toEqual(2.25)
+            ->and($item->received_qty)->toEqual(2.25)
+            ->and($item->pending_qty)->toEqual(8.25)
+            ->and((float) $s['material']->fresh()->total_stock)->toEqual(2.25);
     });
 
     it('reduces pending_qty when stored directly as received', function () {
@@ -463,7 +477,7 @@ describe('store-persistence', function () {
             ->post(route('raw-material.receive.store'), rmrPayload($s, ['qty' => 4, 'status' => 1]))
             ->assertRedirect();
 
-        expect($s['item']->fresh()->pending_qty)->toBe(6);
+        expect($s['item']->fresh()->pending_qty)->toEqual(6);
     });
 });
 
@@ -592,7 +606,7 @@ describe('markReceived', function () {
             ->patch(route('raw-material.receive.markReceived', $receive))
             ->assertRedirect();
 
-        expect($s['item']->fresh()->pending_qty)->toBe(6);
+        expect($s['item']->fresh()->pending_qty)->toEqual(6);
     });
 
     it('blocks marking already-received entry', function () {

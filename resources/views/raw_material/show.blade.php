@@ -42,11 +42,11 @@
             </div>
             <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Total Stock</label>
-                <div class="fw-semibold">{{ number_format($raw_material->total_stock, 2) }} {{ $raw_material->unit }}</div>
+                <div class="fw-semibold">{{ rmQtyFormat($raw_material->total_stock) }} {{ $raw_material->unit }}</div>
             </div>
             <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Available Stock</label>
-                <div class="fw-semibold">{{ number_format($raw_material->available_stock, 2) }} {{ $raw_material->unit }}</div>
+                <div class="fw-semibold">{{ rmQtyFormat($raw_material->available_stock) }} {{ $raw_material->unit }}</div>
             </div>
             <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Status</label>

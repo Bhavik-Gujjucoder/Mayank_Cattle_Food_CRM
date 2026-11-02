@@ -28,7 +28,7 @@
                     </select>
                 </td>
                 <td>
-                    <input type="number" name="total_qty[]" class="form-control qty-field" placeholder="0" min="1" step="1">
+                    <input type="number" name="total_qty[]" class="form-control qty-field" placeholder="0.000" min="0.001" step="0.001">
                 </td>
                 <td>
                     <input type="number" name="price[]" class="form-control price-field" placeholder="0.00" min="0" step="0.001">
@@ -79,7 +79,7 @@
             </select>
         </td>
         <td>
-            <input type="number" name="total_qty[]" class="form-control qty-field" placeholder="0" min="1" step="1">
+            <input type="number" name="total_qty[]" class="form-control qty-field" placeholder="0.000" min="0.001" step="0.001">
         </td>
         <td>
             <input type="number" name="price[]" class="form-control price-field" placeholder="0.00" min="0" step="0.001">

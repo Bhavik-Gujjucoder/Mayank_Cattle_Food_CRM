@@ -15,6 +15,11 @@ function initReceiveCascadeForm(options) {
     var pendingQty = 0;
     var orderedRemaining = 0;
 
+    function formatRmQty(n) {
+        var rounded = Math.round((parseFloat(n) || 0) * 1000) / 1000;
+        return rounded.toLocaleString(undefined, { maximumFractionDigits: 3 });
+    }
+
     $('#receive_supplier_broker_id, #receive_supplier_id, #raw_material_order_id, #raw_material_order_item_id').select2({ width: '100%' });
 
     function resetOrderItemSelect() {
@@ -114,7 +119,7 @@ function initReceiveCascadeForm(options) {
             }
 
             $.each(items, function (i, item) {
-                var remaining = parseInt(item.ordered_remaining, 10) || 0;
+                var remaining = parseFloat(item.ordered_remaining) || 0;
                 var $opt = $('<option>', {
                     value: item.id,
                     text: item.label
@@ -138,19 +143,19 @@ function initReceiveCascadeForm(options) {
 
     function updatePendingQty() {
         var $opt = $('#raw_material_order_item_id option:selected');
-        var remaining = parseInt($opt.data('remaining'), 10) || 0;
+        var remaining = parseFloat($opt.data('remaining')) || 0;
         pendingQty = remaining;
         orderedRemaining = remaining;
-        $('#pendingQtyVal').text($opt.val() ? remaining : '—');
+        $('#pendingQtyVal').text($opt.val() ? formatRmQty(remaining) : '—');
         $('#qty').removeAttr('max');
         updateExtraHint();
     }
 
     function updateExtraHint() {
-        var qty = parseInt($.trim($('#qty').val()), 10) || 0;
-        var extra = Math.max(0, qty - orderedRemaining);
+        var qty = parseFloat($.trim($('#qty').val())) || 0;
+        var extra = Math.max(0, Math.round((qty - orderedRemaining) * 1000) / 1000);
         if ($('#raw_material_order_item_id').val() && qty > 0 && extra > 0) {
-            $('#extraQtyVal').text(extra);
+            $('#extraQtyVal').text(formatRmQty(extra));
             $('#extraQtyHint').removeClass('d-none');
         } else {
             $('#extraQtyHint').addClass('d-none');
@@ -245,8 +250,8 @@ function initReceiveCascadeForm(options) {
             $('.qty_error').text('Please enter quantity.');
             rmSetInvalid($('#qty'), true);
             isValid = false;
-        } else if (parseInt(qtyVal, 10) < 1) {
-            $('.qty_error').text('Quantity must be at least 1 ton.');
+        } else if (!(parseFloat(qtyVal) > 0)) {
+            $('.qty_error').text('Quantity must be greater than 0.');
             rmSetInvalid($('#qty'), true);
             isValid = false;
         }

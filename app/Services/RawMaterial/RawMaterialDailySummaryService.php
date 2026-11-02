@@ -87,12 +87,12 @@ class RawMaterialDailySummaryService
      */
     protected function mapRow(RawMaterialOrderItem $item): array
     {
-        $onRoadQty = (int) $item->receives->sum('qty');
-        $receivedQty = (int) $item->received_qty;
-        $pendingQty = (int) $item->pending_qty;
-        $displayPendingQty = max(0, $pendingQty - $onRoadQty);
-        $totalQty = (int) $item->total_qty;
-        $extraQty = (int) $item->extra_qty;
+        $onRoadQty = rmQty($item->receives->sum('qty'));
+        $receivedQty = rmQty($item->received_qty);
+        $pendingQty = rmQty($item->pending_qty);
+        $displayPendingQty = max(0, rmQty($pendingQty - $onRoadQty));
+        $totalQty = rmQty($item->total_qty);
+        $extraQty = rmQty($item->extra_qty);
         $rate = round((float) $item->price, 2);
         $freight = round((float) $item->total_freight, 2);
 
@@ -152,18 +152,18 @@ class RawMaterialDailySummaryService
      */
     protected function buildTotals(Collection $rows): array
     {
-        $pendingNotOnRoadQty = (int) $rows->sum('pending_qty');
-        $onRoadQty = (int) $rows->sum('on_road_qty');
-        $receivedQty = (int) $rows->sum('unloading_qty');
-        $totalQty = (int) $rows->sum('total_qty');
-        $extraQty = (int) $rows->sum('extra_qty');
+        $pendingNotOnRoadQty = rmQty($rows->sum('pending_qty'));
+        $onRoadQty = rmQty($rows->sum('on_road_qty'));
+        $receivedQty = rmQty($rows->sum('unloading_qty'));
+        $totalQty = rmQty($rows->sum('total_qty'));
+        $extraQty = rmQty($rows->sum('extra_qty'));
         $pendingAmount = round((float) $rows->sum('pending_amount'), 2);
         $receivedAmount = round((float) $rows->sum('received_amount'), 2);
         $taxAmount = round((float) $rows->sum('tax_amount'), 2);
         $otherExpense = round((float) $rows->sum('other_expense'), 2);
         $tdsAmount = round((float) $rows->sum('tds_amount'), 2);
         $grandAmount = round($pendingAmount + $receivedAmount, 2);
-        $pipelinePendingQty = (int) $rows->sum('pipeline_pending_qty');
+        $pipelinePendingQty = rmQty($rows->sum('pipeline_pending_qty'));
 
         return [
             'ordered_qty'           => $totalQty,
@@ -192,7 +192,7 @@ class RawMaterialDailySummaryService
         ];
     }
 
-    protected function weightedAverage(float $amount, int $qtyTons): float
+    protected function weightedAverage(float $amount, float $qtyTons): float
     {
         if ($qtyTons <= 0) {
             return 0.0;

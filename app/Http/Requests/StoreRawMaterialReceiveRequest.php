@@ -16,7 +16,7 @@ class StoreRawMaterialReceiveRequest extends FormRequest
         return [
             'raw_material_order_id'      => 'required|exists:raw_material_orders,id',
             'raw_material_order_item_id' => 'required|exists:raw_material_order_items,id',
-            'qty'                        => 'required|integer|min:1',
+            'qty'                        => 'required|numeric|min:0.001|decimal:0,3',
             'freight'                    => 'nullable|numeric|min:0',
             'received_date'              => 'required|date',
             'status'                     => 'required|in:0,1',
