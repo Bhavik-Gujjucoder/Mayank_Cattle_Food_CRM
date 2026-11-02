@@ -12,7 +12,10 @@ class RawMaterialReceive extends Model
 
     protected $guarded = [];
 
-    protected $casts = ['received_date' => 'date'];
+    protected $casts = [
+        'received_date' => 'date',
+        'qty'           => 'float',
+    ];
 
     public function rawMaterial(): BelongsTo
     {

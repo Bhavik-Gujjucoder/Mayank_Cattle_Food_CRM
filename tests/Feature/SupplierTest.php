@@ -145,6 +145,18 @@ describe('access-control', function () {
 // ─────────────────────────────────────────────
 
 describe('index', function () {
+    it('shows add state and add city links when the user can create them', function () {
+        $actor = supActor(['add-state', 'add-city']);
+
+        $this->actingAs($actor)
+            ->get(route('supplier.index'))
+            ->assertOk()
+            ->assertSee('id="addSupplierStateLink"', false)
+            ->assertSee('Add State', false)
+            ->assertSee('id="addSupplierCityLink"', false)
+            ->assertSee('Add City', false);
+    });
+
     it('returns supplier index view with states and supplier_brokers', function () {
         $state  = mkSupState();
         $city   = mkSupCity($state->id);

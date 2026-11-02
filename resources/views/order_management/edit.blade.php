@@ -152,8 +152,8 @@
                                     @if ($dealer->id == $order->dealer_id)
                                         <option value="{{ $dealer->id }}" selected>
                                             {{ $dealer->user?->name ?? $dealer->firm_shop_name }}
-                                            @if ($dealer->firm_shop_name)
-                                                — {{ $dealer->firm_shop_name }}
+                                            @if ($dealer->city?->city_name)
+                                                — {{ $dealer->city->city_name }}
                                             @endif
                                         </option>
                                     @endif
@@ -166,8 +166,8 @@
                                     <option value="{{ $dealer->id }}" data-address="{{ $dealer->firm_shop_address }}"
                                         {{ $order->dealer_id == $dealer->id ? 'selected' : '' }}>
                                         {{ $dealer->user?->name ?? $dealer->firm_shop_name }}
-                                        @if ($dealer->firm_shop_name)
-                                            — {{ $dealer->firm_shop_name }}
+                                        @if ($dealer->city?->city_name)
+                                            — {{ $dealer->city->city_name }}
                                         @endif
                                     </option>
                                 @endforeach
@@ -572,8 +572,7 @@
                         $select.append(
                             $('<option>', {
                                 value: dealer.id,
-                                text: dealer.name + (dealer.firm_shop_name ? ' — ' + dealer
-                                    .firm_shop_name : ''),
+                                text: dealer.name + (dealer.city_name ? ' — ' + dealer.city_name : ''),
                             }).data('address', dealer.firm_shop_address)
                         );
                     });

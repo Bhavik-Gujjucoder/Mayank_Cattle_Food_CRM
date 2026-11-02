@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\DispatchManagement;
 use App\Models\BrandManagement;
 use App\Models\DealerManagement;
 use App\Models\OrderItem;
@@ -81,6 +82,41 @@ function wrPendingLine(string $unit = 'Bag', int $qty = 100): array
 
     return compact('brand', 'dealer', 'product', 'order', 'orderItem');
 }
+
+it('stores the daily dispatch row id when a row is confirmed', function () {
+    $admin = wrAdmin(['add-dispatch']);
+    $this->actingAs($admin);
+    $ctx = wrPendingLine('Bag', 100);
+    $transporter = User::factory()->create(['status' => 1]);
+    $transporter->assignRole('transporter');
+
+    $report = WeeklyReport::create([
+        'report_date' => '2026-07-12',
+        'already_produced' => 0,
+        'created_by' => $admin->id,
+    ]);
+
+    $item = WeeklyReportItem::create([
+        'weekly_report_id' => $report->id,
+        'sort_order' => 1,
+        'order_id' => $ctx['order']->id,
+        'order_item_id' => $ctx['orderItem']->id,
+        'product_id' => $ctx['product']->id,
+        'quantity' => 20,
+        'transport_id' => $transporter->id,
+        'truck_number' => 'GJ01AA1234',
+        'driver_contact' => '9876543210',
+        'status' => WeeklyReportItem::STATUS_PENDING,
+    ]);
+
+    $dispatch = app(\App\Services\WeeklyReportService::class)->confirmItem($item, ['status' => 0]);
+
+    expect((int) $dispatch->weekly_report_item_id)->toBe((int) $item->id);
+    $item->refresh();
+    expect((int) $item->dispatch_id)->toBe((int) $dispatch->id)
+        ->and($item->status)->toBe(WeeklyReportItem::STATUS_CONFIRMED);
+    expect(DispatchManagement::find($dispatch->id))->not->toBeNull();
+});
 
 it('reuses existing report when storing the same date again', function () {
     $admin = wrAdmin();

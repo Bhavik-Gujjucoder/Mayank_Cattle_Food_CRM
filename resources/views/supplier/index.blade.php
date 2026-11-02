@@ -205,6 +205,13 @@
                                         <option value="{{ $state->id }}">{{ $state->state_name }}</option>
                                     @endforeach
                                 </select>
+                                @can('add-state')
+                                    <div class="mt-1">
+                                        <a href="javascript:void(0)" id="addSupplierStateLink" class="text-primary fw-semibold small">
+                                            <i class="ti ti-plus me-1"></i>Add State
+                                        </a>
+                                    </div>
+                                @endcan
                                 <span class="state_id_error text-danger small"></span>
                             </div>
 
@@ -214,6 +221,13 @@
                                 <select name="city_id" id="supplier_city_id" class="form-select" disabled>
                                     <option value="">-- Select City --</option>
                                 </select>
+                                @can('add-city')
+                                    <div class="mt-1">
+                                        <a href="javascript:void(0)" id="addSupplierCityLink" class="text-primary fw-semibold small">
+                                            <i class="ti ti-plus me-1"></i>Add City
+                                        </a>
+                                    </div>
+                                @endcan
                                 <span class="city_id_error text-danger small"></span>
                             </div>
 
@@ -248,6 +262,100 @@
             </div>
         </div>
     </div>
+
+    @can('add-state')
+        <div class="modal custom-modal fade" id="quickSupplierStateModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add State</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                            <i class="ti ti-x"></i>
+                        </button>
+                    </div>
+                    <form id="quickSupplierStateForm">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="col-form-label">State Name <span class="text-danger">*</span></label>
+                                <input type="text" id="qs_state_name" class="form-control" placeholder="State Name" maxlength="255">
+                                <span class="qs_state_name_error text-danger small"></span>
+                            </div>
+                            <div class="mb-0">
+                                <label class="col-form-label">Status</label>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <input type="radio" class="status-radio" id="qs_active" name="qs_status" value="1" checked>
+                                        <label for="qs_active">Active</label>
+                                    </div>
+                                    <div>
+                                        <input type="radio" class="status-radio" id="qs_inactive" name="qs_status" value="0">
+                                        <label for="qs_inactive">Inactive</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="quickSupplierStateSubmitBtn">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endcan
+
+    @can('add-city')
+        <div class="modal custom-modal fade" id="quickSupplierCityModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add City</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                            <i class="ti ti-x"></i>
+                        </button>
+                    </div>
+                    <form id="quickSupplierCityForm">
+                        <div class="modal-body">
+                            <p class="text-muted small mb-3">City will be added under <strong id="quickCityStateLabel"></strong>.</p>
+                            <div class="mb-3">
+                                <label class="col-form-label">City Name <span class="text-danger">*</span></label>
+                                <input type="text" id="qc_city_name" class="form-control" placeholder="City Name" maxlength="255">
+                                <span class="qc_city_name_error text-danger small"></span>
+                            </div>
+                            <div class="mb-0">
+                                <label class="col-form-label">Status</label>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <input type="radio" class="status-radio" id="qc_active" name="qc_status" value="1" checked>
+                                        <label for="qc_active">Active</label>
+                                    </div>
+                                    <div>
+                                        <input type="radio" class="status-radio" id="qc_inactive" name="qc_status" value="0">
+                                        <label for="qc_inactive">Inactive</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="quickSupplierCitySubmitBtn">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endcan
+
+    <style>
+        #quickSupplierStateModal.modal,
+        #quickSupplierCityModal.modal {
+            z-index: 1065 !important;
+        }
+
+        .modal-backdrop.supplier-quick-backdrop {
+            z-index: 1060 !important;
+        }
+    </style>
 @endsection
 
 @push('datatable-scripts')
@@ -429,6 +537,197 @@
             $('#supplier_city_id').prop('disabled', true)
                 .html('<option value="">-- Select City --</option>');
         }
+
+        function appendSortedOption($select, value, label) {
+            if ($select.find('option[value="' + value + '"]').length) {
+                return;
+            }
+
+            var $option = $('<option>', { value: value, text: label });
+            var placed = false;
+
+            $select.find('option').each(function (index) {
+                if (index === 0) {
+                    return;
+                }
+                if ($(this).text().localeCompare(label, undefined, { sensitivity: 'base' }) > 0) {
+                    $(this).before($option);
+                    placed = true;
+                    return false;
+                }
+            });
+
+            if (!placed) {
+                $select.append($option);
+            }
+        }
+
+        function stackQuickModal($modal) {
+            $modal.on('shown.bs.modal', function () {
+                $('.modal-backdrop').last().addClass('supplier-quick-backdrop');
+            });
+            $modal.on('hidden.bs.modal', function () {
+                $('.modal-backdrop').removeClass('supplier-quick-backdrop');
+                if ($('#supplierModal').hasClass('show')) {
+                    $('body').addClass('modal-open');
+                }
+            });
+        }
+
+        @can('add-state')
+        (function () {
+            var quickStateModalEl = document.getElementById('quickSupplierStateModal');
+            if (!quickStateModalEl) return;
+
+            var quickStateModal = new bootstrap.Modal(quickStateModalEl);
+            stackQuickModal($('#quickSupplierStateModal'));
+
+            function clearQuickStateErrors() {
+                $('#qs_state_name').removeClass('is-invalid');
+                $('.qs_state_name_error').text('');
+            }
+
+            $('#addSupplierStateLink').on('click', function () {
+                clearQuickStateErrors();
+                $('#quickSupplierStateForm')[0].reset();
+                $('#qs_active').prop('checked', true);
+                quickStateModal.show();
+            });
+
+            $('#quickSupplierStateForm').on('submit', function (e) {
+                e.preventDefault();
+                clearQuickStateErrors();
+
+                var $btn = $('#quickSupplierStateSubmitBtn');
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: "{{ route('state.store') }}",
+                    type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Accept': 'application/json'
+                    },
+                    data: {
+                        state_name: $('#qs_state_name').val(),
+                        status: $('input[name="qs_status"]:checked').val()
+                    },
+                    success: function (response) {
+                        quickStateModal.hide();
+                        show_success(response.message || 'State created successfully');
+
+                        var state = response.state;
+                        if (!state || String(state.status) !== '1') {
+                            return;
+                        }
+
+                        appendSortedOption($('#supplier_state_id'), state.id, state.state_name);
+                        appendSortedOption($('#filterState'), state.id, state.state_name);
+                        $('#supplier_state_id').val(String(state.id)).trigger('change');
+                    },
+                    error: function (xhr) {
+                        if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                            var message = xhr.responseJSON.errors.state_name
+                                ? xhr.responseJSON.errors.state_name[0]
+                                : 'Please correct the highlighted fields.';
+                            $('#qs_state_name').addClass('is-invalid');
+                            $('.qs_state_name_error').text(message);
+                        } else {
+                            show_error('Failed to create state. Please try again.');
+                        }
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false);
+                    }
+                });
+            });
+        })();
+        @endcan
+
+        @can('add-city')
+        (function () {
+            var quickCityModalEl = document.getElementById('quickSupplierCityModal');
+            if (!quickCityModalEl) return;
+
+            var quickCityModal = new bootstrap.Modal(quickCityModalEl);
+            stackQuickModal($('#quickSupplierCityModal'));
+
+            function clearQuickCityErrors() {
+                $('#qc_city_name').removeClass('is-invalid');
+                $('.qc_city_name_error').text('');
+            }
+
+            $('#addSupplierCityLink').on('click', function () {
+                var stateId = $('#supplier_state_id').val();
+                if (!stateId) {
+                    show_error('Please select a state first.');
+                    return;
+                }
+
+                clearQuickCityErrors();
+                $('#quickSupplierCityForm')[0].reset();
+                $('#qc_active').prop('checked', true);
+                $('#quickCityStateLabel').text($('#supplier_state_id option:selected').text());
+                quickCityModal.show();
+            });
+
+            $('#quickSupplierCityForm').on('submit', function (e) {
+                e.preventDefault();
+                clearQuickCityErrors();
+
+                var stateId = $('#supplier_state_id').val();
+                if (!stateId) {
+                    show_error('Please select a state first.');
+                    return;
+                }
+
+                var $btn = $('#quickSupplierCitySubmitBtn');
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: "{{ route('city.store') }}",
+                    type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Accept': 'application/json'
+                    },
+                    data: {
+                        state_id: stateId,
+                        city_name: $('#qc_city_name').val(),
+                        status: $('input[name="qc_status"]:checked').val()
+                    },
+                    success: function (response) {
+                        quickCityModal.hide();
+                        show_success(response.message || 'City created successfully');
+
+                        var city = response.city;
+                        if (!city || String(city.status) !== '1') {
+                            return;
+                        }
+
+                        loadSupplierCities(stateId, city.id);
+                        if (String($('#filterState').val()) === String(stateId)) {
+                            appendSortedOption($('#filterCity'), city.id, city.city_name);
+                        }
+                    },
+                    error: function (xhr) {
+                        if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                            var message = xhr.responseJSON.errors.city_name
+                                ? xhr.responseJSON.errors.city_name[0]
+                                : (xhr.responseJSON.errors.state_id ? xhr.responseJSON.errors.state_id[0] : 'Please correct the highlighted fields.');
+                            $('#qc_city_name').addClass('is-invalid');
+                            $('.qc_city_name_error').text(message);
+                        } else {
+                            show_error('Failed to create city. Please try again.');
+                        }
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false);
+                    }
+                });
+            });
+        })();
+        @endcan
 
         /* ── Open modal for Add ────────────────────────────────────────────── */
         $('#openSupplierModal').on('click', function() {

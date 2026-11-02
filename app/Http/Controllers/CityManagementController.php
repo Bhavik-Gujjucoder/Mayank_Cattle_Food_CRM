@@ -76,12 +76,21 @@ class CityManagementController extends Controller
         ], [
             'state_id.required' => 'The state name field is required.'
         ]);
-        CityManagement::create([
+        $city = CityManagement::create([
             'state_id'  => $request->state_id,
             'city_name' => $request->city_name,
             'status'    => $request->status
         ]);
-        return response()->json(['success' => true, 'message' => 'City created successfully']);
+        return response()->json([
+            'success' => true,
+            'message' => 'City created successfully',
+            'city'    => [
+                'id'        => $city->id,
+                'state_id'  => $city->state_id,
+                'city_name' => $city->city_name,
+                'status'    => (int) $city->status,
+            ],
+        ]);
     }
 
     /* ------------------------------------------------------------------ */

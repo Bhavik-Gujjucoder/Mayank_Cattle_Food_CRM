@@ -140,6 +140,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('order/{order}/list-items-detail', [OrderManagementController::class, 'listItemsDetail'])
         ->name('order.listItemsDetail');
     Route::resource('order', OrderManagementController::class)->except(['store', 'update', 'destroy']);
+    Route::get('order-import-sample', [OrderManagementController::class, 'downloadImportSample'])
+        ->name('order.import-sample')->middleware('permission:add-order');
+    Route::post('order-import', [OrderManagementController::class, 'import'])
+        ->name('order.import')->middleware('permission:add-order');
     Route::post('order', [OrderManagementController::class, 'store'])
         ->name('order.store')->middleware('permission:add-order');
     Route::match(['put', 'patch'], 'order/{order}', [OrderManagementController::class, 'update'])
@@ -352,6 +356,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->name('update-advance-payment')->middleware('permission:edit-raw-material-purchas-order');
             Route::get('/', [RawMaterialOrderController::class, 'index'])
                 ->name('index')->middleware('permission:view-raw-material-purchas-order');
+            Route::get('import-sample', [RawMaterialOrderController::class, 'downloadImportSample'])
+                ->name('import-sample')->middleware('permission:add-raw-material-purchas-order');
+            Route::post('import', [RawMaterialOrderController::class, 'import'])
+                ->name('import')->middleware('permission:add-raw-material-purchas-order');
             Route::get('create', [RawMaterialOrderController::class, 'create'])
                 ->name('create')->middleware('permission:add-raw-material-purchas-order');
             Route::get('{raw_material_order}', [RawMaterialOrderController::class, 'show'])

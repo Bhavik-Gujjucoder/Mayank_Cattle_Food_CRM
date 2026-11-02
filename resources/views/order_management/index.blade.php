@@ -361,6 +361,12 @@
             <div class="cls-form-right">
                 <div class="comm-header-right-btn">
                     @can('add-order')
+                        <a href="{{ route('order.import-sample') }}" class="btn btn-outline-primary">
+                            <i class="ti ti-download me-1"></i>Sample Excel
+                        </a>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#orderImportModal">
+                            <i class="ti ti-upload me-1"></i>Import
+                        </button>
                         <a href="{{ route('order.create') }}" class="btn btn-primary">
                             <i class="ti ti-square-rounded-plus me-2"></i>Add Soda/Order
                         </a>
@@ -903,8 +909,11 @@
             $.get(checkUrl)
                 .done(function(data) {
                     if (!data.can_delete) {
-                        /* Blocked — show dispatch details popup */
-                        showDispatchBlockedPopup(data.dispatched_items);
+                        if (data.dispatched_items && data.dispatched_items.length) {
+                            showDispatchBlockedPopup(data.dispatched_items);
+                        } else {
+                            showDailyDispatchBlockedPopup();
+                        }
                         return;
                     }
                     /* Safe to delete — show standard confirm */
@@ -958,9 +967,8 @@
                         error: function(xhr) {
                             var res = xhr.responseJSON;
                             if (res && res.blocked) {
-                                /* One or more orders have dispatch history */
                                 Swal.fire({
-                                    html: buildBulkBlockedHtml(res.blocked_orders),
+                                    html: buildBulkBlockedHtml(res.blocked_orders, res.message),
                                     showConfirmButton: true,
                                     confirmButtonText: '<i class="ti ti-check me-1"></i> Got it',
                                     width: 480,
@@ -1060,7 +1068,34 @@
         }
 
         /* ── Builds minimal HTML for bulk-blocked notification ── */
-        function buildBulkBlockedHtml(blockedOrders) {
+        function showDailyDispatchBlockedPopup() {
+            Swal.fire({
+                html: '<div class="od-alert-bar">' +
+                    '<span class="od-alert-icon"><i class="ti ti-trash-off"></i></span>' +
+                    '<div>' +
+                    '<div class="od-alert-title">Cannot Delete This Order</div>' +
+                    '<div class="od-alert-sub">This order has Daily Dispatch rows and is protected from deletion.</div>' +
+                    '</div>' +
+                    '</div>' +
+                    '<p class="od-footer-note">' +
+                    '<i class="ti ti-info-circle me-1"></i>' +
+                    'Remove the Daily Dispatch rows for this order first, then delete the order.' +
+                    '</p>',
+                showConfirmButton: true,
+                confirmButtonText: '<i class="ti ti-check me-1"></i> Got it',
+                width: 520,
+                padding: '0',
+                customClass: {
+                    popup: 'my-custom-popup od-popup',
+                    htmlContainer: 'od-html-container',
+                    confirmButton: 'btn od-confirm-btn px-4',
+                    actions: 'od-actions',
+                },
+                buttonsStyling: false,
+            });
+        }
+
+        function buildBulkBlockedHtml(blockedOrders, message) {
             var orderList = $.map(blockedOrders, function(id) {
                 return '<span class="od-order-chip">' + id + '</span>';
             }).join(' ');
@@ -1069,7 +1104,7 @@
                 '<span class="od-alert-icon"><i class="ti ti-trash-off"></i></span>' +
                 '<div>' +
                 '<div class="od-alert-title">Cannot Delete Selected Orders</div>' +
-                '<div class="od-alert-sub">One or more selected orders have dispatched items.</div>' +
+                '<div class="od-alert-sub">' + (message || 'One or more selected orders have dispatch or Daily Dispatch entries.') + '</div>' +
                 '</div>' +
                 '</div>' +
                 '<div style="padding:16px 22px 4px;">' +
@@ -1104,4 +1139,10 @@
         }
     });
     </script>
+    @include('partials.excel-import-modal', [
+        'modalId' => 'orderImportModal',
+        'title' => 'Import Soda/Orders',
+        'action' => route('order.import'),
+        'sampleUrl' => route('order.import-sample'),
+    ])
 @endsection

@@ -278,7 +278,10 @@ describe('store — persistence', function () {
                 'status'    => 1,
             ])
             ->assertOk()
-            ->assertJson(['success' => true, 'message' => 'City created successfully']);
+            ->assertJson(['success' => true, 'message' => 'City created successfully'])
+            ->assertJsonPath('city.city_name', 'Surat')
+            ->assertJsonPath('city.state_id', $state->id)
+            ->assertJsonPath('city.status', 1);
 
         $this->assertDatabaseHas('city_management', [
             'state_id'  => $state->id,

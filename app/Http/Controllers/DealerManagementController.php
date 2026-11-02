@@ -470,7 +470,7 @@ class DealerManagementController extends Controller
             return response()->json([]);
         }
 
-        $dealers = DealerManagement::with('user')
+        $dealers = DealerManagement::with(['user', 'city'])
             ->where('broker_id', $brokerId)
             ->where('brand_id', $brandId)
             ->get()
@@ -479,6 +479,7 @@ class DealerManagementController extends Controller
                 'name'              => $d->user?->name ?? $d->firm_shop_name,
                 'firm_shop_name'    => $d->firm_shop_name,
                 'firm_shop_address' => $d->firm_shop_address,
+                'city_name'         => $d->city?->city_name,
             ]);
 
         return response()->json($dealers);

@@ -14,11 +14,15 @@ use App\Support\ProductUnit;
 use App\Support\SalesScope;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\WeeklyReportItem;
+use App\Exports\OrderImportSampleExport;
+use App\Services\OrderBulkImportService;
 use App\Services\PaymentReceivableService;
 use App\Services\SequentialDispatchService;
 use App\Services\WeeklyReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\DataTables;
 
 class OrderManagementController extends Controller
@@ -217,6 +221,32 @@ class OrderManagementController extends Controller
         return view('order_management.create', $data);
     }
 
+    public function downloadImportSample()
+    {
+        return Excel::download(new OrderImportSampleExport(), 'soda-order-import-sample.xlsx');
+    }
+
+    public function import(Request $request, OrderBulkImportService $importer)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+        ], [
+            'file.required' => 'Please choose an Excel file.',
+            'file.mimes' => 'Upload an .xlsx, .xls, or .csv file.',
+        ]);
+
+        try {
+            $result = $importer->import($request->file('file'));
+        } catch (ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->implode("\n"));
+        }
+
+        return redirect()->route('order.index')->with(
+            'success',
+            $result['created'] . ' order(s) imported: ' . implode(', ', $result['ids'])
+        );
+    }
+
     /* ------------------------------------------------------------------ */
     /*  STORE                                                               */
     /* ------------------------------------------------------------------ */
@@ -242,26 +272,61 @@ class OrderManagementController extends Controller
             ];
         }
 
-        $order = OrderManagement::create([
-            'unique_order_id'     => $validated['unique_order_id'],
-            'broker_id'           => $validated['broker_id'],
-            'brand_id'            => $validated['brand_id'],
-            'dealer_id'           => $validated['dealer_id'],
-            'order_date'          => $validated['order_date'],
-            'delivery_address'    => $validated['delivery_address'],
-            'payment_status'      => $validated['payment_status'],
-            'payment_type'        => $validated['payment_type'],
-            'partial_paid_amount' => $validated['payment_status'] === 'partial'
-                ? $validated['partial_paid_amount'] : null,
-            'total_order_amount'  => $totalAmount,
-            'grand_total'         => $totalAmount,
-            'status'              => 1,
-        ]);
+        /* The Order ID shown on the form may have been taken by another user
+           in the meantime — walk forward to the next free number.          */
+        $order = DB::transaction(function () use ($validated, $totalAmount, $items) {
+            $uniqueOrderId = $this->nextAvailableOrderId($validated['unique_order_id']);
 
-        $order->items()->createMany($items);
+            $order = OrderManagement::create([
+                'unique_order_id'     => $uniqueOrderId,
+                'broker_id'           => $validated['broker_id'],
+                'brand_id'            => $validated['brand_id'],
+                'dealer_id'           => $validated['dealer_id'],
+                'order_date'          => $validated['order_date'],
+                'delivery_address'    => $validated['delivery_address'],
+                'payment_status'      => $validated['payment_status'],
+                'payment_type'        => $validated['payment_type'],
+                'partial_paid_amount' => $validated['payment_status'] === 'partial'
+                    ? $validated['partial_paid_amount'] : null,
+                'total_order_amount'  => $totalAmount,
+                'grand_total'         => $totalAmount,
+                'status'              => 1,
+            ]);
+
+            $order->items()->createMany($items);
+
+            return $order;
+        });
 
         return redirect()->route('order.index')
-            ->with('success', 'Order created successfully.');
+            ->with('success', 'Order created successfully. Order ID: ' . $order->unique_order_id)
+            ->with('toast_duration', 12000);
+    }
+
+    /**
+     * Starting at the requested Order ID (ORD/2026-27/0085), return the first
+     * ID that is not already used (soft-deleted orders count as used).
+     * Falls back to the original value if it does not match the pattern.
+     */
+    private function nextAvailableOrderId(string $requested): string
+    {
+        if (!preg_match('/^(.*\/)(\d+)$/', $requested, $m)) {
+            return $requested;
+        }
+
+        $prefix = $m[1];
+        $width  = strlen($m[2]);
+        $seq    = (int) $m[2];
+
+        do {
+            $candidate = $prefix . str_pad($seq++, $width, '0', STR_PAD_LEFT);
+            $exists = OrderManagement::withTrashed()
+                ->where('unique_order_id', $candidate)
+                ->lockForUpdate()
+                ->exists();
+        } while ($exists);
+
+        return $candidate;
     }
 
     /* ------------------------------------------------------------------ */
@@ -279,7 +344,7 @@ class OrderManagementController extends Controller
 
         /* Pre-load dealers for the order's broker + brand so the dropdown
            is already populated when the edit page opens.                  */
-        $data['dealers'] = DealerManagement::with('user')
+        $data['dealers'] = DealerManagement::with(['user', 'city'])
             ->where('broker_id', $order->broker_id)
             ->where('brand_id',  $order->brand_id)
             ->get();
@@ -496,12 +561,13 @@ class OrderManagementController extends Controller
             })
             ->values();
 
-        $hasConfirmedWeekly = $this->weeklyReportService->orderHasConfirmedItems((int) $order->id);
+        $hasDailyDispatch = $this->weeklyReportService->orderHasLiveItems((int) $order->id);
 
         return response()->json([
-            'can_delete'             => $dispatchedItems->isEmpty() && ! $hasConfirmedWeekly,
+            'can_delete'             => $dispatchedItems->isEmpty() && ! $hasDailyDispatch,
             'dispatched_items'       => $dispatchedItems,
-            'has_confirmed_weekly'   => $hasConfirmedWeekly,
+            'has_daily_dispatch'     => $hasDailyDispatch,
+            'has_confirmed_weekly'   => $this->weeklyReportService->orderHasConfirmedItems((int) $order->id),
         ]);
     }
 
@@ -522,9 +588,9 @@ class OrderManagementController extends Controller
                 ->with('error', 'This order cannot be deleted because it has dispatched product items.');
         }
 
-        if ($this->weeklyReportService->orderHasConfirmedItems((int) $order->id)) {
+        if ($this->weeklyReportService->orderHasLiveItems((int) $order->id)) {
             return redirect()->route('order.index')
-                ->with('error', 'This order cannot be deleted because it has confirmed Daily Dispatch rows.');
+                ->with('error', 'This order cannot be deleted because it has Daily Dispatch rows.');
         }
 
         DB::transaction(function () use ($order) {
@@ -594,7 +660,7 @@ class OrderManagementController extends Controller
         }
 
         $weeklyBlocked = $orders
-            ->filter(fn ($o) => $this->weeklyReportService->orderHasConfirmedItems((int) $o->id))
+            ->filter(fn ($o) => $this->weeklyReportService->orderHasLiveItems((int) $o->id))
             ->pluck('unique_order_id')
             ->all();
 
@@ -602,7 +668,7 @@ class OrderManagementController extends Controller
             return response()->json([
                 'blocked'        => true,
                 'blocked_orders' => $weeklyBlocked,
-                'message'        => 'Cannot delete: the following order(s) have confirmed Daily Dispatch rows — '
+                'message'        => 'Cannot delete: the following order(s) have Daily Dispatch rows — '
                     . implode(', ', $weeklyBlocked) . '.',
             ], 422);
         }
@@ -672,8 +738,11 @@ class OrderManagementController extends Controller
     /* ------------------------------------------------------------------ */
     private function validateOrder(Request $request, ?int $ignoreId = null): array
     {
-        $uniqueRule = 'required|string|unique:order_management,unique_order_id'
-            . ($ignoreId ? ",$ignoreId" : '');
+        /* On create the ID may already be taken by another user; store()
+           resolves the next free one, so uniqueness is only enforced on update. */
+        $uniqueRule = $ignoreId
+            ? "required|string|unique:order_management,unique_order_id,$ignoreId"
+            : 'required|string';
 
         return $request->validate([
             'unique_order_id'     => $uniqueRule,

@@ -225,6 +225,13 @@
                         @error('state_id')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
+                        @can('add-state')
+                            <div class="mt-1">
+                                <a href="javascript:void(0)" id="addDealerStateLink" class="text-primary fw-semibold small">
+                                    <i class="ti ti-plus me-1"></i>Add State
+                                </a>
+                            </div>
+                        @endcan
                     </div>
 
                     {{-- ── City ────────────────────────────────────────── --}}
@@ -243,6 +250,13 @@
                         @error('city_id')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
+                        @can('add-city')
+                            <div class="mt-1">
+                                <a href="javascript:void(0)" id="addDealerCityLink" class="text-primary fw-semibold small">
+                                    <i class="ti ti-plus me-1"></i>Add City
+                                </a>
+                            </div>
+                        @endcan
                     </div>
 
                     {{-- ── Postal Code ─────────────────────────────────── --}}
@@ -354,4 +368,5 @@
             });
         });
     </script>
+    @include('dealer.partials.quick-state-city')
 @endsection

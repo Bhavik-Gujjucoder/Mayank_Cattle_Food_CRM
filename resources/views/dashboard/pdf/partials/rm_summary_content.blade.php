@@ -43,11 +43,11 @@
                     <td>{{ $row['supplier_broker_name'] }}</td>
                     <td>{{ $row['party_name'] }}</td>
                     <td>{{ $row['material_name'] }}</td>
-                    <td class="text-right">{{ number_format((int) $row['total_qty']) }}</td>
-                    <td class="text-right">{{ number_format((int) $row['extra_qty']) }}</td>
-                    <td class="text-right">{{ number_format((int) $row['on_road_qty']) }}</td>
-                    <td class="text-right">{{ number_format((int) $row['unloading_qty']) }}</td>
-                    <td class="text-right">{{ number_format((int) $row['pending_qty']) }}</td>
+                    <td class="text-right">{{ rmQtyFormat($row['total_qty']) }}</td>
+                    <td class="text-right">{{ rmQtyFormat($row['extra_qty']) }}</td>
+                    <td class="text-right">{{ rmQtyFormat($row['on_road_qty']) }}</td>
+                    <td class="text-right">{{ rmQtyFormat($row['unloading_qty']) }}</td>
+                    <td class="text-right">{{ rmQtyFormat($row['pending_qty']) }}</td>
                     <td class="text-right">{{ number_format((float) $row['rate'], 2) }}</td>
                     <td class="text-right">{{ number_format((float) ($row['tax_percent'] ?? 0), 2) }}</td>
                     <td class="text-right">{{ number_format((float) ($row['tax_amount'] ?? 0), 2) }}</td>
@@ -66,8 +66,8 @@
             @php $totals = $summary['totals']; @endphp
             <tr class="footer-pending">
                 <td colspan="5">PENDING</td>
-                <td class="text-right">{{ number_format((int) $totals['pending']['qty']) }}</td>
-                <td class="text-right">{{ number_format((int) ($totals['extra_qty'] ?? 0)) }}</td>
+                <td class="text-right">{{ rmQtyFormat($totals['pending']['qty']) }}</td>
+                <td class="text-right">{{ rmQtyFormat(($totals['extra_qty'] ?? 0)) }}</td>
                 <td></td>
                 <td></td>
                 <td></td>
@@ -83,7 +83,7 @@
             </tr>
             <tr class="footer-received">
                 <td colspan="5">RECEIVED</td>
-                <td class="text-right">{{ number_format((int) $totals['received']['qty']) }}</td>
+                <td class="text-right">{{ rmQtyFormat($totals['received']['qty']) }}</td>
                 <td></td>
                 <td></td>
                 <td></td>
@@ -100,8 +100,8 @@
             </tr>
             <tr class="footer-total">
                 <td colspan="5">TOTAL</td>
-                <td class="text-right">{{ number_format((int) $totals['grand']['qty']) }}</td>
-                <td class="text-right">{{ number_format((int) ($totals['extra_qty'] ?? 0)) }}</td>
+                <td class="text-right">{{ rmQtyFormat($totals['grand']['qty']) }}</td>
+                <td class="text-right">{{ rmQtyFormat(($totals['extra_qty'] ?? 0)) }}</td>
                 <td></td>
                 <td></td>
                 <td></td>

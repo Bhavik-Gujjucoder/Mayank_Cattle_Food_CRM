@@ -500,7 +500,7 @@
         <script>
             Toastify({
                 text: @json(session('success')),
-                duration: 5000,
+                duration: {{ (int) session('toast_duration', 5000) }},
                 close: true,
                 gravity: "top",
                 position: "right",

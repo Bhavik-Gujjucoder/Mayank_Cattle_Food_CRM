@@ -57,11 +57,11 @@
             </div>
             <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Total Qty</label>
-                <div class="fw-semibold">{{ $order->total_qty ?? 0 }} tons</div>
+                <div class="fw-semibold">{{ rmQtyFormat($order->total_qty ?? 0) }} tons</div>
             </div>
             <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Extra Qty</label>
-                <div class="fw-semibold">{{ $order->extraQtyTotal() }} tons</div>
+                <div class="fw-semibold">{{ rmQtyFormat($order->extraQtyTotal()) }} tons</div>
             </div>
             <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Total Price</label>
@@ -135,10 +135,10 @@
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $item->rawMaterial?->category?->name ?? '—' }}</td>
                             <td>{{ $item->rawMaterial?->name ?? '—' }}</td>
-                            <td>{{ $item->total_qty }}</td>
-                            <td>{{ $item->extra_qty }}</td>
-                            <td>{{ $item->pending_qty }}</td>
-                            <td>{{ $item->received_qty }}</td>
+                            <td>{{ rmQtyFormat($item->total_qty) }}</td>
+                            <td>{{ rmQtyFormat($item->extra_qty) }}</td>
+                            <td>{{ rmQtyFormat($item->pending_qty) }}</td>
+                            <td>{{ rmQtyFormat($item->received_qty) }}</td>
                             <td>₹ {{ number_format($item->price, 2) }}</td>
                             <td>₹ {{ number_format($item->price_avg, 2) }}</td>
                             <td>{{ number_format((float) $item->tax_percent, 2) }}%</td>
@@ -184,7 +184,7 @@
                         <tr>
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $receive->rawMaterial?->name ?? '—' }}</td>
-                            <td>{{ $receive->qty }}</td>
+                            <td>{{ rmQtyFormat($receive->qty) }}</td>
                             <td>@include('raw_material.partials.receive-freight-display', ['receive' => $receive])</td>
                             <td>{{ $receive->received_date?->format('d M Y') ?? '—' }}</td>
                             <td>{!! $receive->statusBadge() !!}</td>

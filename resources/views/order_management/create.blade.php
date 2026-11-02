@@ -526,7 +526,7 @@ $(document).ready(function () {
                 $select.append(
                     $('<option>', {
                         value: dealer.id,
-                        text:  dealer.name + (dealer.firm_shop_name ? ' — ' + dealer.firm_shop_name : ''),
+                        text:  dealer.name + (dealer.city_name ? ' — ' + dealer.city_name : ''),
                     }).data('address', dealer.firm_shop_address)
                 );
             });

@@ -8,6 +8,8 @@ use App\Models\OrderManagement;
 use App\Models\Product;
 use App\Models\Truck;
 use App\Models\User;
+use App\Models\WeeklyReport;
+use App\Models\WeeklyReportItem;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -622,6 +624,50 @@ describe('destroy', function () {
         $this->actingAs($actor)->delete(route('dispatch.destroy', $d));
 
         $this->assertSoftDeleted('dispatch_management', ['id' => $d->id]);
+    });
+
+    it('restores a pending daily dispatch row when the linked dispatch is deleted', function () {
+        $s     = disSetup();
+        $actor = disActor(['delete-dispatch']);
+        $report = WeeklyReport::create([
+            'report_date' => '2026-07-09',
+            'already_produced' => 0,
+            'created_by' => $actor->id,
+        ]);
+        $item = WeeklyReportItem::create([
+            'weekly_report_id' => $report->id,
+            'sort_order' => 3,
+            'order_id' => $s['order']->id,
+            'order_item_id' => $s['orderItem']->id,
+            'product_id' => $s['product']->id,
+            'quantity' => 5,
+            'transport_id' => $s['transporter']->id,
+            'truck_number' => 'GJ01AA1234',
+            'driver_contact' => '9876543210',
+            'note' => 'Morning load',
+            'status' => WeeklyReportItem::STATUS_CONFIRMED,
+        ]);
+        $d = mkDis($s['order']->id, $s['orderItem']->id, $s['product']->id, $s['transporter']->id, [
+            'weekly_report_item_id' => $item->id,
+        ]);
+        $item->update(['dispatch_id' => $d->id]);
+
+        $this->actingAs($actor)->delete(route('dispatch.destroy', $d));
+
+        $this->assertSoftDeleted('dispatch_management', ['id' => $d->id]);
+        $this->assertSoftDeleted('weekly_report_items', ['id' => $item->id]);
+
+        $restored = WeeklyReportItem::query()
+            ->where('weekly_report_id', $report->id)
+            ->where('status', WeeklyReportItem::STATUS_PENDING)
+            ->first();
+
+        expect($restored)->not->toBeNull()
+            ->and((int) $restored->order_item_id)->toBe((int) $s['orderItem']->id)
+            ->and((int) $restored->quantity)->toBe(5)
+            ->and((int) $restored->sort_order)->toBe(3)
+            ->and($restored->note)->toBe('Morning load')
+            ->and($restored->dispatch_id)->toBeNull();
     });
 
     it('redirects to orderHistory after destroy', function () {

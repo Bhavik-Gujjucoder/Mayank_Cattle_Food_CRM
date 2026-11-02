@@ -33,7 +33,7 @@ class RawMaterialReceivesExport implements FromCollection, WithHeadings, WithSty
                 $row->order?->supplier_order_id ?? '—',
                 $row->rawMaterial?->category?->name ?? '—',
                 $row->rawMaterial?->name ?? '—',
-                $row->qty,
+                rmQty($row->qty),
                 RawMaterialCacheService::receiveFreightPlain($row),
                 $row->received_date?->format('d-m-Y') ?? '—',
                 RawMaterialFilterService::receiveStatusLabel((int) $row->status),

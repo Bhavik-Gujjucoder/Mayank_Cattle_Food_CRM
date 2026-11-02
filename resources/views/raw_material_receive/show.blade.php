@@ -69,7 +69,7 @@
             </div>
             <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Quantity</label>
-                <div class="fw-semibold">{{ $receive->qty }} tons</div>
+                <div class="fw-semibold">{{ rmQtyFormat($receive->qty) }} tons</div>
             </div>
             <div class="col-12 col-sm-6 col-md-4 mb-3">
                 <label class="col-form-label text-muted">Freight</label>
@@ -94,15 +94,15 @@
         <div class="row">
             <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Total Qty</label>
-                <div class="fw-semibold">{{ $receive->orderItem->total_qty }} tons</div>
+                <div class="fw-semibold">{{ rmQtyFormat($receive->orderItem->total_qty) }} tons</div>
             </div>
             <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Pending Qty</label>
-                <div class="fw-semibold">{{ $receive->orderItem->pending_qty }} tons</div>
+                <div class="fw-semibold">{{ rmQtyFormat($receive->orderItem->pending_qty) }} tons</div>
             </div>
             <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Received Qty</label>
-                <div class="fw-semibold">{{ $receive->orderItem->received_qty }} tons</div>
+                <div class="fw-semibold">{{ rmQtyFormat($receive->orderItem->received_qty) }} tons</div>
             </div>
             <div class="col-12 col-sm-6 col-md-3 mb-3">
                 <label class="col-form-label text-muted">Price / kg</label>

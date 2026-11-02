@@ -42,6 +42,7 @@ class RawMaterialReceiveController extends Controller
                 ->addColumn('supplier_order_id', fn($row) => e($row->order?->supplier_order_id ?: '—'))
                 ->addColumn('category_name', fn($row) => e($row->rawMaterial?->category?->name ?? '—'))
                 ->addColumn('material_name', fn($row) => e($row->rawMaterial?->name ?? '—'))
+                ->editColumn('qty', fn($row) => rmQtyFormat($row->qty))
                 ->editColumn('freight', fn($row) => RawMaterialCacheService::receiveFreightHtml($row))
                 ->editColumn('received_date', fn($row) => $row->received_date?->format('d M Y') ?? '—')
                 ->editColumn('status', fn($row) => $row->statusBadge())
@@ -84,7 +85,7 @@ class RawMaterialReceiveController extends Controller
             'raw_material_id'            => $item->raw_material_id,
             'raw_material_order_id'      => $request->raw_material_order_id,
             'raw_material_order_item_id' => $request->raw_material_order_item_id,
-            'qty'                        => $request->qty,
+            'qty'                        => rmQty($request->qty),
             'freight'                    => $request->freight ?? 0,
             'received_date'              => $request->received_date,
             'status'                     => $request->status,
@@ -182,7 +183,7 @@ class RawMaterialReceiveController extends Controller
             'raw_material_id'            => $item->raw_material_id,
             'raw_material_order_id'      => $request->raw_material_order_id,
             'raw_material_order_item_id' => $request->raw_material_order_item_id,
-            'qty'                        => $request->qty,
+            'qty'                        => rmQty($request->qty),
             'freight'                    => $request->freight ?? 0,
             'received_date'              => $request->received_date,
         ]);

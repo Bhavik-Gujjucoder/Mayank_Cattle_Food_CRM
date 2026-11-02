@@ -359,11 +359,14 @@ describe('store-validation', function () {
             ->assertSessionHasErrors(['order_date']);
     });
 
-    it('rejects future order_date', function () {
+    it('accepts a future order_date', function () {
         $s = rmoSetup();
+        $future = now()->addDay()->toDateString();
         actingAs(rmoActor(['add-raw-material-purchas-order']))
-            ->post(route('raw-material.order.store'), rmoPayload($s['broker']->id, $s['supplier']->id, $s['material']->id, ['order_date' => now()->addDay()->toDateString()]))
-            ->assertSessionHasErrors(['order_date']);
+            ->post(route('raw-material.order.store'), rmoPayload($s['broker']->id, $s['supplier']->id, $s['material']->id, ['order_date' => $future]))
+            ->assertRedirect(route('raw-material.order.index'));
+
+        expect(RawMaterialOrder::latest('id')->first()->order_date->toDateString())->toBe($future);
     });
 
     it('rejects invalid price_basis', function () {
@@ -371,6 +374,28 @@ describe('store-validation', function () {
         actingAs(rmoActor(['add-raw-material-purchas-order']))
             ->post(route('raw-material.order.store'), rmoPayload($s['broker']->id, $s['supplier']->id, $s['material']->id, ['price_basis' => 'Invalid']))
             ->assertSessionHasErrors(['price_basis']);
+    });
+
+    it('stores a decimal total qty and prices it in kilograms', function () {
+        $broker   = mkRmoBroker();
+        $supplier = mkRmoSupplier($broker->id);
+        $material = mkRmoMaterial(mkRmoCategory()->id);
+        $orderId  = 'ORD-DEC-' . uniqid();
+
+        actingAs(rmoActor(['add-raw-material-purchas-order']))
+            ->post(route('raw-material.order.store'), rmoPayload($broker->id, $supplier->id, $material->id, [
+                'order_unique_id' => $orderId,
+                'total_qty'       => ['10.5'],
+                'price'           => ['500'],
+            ]))
+            ->assertRedirect(route('raw-material.order.index'));
+
+        $order = RawMaterialOrder::where('order_unique_id', $orderId)->first();
+        $item  = $order->items()->first();
+
+        expect($item->total_qty)->toEqual(10.5)
+            ->and($order->fresh()->total_qty)->toEqual(10.5)
+            ->and((float) $item->total_price)->toEqual(10.5 * 1000 * 500);
     });
 
     it('rejects zero quantity', function () {
@@ -1076,5 +1101,152 @@ describe('model-methods', function () {
         $s = rmoSetup();
         expect($s['order']->supplier->id)->toBe($s['supplier']->id);
         expect($s['order']->supplierBroker->id)->toBe($s['broker']->id);
+    });
+});
+
+function rmoImportFile(array $rows): \Illuminate\Http\UploadedFile
+{
+    $headings = \App\Exports\RawMaterialOrderImportSampleExport::headings();
+    $sheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $sheet->getActiveSheet()->fromArray(array_merge([$headings], $rows), null, 'A1');
+    $path = tempnam(sys_get_temp_dir(), 'rmoimp') . '.xlsx';
+    (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($sheet))->save($path);
+
+    return new \Illuminate\Http\UploadedFile(
+        $path,
+        'raw-material-orders.xlsx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        null,
+        true
+    );
+}
+
+describe('raw material order import', function () {
+    it('downloads the sample workbook', function () {
+        $actor = rmoActor(['add-raw-material-purchas-order']);
+
+        $response = actingAs($actor)
+            ->get(route('raw-material.order.import-sample'))
+            ->assertOk()
+            ->assertDownload('raw-material-order-import-sample.xlsx');
+
+        $path = tempnam(sys_get_temp_dir(), 'rmosample');
+        file_put_contents($path, $response->streamedContent());
+        $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path)->getSheetByName('Orders');
+
+        expect($sheet->getComment('C1')->getText()->getPlainText())->toContain('supplier broker')
+            ->and($sheet->getComment('F1')->getText()->getPlainText())->toContain('FOR + GST');
+    });
+
+    it('imports two material lines as one order', function () {
+        $broker = mkRmoBroker(['name' => 'Import SB']);
+        $supplier = mkRmoSupplier($broker->id, ['name' => 'Import Supplier']);
+        $category = mkRmoCategory();
+        $maize = mkRmoMaterial($category->id);
+        $maize->update(['name' => 'Import Maize']);
+        $bran = mkRmoMaterial($category->id);
+        $bran->update(['name' => 'Import Bran']);
+        $actor = rmoActor(['add-raw-material-purchas-order']);
+        $today = now()->toDateString();
+
+        $file = rmoImportFile([
+            ['1', $today, 'Import SB', 'Import Supplier', 'SUP-1', 'FOR + GST', 1000, 'Import Maize', 2.5, 20, 5, 0, 0],
+            ['1', $today, 'Import SB', 'Import Supplier', 'SUP-1', 'FOR + GST', 1000, 'Import Bran', 1, 30, 0, 10, 0],
+        ]);
+
+        actingAs($actor)
+            ->post(route('raw-material.order.import'), ['file' => $file])
+            ->assertRedirect(route('raw-material.order.index'));
+
+        $order = RawMaterialOrder::with('items')->first();
+        expect($order)->not->toBeNull()
+            ->and($order->order_unique_id)->toStartWith('RMO/')
+            ->and((int) $order->supplier_id)->toBe((int) $supplier->id)
+            ->and($order->price_basis)->toBe('FOR + GST')
+            ->and((float) $order->advance_payment)->toBe(1000.0)
+            ->and($order->items)->toHaveCount(2);
+    });
+
+    it('imports nothing when the price basis is invalid', function () {
+        $broker = mkRmoBroker(['name' => 'Import SB']);
+        mkRmoSupplier($broker->id, ['name' => 'Import Supplier']);
+        $material = mkRmoMaterial(mkRmoCategory()->id);
+        $material->update(['name' => 'Import Maize']);
+        $actor = rmoActor(['add-raw-material-purchas-order']);
+
+        $file = rmoImportFile([
+            ['1', now()->toDateString(), 'Import SB', 'Import Supplier', '', 'Wrong basis', 0, 'Import Maize', 1, 20, 0, 0, 0],
+        ]);
+
+        actingAs($actor)
+            ->from(route('raw-material.order.index'))
+            ->post(route('raw-material.order.import'), ['file' => $file])
+            ->assertRedirect(route('raw-material.order.index'))
+            ->assertSessionHas('error');
+
+        expect(RawMaterialOrder::count())->toBe(0);
+    });
+
+    it('imports an order dated in the future', function () {
+        $broker = mkRmoBroker(['name' => 'Import SB']);
+        mkRmoSupplier($broker->id, ['name' => 'Import Supplier']);
+        $material = mkRmoMaterial(mkRmoCategory()->id);
+        $material->update(['name' => 'Import Maize']);
+        $actor = rmoActor(['add-raw-material-purchas-order']);
+        $future = now()->addDays(5)->toDateString();
+
+        $file = rmoImportFile([
+            ['1', $future, 'Import SB', 'Import Supplier', '', 'FOR + GST', 0, 'Import Maize', 1, 20, 0, 0, 0],
+        ]);
+
+        actingAs($actor)
+            ->post(route('raw-material.order.import'), ['file' => $file])
+            ->assertRedirect(route('raw-material.order.index'));
+
+        expect(RawMaterialOrder::first()->order_date->toDateString())->toBe($future);
+    });
+
+    it('allows the same raw material on two order groups', function () {
+        $broker = mkRmoBroker(['name' => 'Import SB']);
+        mkRmoSupplier($broker->id, ['name' => 'Import Supplier']);
+        $material = mkRmoMaterial(mkRmoCategory()->id);
+        $material->update(['name' => 'Import Maize']);
+        $actor = rmoActor(['add-raw-material-purchas-order']);
+        $today = now()->toDateString();
+
+        $file = rmoImportFile([
+            ['1', $today, 'Import SB', 'Import Supplier', 'SUP-1', 'FOR + GST', 0, 'Import Maize', 2, 20, 0, 0, 0],
+            ['2', $today, 'Import SB', 'Import Supplier', 'SUP-2', 'Ex-Factory + GST', 0, 'Import Maize', 1, 22, 0, 0, 0],
+        ]);
+
+        actingAs($actor)
+            ->post(route('raw-material.order.import'), ['file' => $file])
+            ->assertRedirect(route('raw-material.order.index'));
+
+        expect(RawMaterialOrder::count())->toBe(2);
+        expect(RawMaterialOrderItem::where('raw_material_id', $material->id)->count())->toBe(2);
+    });
+
+    it('allows the same raw material twice inside one order group', function () {
+        $broker = mkRmoBroker(['name' => 'Import SB']);
+        mkRmoSupplier($broker->id, ['name' => 'Import Supplier']);
+        $material = mkRmoMaterial(mkRmoCategory()->id);
+        $material->update(['name' => 'Import Maize']);
+        $actor = rmoActor(['add-raw-material-purchas-order']);
+        $today = now()->toDateString();
+
+        $file = rmoImportFile([
+            ['1', $today, 'Import SB', 'Import Supplier', 'SUP-1', 'FOR + GST', 0, 'Import Maize', 2, 20, 0, 0, 0],
+            ['1', $today, 'Import SB', 'Import Supplier', 'SUP-1', 'FOR + GST', 0, 'Import Maize', 1, 22, 0, 0, 0],
+        ]);
+
+        actingAs($actor)
+            ->post(route('raw-material.order.import'), ['file' => $file])
+            ->assertRedirect(route('raw-material.order.index'));
+
+        $order = RawMaterialOrder::with('items')->first();
+        expect(RawMaterialOrder::count())->toBe(1)
+            ->and($order->items)->toHaveCount(2)
+            ->and($order->items->where('raw_material_id', $material->id))->toHaveCount(2);
     });
 });

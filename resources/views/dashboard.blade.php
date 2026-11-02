@@ -616,28 +616,34 @@ withDataTable(function($) {
 
     @can('raw-material-daily-summary')
     @if ($rm_daily_summary)
+    function formatRmQty(value) {
+        var n = Number(value || 0);
+        if (!isFinite(n)) n = 0;
+        return n.toLocaleString(undefined, { maximumFractionDigits: 3 });
+    }
+
     function updateRmSummaryTotals(totals) {
         totals = totals || {};
         var top = totals || {};
-        $('#rmKpiOrderedQty').text(Number(top.ordered_qty || 0).toLocaleString());
-        $('#rmKpiOnRoadQty').text(Number(top.on_road_qty || 0).toLocaleString());
-        $('#rmKpiUnloadingQty').text(Number(top.unloading_qty || 0).toLocaleString());
-        $('#rmKpiPendingQty').text(Number(top.pending_not_on_road || 0).toLocaleString());
+        $('#rmKpiOrderedQty').text(formatRmQty(top.ordered_qty));
+        $('#rmKpiOnRoadQty').text(formatRmQty(top.on_road_qty));
+        $('#rmKpiUnloadingQty').text(formatRmQty(top.unloading_qty));
+        $('#rmKpiPendingQty').text(formatRmQty(top.pending_not_on_road));
 
         var pending = top.pending || {};
         var received = top.received || {};
         var grand = top.grand || {};
 
-        $('#rmFootPendingQty').text(Number(pending.qty || 0).toLocaleString());
+        $('#rmFootPendingQty').text(formatRmQty(pending.qty));
         $('#rmFootPendingAvg').text(Number(pending.average || 0).toFixed(3));
         $('#rmFootPendingAmt').text(Number(pending.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
-        $('#rmFootReceivedQty').text(Number(received.qty || 0).toLocaleString());
+        $('#rmFootReceivedQty').text(formatRmQty(received.qty));
         $('#rmFootReceivedAvg').text(Number(received.average || 0).toFixed(3));
         $('#rmFootReceivedAmt').text(Number(received.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
-        $('#rmFootGrandQty').text(Number(grand.qty || 0).toLocaleString());
-        $('#rmFootExtraQty').text(Number(top.extra_qty || 0).toLocaleString());
+        $('#rmFootGrandQty').text(formatRmQty(grand.qty));
+        $('#rmFootExtraQty').text(formatRmQty(top.extra_qty));
         $('#rmFootGrandAvg').text(Number(grand.average || 0).toFixed(3));
         $('#rmFootGrandPendingAmt').text(Number(pending.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
         $('#rmFootGrandReceivedAmt').text(Number(received.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));

@@ -38,8 +38,8 @@
                     <td>{{ $material->category?->name ?? '—' }}</td>
                     <td>{{ $material->name }}</td>
                     <td>{{ $material->unit }}</td>
-                    <td class="text-right">{{ number_format((float) $material->total_stock, 2) }}</td>
-                    <td class="text-right">{{ number_format((float) $material->available_stock, 2) }}</td>
+                    <td class="text-right">{{ rmQtyFormat($material->total_stock) }}</td>
+                    <td class="text-right">{{ rmQtyFormat($material->available_stock) }}</td>
                     <td class="text-right">{{ number_format((float) $material->last_purchase_price, 2) }}</td>
                     <td class="text-right">{{ number_format((float) $material->average_price, 2) }}</td>
                     <td>{{ \App\Services\RawMaterial\RawMaterialFilterService::materialStatusLabel((int) $material->status) }}</td>

@@ -25,7 +25,7 @@
                 <td>{{ $order->supplier_order_id ?: '—' }}</td>
                 <td>{{ $order->price_basis ?: '—' }}</td>
                 <td>{{ $order->order_date?->format('d M Y') ?? '—' }}</td>
-                <td class="text-right">{{ $order->total_qty }}</td>
+                <td class="text-right">{{ rmQtyFormat($order->total_qty) }}</td>
                 <td class="text-right">{{ number_format((float) $order->total_price, 2) }}</td>
                 <td class="text-right">{{ number_format((float) $order->advance_payment, 2) }}</td>
                 <td class="text-right">{{ number_format((float) $order->total_freight, 2) }}</td>

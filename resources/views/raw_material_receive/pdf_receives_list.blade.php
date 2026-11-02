@@ -40,7 +40,7 @@
                     <td>{{ $receive->order?->supplier_order_id ?: '—' }}</td>
                     <td>{{ $receive->rawMaterial?->category?->name ?? '—' }}</td>
                     <td>{{ $receive->rawMaterial?->name ?? '—' }}</td>
-                    <td class="text-right">{{ $receive->qty }}</td>
+                    <td class="text-right">{{ rmQtyFormat($receive->qty) }}</td>
                     <td>{!! \App\Services\RawMaterialCacheService::receiveFreightPdfHtml($receive) !!}</td>
                     <td>{{ $receive->received_date?->format('d M Y') ?? '—' }}</td>
                     <td>{{ \App\Services\RawMaterial\RawMaterialFilterService::receiveStatusLabel((int) $receive->status) }}</td>
