@@ -112,9 +112,22 @@
     <div class="card-body">
         <div class="table-responsive custom-table">
             <table class="table dataTable no-footer" id="raw_material_order_table">
+                @can('delete-raw-material-purchas-order')
+                    <button class="btn btn-danger me-2" id="bulk_delete_button" style="display:none;">
+                        <i class="ti ti-trash me-2"></i>Delete Selected
+                    </button>
+                @endcan
                 <thead class="thead-light">
                     <tr>
                         <th hidden>ID</th>
+                        @can('delete-raw-material-purchas-order')
+                            <th class="no-sort" scope="col">
+                                <label class="checkboxs">
+                                    <input type="checkbox" id="select-all" class="rmo_checkbox">
+                                    <span class="checkmarks"></span>
+                                </label>
+                            </th>
+                        @endcan
                         <th class="no-sort" scope="col">Sr No</th>
                         <th scope="col">Order ID</th>
                         <th scope="col">Supplier Broker</th>
@@ -164,6 +177,7 @@ withDataTable(function () {
     }
 
     const isShowAction = {{ auth()->user()->canAny(['add-raw-material-purchas-order', 'edit-raw-material-purchas-order', 'delete-raw-material-purchas-order']) ? 'true' : 'false' }};
+    const isShowCheckbox = {{ auth()->user()->can('delete-raw-material-purchas-order') ? 'true' : 'false' }};
 
     var rawMaterialOrderAjax = buildDataTableAjax("{{ route('raw-material.order.index') }}", {
         data: function (d) {
@@ -184,6 +198,7 @@ withDataTable(function () {
         ajax: rawMaterialOrderAjax,
         columns: [
             { data: 'id', name: 'id', visible: false, searchable: false },
+            ...(isShowCheckbox ? [{ data: 'checkbox', name: 'checkbox', orderable: false, searchable: false }] : []),
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
             { data: 'order_unique_id', name: 'order_unique_id', searchable: true },
             { data: 'supplier_broker_name', name: 'supplier_broker_name', orderable: false, searchable: false },
@@ -272,6 +287,54 @@ withDataTable(function () {
         });
     });
 
+    $('#select-all').on('change', function () {
+        $('.rmo_checkbox').prop('checked', this.checked);
+        toggleBulkBtn();
+    });
+
+    $(document).on('change', '.rmo_checkbox', function () {
+        if (!this.checked) {
+            $('#select-all').prop('checked', false);
+        }
+        toggleBulkBtn();
+    });
+
+    function toggleBulkBtn() {
+        var count = $('.rmo_checkbox:checked').not('#select-all').length;
+        count > 0 ? $('#bulk_delete_button').show() : $('#bulk_delete_button').hide();
+    }
+
+    $('#bulk_delete_button').on('click', function () {
+        var selectedIds = $('.rmo_checkbox:checked').not('#select-all').map(function () {
+            return $(this).data('id');
+        }).get();
+
+        if (!selectedIds.length) {
+            return;
+        }
+
+        confirmDeletion(function () {
+            $.ajax({
+                url: "{{ route('raw-material.order.bulk-delete') }}",
+                method: 'POST',
+                data: {
+                    ids: selectedIds,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function (response) {
+                    show_success(response.message);
+                    raw_material_order_table.ajax.reload();
+                    $('#bulk_delete_button').hide();
+                    $('#select-all').prop('checked', false);
+                },
+                error: function (xhr) {
+                    var res = xhr.responseJSON;
+                    show_error((res && res.message) ? res.message : 'An error occurred while deleting.');
+                }
+            });
+        }, 'You want to remove the selected purchase orders? Once deleted, they cannot be recovered.');
+    });
+
     $(document).on('click', '.cancel-order-btn', function (e) {
         e.preventDefault();
         var url = $(this).data('url');
@@ -299,10 +362,10 @@ withDataTable(function () {
         $form.submit();
     }
 
-    function confirmDeletion(callback) {
+    function confirmDeletion(callback, text) {
         Swal.fire({
             title: 'Are you sure?',
-            text: 'You want to remove this purchase order? Once deleted, it cannot be recovered.',
+            text: text || 'You want to remove this purchase order? Once deleted, it cannot be recovered.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Yes, delete it!',

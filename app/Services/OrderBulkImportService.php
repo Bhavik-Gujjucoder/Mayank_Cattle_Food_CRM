@@ -38,7 +38,7 @@ class OrderBulkImportService
         $brands = $this->indexByName(
             BrandManagement::query()->where('status', 1)->get(['id', 'name'])
         );
-        $dealers = DealerManagement::query()->get(['id', 'broker_id', 'brand_id', 'code_no']);
+        $dealers = DealerManagement::query()->get(['id', 'broker_id', 'brand_id', 'code_no', 'firm_shop_address']);
         $dealersByCode = [];
         foreach ($dealers as $dealer) {
             $dealersByCode[mb_strtolower(trim((string) $dealer->code_no))] = $dealer;
@@ -51,9 +51,9 @@ class OrderBulkImportService
         foreach ($rows as $entry) {
             $rowNo = $entry['row'];
             $data = $entry['data'];
-            $groupKey = SpreadsheetImport::text($data, 'order_group');
+            $groupKey = SpreadsheetImport::text($data, 'total_product_order_id');
             if ($groupKey === '') {
-                $errors[] = "Row {$rowNo}: Order group is required.";
+                $errors[] = "Row {$rowNo}: Total Product Order ID is required.";
                 continue;
             }
 
@@ -71,9 +71,6 @@ class OrderBulkImportService
 
             if (! $date) {
                 $errors[] = "Row {$rowNo}: Order date must be YYYY-MM-DD.";
-            }
-            if ($address === '') {
-                $errors[] = "Row {$rowNo}: Delivery address is required.";
             }
             if (! in_array($paymentStatus, ['unpaid', 'paid', 'partial'], true)) {
                 $errors[] = "Row {$rowNo}: Payment status must be unpaid, paid, or partial.";
@@ -126,7 +123,7 @@ class OrderBulkImportService
                     'lines' => [],
                 ];
             } elseif ($groups[$groupKey]['header'] !== $header) {
-                $errors[] = "Row {$rowNo}: Order group {$groupKey} has different order details than its first row.";
+                $errors[] = "Row {$rowNo}: Total Product Order ID {$groupKey} has different order details than its first row.";
             }
 
             $groups[$groupKey]['lines'][] = [
@@ -147,7 +144,7 @@ class OrderBulkImportService
             } else {
                 $broker = $this->resolveNamed($brokers, $group['broker'], 'Broker', $firstRow, $errors);
                 if ($user && SalesScope::isBroker($user) && $broker && (int) $broker->id !== (int) $user->id) {
-                    $errors[] = 'Order group ' . $groupKey . ': you can only import orders for your own broker account.';
+                    $errors[] = 'Total Product Order ID ' . $groupKey . ': you can only import orders for your own broker account.';
                     $broker = null;
                 }
             }
@@ -156,13 +153,13 @@ class OrderBulkImportService
             $dealer = null;
             $codeKey = mb_strtolower($group['dealer_code']);
             if ($codeKey === '') {
-                $errors[] = 'Order group ' . $groupKey . ': Dealer code is required.';
+                $errors[] = 'Total Product Order ID ' . $groupKey . ': Dealer code is required.';
             } elseif (! isset($dealersByCode[$codeKey])) {
-                $errors[] = 'Order group ' . $groupKey . ': dealer code "' . $group['dealer_code'] . '" was not found.';
+                $errors[] = 'Total Product Order ID ' . $groupKey . ': dealer code "' . $group['dealer_code'] . '" was not found.';
             } else {
                 $dealer = $dealersByCode[$codeKey];
                 if ($broker && $brand && ((int) $dealer->broker_id !== (int) $broker->id || (int) $dealer->brand_id !== (int) $brand->id)) {
-                    $errors[] = 'Order group ' . $groupKey . ': dealer code "' . $group['dealer_code'] . '" does not belong to that broker and brand.';
+                    $errors[] = 'Total Product Order ID ' . $groupKey . ': dealer code "' . $group['dealer_code'] . '" does not belong to that broker and brand.';
                     $dealer = null;
                 }
             }
@@ -170,7 +167,7 @@ class OrderBulkImportService
             if ($user && SalesScope::isDealer($user)) {
                 $own = DealerManagement::where('user_id', $user->id)->first();
                 if (! $own || ! $dealer || (int) $dealer->id !== (int) $own->id) {
-                    $errors[] = 'Order group ' . $groupKey . ': you can only import orders for your own dealer code.';
+                    $errors[] = 'Total Product Order ID ' . $groupKey . ': you can only import orders for your own dealer code.';
                     $dealer = null;
                 }
             }
@@ -201,13 +198,21 @@ class OrderBulkImportService
                 ];
             }
 
-            if ($broker && $brand && $dealer && $group['date'] && $group['address'] !== '' && $lines !== []) {
+            $address = $group['address'] !== ''
+                ? $group['address']
+                : trim((string) ($dealer?->firm_shop_address ?? ''));
+
+            if ($address === '' && $dealer) {
+                $errors[] = 'Total Product Order ID ' . $groupKey . ': Delivery address is empty and this dealer has no shop address.';
+            }
+
+            if ($broker && $brand && $dealer && $group['date'] && $address !== '' && $lines !== []) {
                 $prepared[] = [
                     'date' => $group['date'],
                     'broker_id' => (int) $broker->id,
                     'brand_id' => (int) $brand->id,
                     'dealer_id' => (int) $dealer->id,
-                    'address' => $group['address'],
+                    'address' => $address,
                     'payment_status' => $group['payment_status'],
                     'payment_type' => $group['payment_type'],
                     'partial' => $group['payment_status'] === 'partial' ? $group['partial'] : null,

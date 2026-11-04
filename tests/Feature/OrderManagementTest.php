@@ -2027,6 +2027,27 @@ describe('order import', function () {
         expect(OrderManagement::count())->toBe(0);
     });
 
+    it('uses the dealer shop address when delivery address is blank', function () {
+        $brand = mkOrdBrand(['name' => 'Import Brand']);
+        $broker = mkOrdBroker(['name' => 'Import Broker']);
+        mkOrdDealer($broker->id, $brand->id, null, [
+            'code_no' => 'IMP-D1',
+            'firm_shop_address' => 'Dealer shop, city',
+        ]);
+        mkOrdProduct($brand->id, ['name' => 'Import Feed']);
+        $actor = ordActor(['add-order']);
+
+        $file = orderImportFile([
+            ['1', '2026-11-02', 'Import Broker', 'Import Brand', 'IMP-D1', '', 'unpaid', 'credit', '', 'Import Feed', 10, 100],
+        ]);
+
+        actingAs($actor)
+            ->post(route('order.import'), ['file' => $file])
+            ->assertRedirect(route('order.index'));
+
+        expect(OrderManagement::first()->delivery_address)->toBe('Dealer shop, city');
+    });
+
     it('allows the same product on two order groups', function () {
         $brand = mkOrdBrand(['name' => 'Import Brand']);
         $broker = mkOrdBroker(['name' => 'Import Broker']);
