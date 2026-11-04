@@ -116,7 +116,10 @@ class OrderManagementController extends Controller
                 })
                 ->addColumn('checkbox', function ($row) {
                     return '<label class="checkboxs">
-                                <input type="checkbox" class="checkbox-item order_checkbox" data-id="' . $row->id . '">
+                                <input type="checkbox" class="checkbox-item order_checkbox"
+                                    data-id="' . $row->id . '"
+                                    data-label="' . e($row->unique_order_id) . '"
+                                    data-check-url="' . route('order.deleteCheck', $row->id) . '">
                                 <span class="checkmarks"></span>
                             </label>';
                 })

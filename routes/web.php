@@ -360,6 +360,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->name('import-sample')->middleware('permission:add-raw-material-purchas-order');
             Route::post('import', [RawMaterialOrderController::class, 'import'])
                 ->name('import')->middleware('permission:add-raw-material-purchas-order');
+            Route::post('bulk-delete', [RawMaterialOrderController::class, 'bulkDelete'])
+                ->name('bulk-delete')->middleware('permission:delete-raw-material-purchas-order');
             Route::get('create', [RawMaterialOrderController::class, 'create'])
                 ->name('create')->middleware('permission:add-raw-material-purchas-order');
             Route::get('{raw_material_order}', [RawMaterialOrderController::class, 'show'])

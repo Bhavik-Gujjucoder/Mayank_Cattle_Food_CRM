@@ -45,9 +45,9 @@ class RawMaterialOrderBulkImportService
         foreach ($rows as $entry) {
             $rowNo = $entry['row'];
             $data = $entry['data'];
-            $groupKey = SpreadsheetImport::text($data, 'order_group');
+            $groupKey = SpreadsheetImport::text($data, 'total_product_order_id');
             if ($groupKey === '') {
-                $errors[] = "Row {$rowNo}: Order group is required.";
+                $errors[] = "Row {$rowNo}: Total Product Order ID is required.";
                 continue;
             }
 
@@ -129,7 +129,7 @@ class RawMaterialOrderBulkImportService
                     'lines' => [],
                 ];
             } elseif ($groups[$groupKey]['header'] !== $header) {
-                $errors[] = "Row {$rowNo}: Order group {$groupKey} has different order details than its first row.";
+                $errors[] = "Row {$rowNo}: Total Product Order ID {$groupKey} has different order details than its first row.";
             }
 
             $groups[$groupKey]['lines'][] = [

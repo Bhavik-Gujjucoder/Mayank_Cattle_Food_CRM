@@ -59,6 +59,14 @@ class RawMaterialOrderController extends Controller
                 ->editColumn('advance_payment', fn($row) => '₹ ' . number_format((float) $row->advance_payment, 2))
                 ->editColumn('total_freight', fn($row) => '₹ ' . number_format($row->total_freight, 2))
                 ->editColumn('status', fn($row) => $row->statusBadge())
+                ->addColumn('checkbox', function ($row) {
+                    return '<label class="checkboxs">
+                                <input type="checkbox" class="checkbox-item rmo_checkbox"
+                                    data-id="' . $row->id . '"
+                                    data-label="' . e($row->order_unique_id) . '">
+                                <span class="checkmarks"></span>
+                            </label>';
+                })
                 ->addColumn('action', function ($row) use ($canView, $canEdit, $canExport, $canDelete) {
                     $view   = $canView
                         ? '<a href="' . route('raw-material.order.show', $row->id) . '" class="dropdown-item"><i class="ti ti-eye text-info"></i> View</a>'
@@ -77,7 +85,7 @@ class RawMaterialOrderController extends Controller
 
                     return '<div class="dropdown table-action"><a href="#" class="action-icon" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v"></i></a><div class="dropdown-menu dropdown-menu-right">' . $view . $edit . $cancel . $exportExcel . $exportPdf . $delete . '</div></div>';
                 })
-                ->rawColumns(['status', 'action'])
+                ->rawColumns(['status', 'checkbox', 'action'])
                 ->make(true);
         }
 
@@ -228,6 +236,37 @@ class RawMaterialOrderController extends Controller
         $raw_material_order->delete();
 
         return redirect()->route('raw-material.order.index')->with('success', 'Order deleted successfully.');
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (! is_array($ids) || $ids === []) {
+            return response()->json(['message' => 'No records selected.'], 400);
+        }
+
+        $orders = RawMaterialOrder::with('receives')->whereIn('id', $ids)->get();
+        $blocked = $orders
+            ->filter(fn (RawMaterialOrder $order) => $order->receives->isNotEmpty())
+            ->pluck('order_unique_id')
+            ->all();
+
+        if ($blocked !== []) {
+            return response()->json([
+                'blocked' => true,
+                'blocked_orders' => $blocked,
+                'message' => 'Cannot delete — receive entries exist for: ' . implode(', ', $blocked) . '.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($orders) {
+            foreach ($orders as $order) {
+                $order->items()->delete();
+                $order->delete();
+            }
+        });
+
+        return response()->json(['message' => 'Selected orders deleted successfully.']);
     }
 
     public function cancel(RawMaterialOrder $raw_material_order)

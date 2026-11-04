@@ -783,6 +783,46 @@ describe('destroy', function () {
         assertSoftDeleted('raw_material_orders', ['id' => $s['order']->id]);
     });
 
+    it('deletes selected orders that have no receives', function () {
+        $first = rmoSetup();
+        $second = rmoSetup();
+
+        actingAs(rmoActor(['delete-raw-material-purchas-order']))
+            ->postJson(route('raw-material.order.bulk-delete'), [
+                'ids' => [$first['order']->id, $second['order']->id],
+            ])
+            ->assertOk()
+            ->assertJson(['message' => 'Selected orders deleted successfully.']);
+
+        assertSoftDeleted('raw_material_orders', ['id' => $first['order']->id]);
+        assertSoftDeleted('raw_material_orders', ['id' => $second['order']->id]);
+    });
+
+    it('blocks bulk delete when any selected order has receives', function () {
+        $open = rmoSetup();
+        $received = rmoSetup();
+
+        RawMaterialReceive::create([
+            'raw_material_id'            => $received['material']->id,
+            'raw_material_order_id'      => $received['order']->id,
+            'raw_material_order_item_id' => $received['item']->id,
+            'qty'                        => 5,
+            'freight'                    => 0,
+            'received_date'              => now()->toDateString(),
+            'status'                     => 0,
+        ]);
+
+        actingAs(rmoActor(['delete-raw-material-purchas-order']))
+            ->postJson(route('raw-material.order.bulk-delete'), [
+                'ids' => [$open['order']->id, $received['order']->id],
+            ])
+            ->assertStatus(422)
+            ->assertJson(['blocked' => true]);
+
+        expect(RawMaterialOrder::find($open['order']->id))->not->toBeNull();
+        expect(RawMaterialOrder::find($received['order']->id))->not->toBeNull();
+    });
+
     it('blocks delete when receives exist for this order', function () {
         $s = rmoSetup();
 

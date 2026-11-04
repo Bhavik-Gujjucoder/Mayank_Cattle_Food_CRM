@@ -435,12 +435,14 @@
                 <thead class="thead-light">
                     <tr>
                         <th hidden>ID</th>
-                        {{-- <th class="no-sort" scope="col">
-                            <label class="checkboxs">
-                                <input type="checkbox" id="select-all" class="order_checkbox">
-                                <span class="checkmarks"></span>
-                            </label>
-                        </th> --}}
+                        @can('delete-order')
+                            <th class="no-sort" scope="col">
+                                <label class="checkboxs">
+                                    <input type="checkbox" id="select-all" class="order_checkbox">
+                                    <span class="checkmarks"></span>
+                                </label>
+                            </th>
+                        @endcan
                         <th class="no-sort" style="width:40px;" scope="col"></th>
                         <th class="no-sort" scope="col">Sr No</th>
                         <th scope="col">Order ID</th>
@@ -612,19 +614,18 @@
                 [0, 'desc']
             ],
             ajax: orderAjax,
-            columns: [{
+            columns: [                {
                     data: 'id',
                     name: 'id',
                     visible: false,
                     searchable: false
                 },
-                // {
-                //     data: 'checkbox',
-                //     name: 'checkbox',
-                //     orderable: false,
-                //     searchable: false,
-                //     visible: isShowCheckbox
-                // },
+                ...(isShowCheckbox ? [{
+                    data: 'checkbox',
+                    name: 'checkbox',
+                    orderable: false,
+                    searchable: false
+                }] : []),
                 {
                     data: 'expand_control',
                     name: 'expand_control',
@@ -936,6 +937,9 @@
         });
 
         $(document).on('change', '.order_checkbox', function() {
+            if (!this.checked) {
+                $('#select-all').prop('checked', false);
+            }
             toggleBulkBtn();
         });
 
@@ -945,48 +949,91 @@
         }
 
         $('#bulk_delete_button').on('click', function() {
-            confirmDeletion(function() {
-                var selectedIds = $('.order_checkbox:checked').not('#select-all').map(function() {
-                    return $(this).data('id');
-                }).get();
+            var selected = $('.order_checkbox:checked').not('#select-all').map(function() {
+                return {
+                    id: $(this).data('id'),
+                    label: $(this).data('label'),
+                    checkUrl: $(this).data('check-url')
+                };
+            }).get();
 
-                if (selectedIds.length > 0) {
-                    $.ajax({
-                        url: "{{ route('order.bulkDelete') }}",
-                        method: 'POST',
-                        data: {
-                            ids: selectedIds,
-                            _token: '{{ csrf_token() }}'
-                        },
-                        success: function(response) {
-                            show_success(response.message);
-                            order_table.ajax.reload();
-                            $('#bulk_delete_button').hide();
-                            $('#select-all').prop('checked', false);
-                        },
-                        error: function(xhr) {
-                            var res = xhr.responseJSON;
-                            if (res && res.blocked) {
-                                Swal.fire({
-                                    html: buildBulkBlockedHtml(res.blocked_orders, res.message),
-                                    showConfirmButton: true,
-                                    confirmButtonText: '<i class="ti ti-check me-1"></i> Got it',
-                                    width: 480,
-                                    padding: '0',
-                                    customClass: {
-                                        popup: 'my-custom-popup od-popup',
-                                        htmlContainer: 'od-html-container',
-                                        confirmButton: 'btn od-confirm-btn px-4',
-                                        actions: 'od-actions',
-                                    },
-                                    buttonsStyling: false,
-                                });
-                            } else {
-                                show_error('An error occurred while deleting.');
-                            }
+            if (!selected.length) {
+                return;
+            }
+
+            var pending = selected.length;
+            var blocked = [];
+
+            selected.forEach(function(item) {
+                $.get(item.checkUrl)
+                    .done(function(data) {
+                        if (!data.can_delete) {
+                            blocked.push(item.label || item.id);
                         }
+                    })
+                    .fail(function() {
+                        blocked.push(item.label || item.id);
+                    })
+                    .always(function() {
+                        pending--;
+                        if (pending > 0) {
+                            return;
+                        }
+                        if (blocked.length) {
+                            Swal.fire({
+                                html: buildBulkBlockedHtml(blocked, 'Cannot delete: the selected order(s) have dispatch or Daily Dispatch entries — ' + blocked.join(', ') + '.'),
+                                showConfirmButton: true,
+                                confirmButtonText: '<i class="ti ti-check me-1"></i> Got it',
+                                width: 480,
+                                padding: '0',
+                                customClass: {
+                                    popup: 'my-custom-popup od-popup',
+                                    htmlContainer: 'od-html-container',
+                                    confirmButton: 'btn od-confirm-btn px-4',
+                                    actions: 'od-actions',
+                                },
+                                buttonsStyling: false,
+                            });
+                            return;
+                        }
+                        confirmDeletion(function() {
+                            $.ajax({
+                                url: "{{ route('order.bulkDelete') }}",
+                                method: 'POST',
+                                data: {
+                                    ids: selected.map(function(item) { return item.id; }),
+                                    _token: '{{ csrf_token() }}'
+                                },
+                                success: function(response) {
+                                    show_success(response.message);
+                                    order_table.ajax.reload();
+                                    $('#bulk_delete_button').hide();
+                                    $('#select-all').prop('checked', false);
+                                },
+                                error: function(xhr) {
+                                    var res = xhr.responseJSON;
+                                    if (res && res.blocked) {
+                                        Swal.fire({
+                                            html: buildBulkBlockedHtml(res.blocked_orders, res.message),
+                                            showConfirmButton: true,
+                                            confirmButtonText: '<i class="ti ti-check me-1"></i> Got it',
+                                            width: 480,
+                                            padding: '0',
+                                            customClass: {
+                                                popup: 'my-custom-popup od-popup',
+                                                htmlContainer: 'od-html-container',
+                                                confirmButton: 'btn od-confirm-btn px-4',
+                                                actions: 'od-actions',
+                                            },
+                                            buttonsStyling: false,
+                                        });
+                                    } else {
+                                        show_error('An error occurred while deleting.');
+                                    }
+                                }
+                            });
+                        }, 'You want to remove the selected orders? Once deleted, they cannot be recovered.');
                     });
-                }
             });
         });
 
@@ -1118,10 +1165,10 @@
         }
 
         /* ── Standard delete confirmation (used when delete is safe) ─── */
-        function confirmDeletion(callback) {
+        function confirmDeletion(callback, text) {
             Swal.fire({
                 title: 'Are you sure?',
-                text: 'You want to remove this Order? Once deleted, it cannot be recovered.',
+                text: text || 'You want to remove this Order? Once deleted, it cannot be recovered.',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'Yes, delete it!',
