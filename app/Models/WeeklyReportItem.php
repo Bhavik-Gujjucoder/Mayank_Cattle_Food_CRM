@@ -18,8 +18,9 @@ class WeeklyReportItem extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'sort_order' => 'integer',
-        'quantity'   => 'integer',
+        'sort_order'            => 'integer',
+        'quantity'              => 'integer',
+        'less_freight_per_qty'  => 'decimal:2',
     ];
 
     /* ── Relationships ───────────────────────────────────────────── */

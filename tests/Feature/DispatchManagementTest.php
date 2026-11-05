@@ -428,6 +428,13 @@ describe('orderHistory', function () {
 
         expect($response->viewData('dispatchBlocked'))->toBeFalse()
             ->and($response->viewData('blockingOrder'))->toBeNull();
+
+        $response->assertSee('Order amount')
+            ->assertSee('Less freight')
+            ->assertSee('Net amount')
+            ->assertSee('Dispatch progress')
+            ->assertSee('Due charges')
+            ->assertSee('1,000.00');
     });
 
     it('detects blocking prior order that is not fully dispatched', function () {
@@ -1098,5 +1105,143 @@ describe('resource-routes', function () {
         $this->actingAs(disActor(['view-dispatch']))
             ->get(route('dispatch.create'))
             ->assertForbidden();
+    });
+});
+
+describe('less freight', function () {
+    it('stores a blank less freight as no deduction', function () {
+        $s = disSetup();
+        $actor = disActor(['add-dispatch']);
+
+        $this->actingAs($actor)
+            ->post(route('dispatch.store'), disPayload(
+                $s['order']->id,
+                $s['orderItem']->id,
+                $s['product']->id,
+                $s['transporter']->id,
+                ['less_freight_per_qty' => '']
+            ))
+            ->assertRedirect(route('dispatch.orderHistory', $s['order']->id));
+
+        $dispatch = DispatchManagement::latest('id')->first();
+        expect($dispatch->less_freight_per_qty)->toBeNull();
+        expect(app(\App\Services\PaymentReceivableService::class)->baseAmount($dispatch))->toBe(500.0);
+    });
+
+    it('uses the dispatch final amount as the receivable base', function () {
+        $s = disSetup();
+        $s['orderItem']->update(['unit_price' => 820, 'qty' => 10, 'total_price' => 8200]);
+        $s['order']->update(['grand_total' => 8200, 'total_order_amount' => 8200]);
+        $actor = disActor(['add-dispatch', 'edit-dispatch']);
+
+        $this->actingAs($actor)
+            ->post(route('dispatch.store'), disPayload(
+                $s['order']->id,
+                $s['orderItem']->id,
+                $s['product']->id,
+                $s['transporter']->id,
+                ['no_of_bags' => 5, 'less_freight_per_qty' => 50]
+            ))
+            ->assertRedirect(route('dispatch.orderHistory', $s['order']->id));
+
+        $dispatch = DispatchManagement::latest('id')->first();
+        $service = app(\App\Services\PaymentReceivableService::class);
+
+        expect($service->grossAmount($dispatch))->toBe(4100.0)
+            ->and($service->lessFreightTotal($dispatch))->toBe(250.0)
+            ->and($service->baseAmount($dispatch))->toBe(3850.0);
+
+        $order = $s['order']->fresh()->load('dispatches');
+        expect($order->lessFreightTotal())->toBe(250.0)
+            ->and((float) $order->grand_total)->toBe(8200.0)
+            ->and($order->netAmount())->toBe(7950.0);
+
+        $this->actingAs($actor)
+            ->put(route('dispatch.update', $dispatch), [
+                'no_of_bags' => 5,
+                'less_freight_per_qty' => 65,
+                'dispatch_date' => '2026-01-15',
+                'transport_id' => $s['transporter']->id,
+                'truck_number' => 'GJ01AA1234',
+                'driver_contact' => '9876543210',
+                'status' => 0,
+            ])
+            ->assertRedirect(route('dispatch.orderHistory', $s['order']->id))
+            ->assertSessionHasNoErrors();
+
+        expect($service->baseAmount($dispatch->fresh()))->toBe(3775.0);
+    });
+
+    it('rejects less freight above the unit price', function () {
+        $s = disSetup();
+        $actor = disActor(['add-dispatch']);
+
+        $this->actingAs($actor)
+            ->from(route('dispatch.orderHistory', $s['order']))
+            ->post(route('dispatch.store'), disPayload(
+                $s['order']->id,
+                $s['orderItem']->id,
+                $s['product']->id,
+                $s['transporter']->id,
+                ['less_freight_per_qty' => 150]
+            ))
+            ->assertRedirect()
+            ->assertSessionHasErrors(['less_freight_per_qty']);
+
+        expect(DispatchManagement::count())->toBe(0);
+    });
+
+    it('rejects a partial payment above the final amount', function () {
+        $s = disSetup();
+        $actor = disActor(['add-dispatch']);
+
+        $this->actingAs($actor)
+            ->from(route('dispatch.orderHistory', $s['order']))
+            ->post(route('dispatch.store'), disPayload(
+                $s['order']->id,
+                $s['orderItem']->id,
+                $s['product']->id,
+                $s['transporter']->id,
+                ['no_of_bags' => 5, 'less_freight_per_qty' => 50, 'status' => 2, 'partial_paid_amount' => 300]
+            ))
+            ->assertRedirect()
+            ->assertSessionHasErrors(['partial_paid_amount']);
+    });
+
+    it('keeps the less freight rate when a linked dispatch is deleted', function () {
+        $s = disSetup();
+        $actor = disActor(['delete-dispatch']);
+        $report = WeeklyReport::create([
+            'report_date' => '2026-07-09',
+            'already_produced' => 0,
+            'created_by' => $actor->id,
+        ]);
+        $item = WeeklyReportItem::create([
+            'weekly_report_id' => $report->id,
+            'sort_order' => 1,
+            'order_id' => $s['order']->id,
+            'order_item_id' => $s['orderItem']->id,
+            'product_id' => $s['product']->id,
+            'quantity' => 5,
+            'less_freight_per_qty' => 20,
+            'transport_id' => $s['transporter']->id,
+            'truck_number' => 'GJ01AA1234',
+            'driver_contact' => '9876543210',
+            'status' => WeeklyReportItem::STATUS_CONFIRMED,
+        ]);
+        $d = mkDis($s['order']->id, $s['orderItem']->id, $s['product']->id, $s['transporter']->id, [
+            'weekly_report_item_id' => $item->id,
+            'less_freight_per_qty' => 50,
+        ]);
+        $item->update(['dispatch_id' => $d->id]);
+
+        $this->actingAs($actor)->delete(route('dispatch.destroy', $d));
+
+        $restored = WeeklyReportItem::query()
+            ->where('weekly_report_id', $report->id)
+            ->where('status', WeeklyReportItem::STATUS_PENDING)
+            ->first();
+
+        expect((float) $restored->less_freight_per_qty)->toBe(50.0);
     });
 });

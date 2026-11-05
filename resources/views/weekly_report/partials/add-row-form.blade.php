@@ -52,6 +52,12 @@
                 <input type="number" name="quantity" class="form-control form-control-sm wr-add-quantity" min="1" required>
                 <span class="text-danger small d-block quantity_error"></span>
             </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <label class="col-form-label">Less freight / qty</label>
+                <input type="number" name="less_freight_per_qty" class="form-control form-control-sm wr-add-less-freight" min="0" step="0.01" placeholder="Optional">
+                <span class="text-danger small d-block less_freight_per_qty_error"></span>
+                <div class="small wr-add-freight-preview"></div>
+            </div>
             <div class="col-6 col-md-4 col-lg-1 wr-add-entries-col">
                 <label class="col-form-label">No. of Entries <span class="text-danger">*</span></label>
                 <input type="number" name="no_of_entries" class="form-control form-control-sm wr-add-entries"

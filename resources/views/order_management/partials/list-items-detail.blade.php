@@ -10,6 +10,10 @@
         <span class="ol-detail-meta">
             {{ $lineCount }} product{{ $lineCount !== 1 ? 's' : '' }}
             · Order total <strong>₹ {{ number_format($order->grand_total, 2) }}</strong>
+            @if ($order->lessFreightTotal() > 0)
+                · Less freight <strong>₹ {{ number_format($order->lessFreightTotal(), 2) }}</strong>
+                · Net <strong>₹ {{ number_format($order->netAmount(), 2) }}</strong>
+            @endif
             · Avg <strong>₹ {{ number_format($order->weightedAvgUnitPrice(), 2) }}</strong> / bag
         </span>
     </div>

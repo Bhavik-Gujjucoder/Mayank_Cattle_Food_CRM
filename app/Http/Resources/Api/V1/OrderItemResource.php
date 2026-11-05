@@ -4,6 +4,7 @@ namespace App\Http\Resources\Api\V1;
 
 use App\Models\DispatchManagement;
 use App\Models\OrderItem;
+use App\Support\LessFreight;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -65,6 +66,12 @@ class OrderItemResource extends JsonResource
                 ->map(fn (DispatchManagement $d) => [
                     'id'             => $d->id,
                     'no_of_bags'     => (int) $d->no_of_bags,
+                    'less_freight_per_qty' => $d->less_freight_per_qty !== null
+                        ? (string) $d->less_freight_per_qty
+                        : null,
+                    'amount'         => number_format(LessFreight::gross((int) $d->no_of_bags, (float) $this->unit_price), 2, '.', ''),
+                    'less_freight_total' => number_format(LessFreight::deduction((int) $d->no_of_bags, $d->less_freight_per_qty), 2, '.', ''),
+                    'final_amount'   => number_format(LessFreight::finalAmount((int) $d->no_of_bags, (float) $this->unit_price, $d->less_freight_per_qty), 2, '.', ''),
                     'dispatch_date'  => $d->dispatch_date?->format('Y-m-d'),
                     'payment_status' => match ((int) $d->status) {
                         DispatchManagement::STATUS_PAID    => 'paid',

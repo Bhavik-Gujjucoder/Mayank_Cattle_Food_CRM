@@ -4,6 +4,51 @@
 @endsection
 @section('content')
 
+    <style>
+        .dh-order-summary {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px 16px;
+        }
+        .dh-order-fact {
+            min-width: 0;
+        }
+        .dh-order-fact-wide {
+            grid-column: span 2;
+        }
+        .dh-order-fact-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #8a9bc0;
+            margin-bottom: 2px;
+        }
+        .dh-order-fact-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #262A2A;
+        }
+        .dh-order-progress {
+            height: 6px;
+            margin: 6px 0 4px;
+            background: #e8eef6;
+        }
+        .pd-item-money {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        @media (max-width: 991px) {
+            .dh-order-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 575px) {
+            .dh-order-summary { grid-template-columns: 1fr; }
+            .dh-order-fact-wide { grid-column: span 1; }
+        }
+    </style>
+
     <div class="card">
 
         {{-- ══════════════════════════════════════════════════════════════
@@ -180,6 +225,84 @@
         @endif
 
         {{-- ══════════════════════════════════════════════════════════════
+         ORDER SUMMARY — same figures as the order list
+    ══════════════════════════════════════════════════════════════ --}}
+        @php
+            $orderPct = $order->dispatchPercent();
+            $pendingLines = $order->pendingLineItemCount();
+            $productCount = $order->items->count();
+            $lessFreight = $order->lessFreightTotal();
+            $orderReceivable = app(\App\Services\PaymentReceivableService::class)
+                ->summarizeOrderPendingDispatches($order->items->flatMap(fn ($item) => $item->dispatches));
+        @endphp
+        <div class="card-body py-3 border-bottom">
+            <div class="dh-order-summary">
+                <div class="dh-order-fact">
+                    <span class="dh-order-fact-label">Order date</span>
+                    <span class="dh-order-fact-value">{{ $order->order_date?->format('d M Y') ?? '—' }}</span>
+                </div>
+                <div class="dh-order-fact">
+                    <span class="dh-order-fact-label">Broker</span>
+                    <span class="dh-order-fact-value">{{ $order->broker?->name ?? '—' }}</span>
+                </div>
+                <div class="dh-order-fact">
+                    <span class="dh-order-fact-label">Brand</span>
+                    <span class="dh-order-fact-value">{{ $order->brand?->name ?? '—' }}</span>
+                </div>
+                <div class="dh-order-fact">
+                    <span class="dh-order-fact-label">Payment</span>
+                    <span class="dh-order-fact-value">{!! $order->paymentBadge() !!} {!! $order->paymentTypeBadge() !!}</span>
+                </div>
+                <div class="dh-order-fact">
+                    <span class="dh-order-fact-label">Order amount</span>
+                    <span class="dh-order-fact-value">₹ {{ number_format((float) $order->grand_total, 2) }}</span>
+                </div>
+                <div class="dh-order-fact">
+                    <span class="dh-order-fact-label">Less freight</span>
+                    <span class="dh-order-fact-value">₹ {{ number_format($lessFreight, 2) }}</span>
+                </div>
+                <div class="dh-order-fact">
+                    <span class="dh-order-fact-label">Net amount</span>
+                    <span class="dh-order-fact-value">₹ {{ number_format($order->netAmount(), 2) }}</span>
+                </div>
+                <div class="dh-order-fact">
+                    <span class="dh-order-fact-label">Average</span>
+                    <span class="dh-order-fact-value">
+                        @if ($order->totalOrderedQty() > 0)
+                            ₹ {{ number_format($order->weightedAvgUnitPrice(), 2) }} / bag
+                        @else
+                            —
+                        @endif
+                    </span>
+                </div>
+                <div class="dh-order-fact dh-order-fact-wide">
+                    <span class="dh-order-fact-label">Dispatch progress</span>
+                    <div class="progress dh-order-progress">
+                        <div class="progress-bar {{ $orderPct >= 100 ? 'bg-success' : 'bg-primary' }}"
+                            style="width:{{ $orderPct }}%"></div>
+                    </div>
+                    <span class="dh-order-fact-value">
+                        {{ $orderPct }}% · {{ $productCount }} product{{ $productCount === 1 ? '' : 's' }}
+                        · {{ $pendingLines > 0 ? $pendingLines . ' pending' : 'All done' }}
+                    </span>
+                </div>
+                <div class="dh-order-fact">
+                    <span class="dh-order-fact-label">Due charges</span>
+                    <span class="dh-order-fact-value">
+                        @if ($orderReceivable['total_late_fee'] > 0)
+                            <span class="d-block small text-warning">Late ₹ {{ number_format($orderReceivable['total_late_fee'], 2) }}</span>
+                        @endif
+                        @if ($orderReceivable['total_balance_due'] > 0)
+                            ₹ {{ number_format($orderReceivable['total_balance_due'], 2) }}
+                        @elseif ($orderReceivable['total_late_fee'] <= 0)
+                            —
+                        @endif
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        {{-- ══════════════════════════════════════════════════════════════
          PENDING DISPATCH SUMMARY
     ══════════════════════════════════════════════════════════════ --}}
         <div class="card-body py-3 border-bottom">
@@ -198,6 +321,13 @@
                         <div class="pd-item-product">
                             <i class="ti ti-package me-1"></i>
                             {{ $item->product?->name ?? '—' }}
+                        </div>
+                        <div class="pd-item-money">
+                            ₹ {{ number_format((float) $item->unit_price, 2) }} / bag
+                            · Line ₹ {{ number_format((float) $item->total_price, 2) }}
+                            @if ($pendingQty > 0)
+                                · Pending ₹ {{ number_format($pendingQty * (float) $item->unit_price, 2) }}
+                            @endif
                         </div>
 
                         {{-- Three stat counters --}}
@@ -298,6 +428,9 @@
                             <th class="dh-col-sr">Sr no</th>
                             <th>Product</th>
                             <th class="dh-col-bags">{{ \App\Support\ProductUnit::genericLabel() }}</th>
+                            <th class="text-end">Amount</th>
+                            <th class="text-end">Less freight</th>
+                            <th class="text-end">Final amount</th>
                             <th class="dh-col-date">Dispatch date</th>
                             <th>Transport</th>
                             <th>Truck number</th>
@@ -320,6 +453,9 @@
                                     <td class="text-center">{{ $itemIndex + 1 }}</td>
                                     <td>{{ $item->product?->name ?? '—' }}</td>
                                     <td>{{ \App\Support\ProductUnit::formatWithUnit($dispatch->no_of_bags, $item->product?->unit) }}</td>
+                                    <td class="text-end text-nowrap">{{ PaymentReceivableService::formatMoney($recv['gross_amount']) }}</td>
+                                    <td class="text-end text-nowrap">{{ $recv['less_freight'] > 0 ? PaymentReceivableService::formatMoney($recv['less_freight']) : '—' }}</td>
+                                    <td class="text-end text-nowrap fw-medium">{{ PaymentReceivableService::formatMoney($recv['base_amount']) }}</td>
                                     <td>{{ $dispatch->dispatch_date?->format('d M Y') ?? '—' }}</td>
                                     <td>{{ $dispatch->transporter?->name ?? '—' }}</td>
                                     <td>{{ $dispatch->truck_number }}</td>
@@ -343,6 +479,8 @@
                                                 <button type="button" class="btn btn-sm btn-outline-warning edit-dispatch-btn"
                                                     title="Edit" data-id="{{ $dispatch->id }}"
                                                     data-no-of-bags="{{ $dispatch->no_of_bags }}"
+                                                    data-less-freight="{{ $dispatch->less_freight_per_qty }}"
+                                                    data-unit-price="{{ $item->unit_price }}"
                                                     data-dispatch-date="{{ $dispatch->dispatch_date?->format('Y-m-d') }}"
                                                     data-transport-id="{{ $dispatch->transport_id }}"
                                                     data-truck-number="{{ $dispatch->truck_number }}"
@@ -382,7 +520,7 @@
 
                         @if (!$hasRows)
                             <tr>
-                                <td colspan="11" class="text-center text-muted py-4">
+                                <td colspan="14" class="text-center text-muted py-4">
                                     No dispatch entries found for this order.
                                 </td>
                             </tr>
@@ -435,6 +573,7 @@
                                             @php $pending = $item->pendingQty(); @endphp
                                             <option value="{{ $item->id }}" data-product-id="{{ $item->product_id }}"
                                                 data-product-unit="{{ $item->product?->unit ?? '' }}"
+                                                data-unit-price="{{ $item->unit_price }}"
                                                 data-pending="{{ $pending }}" {{ $pending <= 0 ? 'disabled' : '' }}>
                                                 {{ $item->product?->name }}
                                                 — Ordered: {{ $item->qty }},&nbsp;Pending: {{ $pending }}
@@ -454,6 +593,15 @@
                                     <input type="number" name="no_of_bags" id="dispatchNoBags" class="form-control"
                                         placeholder="0" min="1">
                                     <span class="field-error" id="no_of_bags-error"></span>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="col-form-label">Less freight / qty</label>
+                                    <input type="number" name="less_freight_per_qty" id="dispatchLessFreight" class="form-control"
+                                        placeholder="Optional" min="0" step="0.01" value="{{ old('less_freight_per_qty') }}">
+                                    <small class="text-muted">Optional. Deducted for each qty on this dispatch.</small>
+                                    <span class="field-error" id="less_freight_per_qty-error"></span>
+                                    <div class="small mt-1" id="dispatchLessFreightPreview"></div>
                                 </div>
 
                                 {{-- ── Dispatch Date ─────────────────────────────── --}}
@@ -587,6 +735,15 @@
                                     <input type="number" name="no_of_bags" id="editNoBags" class="form-control"
                                         placeholder="0" min="1">
                                     <span class="field-error" id="edit_no_of_bags-error"></span>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="col-form-label">Less freight / qty</label>
+                                    <input type="number" name="less_freight_per_qty" id="editLessFreight" class="form-control"
+                                        placeholder="Optional" min="0" step="0.01">
+                                    <small class="text-muted">Optional. Deducted for each qty on this dispatch.</small>
+                                    <span class="field-error" id="edit_less_freight_per_qty-error"></span>
+                                    <div class="small mt-1" id="editLessFreightPreview"></div>
                                 </div>
 
                                 {{-- ── Dispatch Date ─────────────────────────────── --}}
@@ -939,6 +1096,14 @@
             });
 
             /* ── Reset Add modal on open ────────────────────────────────── */
+            $('#dispatchForm').on('input change', '#dispatchNoBags, #dispatchLessFreight, #dispatchOrderItemId', function () {
+                var price = $('#dispatchOrderItemId').find(':selected').data('unit-price') || 0;
+                refreshDispatchFreightPreview('#dispatchNoBags', '#dispatchLessFreight', price, '#dispatchLessFreightPreview');
+            });
+            $('#editDispatchForm').on('input change', '#editNoBags, #editLessFreight', function () {
+                refreshDispatchFreightPreview('#editNoBags', '#editLessFreight', $('#editDispatchForm').data('unitPrice'), '#editLessFreightPreview');
+            });
+
             $('#addDispatchModal').on('show.bs.modal', function() {
                 /* Reset truck dropdown to initial disabled state */
                 $('#dispatchTruckNumber')
@@ -970,6 +1135,7 @@
                 rules: {
                     order_item_id:  { required: true },
                     no_of_bags:     { required: true, number: true, min: 1, maxPending: true },
+                    less_freight_per_qty: { number: true, min: 0 },
                     dispatch_date:  { required: true },
                     transport_id:   { required: true },
                     truck_number:   { required: true },
@@ -1091,6 +1257,7 @@
                 },
                 rules: {
                     no_of_bags:     { required: true, number: true, min: 1, maxEditPending: true },
+                    less_freight_per_qty: { number: true, min: 0 },
                     dispatch_date:  { required: true },
                     transport_id:   { required: true },
                     truck_number:   { required: true },
@@ -1206,7 +1373,29 @@
             }
 
             /* ── Helper: populate edit modal fields ─────────────────────── */
-            function populateEditModal(dispatchId, transportId, truckNumber, driverContact, status, partialPaidAmount, noBags, dispatchDate, productName, effectivePending, updateUrl, productUnit, validationErrors) {
+            function refreshDispatchFreightPreview(qtySelector, rateSelector, price, previewSelector) {
+                var qty = parseFloat($(qtySelector).val()) || 0;
+                var rate = parseFloat($(rateSelector).val()) || 0;
+                var unitPrice = parseFloat(price) || 0;
+                if (qty <= 0 || unitPrice <= 0) {
+                    $(previewSelector).text('');
+                    return;
+                }
+                var gross = qty * unitPrice;
+                var less = qty * rate;
+                var finalAmt = Math.max(0, gross - less);
+                var fmt = function (n) {
+                    return '₹ ' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                };
+                var text = qty + ' × ' + fmt(unitPrice) + ' = ' + fmt(gross);
+                if (rate > 0) {
+                    text += ' − less freight ' + fmt(less);
+                }
+                text += ' = ' + fmt(finalAmt);
+                $(previewSelector).text(text);
+            }
+
+            function populateEditModal(dispatchId, transportId, truckNumber, driverContact, status, partialPaidAmount, noBags, dispatchDate, productName, effectivePending, updateUrl, productUnit, validationErrors, lessFreight, unitPrice) {
                 editOriginalNoOfBags = parseInt(noBags, 10) || 0;
                 editEffectivePending = parseInt(effectivePending, 10) || 0;
                 editMaxAllowedBags = Math.max(editEffectivePending, editOriginalNoOfBags);
@@ -1214,6 +1403,9 @@
                 $('#editDispatchForm').attr('action', updateUrl || '');
                 $('#editProductName').text(productName || '—');
                 $('#editNoBags').val(noBags);
+                $('#editLessFreight').val(lessFreight || '');
+                $('#editDispatchForm').data('unitPrice', unitPrice || 0);
+                refreshDispatchFreightPreview('#editNoBags', '#editLessFreight', unitPrice, '#editLessFreightPreview');
                 $('#editDriverContact').val(driverContact);
                 window.dispatchPaymentStatusHelpers.setFormStatus($('#editDispatchForm'), status, partialPaidAmount);
                 editDatePicker.setDate(dispatchDate, false);
@@ -1284,7 +1476,10 @@
                     $btn.attr('data-product-name'),
                     parseInt($btn.attr('data-effective-pending'), 10) || 0,
                     $btn.attr('data-update-url'),
-                    $btn.attr('data-product-unit')
+                    $btn.attr('data-product-unit'),
+                    null,
+                    $btn.attr('data-less-freight') || '',
+                    $btn.attr('data-unit-price') || 0
                 );
             });
 
@@ -1309,7 +1504,9 @@
                         payload.effectivePending,
                         payload.updateUrl,
                         payload.productUnit,
-                        payload.validationErrors || null
+                        payload.validationErrors || null,
+                        payload.lessFreight || '',
+                        payload.unitPrice || 0
                     );
                 } catch (e) {
                     console.error('Failed to reopen edit dispatch modal', e);

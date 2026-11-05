@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\V1;
 
 use App\Models\OrderManagement;
+use App\Support\LessFreight;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -41,6 +42,13 @@ class OrderResource extends JsonResource
             fn ($item) => max(0, (int) $item->qty - (int) $item->dispatches->sum('no_of_bags')) > 0
         )->count();
 
+        $lessFreight = round($this->items->sum(
+            fn ($item) => $item->dispatches->sum(
+                fn ($dispatch) => LessFreight::deduction((int) $dispatch->no_of_bags, $dispatch->less_freight_per_qty)
+            )
+        ), 2);
+        $netAmount = round(max(0, (float) $this->grand_total - $lessFreight), 2);
+
         return [
             // ── Order identity ─────────────────────────────────────────────────
             'id'           => $this->id,
@@ -78,6 +86,8 @@ class OrderResource extends JsonResource
                 : null,
             'total_order_amount'  => (string) $this->total_order_amount,
             'grand_total'         => (string) $this->grand_total,
+            'less_freight_total'  => number_format($lessFreight, 2, '.', ''),
+            'net_amount'          => number_format($netAmount, 2, '.', ''),
 
             // ── Order status ───────────────────────────────────────────────────
             'status' => (int) $this->status,  // 1 = active, 0 = inactive

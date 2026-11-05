@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Truck;
 use App\Models\User;
 use App\Support\FinancialYear;
+use App\Support\LessFreight;
 use App\Support\ProductUnit;
 use App\Support\SalesScope;
 use App\Services\PaymentReceivableService;
@@ -108,6 +109,17 @@ class DispatchManagementController extends Controller
 
                     return ProductUnit::formatWithUnit((int) $row->no_of_bags, $unit);
                 })
+                ->addColumn('dispatch_amount', function ($row) use ($receivableService) {
+                    return PaymentReceivableService::formatMoney($receivableService->grossAmount($row));
+                })
+                ->addColumn('less_freight', function ($row) use ($receivableService) {
+                    $less = $receivableService->lessFreightTotal($row);
+
+                    return $less > 0 ? PaymentReceivableService::formatMoney($less) : '—';
+                })
+                ->addColumn('final_amount', function ($row) use ($receivableService) {
+                    return PaymentReceivableService::formatMoney($receivableService->baseAmount($row));
+                })
                 ->addColumn('transporter_name',fn($row) => $row->transporter?->name ?? '—')
                 ->editColumn('dispatch_date',  fn($row) => $row->dispatch_date?->format('d M Y') ?? '—')
                 ->addColumn('dealer_name',    fn($row) => $row->orderItem?->order?->dealer?->user?->name ?? '—')
@@ -190,8 +202,11 @@ class DispatchManagementController extends Controller
 
         $data['page_title']   = 'Dispatch History';
         $data['order']        = $order->load([
+            'broker',
+            'brand',
             'dealer.user',
             'items.product',
+            'items.dispatches.orderItem',
             'items.dispatches.product',
             'items.dispatches.transporter',
         ]);
@@ -245,6 +260,7 @@ class DispatchManagementController extends Controller
             'order_item_id'  => ['required', Rule::exists('order_items', 'id')->whereNull('deleted_at')],
             'product_id'     => 'required|exists:products,id',
             'no_of_bags'     => 'required|integer|min:1',
+            'less_freight_per_qty' => 'nullable|numeric|min:0',
             'dispatch_date'  => 'required|date',
             'transport_id'   => 'required|exists:users,id',
             'truck_number'   => 'required|string|max:100',
@@ -253,6 +269,8 @@ class DispatchManagementController extends Controller
             'partial_paid_amount' => 'nullable|numeric|min:0|required_if:status,2',
         ], [
             'order_item_id.required'  => 'Please select a product.',
+            'less_freight_per_qty.numeric' => 'Please enter a valid less freight amount.',
+            'less_freight_per_qty.min'     => 'Less freight cannot be negative.',
             'no_of_bags.required'     => ProductUnit::requiredMessage(),
             'no_of_bags.min'          => ProductUnit::minMessage(),
             // 'no_of_bags.max'          => 'The entered quantity cannot exceed the pending quantity.',
@@ -272,6 +290,16 @@ class DispatchManagementController extends Controller
 
         /* Guard against over-dispatch */
         $orderItem  = OrderItem::findOrFail($validated['order_item_id']);
+        $freightError = LessFreight::validationMessage(
+            $validated['less_freight_per_qty'] ?? null,
+            (float) $orderItem->unit_price
+        );
+        if ($freightError) {
+            return $this->dispatchStoreErrorResponse($request, [
+                'less_freight_per_qty' => $freightError,
+            ]);
+        }
+        $validated['less_freight_per_qty'] = LessFreight::normalize($validated['less_freight_per_qty'] ?? null);
         $dispatched = (int) $orderItem->dispatches()->sum('no_of_bags');
         $pending    = max(0, (int) $orderItem->qty - $dispatched);
 
@@ -296,6 +324,22 @@ class DispatchManagementController extends Controller
                 'order_item_id' => 'Order ' . $blockingPrior->unique_order_id
                     . ' must be fully dispatched before dispatching this order.',
             ]);
+        }
+
+        if ((int) $validated['status'] === DispatchManagement::STATUS_PARTIAL) {
+            $preview = new DispatchManagement([
+                'no_of_bags'           => (int) $validated['no_of_bags'],
+                'less_freight_per_qty' => $validated['less_freight_per_qty'],
+                'accrued_late_fee'     => 0,
+            ]);
+            $preview->setRelation('orderItem', $orderItem);
+            $totalReceivable = app(PaymentReceivableService::class)->totalReceivable($preview);
+            if ((float) $validated['partial_paid_amount'] > $totalReceivable) {
+                return $this->dispatchStoreErrorResponse($request, [
+                    'partial_paid_amount' => 'Paid amount cannot exceed total receivable of '
+                        . PaymentReceivableService::formatMoney($totalReceivable) . '.',
+                ]);
+            }
         }
 
         $dispatch = DispatchManagement::create($validated);
@@ -366,6 +410,8 @@ class DispatchManagementController extends Controller
                 'partial_paid_amount' => (string) ($dispatch->partial_paid_amount ?? ''),
             ],
             'receivable' => [
+                'gross_amount'     => $summary['gross_amount'],
+                'less_freight'     => $summary['less_freight'],
                 'base_amount'      => $summary['base_amount'],
                 'accrued_late_fee' => $summary['accrued_late_fee'],
                 'total_receivable' => $summary['total_receivable'],
@@ -449,6 +495,7 @@ class DispatchManagementController extends Controller
 
         $validator = Validator::make($request->all(), [
             'no_of_bags'     => 'required|integer|min:1',
+            'less_freight_per_qty' => 'nullable|numeric|min:0',
             'dispatch_date'  => 'required|date',
             'transport_id'   => 'required|exists:users,id',
             'truck_number'   => 'required|string|max:100',
@@ -457,6 +504,8 @@ class DispatchManagementController extends Controller
             'partial_paid_amount' => 'nullable|numeric|min:0|required_if:status,2',
         ], [
             'no_of_bags.required'     => ProductUnit::requiredMessage(),
+            'less_freight_per_qty.numeric' => 'Please enter a valid less freight amount.',
+            'less_freight_per_qty.min'     => 'Less freight cannot be negative.',
             'no_of_bags.min'          => ProductUnit::minMessage(),
             'dispatch_date.required'  => 'Dispatch date is required.',
             'transport_id.required'   => 'Please select a transporter.',
@@ -479,9 +528,25 @@ class DispatchManagementController extends Controller
         }
 
         $validated = $this->normalizeDispatchPayment($validator->validated());
+        $orderItem = $dispatch->orderItem;
+        $freightError = LessFreight::validationMessage(
+            $validated['less_freight_per_qty'] ?? null,
+            (float) ($orderItem?->unit_price ?? 0)
+        );
+        if ($freightError) {
+            return redirect()
+                ->route('dispatch.orderHistory', $dispatch->order_id)
+                ->withInput()
+                ->withErrors(['less_freight_per_qty' => $freightError])
+                ->with('edit_dispatch_id', $dispatch->id);
+        }
+        $validated['less_freight_per_qty'] = LessFreight::normalize($validated['less_freight_per_qty'] ?? null);
 
         if ((int) $validated['status'] === DispatchManagement::STATUS_PARTIAL) {
-            $totalReceivable = $receivableService->totalReceivable($dispatch);
+            $preview = clone $dispatch;
+            $preview->no_of_bags = (int) $validated['no_of_bags'];
+            $preview->less_freight_per_qty = $validated['less_freight_per_qty'];
+            $totalReceivable = $receivableService->totalReceivable($preview);
             $partialPaid = (float) $validated['partial_paid_amount'];
 
             if ($partialPaid > $totalReceivable) {
@@ -500,7 +565,6 @@ class DispatchManagementController extends Controller
          * Over-dispatch guard — only when bag count is being changed.
          * Payment-only updates (same bag qty) must not be blocked.
          */
-        $orderItem = $dispatch->orderItem;
         $maxAllowedBags = $orderItem->maxBagsWhenEditing($dispatch);
 
         if ((int) $validated['no_of_bags'] !== (int) $dispatch->no_of_bags
@@ -514,6 +578,7 @@ class DispatchManagementController extends Controller
 
         $dispatch->update([
             'no_of_bags'          => (int) $validated['no_of_bags'],
+            'less_freight_per_qty' => $validated['less_freight_per_qty'],
             'dispatch_date'       => $validated['dispatch_date'],
             'transport_id'        => (int) $validated['transport_id'],
             'truck_number'        => $validated['truck_number'],
@@ -523,6 +588,7 @@ class DispatchManagementController extends Controller
         ]);
 
         $dispatch->refresh();
+        $this->weeklyReports->syncLessFreightFromDispatch($dispatch);
         $this->syncOrderPaymentFromDispatches($dispatch);
 
         return redirect()
@@ -550,6 +616,7 @@ class DispatchManagementController extends Controller
                 'product_name' => $item->product?->name ?? '—',
                 'product_unit' => $item->product?->unit,
                 'qty'          => (int) $item->qty,
+                'unit_price'   => (string) $item->unit_price,
                 'pending'      => $pending,
                 'disabled'     => $pending <= 0,
             ];
@@ -660,6 +727,8 @@ class DispatchManagementController extends Controller
                     'status'            => (string) ($useOldInput ? old('status', (string) $dispatch->status) : $dispatch->status),
                     'partialPaidAmount' => (string) ($useOldInput ? old('partial_paid_amount', $dispatch->partial_paid_amount ?? '') : ($dispatch->partial_paid_amount ?? '')),
                     'noOfBags'          => (int) ($useOldInput ? old('no_of_bags', $dispatch->no_of_bags) : $dispatch->no_of_bags),
+                    'lessFreight'       => (string) ($useOldInput ? old('less_freight_per_qty', $dispatch->less_freight_per_qty ?? '') : ($dispatch->less_freight_per_qty ?? '')),
+                    'unitPrice'         => (string) $item->unit_price,
                     'dispatchDate'      => (string) ($useOldInput ? old('dispatch_date', $dispatch->dispatch_date?->format('Y-m-d')) : ($dispatch->dispatch_date?->format('Y-m-d') ?? '')),
                     'productName'       => (string) ($item->product?->name ?? ''),
                     'effectivePending'  => $effectivePending,

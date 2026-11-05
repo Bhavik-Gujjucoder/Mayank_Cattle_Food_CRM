@@ -251,6 +251,26 @@ describe('charge-amounts', function () {
         expect($service->baseAmount($dispatch))->toBe(500.0);
     });
 
+    it('baseAmount subtracts optional less freight and keeps late fee on top', function () {
+        $dispatch = prsMakeDispatch([
+            'no_of_bags' => 5,
+            'less_freight_per_qty' => 50,
+            'accrued_late_fee' => 10,
+        ]);
+        $service = new PaymentReceivableService();
+
+        expect($service->grossAmount($dispatch))->toBe(500.0)
+            ->and($service->lessFreightTotal($dispatch))->toBe(250.0)
+            ->and($service->baseAmount($dispatch))->toBe(250.0)
+            ->and($service->totalReceivable($dispatch))->toBe(260.0);
+    });
+
+    it('baseAmount is unchanged when less freight is blank', function () {
+        $dispatch = prsMakeDispatch(['no_of_bags' => 5, 'less_freight_per_qty' => null]);
+
+        expect((new PaymentReceivableService())->baseAmount($dispatch))->toBe(500.0);
+    });
+
     it('accruedLateFee returns value from dispatch model', function () {
         $dispatch = prsMakeDispatch(['accrued_late_fee' => 250.0]);
         expect((new PaymentReceivableService())->accruedLateFee($dispatch))->toBe(250.0);

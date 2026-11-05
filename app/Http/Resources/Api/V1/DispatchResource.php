@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\V1;
 
 use App\Models\DispatchManagement;
+use App\Support\LessFreight;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -27,7 +28,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *   is_item_complete      — true when total_dispatched_qty >= ordered_qty
  *
  * Payment receivable fields (computed inline, no extra queries):
- *   base_amount      — unit_price × no_of_bags (value at time of dispatch)
+ *   base_amount      — unit_price × no_of_bags − less freight (blank less freight leaves the full amount)
  *   total_receivable — base_amount + accrued_late_fee
  *   amount_paid      — 0 (unpaid) | partial_paid_amount (partial) | total_receivable (paid)
  *   balance_due      — total_receivable − amount_paid (0 when fully paid)
@@ -64,7 +65,10 @@ class DispatchResource extends JsonResource
         // All inputs are already loaded: orderItem.unit_price, no_of_bags,
         // accrued_late_fee, status, partial_paid_amount.
         $unitPrice       = (float) ($this->orderItem?->unit_price ?? 0);
-        $baseAmount      = round($unitPrice * (int) $this->no_of_bags, 2);
+        $bags            = (int) $this->no_of_bags;
+        $grossAmount     = LessFreight::gross($bags, $unitPrice);
+        $lessFreight     = LessFreight::deduction($bags, $this->less_freight_per_qty);
+        $baseAmount      = LessFreight::finalAmount($bags, $unitPrice, $this->less_freight_per_qty);
         $lateFee         = round((float) ($this->accrued_late_fee ?? 0), 2);
         $totalReceivable = round($baseAmount + $lateFee, 2);
         $amountPaid      = match ((int) $this->status) {
@@ -85,6 +89,12 @@ class DispatchResource extends JsonResource
 
             // ── Quantity (this dispatch event) ─────────────────────────────────
             'no_of_bags' => (int) $this->no_of_bags,
+            'less_freight_per_qty' => $this->less_freight_per_qty !== null
+                ? (string) $this->less_freight_per_qty
+                : null,
+            'dispatch_amount' => number_format($grossAmount, 2, '.', ''),
+            'less_freight_total' => number_format($lessFreight, 2, '.', ''),
+            'final_amount' => number_format($baseAmount, 2, '.', ''),
 
             // ── Quantity (order-item totals) ───────────────────────────────────
             // These allow the mobile app to show fulfilment progress for the
@@ -106,6 +116,8 @@ class DispatchResource extends JsonResource
             // Gives the mobile app a complete financial picture per dispatch
             // without requiring a separate /payment endpoint call.
             'payment_receivable' => [
+                'gross_amount'     => number_format($grossAmount, 2, '.', ''),
+                'less_freight'     => number_format($lessFreight, 2, '.', ''),
                 'base_amount'      => number_format($baseAmount, 2, '.', ''),
                 'total_receivable' => number_format($totalReceivable, 2, '.', ''),
                 'amount_paid'      => number_format($amountPaid, 2, '.', ''),
