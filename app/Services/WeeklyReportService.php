@@ -167,6 +167,7 @@ class WeeklyReportService
     {
         return [
             'items.product:id,name,unit',
+            'items.orderItem:id,unit_price',
             'items.order:id,unique_order_id,dealer_id',
             'items.order.dealer:id,user_id,firm_shop_name,city_id',
             'items.order.dealer.user:id,name',
@@ -292,6 +293,7 @@ class WeeklyReportService
             'order_item_id'    => $source->order_item_id,
             'product_id'       => $source->product_id,
             'quantity'         => $source->quantity,
+            'less_freight_per_qty' => $dispatch->less_freight_per_qty,
             'transport_id'     => $source->transport_id,
             'truck_number'     => $source->truck_number,
             'driver_contact'   => $source->driver_contact,
@@ -303,6 +305,17 @@ class WeeklyReportService
         if (! $source->trashed()) {
             $source->delete();
         }
+    }
+
+    public function syncLessFreightFromDispatch(DispatchManagement $dispatch): void
+    {
+        if (! $dispatch->weekly_report_item_id) {
+            return;
+        }
+
+        WeeklyReportItem::query()
+            ->whereKey($dispatch->weekly_report_item_id)
+            ->update(['less_freight_per_qty' => $dispatch->less_freight_per_qty]);
     }
 
     public function orderItemHasConfirmedItems(int $orderItemId): bool
@@ -432,6 +445,18 @@ class WeeklyReportService
 
         $totalQty = $qty * $entries;
 
+        $freightMessage = \App\Support\LessFreight::validationMessage(
+            $data['less_freight_per_qty'] ?? null,
+            (float) $orderItem->unit_price
+        );
+        if ($freightMessage) {
+            throw ValidationException::withMessages([
+                'less_freight_per_qty' => $freightMessage,
+            ]);
+        }
+
+        $lessFreight = \App\Support\LessFreight::normalize($data['less_freight_per_qty'] ?? null);
+
         if ($totalQty > $available) {
             if ($entries > 1) {
                 throw ValidationException::withMessages([
@@ -445,7 +470,7 @@ class WeeklyReportService
             ]);
         }
 
-        return DB::transaction(function () use ($report, $orderItem, $data, $qty, $entries) {
+        return DB::transaction(function () use ($report, $orderItem, $data, $qty, $entries, $lessFreight) {
             $maxSort = (int) $report->items()->max('sort_order');
             $created = collect();
 
@@ -456,6 +481,7 @@ class WeeklyReportService
                     'order_item_id'  => $orderItem->id,
                     'product_id'     => $orderItem->product_id,
                     'quantity'       => $qty,
+                    'less_freight_per_qty' => $lessFreight,
                     'transport_id'   => $data['transport_id'] ?? null,
                     'truck_number'   => $data['truck_number'] ?? null,
                     'driver_contact' => $data['driver_contact'] ?? null,
@@ -501,8 +527,23 @@ class WeeklyReportService
             ]);
         }
 
+        $lessFreight = $item->less_freight_per_qty;
+        if (array_key_exists('less_freight_per_qty', $data)) {
+            $freightMessage = \App\Support\LessFreight::validationMessage(
+                $data['less_freight_per_qty'],
+                (float) $orderItem->unit_price
+            );
+            if ($freightMessage) {
+                throw ValidationException::withMessages([
+                    'less_freight_per_qty' => $freightMessage,
+                ]);
+            }
+            $lessFreight = \App\Support\LessFreight::normalize($data['less_freight_per_qty']);
+        }
+
         $item->update([
             'quantity'       => $qty,
+            'less_freight_per_qty' => $lessFreight,
             'transport_id'   => $data['transport_id'] ?? $item->transport_id,
             'truck_number'   => $data['truck_number'] ?? $item->truck_number,
             'driver_contact' => $data['driver_contact'] ?? $item->driver_contact,
@@ -599,10 +640,34 @@ class WeeklyReportService
             ]);
         }
 
+        $freightMessage = \App\Support\LessFreight::validationMessage(
+            $item->less_freight_per_qty,
+            (float) $orderItem->unit_price
+        );
+        if ($freightMessage) {
+            throw ValidationException::withMessages([
+                'less_freight_per_qty' => $freightMessage,
+            ]);
+        }
+
         $status = (int) $payment['status'];
         $partial = $status === DispatchManagement::STATUS_PARTIAL
             ? $payment['partial_paid_amount']
             : null;
+
+        if ($status === DispatchManagement::STATUS_PARTIAL) {
+            $finalAmount = \App\Support\LessFreight::finalAmount(
+                (int) $item->quantity,
+                (float) $orderItem->unit_price,
+                $item->less_freight_per_qty
+            );
+            if ((float) $partial > $finalAmount) {
+                throw ValidationException::withMessages([
+                    'partial_paid_amount' => 'Paid amount cannot exceed total receivable of '
+                        . PaymentReceivableService::formatMoney($finalAmount) . '.',
+                ]);
+            }
+        }
 
         return DB::transaction(function () use ($item, $status, $partial) {
             $dispatch = DispatchManagement::create([
@@ -610,6 +675,7 @@ class WeeklyReportService
                 'order_item_id'       => $item->order_item_id,
                 'product_id'          => $item->product_id,
                 'no_of_bags'          => (int) $item->quantity,
+                'less_freight_per_qty' => $item->less_freight_per_qty,
                 'dispatch_date'       => $item->report->report_date->toDateString(),
                 'transport_id'        => $item->transport_id,
                 'truck_number'        => $item->truck_number,
@@ -701,6 +767,7 @@ class WeeklyReportService
                     'product_id'     => $item->product_id,
                     'product_name'   => $item->product?->name ?? '—',
                     'product_unit'   => $item->product?->unit,
+                    'unit_price'     => (string) $item->unit_price,
                     'pending_qty'    => $available,
                     'dealer_name'    => $dealer?->user?->name ?? $dealer?->firm_shop_name ?? '—',
                     'city_name'      => $dealer?->city?->city_name ?? '—',

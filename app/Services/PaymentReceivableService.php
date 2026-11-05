@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\DispatchLateFeeLog;
 use App\Models\DispatchManagement;
 use App\Models\OrderManagement;
+use App\Support\LessFreight;
 use App\Support\DispatchEmailDelivery;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -136,7 +137,25 @@ class PaymentReceivableService
         $unitPrice = (float) ($dispatch->orderItem?->unit_price ?? 0);
         $qty = max(0, (int) $dispatch->no_of_bags);
 
-        return round($unitPrice * $qty, 2);
+        return LessFreight::finalAmount($qty, $unitPrice, $dispatch->less_freight_per_qty);
+    }
+
+    public function grossAmount(DispatchManagement $dispatch): float
+    {
+        $dispatch->loadMissing('orderItem:id,unit_price');
+
+        return LessFreight::gross(
+            max(0, (int) $dispatch->no_of_bags),
+            (float) ($dispatch->orderItem?->unit_price ?? 0)
+        );
+    }
+
+    public function lessFreightTotal(DispatchManagement $dispatch): float
+    {
+        return LessFreight::deduction(
+            max(0, (int) $dispatch->no_of_bags),
+            $dispatch->less_freight_per_qty
+        );
     }
 
     public function accruedLateFee(DispatchManagement $dispatch): float
@@ -180,6 +199,8 @@ class PaymentReceivableService
 
     /**
      * @return array{
+     *     gross_amount: float,
+     *     less_freight: float,
      *     base_amount: float,
      *     accrued_late_fee: float,
      *     total_receivable: float,
@@ -193,6 +214,8 @@ class PaymentReceivableService
     public function summarizeDispatch(DispatchManagement $dispatch, ?Carbon $asOf = null): array
     {
         return [
+            'gross_amount'          => $this->grossAmount($dispatch),
+            'less_freight'          => $this->lessFreightTotal($dispatch),
             'base_amount'           => $this->baseAmount($dispatch),
             'accrued_late_fee'      => $this->accruedLateFee($dispatch),
             'total_receivable'      => $this->totalReceivable($dispatch),

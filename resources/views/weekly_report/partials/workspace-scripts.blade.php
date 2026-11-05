@@ -102,7 +102,7 @@
         $.get(pendingItemsUrl, { dealer_id: dealerId || '' }, function (res) {
             var html = '<option value="">— Select pending order line —</option>';
             (res.results || []).forEach(function (r) {
-                html += '<option value="' + r.order_item_id + '" data-pending="' + r.pending_qty + '" data-unit="' + (r.product_unit || '') + '">'
+                html += '<option value="' + r.order_item_id + '" data-pending="' + r.pending_qty + '" data-unit="' + (r.product_unit || '') + '" data-unit-price="' + (r.unit_price || 0) + '">'
                     + r.label + '</option>';
             });
             if (!(res.results || []).length) {
@@ -140,6 +140,50 @@
                 loadPendingOptions($addForm.find('.wr-add-order-item'), null);
             }
         }
+
+        function wrMoney(n) {
+            return '₹ ' + (Number(n) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function refreshRowFinal($row) {
+            var qty = parseFloat($row.find('.item-qty').val());
+            if (isNaN(qty)) qty = parseFloat($row.data('qty')) || 0;
+            var rate = parseFloat($row.find('.item-less-freight').val()) || 0;
+            var price = parseFloat($row.data('unit-price')) || 0;
+            var gross = qty * price;
+            var less = qty * rate;
+            var finalAmt = Math.max(0, gross - less);
+            var html = '<div>' + qty + ' × ' + wrMoney(price) + '</div>'
+                + '<div>= ' + wrMoney(gross) + '</div>';
+            if (rate > 0) html += '<div>− ' + wrMoney(less) + '</div>';
+            html += '<div class="wr-final-figure">' + wrMoney(finalAmt) + '</div>';
+            $row.find('.wr-final-amount').html(html);
+        }
+
+        function refreshAddFreight($form) {
+            var qty = parseFloat($form.find('.wr-add-quantity').val()) || 0;
+            var rate = parseFloat($form.find('.wr-add-less-freight').val()) || 0;
+            var price = parseFloat($form.find('.wr-add-order-item option:selected').data('unit-price')) || 0;
+            var $preview = $form.find('.wr-add-freight-preview');
+            if (qty <= 0 || price <= 0) {
+                $preview.text('');
+                return;
+            }
+            var gross = qty * price;
+            var less = qty * rate;
+            var finalAmt = Math.max(0, gross - less);
+            var text = qty + ' × ' + wrMoney(price) + ' = ' + wrMoney(gross);
+            if (rate > 0) text += ' − less freight ' + wrMoney(less);
+            text += ' = ' + wrMoney(finalAmt);
+            $preview.text(text);
+        }
+
+        $block.on('input change', '.item-qty, .item-less-freight', function () {
+            refreshRowFinal($(this).closest('tr'));
+        });
+        $block.on('input change', '.wr-add-quantity, .wr-add-less-freight, .wr-add-order-item', function () {
+            refreshAddFreight($(this).closest('.wr-add-item-form'));
+        });
 
         $block.on('change', '.wr-add-dealer', function () {
             var $form = $(this).closest('.wr-add-item-form');
@@ -232,6 +276,7 @@
             var id = $row.data('item-id');
             var payload = {
                 quantity: $row.find('.item-qty').val(),
+                less_freight_per_qty: $row.find('.item-less-freight').val(),
                 transport_id: $row.find('.wr-transport-select').val() || null,
                 truck_number: $row.find('.wr-truck-select').val() || null,
                 driver_contact: $row.find('.item-contact').val() || null,

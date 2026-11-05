@@ -23,6 +23,7 @@ class DispatchManagement extends Model
         'dispatch_date'           => 'date',
         'status'                  => 'integer',
         'partial_paid_amount'     => 'decimal:2',
+        'less_freight_per_qty'    => 'decimal:2',
         'accrued_late_fee'        => 'decimal:2',
         'late_fee_last_accrued_on' => 'date',
     ];

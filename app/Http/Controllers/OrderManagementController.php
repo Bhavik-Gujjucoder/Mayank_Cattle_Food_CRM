@@ -81,9 +81,19 @@ class OrderManagementController extends Controller
                     $avg   = $row->totalOrderedQty() > 0
                         ? 'Avg ₹ ' . number_format($row->weightedAvgUnitPrice(), 2) . ' / bag'
                         : '—';
+                    $lessFreight = $row->lessFreightTotal();
+                    $freightLine = '';
+                    if ($lessFreight > 0) {
+                        $freightLine = '<div class="ol-amount-avg text-muted">Less freight ₹ '
+                            . number_format($lessFreight, 2)
+                            . '</div><div class="ol-amount-total">Net ₹ '
+                            . number_format($row->netAmount(), 2)
+                            . '</div>';
+                    }
 
                     return '<div class="ol-amount-cell">'
                         . '<div class="ol-amount-total fw-semibold">' . $total . '</div>'
+                        . $freightLine
                         . '<div class="ol-amount-avg text-muted">' . e($avg) . '</div>'
                         . '</div>';
                 })

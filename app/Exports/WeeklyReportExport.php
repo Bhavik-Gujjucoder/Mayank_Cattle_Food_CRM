@@ -4,6 +4,7 @@ namespace App\Exports;
 
 use App\Models\WeeklyReport;
 use App\Models\WeeklyReportItem;
+use App\Support\LessFreight;
 use App\Support\ProductUnit;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromArray;
@@ -23,9 +24,9 @@ class WeeklyReportExport implements FromArray, WithStyles, WithEvents
     /** @var list<list<string>> */
     protected array $rows = [];
 
-    protected string $lastCol = 'K';
+    protected string $lastCol = 'O';
 
-    protected int $colCount = 11;
+    protected int $colCount = 15;
 
     /**
      * @param  list<array{date: Carbon, report: WeeklyReport|null}>  $days
@@ -66,7 +67,7 @@ class WeeklyReportExport implements FromArray, WithStyles, WithEvents
             }
 
             $this->pushRow(
-                ['Order No', 'Order ID', 'Product', 'Dealer', 'City', 'Qty', 'Transport', 'Truck No', 'Contact', 'Note', 'Status'],
+                ['Order No', 'Order ID', 'Product', 'Dealer', 'City', 'Qty', 'Less freight/qty', 'Amount', 'Less freight', 'Final', 'Transport', 'Truck No', 'Contact', 'Note', 'Status'],
                 $line++,
                 'table-header'
             );
@@ -82,6 +83,10 @@ class WeeklyReportExport implements FromArray, WithStyles, WithEvents
                         : ($pendingIndex % 2 === 0 ? 'row-pending-odd' : 'row-pending-even');
                     $pendingIndex++;
 
+                    $qty = (int) $item->quantity;
+                    $price = (float) ($item->orderItem?->unit_price ?? 0);
+                    $less = LessFreight::deduction($qty, $item->less_freight_per_qty);
+
                     $this->pushRow([
                         (string) $item->sort_order,
                         $item->order?->unique_order_id ?? '—',
@@ -89,6 +94,10 @@ class WeeklyReportExport implements FromArray, WithStyles, WithEvents
                         $dealer?->user?->name ?? $dealer?->firm_shop_name ?? '—',
                         $dealer?->city?->city_name ?? '—',
                         ProductUnit::formatWithUnit($item->quantity, $item->product?->unit),
+                        $item->less_freight_per_qty !== null ? number_format((float) $item->less_freight_per_qty, 2) : '—',
+                        number_format(LessFreight::gross($qty, $price), 2),
+                        $less > 0 ? number_format($less, 2) : '—',
+                        number_format(LessFreight::finalAmount($qty, $price, $item->less_freight_per_qty), 2),
                         $item->transporter?->name ?? '—',
                         $item->truck_number ?? '—',
                         $item->driver_contact ?? '—',
@@ -267,7 +276,7 @@ class WeeklyReportExport implements FromArray, WithStyles, WithEvents
                     }
 
                     if (str_starts_with($type, 'row-')) {
-                        $statusCell = 'K' . $row;
+                        $statusCell = $this->lastCol . $row;
                         $status = $sheet->getCell($statusCell)->getValue();
                         if ($status === WeeklyReportItem::STATUS_CONFIRMED || $status === 'Confirmed') {
                             $sheet->getStyle($statusCell)->applyFromArray([
@@ -293,7 +302,7 @@ class WeeklyReportExport implements FromArray, WithStyles, WithEvents
                     }
                 }
 
-                $widths = [10, 18, 22, 22, 14, 12, 18, 14, 14, 28, 12];
+                $widths = [10, 18, 22, 22, 14, 12, 16, 14, 14, 14, 18, 14, 14, 28, 12];
                 foreach ($widths as $index => $width) {
                     $sheet->getColumnDimension(chr(65 + $index))->setWidth($width);
                 }

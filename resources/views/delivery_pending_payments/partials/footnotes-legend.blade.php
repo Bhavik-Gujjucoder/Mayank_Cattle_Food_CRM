@@ -29,7 +29,7 @@
 <p class="mb-1 dpp-footnote dpp-footnote-line {{ $modifier }}">
     <span class="dpp-footnote-label">Late fee:</span>
     After the configured Cash or Credit due days (from order Payment Type), a daily late fee is added at midnight per unpaid/partial dispatch
-    (rate × dispatched qty). Accrued fees are shown in Late Fee; Balance Due includes base amount + late fee minus any partial payment.
+    (rate × dispatched qty). Accrued fees are shown in Late Fee; Balance Due includes the dispatch final amount after less freight, plus late fee, minus any partial payment.
 </p>
 <p class="mb-0 dpp-footnote dpp-footnote-line {{ $modifier }}">
     <span class="dpp-footnote-label">Scope:</span>

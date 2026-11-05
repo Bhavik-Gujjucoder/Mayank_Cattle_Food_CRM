@@ -91,6 +91,9 @@
                         <th>Order ID</th>
                         <th>Product</th>
                         <th style="width:130px;">Bag / Ton / KG</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-end">Less freight</th>
+                        <th class="text-end">Final amount</th>
                         <th>Dealer Name</th>
                         <th style="width:130px;">Dispatch Date</th>
                         <th>Transport</th>
@@ -203,6 +206,9 @@ withDataTable(function () {
             { data: 'unique_order_id', name: 'unique_order_id',                  orderable: false,  searchable: false },
             { data: 'product_name',    name: 'product_name',                     orderable: false, searchable: false },
             { data: 'no_of_bags',      name: 'no_of_bags',                       orderable: false,  searchable: false },
+            { data: 'dispatch_amount', name: 'dispatch_amount', className: 'text-end', orderable: false, searchable: false },
+            { data: 'less_freight',    name: 'less_freight',    className: 'text-end', orderable: false, searchable: false },
+            { data: 'final_amount',    name: 'final_amount',    className: 'text-end', orderable: false, searchable: false },
             { data: 'dealer_name',     name: 'dealer_name',                      orderable: false, searchable: false },
             { data: 'dispatch_date',   name: 'dispatch_date',                    orderable: false,  searchable: false },
             { data: 'transporter_name',name: 'transporter_name',                 orderable: false, searchable: false },

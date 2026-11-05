@@ -46,6 +46,9 @@ class EmailPreviewSamples
                 'partial_paid_amount' => null,
             ],
             'receivable' => [
+                'gross_amount'     => '₹ 31,250.00',
+                'less_freight'     => '₹ 0.00',
+                'has_less_freight' => false,
                 'base_amount'      => '₹ 31,250.00',
                 'accrued_late_fee' => '₹ 500.00',
                 'total_receivable' => '₹ 31,750.00',

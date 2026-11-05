@@ -52,6 +52,16 @@
                         </div>
 
                         <div class="col-md-6 mb-3">
+                            <label class="col-form-label">Less freight / qty</label>
+                            <input type="number" name="less_freight_per_qty" id="dashboardDispatchLessFreight"
+                                class="form-control" placeholder="Optional" min="0" step="0.01"
+                                value="{{ old('less_freight_per_qty') }}">
+                            <small class="text-muted">Optional. Deducted for each qty on this dispatch.</small>
+                            <span class="field-error" id="less_freight_per_qty-error"></span>
+                            <div class="small mt-1" id="dashboardLessFreightPreview"></div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
                             <label class="col-form-label">
                                 Dispatch Date <span class="text-danger">*</span>
                             </label>

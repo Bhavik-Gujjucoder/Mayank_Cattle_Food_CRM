@@ -10,6 +10,8 @@ window.dispatchReceivableHelpers = window.dispatchReceivableHelpers || {
         var $section = $('#' + prefix + '_receivable_section');
         $section.data('totalReceivable', parseFloat(receivable.total_receivable) || 0);
 
+        $('#' + prefix + '_gross_amount').val(this.formatMoney(receivable.gross_amount));
+        $('#' + prefix + '_less_freight').val(this.formatMoney(receivable.less_freight));
         $('#' + prefix + '_base_amount').val(this.formatMoney(receivable.base_amount));
         $('#' + prefix + '_accrued_late_fee').val(this.formatMoney(receivable.accrued_late_fee));
         $('#' + prefix + '_total_receivable').val(this.formatMoney(receivable.total_receivable));

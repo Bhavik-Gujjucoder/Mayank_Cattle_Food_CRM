@@ -42,6 +42,16 @@
                     <label class="text-muted small">Grand Total</label>
                     <div class="fw-semibold">₹ {{ number_format((float) $order->grand_total, 2) }}</div>
                 </div>
+                @if ($order->lessFreightTotal() > 0)
+                    <div class="col-md-3 mt-3">
+                        <label class="text-muted small">Less Freight</label>
+                        <div>₹ {{ number_format($order->lessFreightTotal(), 2) }}</div>
+                    </div>
+                    <div class="col-md-3 mt-3">
+                        <label class="text-muted small">Net Amount</label>
+                        <div class="fw-semibold">₹ {{ number_format($order->netAmount(), 2) }}</div>
+                    </div>
+                @endif
                 <div class="col-md-3 mt-3">
                     <label class="text-muted small">Payment Status</label>
                     <div>{!! $order->paymentBadge() !!}</div>

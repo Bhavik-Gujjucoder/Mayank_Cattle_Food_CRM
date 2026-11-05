@@ -135,7 +135,15 @@
                                 <h6 class="mb-2 text-muted">Payment Receivable</h6>
                             </div>
                             <div class="col-md-4">
-                                <label class="col-form-label">Base Amount</label>
+                                <label class="col-form-label">Amount</label>
+                                <input type="text" class="form-control" id="dpp_gross_amount" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="col-form-label">Less Freight</label>
+                                <input type="text" class="form-control" id="dpp_less_freight" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="col-form-label">Final Amount</label>
                                 <input type="text" class="form-control" id="dpp_base_amount" readonly>
                             </div>
                             <div class="col-md-4">
@@ -226,6 +234,8 @@ $(document).ready(function () {
 
     function dppSetReceivable(receivable) {
         receivable = receivable || {};
+        $('#dpp_gross_amount').val(dppFormatMoney(receivable.gross_amount));
+        $('#dpp_less_freight').val(dppFormatMoney(receivable.less_freight));
         $('#dpp_base_amount').val(dppFormatMoney(receivable.base_amount));
         $('#dpp_accrued_late_fee').val(dppFormatMoney(receivable.accrued_late_fee));
         $('#dpp_total_receivable').val(dppFormatMoney(receivable.total_receivable));

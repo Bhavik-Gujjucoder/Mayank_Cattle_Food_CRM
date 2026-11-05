@@ -86,6 +86,16 @@
 @endcomponent
 
 @component('emails.dispatch.partials.section-card', ['title' => 'Payment Receivable'])
+    @if (!empty($payload['receivable']['has_less_freight']))
+        @include('emails.dispatch.partials.detail-row', [
+            'label' => 'Dispatch Amount',
+            'value' => e($payload['receivable']['gross_amount']),
+        ])
+        @include('emails.dispatch.partials.detail-row', [
+            'label' => 'Less Freight',
+            'value' => e($payload['receivable']['less_freight']),
+        ])
+    @endif
     @include('emails.dispatch.partials.detail-row', [
         'label' => 'Base Amount',
         'value' => e($payload['receivable']['base_amount']),

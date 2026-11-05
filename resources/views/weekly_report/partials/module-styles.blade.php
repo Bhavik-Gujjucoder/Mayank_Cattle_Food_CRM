@@ -217,7 +217,7 @@
     .weekly-report-module .weekly-report-items-table {
         margin-bottom: 0 !important;
         border: none !important;
-        min-width: 1720px;
+        min-width: 2060px;
         width: 100%;
         table-layout: fixed;
     }
@@ -228,6 +228,8 @@
     .weekly-report-module .weekly-report-items-table col.wr-col-dealer { width: 200px; }
     .weekly-report-module .weekly-report-items-table col.wr-col-city { width: 140px; }
     .weekly-report-module .weekly-report-items-table col.wr-col-qty { width: 96px; }
+    .weekly-report-module .weekly-report-items-table col.wr-col-freight { width: 150px; }
+    .weekly-report-module .weekly-report-items-table col.wr-col-final { width: 190px; }
     .weekly-report-module .weekly-report-items-table col.wr-col-transport { width: 168px; }
     .weekly-report-module .weekly-report-items-table col.wr-col-truck { width: 136px; }
     .weekly-report-module .weekly-report-items-table col.wr-col-contact { width: 118px; }
@@ -319,6 +321,40 @@
 
     .weekly-report-module .weekly-report-items-table .item-contact {
         min-width: 100%;
+    }
+
+    .weekly-report-module .weekly-report-items-table thead th.wr-th-freight,
+    .weekly-report-module .weekly-report-items-table thead th.wr-th-final {
+        white-space: normal;
+        line-height: 1.25;
+    }
+
+    .weekly-report-module .weekly-report-items-table td.wr-cell-freight,
+    .weekly-report-module .weekly-report-items-table td.wr-cell-final {
+        overflow: hidden;
+    }
+
+    .weekly-report-module .weekly-report-items-table .item-less-freight {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .weekly-report-module .weekly-report-items-table .wr-freight-hint {
+        display: block;
+        margin-top: 0.15rem;
+        font-size: 10px;
+        line-height: 1.2;
+    }
+
+    .weekly-report-module .weekly-report-items-table .wr-final-amount {
+        white-space: normal;
+        line-height: 1.35;
+        word-break: break-word;
+    }
+
+    .weekly-report-module .weekly-report-items-table .wr-final-amount .wr-final-figure {
+        font-weight: 700;
+        color: #262A2A;
     }
 
     .weekly-report-module .weekly-report-items-table td.wr-cell-action {

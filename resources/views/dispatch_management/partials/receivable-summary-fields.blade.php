@@ -6,7 +6,15 @@
         <h6 class="mb-0 text-muted">Payment Receivable</h6>
     </div>
     <div class="col-md-4">
-        <label class="col-form-label">Base Amount</label>
+        <label class="col-form-label">Amount</label>
+        <input type="text" class="form-control" id="{{ $idPrefix }}_gross_amount" readonly>
+    </div>
+    <div class="col-md-4">
+        <label class="col-form-label">Less Freight</label>
+        <input type="text" class="form-control" id="{{ $idPrefix }}_less_freight" readonly>
+    </div>
+    <div class="col-md-4">
+        <label class="col-form-label">Final Amount</label>
         <input type="text" class="form-control" id="{{ $idPrefix }}_base_amount" readonly>
     </div>
     <div class="col-md-4">

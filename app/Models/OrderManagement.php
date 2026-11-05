@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\PaymentReceivableService;
+use App\Support\LessFreight;
 use App\Support\SalesScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -97,6 +98,24 @@ class OrderManagement extends Model
         return $ordered > 0
             ? (int) round(($this->totalDispatchedQty() / $ordered) * 100)
             : 0;
+    }
+
+    /** Sum of less-freight totals on live dispatches. */
+    public function lessFreightTotal(): float
+    {
+        $dispatches = $this->relationLoaded('dispatches')
+            ? $this->dispatches
+            : $this->items->flatMap(fn ($item) => $item->dispatches);
+
+        return round($dispatches->sum(
+            fn ($dispatch) => LessFreight::deduction((int) $dispatch->no_of_bags, $dispatch->less_freight_per_qty)
+        ), 2);
+    }
+
+    /** Order amount after less freight. grand_total itself stays the full order amount. */
+    public function netAmount(): float
+    {
+        return round(max(0, (float) $this->grand_total - $this->lessFreightTotal()), 2);
     }
 
     /** Weighted average unit price: grand_total ÷ total ordered qty. */

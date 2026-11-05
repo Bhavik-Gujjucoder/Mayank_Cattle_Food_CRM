@@ -620,3 +620,85 @@ it('exports weekly report using dashboard filter param names', function () {
         ->assertOk()
         ->assertDownload('daily-dispatch-2026-07-10.xlsx');
 });
+
+it('stores optional less freight on a daily dispatch row and copies it when confirmed', function () {
+    $admin = wrAdmin(['edit-weekly-report', 'add-dispatch']);
+    $ctx = wrPendingLine('Bag', 10);
+    $ctx['orderItem']->update(['unit_price' => 820, 'total_price' => 8200]);
+    $ctx['order']->update(['grand_total' => 8200, 'total_order_amount' => 8200]);
+    $transporter = User::factory()->create(['status' => 1]);
+    $transporter->assignRole('transporter');
+
+    $report = WeeklyReport::create([
+        'report_date' => '2026-07-12',
+        'already_produced' => 0,
+        'created_by' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->postJson(route('weekly-report.items.store', $report->id), [
+            'order_item_id' => $ctx['orderItem']->id,
+            'quantity' => 5,
+            'less_freight_per_qty' => 50,
+            'transport_id' => $transporter->id,
+            'truck_number' => 'GJ01AA1234',
+            'driver_contact' => '9876543210',
+        ])
+        ->assertOk();
+
+    $item = WeeklyReportItem::where('weekly_report_id', $report->id)->first();
+    expect((float) $item->less_freight_per_qty)->toBe(50.0);
+
+    $dispatch = app(\App\Services\WeeklyReportService::class)->confirmItem($item->fresh(), ['status' => 0]);
+
+    expect((float) $dispatch->less_freight_per_qty)->toBe(50.0);
+    expect(app(\App\Services\PaymentReceivableService::class)->baseAmount($dispatch))->toBe(3850.0);
+
+    $order = $ctx['order']->fresh()->load('items.dispatches');
+    expect($order->netAmount())->toBe(7950.0)
+        ->and((float) $order->grand_total)->toBe(8200.0);
+});
+
+it('rejects daily dispatch less freight above the unit price and an overpaid confirm', function () {
+    $admin = wrAdmin(['edit-weekly-report', 'add-dispatch']);
+    $ctx = wrPendingLine('Bag', 10);
+    $ctx['orderItem']->update(['unit_price' => 820, 'total_price' => 8200]);
+
+    $report = WeeklyReport::create([
+        'report_date' => '2026-07-13',
+        'already_produced' => 0,
+        'created_by' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->postJson(route('weekly-report.items.store', $report->id), [
+            'order_item_id' => $ctx['orderItem']->id,
+            'quantity' => 5,
+            'less_freight_per_qty' => 900,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['less_freight_per_qty']);
+
+    expect(WeeklyReportItem::count())->toBe(0);
+
+    $item = WeeklyReportItem::create([
+        'weekly_report_id' => $report->id,
+        'sort_order' => 1,
+        'order_id' => $ctx['order']->id,
+        'order_item_id' => $ctx['orderItem']->id,
+        'product_id' => $ctx['product']->id,
+        'quantity' => 5,
+        'less_freight_per_qty' => 50,
+        'transport_id' => User::factory()->create(['status' => 1])->id,
+        'truck_number' => 'GJ01AA1234',
+        'driver_contact' => '9876543210',
+        'status' => WeeklyReportItem::STATUS_PENDING,
+    ]);
+
+    expect(fn () => app(\App\Services\WeeklyReportService::class)->confirmItem($item, [
+        'status' => 2,
+        'partial_paid_amount' => 4000,
+    ]))->toThrow(\Illuminate\Validation\ValidationException::class);
+
+    expect(DispatchManagement::count())->toBe(0);
+});

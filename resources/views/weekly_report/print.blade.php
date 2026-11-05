@@ -245,6 +245,10 @@
                                 <th>Dealer</th>
                                 <th>City</th>
                                 <th>Qty</th>
+                                <th>Less freight / qty</th>
+                                <th>Amount</th>
+                                <th>Less freight</th>
+                                <th>Final</th>
                                 <th>Transport</th>
                                 <th>Truck No</th>
                                 <th>Contact</th>
@@ -265,6 +269,15 @@
                                     <td>{{ $dealer?->user?->name ?? $dealer?->firm_shop_name ?? '—' }}</td>
                                     <td>{{ $dealer?->city?->city_name ?? '—' }}</td>
                                     <td>{{ ProductUnit::formatWithUnit($item->quantity, $item->product?->unit) }}</td>
+                                    @php
+                                        $printQty = (int) $item->quantity;
+                                        $printPrice = (float) ($item->orderItem?->unit_price ?? 0);
+                                        $printLess = \App\Support\LessFreight::deduction($printQty, $item->less_freight_per_qty);
+                                    @endphp
+                                    <td>{{ $item->less_freight_per_qty !== null ? number_format((float) $item->less_freight_per_qty, 2) : '—' }}</td>
+                                    <td>{{ number_format(\App\Support\LessFreight::gross($printQty, $printPrice), 2) }}</td>
+                                    <td>{{ $printLess > 0 ? number_format($printLess, 2) : '—' }}</td>
+                                    <td>{{ number_format(\App\Support\LessFreight::finalAmount($printQty, $printPrice, $item->less_freight_per_qty), 2) }}</td>
                                     <td>{{ $item->transporter?->name ?? '—' }}</td>
                                     <td>{{ $item->truck_number ?? '—' }}</td>
                                     <td>{{ $item->driver_contact ?? '—' }}</td>

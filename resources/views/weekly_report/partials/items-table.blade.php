@@ -18,6 +18,8 @@
                     <col class="wr-col-dealer">
                     <col class="wr-col-city">
                     <col class="wr-col-qty">
+                    <col class="wr-col-freight">
+                    <col class="wr-col-final">
                     <col class="wr-col-transport">
                     <col class="wr-col-truck">
                     <col class="wr-col-contact">
@@ -33,6 +35,8 @@
                         <th>Dealer</th>
                         <th>City</th>
                         <th>Qty</th>
+                        <th class="wr-th-freight">Less freight / qty</th>
+                        <th class="wr-th-final">Final amount</th>
                         <th>Transport</th>
                         <th>Truck No</th>
                         <th>Contact</th>
@@ -51,6 +55,7 @@
                             data-locked="{{ $locked ? '1' : '0' }}"
                             data-unit="{{ $item->product?->unit }}"
                             data-qty="{{ $item->quantity }}"
+                            data-unit-price="{{ $item->orderItem?->unit_price ?? 0 }}"
                             class="{{ $locked ? 'wr-row-confirmed' : 'wr-row-pending' }}">
                             <td data-label="Order No">
                                 @if ($canEdit && ! $locked)
@@ -83,6 +88,32 @@
                                 @else
                                     <div class="wr-readonly-value">{{ ProductUnit::formatWithUnit($item->quantity, $item->product?->unit) }}</div>
                                 @endif
+                            </td>
+                            <td data-label="Less freight / qty" class="wr-cell-freight">
+                                @if ($canEdit && ! $locked)
+                                    <input type="number" class="form-control form-control-sm item-less-freight"
+                                        value="{{ $item->less_freight_per_qty }}" min="0" step="0.01" placeholder="Optional">
+                                    <small class="text-muted wr-freight-hint">Optional, per qty</small>
+                                @else
+                                    <div class="wr-readonly-value">{{ $item->less_freight_per_qty !== null ? '₹ '.number_format((float) $item->less_freight_per_qty, 2) : '—' }}</div>
+                                @endif
+                            </td>
+                            <td data-label="Final amount" class="wr-cell-final">
+                                @php
+                                    $wrQty = (int) $item->quantity;
+                                    $wrPrice = (float) ($item->orderItem?->unit_price ?? 0);
+                                    $wrGross = \App\Support\LessFreight::gross($wrQty, $wrPrice);
+                                    $wrLess = \App\Support\LessFreight::deduction($wrQty, $item->less_freight_per_qty);
+                                    $wrFinal = \App\Support\LessFreight::finalAmount($wrQty, $wrPrice, $item->less_freight_per_qty);
+                                @endphp
+                                <div class="wr-final-amount small">
+                                    <div>{{ $wrQty }} × ₹{{ number_format($wrPrice, 2) }}</div>
+                                    <div>= ₹{{ number_format($wrGross, 2) }}</div>
+                                    @if ($wrLess > 0)
+                                        <div>− ₹{{ number_format($wrLess, 2) }}</div>
+                                    @endif
+                                    <div class="wr-final-figure">₹{{ number_format($wrFinal, 2) }}</div>
+                                </div>
                             </td>
                             <td data-label="Transport" class="wr-cell-transport">
                                 @if ($canEdit && ! $locked)
@@ -171,7 +202,7 @@
                         </tr>
                     @empty
                         <tr class="wr-empty-rows-message">
-                            <td colspan="12">
+                            <td colspan="14">
                                 <div class="wr-empty-state py-3">
                                     <i class="ti ti-inbox"></i>
                                     No orders yet — use the form above.

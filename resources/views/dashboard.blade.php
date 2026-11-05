@@ -860,6 +860,7 @@ withDataTable(function($) {
                     var disabled = item.disabled ? ' disabled' : '';
                     html += '<option value="' + item.id + '" data-product-id="' + item.product_id +
                         '" data-product-unit="' + (item.product_unit || '') +
+                        '" data-unit-price="' + (item.unit_price || 0) +
                         '" data-pending="' + item.pending + '"' + disabled + '>' +
                         item.product_name + ' — Ordered: ' + item.qty + ', Pending: ' + item.pending +
                         '</option>';
@@ -924,6 +925,27 @@ withDataTable(function($) {
                 loadOrderItems($(this).val());
             });
 
+            function refreshDashboardFreightPreview() {
+                var qty = parseFloat($('#dashboardDispatchNoBags').val()) || 0;
+                var rate = parseFloat($('#dashboardDispatchLessFreight').val()) || 0;
+                var unitPrice = parseFloat($('#dashboardDispatchOrderItemId').find(':selected').data('unit-price')) || 0;
+                var $preview = $('#dashboardLessFreightPreview');
+                if (qty <= 0 || unitPrice <= 0) {
+                    $preview.text('');
+                    return;
+                }
+                var gross = qty * unitPrice;
+                var less = qty * rate;
+                var finalAmt = Math.max(0, gross - less);
+                var fmt = function (n) {
+                    return '₹ ' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                };
+                var text = qty + ' × ' + fmt(unitPrice) + ' = ' + fmt(gross);
+                if (rate > 0) text += ' − less freight ' + fmt(less);
+                text += ' = ' + fmt(finalAmt);
+                $preview.text(text);
+            }
+
             $('#dashboardDispatchOrderItemId').on('change', function() {
                 var $opt = $(this).find(':selected');
                 var pending = parseInt($opt.data('pending')) || 0;
@@ -932,7 +954,9 @@ withDataTable(function($) {
                 updateDashboardQtyLabel(unit);
                 $('#dashboardDispatchPendingHint').text($opt.val() ? 'Available pending qty: ' + pending + (
                     unit ? ' ' + unit : '') : '');
+                refreshDashboardFreightPreview();
             });
+            $('#dashboardDispatchNoBags, #dashboardDispatchLessFreight').on('input change', refreshDashboardFreightPreview);
 
             $('#dashboardDispatchTransport').on('change', function() {
                 loadTrucksForTransporter($(this).val(), $('#dashboardDispatchTruckNumber'),
@@ -969,6 +993,10 @@ withDataTable(function($) {
                         number: true,
                         min: 1,
                         maxDashboardPending: true
+                    },
+                    less_freight_per_qty: {
+                        number: true,
+                        min: 0
                     },
                     dispatch_date: {
                         required: true

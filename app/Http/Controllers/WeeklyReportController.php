@@ -314,6 +314,7 @@ class WeeklyReportController extends Controller
         $validated = $request->validate([
             'order_item_id'  => ['required', Rule::exists('order_items', 'id')->whereNull('deleted_at')],
             'quantity'       => 'required|integer|min:1',
+            'less_freight_per_qty' => 'nullable|numeric|min:0',
             'no_of_entries'  => 'nullable|integer|min:1|max:100',
             'transport_id'   => 'nullable|exists:users,id',
             'truck_number'   => 'nullable|string|max:100',
@@ -323,6 +324,8 @@ class WeeklyReportController extends Controller
             'order_item_id.required' => 'Please select a pending order line.',
             'quantity.required'      => ProductUnit::requiredMessage(),
             'quantity.min'           => ProductUnit::minMessage(),
+            'less_freight_per_qty.numeric' => 'Please enter a valid less freight amount.',
+            'less_freight_per_qty.min'     => 'Less freight cannot be negative.',
             'no_of_entries.min'      => 'No. of Entries must be at least 1.',
             'no_of_entries.max'      => 'No. of Entries cannot exceed 100.',
         ]);
@@ -369,6 +372,7 @@ class WeeklyReportController extends Controller
         if (! $weeklyReportItem->isLocked()) {
             $rules = array_merge($rules, [
                 'quantity'       => 'required|integer|min:1',
+                'less_freight_per_qty' => 'nullable|numeric|min:0',
                 'transport_id'   => 'nullable|exists:users,id',
                 'truck_number'   => 'nullable|string|max:100',
                 'driver_contact' => 'nullable|string|max:20',
