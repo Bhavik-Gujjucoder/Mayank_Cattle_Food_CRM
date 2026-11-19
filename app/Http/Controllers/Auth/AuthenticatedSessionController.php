@@ -60,7 +60,14 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
+        /* Start:: Direct Login Without OTP */
+        Auth::login($user, $request->boolean('remember'));
+        $request->session()->regenerate();
+        return redirect()->route('dashboard');
+        /* End:: Direct Login Without OTP */
+
         /* Generate and store OTP */
+        /*
         $otp = rand(100000, 999999);
         $user->update([
             'otp_code'       => $otp,
@@ -78,6 +85,7 @@ class AuthenticatedSessionController extends Controller
             'message',
             'OTP is being sent to your email. It may take up to a minute to arrive.'
         );
+        */
     }
 
     /* ------------------------------------------------------------------ */

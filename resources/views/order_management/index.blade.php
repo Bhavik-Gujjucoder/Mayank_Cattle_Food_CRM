@@ -316,6 +316,15 @@
                             autocomplete="off">
                     </div>
                 </div>
+                <div class="common-hed-form cls-form-select-input">
+                    <label class="col-form-label">Payment Status</label>
+                    <select class="form-select select search-dropdown" name="payment_status" id="paymentStatusFilter">
+                        <option value="all">All Status</option>
+                        <option value="unpaid">Unpaid</option>
+                        <option value="partial">Partial</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                </div>
                 @if (\App\Support\SalesScope::showBrandFilter())
                     <div class="common-hed-form cls-form-select-input">
                         <label class="col-form-label">Brand </label>
@@ -600,6 +609,7 @@
                 }
                 d.date_from = $('#orderDateFrom').val() || '';
                 d.date_to   = $('#orderDateTo').val() || '';
+                d.payment_status = $('#paymentStatusFilter').val() || 'all';
             }
         });
         var order_table = $('#order_table').DataTable({
@@ -762,7 +772,7 @@
         });
 
         /* Broker / Brand / Dealer filters */
-        $('#broker_id, #BrandId, #dealerFilter').on('change', function() {
+        $('#paymentStatusFilter, #broker_id, #BrandId, #dealerFilter').on('change', function() {
             order_table.draw();
         });
 
@@ -776,6 +786,8 @@
             orderDateFromPicker.clear();
             orderDateToPicker.clear();
 
+            $('#paymentStatusFilter').val('all');
+
             if ($('#BrandId').length) {
                 $('#BrandId').val('all');
             }
@@ -787,7 +799,7 @@
             }
 
             $('.search-dropdown').trigger('change.select2');
-            collapsedOrderIds.clear();
+            expandedOrderIds.clear();
             order_table.draw();
         });
 

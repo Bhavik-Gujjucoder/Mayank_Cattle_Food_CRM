@@ -710,7 +710,7 @@ class WeeklyReportService
         $query = OrderItem::query()
             ->with([
                 'product:id,name,unit',
-                'order:id,unique_order_id,dealer_id,payment_status',
+                'order:id,unique_order_id,order_date,dealer_id,payment_status',
                 'order.dealer:id,user_id,firm_shop_name,city_id',
                 'order.dealer.user:id,name',
                 'order.dealer.city:id,city_name',
@@ -760,6 +760,8 @@ class WeeklyReportService
                 $dealer = $item->order?->dealer;
                 $available = $this->availableWeeklyQty($item);
 
+                $orderDate = $item->order?->order_date?->format('d-m-Y') ?? '—';
+
                 return [
                     'order_item_id'  => $item->id,
                     'order_id'       => $item->order_id,
@@ -772,6 +774,7 @@ class WeeklyReportService
                     'dealer_name'    => $dealer?->user?->name ?? $dealer?->firm_shop_name ?? '—',
                     'city_name'      => $dealer?->city?->city_name ?? '—',
                     'label'          => ($item->order?->unique_order_id ?? '')
+                        . ' - ' . $orderDate
                         . ' — ' . ($item->product?->name ?? '')
                         . ' (remaining: ' . $available . ' '
                         . ProductUnit::dispatchedSuffix($item->product?->unit) . ')',
