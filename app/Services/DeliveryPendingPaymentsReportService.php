@@ -56,6 +56,7 @@ class DeliveryPendingPaymentsReportService
                             'overdue_days'     => $summary['overdue_days'],
                             'base_amount'      => $summary['base_amount'],
                             'accrued_late_fee' => $summary['accrued_late_fee'],
+                            'late_fee_source'  => $d->late_fee_source,
                             'total_receivable' => $summary['total_receivable'],
                             'balance_due'      => $summary['balance_due'],
                             'payment_type'     => $paymentType,
@@ -85,6 +86,9 @@ class DeliveryPendingPaymentsReportService
                     'max_pending_days'      => $maxDays,
                     'days_emphasis_class'   => $this->daysEmphasisClass($maxDays, $paymentType),
                     'total_late_fee'        => round($pendingDaysItems->sum('accrued_late_fee'), 2),
+                    'total_late_fee_source' => $this->receivableService->combineLateFeeSources(
+                        $pendingDaysItems->filter(fn (array $item) => (float) $item['accrued_late_fee'] > 0)->pluck('late_fee_source')
+                    ),
                     'total_balance_due'     => round($pendingDaysItems->sum('balance_due'), 2),
                 ];
             })
@@ -149,6 +153,9 @@ class DeliveryPendingPaymentsReportService
         $row['max_pending_days']     = $maxDays;
         $row['days_emphasis_class']  = $this->daysEmphasisClass($maxDays, $paymentType);
         $row['total_late_fee']       = round(collect($items)->sum('accrued_late_fee'), 2);
+        $row['total_late_fee_source'] = $this->receivableService->combineLateFeeSources(
+            collect($items)->filter(fn (array $item) => (float) ($item['accrued_late_fee'] ?? 0) > 0)->pluck('late_fee_source')
+        );
         $row['total_balance_due']    = round(collect($items)->sum('balance_due'), 2);
 
         return $row;

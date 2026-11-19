@@ -200,6 +200,7 @@
                                     {{-- ------------------------------------------------------------------ */
                                     /*  Dispatch Pending Payments
                                     /* ------------------------------------------------------------------ --}}
+                                    @if (app(\App\Services\PaymentReceivableService::class)->isAutoLateFeeEnabled())
                                     @can('view-dispatch-pending-payments')
                                         <li>
                                             <a href="{{ route('delivery-pending-payments.index') }}"
@@ -208,6 +209,7 @@
                                             </a>
                                         </li>
                                     @endcan
+                                    @endif
 
                                     {{-- ------------------------------------------------------------------ */
                                     /*  Daily Dispatch (dispatch prediction)

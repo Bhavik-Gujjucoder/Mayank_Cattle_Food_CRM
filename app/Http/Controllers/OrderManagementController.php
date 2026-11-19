@@ -121,7 +121,8 @@ class OrderManagementController extends Controller
 
                     return $receivableService->formatReceivableCell(
                         $summary['total_late_fee'],
-                        $summary['total_balance_due']
+                        $summary['total_balance_due'],
+                        $summary['late_fee_source']
                     );
                 })
                 ->addColumn('checkbox', function ($row) {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\DeliveryPendingPaymentsExport;
 use App\Models\BrandManagement;
 use App\Services\DeliveryPendingPaymentsReportService;
+use App\Services\PaymentReceivableService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,6 +20,8 @@ class DeliveryPendingPaymentsController extends Controller
 
     public function index(Request $request): View
     {
+        $this->ensureAutoLateFeeEnabled();
+
         $brandFilter = $request->query('brand_id', 'all');
         if ($brandFilter !== 'all' && ! BrandManagement::isActive((int) $brandFilter)) {
             $brandFilter = 'all';
@@ -47,6 +50,8 @@ class DeliveryPendingPaymentsController extends Controller
 
     public function export(Request $request): BinaryFileResponse|RedirectResponse
     {
+        $this->ensureAutoLateFeeEnabled();
+
         $brandFilter = $request->query('brand_id', 'all');
 
         $brandSections = $this->reportService->build($brandFilter);
@@ -63,5 +68,10 @@ class DeliveryPendingPaymentsController extends Controller
             DeliveryPendingPaymentsExport::fromSections($brandSections),
             $filename
         );
+    }
+
+    private function ensureAutoLateFeeEnabled(): void
+    {
+        abort_unless(app(PaymentReceivableService::class)->isAutoLateFeeEnabled(), 404);
     }
 }

@@ -38,6 +38,7 @@ class GeneralSettingController extends Controller
             ]);
         } elseif ($request->form_type == 'sales') {
             $request->validate([
+                'late_fee_auto'       => 'nullable|in:0,1',
                 'cash_due_days'       => 'nullable|integer|min:0',
                 'cash_due_amount'     => 'nullable|numeric|min:0',
                 'credit_due_days'     => 'nullable|integer|min:0',

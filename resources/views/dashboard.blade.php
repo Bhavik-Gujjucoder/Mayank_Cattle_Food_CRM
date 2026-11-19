@@ -1016,6 +1016,10 @@ withDataTable(function($) {
                     partial_paid_amount: {
                         dispatchPartialAmount: true
                     },
+                    accrued_late_fee: {
+                        number: true,
+                        min: 0
+                    },
                 },
                 messages: {
                     order_id: {
@@ -1044,6 +1048,10 @@ withDataTable(function($) {
                     },
                     partial_paid_amount: {
                         dispatchPartialAmount: 'Please enter the paid amount.'
+                    },
+                    accrued_late_fee: {
+                        number: 'Please enter a valid late fee.',
+                        min: 'Late fee cannot be negative.'
                     },
                 },
                 errorElement: 'span',

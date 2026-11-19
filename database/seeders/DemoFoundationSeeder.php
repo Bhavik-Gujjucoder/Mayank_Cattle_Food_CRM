@@ -70,6 +70,7 @@ class DemoFoundationSeeder extends Seeder
         $now = now();
 
         foreach ([
+            'late_fee_auto'      => '1',
             'cash_due_days'      => '7',
             'cash_due_amount'    => '5',
             'credit_due_days'    => '7',

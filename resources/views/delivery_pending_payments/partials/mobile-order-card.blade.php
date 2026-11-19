@@ -31,7 +31,7 @@
 
     @if (count($items) > 0)
         <div class="dpp-mobile-order-amounts small text-muted mb-2">
-            <span>Late fee: <strong class="text-dark">{{ PaymentReceivableService::formatMoney((float) ($row['total_late_fee'] ?? 0)) }}</strong></span>
+            <span>Late fee: <strong class="text-dark">{{ PaymentReceivableService::formatLateFeeText((float) ($row['total_late_fee'] ?? 0), $row['total_late_fee_source'] ?? null) }}</strong></span>
             <span class="mx-1" aria-hidden="true">·</span>
             <span>Balance: <strong class="text-dark">{{ PaymentReceivableService::formatMoney((float) ($row['total_balance_due'] ?? 0)) }}</strong></span>
         </div>

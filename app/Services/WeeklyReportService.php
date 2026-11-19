@@ -173,7 +173,7 @@ class WeeklyReportService
             'items.order.dealer.user:id,name',
             'items.order.dealer.city:id,city_name',
             'items.transporter:id,name,phone_no',
-            'items.dispatch:id',
+            'items.dispatch:id,accrued_late_fee,late_fee_source',
         ];
     }
 
@@ -594,7 +594,7 @@ class WeeklyReportService
     /**
      * Confirm a planned row → create real dispatch (same guards as DispatchManagementController::store).
      *
-     * @param  array{status: int|string, partial_paid_amount?: mixed}  $payment
+     * @param  array{status: int|string, partial_paid_amount?: mixed, accrued_late_fee?: mixed}  $payment
      */
     public function confirmItem(WeeklyReportItem $item, array $payment): DispatchManagement
     {
@@ -654,13 +654,14 @@ class WeeklyReportService
         $partial = $status === DispatchManagement::STATUS_PARTIAL
             ? $payment['partial_paid_amount']
             : null;
+        $lateFee = $this->receivableService->resolveManualLateFee($payment['accrued_late_fee'] ?? null, 0);
 
         if ($status === DispatchManagement::STATUS_PARTIAL) {
-            $finalAmount = \App\Support\LessFreight::finalAmount(
+            $finalAmount = round(\App\Support\LessFreight::finalAmount(
                 (int) $item->quantity,
                 (float) $orderItem->unit_price,
                 $item->less_freight_per_qty
-            );
+            ) + $lateFee, 2);
             if ((float) $partial > $finalAmount) {
                 throw ValidationException::withMessages([
                     'partial_paid_amount' => 'Paid amount cannot exceed total receivable of '
@@ -669,7 +670,7 @@ class WeeklyReportService
             }
         }
 
-        return DB::transaction(function () use ($item, $status, $partial) {
+        return DB::transaction(function () use ($item, $status, $partial, $lateFee) {
             $dispatch = DispatchManagement::create([
                 'order_id'            => $item->order_id,
                 'order_item_id'       => $item->order_item_id,
@@ -682,6 +683,13 @@ class WeeklyReportService
                 'driver_contact'        => $item->driver_contact,
                 'status'                => $status,
                 'partial_paid_amount'   => $partial,
+                'accrued_late_fee'      => $lateFee,
+                'late_fee_source'       => $this->receivableService->nextLateFeeSource(
+                    null,
+                    PaymentReceivableService::LATE_FEE_SOURCE_MANUAL,
+                    0,
+                    $lateFee
+                ),
                 'weekly_report_item_id' => $item->id,
             ]);
 

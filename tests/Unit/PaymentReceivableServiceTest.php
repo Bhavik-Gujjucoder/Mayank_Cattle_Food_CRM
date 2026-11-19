@@ -366,6 +366,50 @@ describe('aging-level', function () {
 // ─────────────────────────────────────────────
 
 describe('accrual-eligibility', function () {
+    it('returns false when automatic late fee is off', function () {
+        prsUpdateSettings(dueDays: 3, dueAmount: 10);
+        DB::table('general_settings')->updateOrInsert(
+            ['key' => 'late_fee_auto'],
+            ['value' => '0', 'created_at' => now(), 'updated_at' => now()]
+        );
+        forgetGeneralSettingsCache();
+
+        $dispatch = prsMakeDispatch([
+            'dispatch_date' => '2026-01-01',
+            'status'        => DispatchManagement::STATUS_UNPAID,
+            'no_of_bags'    => 5,
+        ]);
+
+        expect((new PaymentReceivableService())->isAutoLateFeeEnabled())->toBeFalse();
+        expect((new PaymentReceivableService())->isAccrualEligible($dispatch, Carbon::parse('2026-01-15')))->toBeFalse();
+        expect((new PaymentReceivableService())->resolveManualLateFee('250.5', 10))->toBe(250.5);
+    });
+
+    it('keeps the stored late fee when automatic late fee is on', function () {
+        DB::table('general_settings')->updateOrInsert(
+            ['key' => 'late_fee_auto'],
+            ['value' => '1', 'created_at' => now(), 'updated_at' => now()]
+        );
+        forgetGeneralSettingsCache();
+
+        expect((new PaymentReceivableService())->resolveManualLateFee('250', 40))->toBe(40.0);
+    });
+
+    it('marks a changed automatic fee as mixed and keeps an unchanged source', function () {
+        $service = new PaymentReceivableService();
+
+        expect($service->nextLateFeeSource(null, PaymentReceivableService::LATE_FEE_SOURCE_MANUAL, 0, 80))
+            ->toBe(PaymentReceivableService::LATE_FEE_SOURCE_MANUAL);
+        expect($service->nextLateFeeSource(PaymentReceivableService::LATE_FEE_SOURCE_AUTO, PaymentReceivableService::LATE_FEE_SOURCE_MANUAL, 80, 80))
+            ->toBe(PaymentReceivableService::LATE_FEE_SOURCE_AUTO);
+        expect($service->nextLateFeeSource(PaymentReceivableService::LATE_FEE_SOURCE_AUTO, PaymentReceivableService::LATE_FEE_SOURCE_MANUAL, 80, 120))
+            ->toBe(PaymentReceivableService::LATE_FEE_SOURCE_MIXED);
+        expect($service->nextLateFeeSource(PaymentReceivableService::LATE_FEE_SOURCE_MANUAL, PaymentReceivableService::LATE_FEE_SOURCE_AUTO, 80, 100))
+            ->toBe(PaymentReceivableService::LATE_FEE_SOURCE_MIXED);
+        expect($service->nextLateFeeSource(PaymentReceivableService::LATE_FEE_SOURCE_AUTO, PaymentReceivableService::LATE_FEE_SOURCE_MANUAL, 80, 0))
+            ->toBeNull();
+    });
+
     it('returns false when late fee is disabled', function () {
         $dispatch = prsMakeDispatch(['dispatch_date' => '2026-01-01', 'status' => DispatchManagement::STATUS_UNPAID]);
         $asOf     = Carbon::parse('2026-01-15');
@@ -446,6 +490,7 @@ describe('accrue-dispatch', function () {
 
         $dispatch->refresh();
         expect((float) $dispatch->accrued_late_fee)->toBe(150.0);
+        expect($dispatch->late_fee_source)->toBe(PaymentReceivableService::LATE_FEE_SOURCE_AUTO);
         expect($dispatch->late_fee_last_accrued_on->toDateString())->toBe('2026-01-07');
         expect(DispatchLateFeeLog::where('dispatch_management_id', $dispatch->id)->count())->toBe(3);
         Mail::assertQueued(\App\Mail\DispatchPaymentPendingReminderMail::class);

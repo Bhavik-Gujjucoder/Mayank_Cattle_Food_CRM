@@ -13,6 +13,12 @@ class AccrueDispatchLateFeesCommand extends Command
 
     public function handle(PaymentReceivableService $service): int
     {
+        if (! $service->isAutoLateFeeEnabled()) {
+            $this->info('Late fee accrual skipped (automatic late fee is off).');
+
+            return self::SUCCESS;
+        }
+
         if (! $service->isAnyLateFeeEnabled()) {
             $this->info('Late fee accrual skipped (cash and credit due days/amounts are zero).');
 

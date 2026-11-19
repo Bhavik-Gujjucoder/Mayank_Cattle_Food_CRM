@@ -39,7 +39,7 @@
                             @endif
                         </td>
                         <td class="text-end text-nowrap">
-                            {{ PaymentReceivableService::formatMoney((float) ($row['total_late_fee'] ?? 0)) }}
+                            {!! PaymentReceivableService::formatLateFeeHtml((float) ($row['total_late_fee'] ?? 0), $row['total_late_fee_source'] ?? null) !!}
                         </td>
                         <td class="text-end text-nowrap fw-medium">
                             {{ PaymentReceivableService::formatMoney((float) ($row['total_balance_due'] ?? 0)) }}

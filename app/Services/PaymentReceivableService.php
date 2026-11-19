@@ -16,6 +16,12 @@ class PaymentReceivableService
 
     public const PAYMENT_TYPE_CREDIT = 'credit';
 
+    public const LATE_FEE_SOURCE_AUTO = 'auto';
+
+    public const LATE_FEE_SOURCE_MANUAL = 'manual';
+
+    public const LATE_FEE_SOURCE_MIXED = 'mixed';
+
     public function normalizePaymentType(?string $type): string
     {
         return $type === self::PAYMENT_TYPE_CREDIT
@@ -68,9 +74,108 @@ class PaymentReceivableService
         return max(0, (float) getSetting($keys['amount_key']));
     }
 
+    /**
+     * Automatic daily late fee. Missing or any value other than 0 keeps the current flow.
+     */
+    public function isAutoLateFeeEnabled(): bool
+    {
+        return getSetting('late_fee_auto') !== '0';
+    }
+
     public function isLateFeeEnabled(DispatchManagement|OrderManagement|string|null $context = null): bool
     {
         return $this->paymentDueDays($context) > 0 && $this->paymentDueAmountRate($context) > 0;
+    }
+
+    /**
+     * Late fee typed on a dispatch while automatic accrual is off.
+     * While automatic accrual is on, the stored amount is left unchanged.
+     */
+    public function resolveManualLateFee(mixed $input, float $existing = 0): float
+    {
+        if ($this->isAutoLateFeeEnabled()) {
+            return round($existing, 2);
+        }
+
+        if ($input === null || $input === '') {
+            return 0.0;
+        }
+
+        return round(max(0, (float) $input), 2);
+    }
+
+    /**
+     * Remember whether this dispatch's late fee came from the nightly job, a typed amount, or both.
+     * An unchanged amount keeps the existing source, so saving a form does not relabel an automatic fee.
+     */
+    public function nextLateFeeSource(?string $current, string $incoming, float $previousAmount, float $newAmount): ?string
+    {
+        if ($newAmount <= 0) {
+            return null;
+        }
+
+        $current = $current !== null && $current !== '' ? $current : null;
+
+        if ($current === null || $current === $incoming) {
+            return $incoming;
+        }
+
+        if (abs($previousAmount - $newAmount) < 0.005) {
+            return $current;
+        }
+
+        return self::LATE_FEE_SOURCE_MIXED;
+    }
+
+    /**
+     * @param  iterable<int, string|null>  $sources
+     */
+    public function combineLateFeeSources(iterable $sources): ?string
+    {
+        $unique = collect($sources)
+            ->filter(fn ($source) => $source !== null && $source !== '')
+            ->unique()
+            ->values();
+
+        if ($unique->isEmpty()) {
+            return null;
+        }
+
+        if ($unique->count() === 1 && $unique->first() !== self::LATE_FEE_SOURCE_MIXED) {
+            return $unique->first();
+        }
+
+        return self::LATE_FEE_SOURCE_MIXED;
+    }
+
+    public static function lateFeeSourceLabel(?string $source): string
+    {
+        return match ($source) {
+            self::LATE_FEE_SOURCE_AUTO   => 'Auto',
+            self::LATE_FEE_SOURCE_MANUAL => 'Manual',
+            self::LATE_FEE_SOURCE_MIXED  => 'Auto + manual',
+            default                      => '',
+        };
+    }
+
+    public static function formatLateFeeText(float $amount, ?string $source): string
+    {
+        $money = self::formatMoney($amount);
+        $label = self::lateFeeSourceLabel($source);
+
+        return $label !== '' && $amount > 0 ? $money . ' (' . $label . ')' : $money;
+    }
+
+    public static function formatLateFeeHtml(float $amount, ?string $source): string
+    {
+        $html = e(self::formatMoney($amount));
+        $label = self::lateFeeSourceLabel($source);
+
+        if ($label === '' || $amount <= 0) {
+            return $html;
+        }
+
+        return $html . '<div class="small text-muted">' . e($label) . '</div>';
     }
 
     /**
@@ -248,13 +353,14 @@ class PaymentReceivableService
     }
 
     /**
-     * @return array{total_late_fee: float, total_balance_due: float, has_pending: bool}
+     * @return array{total_late_fee: float, total_balance_due: float, has_pending: bool, late_fee_source: string|null}
      */
     public function summarizeOrderPendingDispatches(iterable $dispatches): array
     {
         $totalLateFee = 0.0;
         $totalBalance = 0.0;
         $hasPending = false;
+        $sources = [];
 
         foreach ($dispatches as $dispatch) {
             if (! in_array((int) $dispatch->status, DispatchManagement::pendingPaymentStatuses(), true)) {
@@ -265,16 +371,20 @@ class PaymentReceivableService
             $summary = $this->summarizeDispatch($dispatch);
             $totalLateFee += $summary['accrued_late_fee'];
             $totalBalance += $summary['balance_due'];
+            if ($summary['accrued_late_fee'] > 0) {
+                $sources[] = $dispatch->late_fee_source;
+            }
         }
 
         return [
-            'total_late_fee'    => round($totalLateFee, 2),
-            'total_balance_due' => round($totalBalance, 2),
-            'has_pending'       => $hasPending,
+            'total_late_fee'     => round($totalLateFee, 2),
+            'total_balance_due'  => round($totalBalance, 2),
+            'has_pending'        => $hasPending,
+            'late_fee_source'    => $this->combineLateFeeSources($sources),
         ];
     }
 
-    public function formatReceivableCell(float $lateFee, float $balanceDue): string
+    public function formatReceivableCell(float $lateFee, float $balanceDue, ?string $lateFeeSource = null): string
     {
         if ($lateFee <= 0 && $balanceDue <= 0) {
             return '<span class="text-muted">—</span>';
@@ -282,7 +392,12 @@ class PaymentReceivableService
 
         $html = '<div class="dispatch-receivable-cell text-end text-nowrap">';
         if ($lateFee > 0) {
-            $html .= '<div class="small text-warning">Late: ' . e(self::formatMoney($lateFee)) . '</div>';
+            $html .= '<div class="small text-warning">Late: ' . e(self::formatMoney($lateFee));
+            $label = self::lateFeeSourceLabel($lateFeeSource);
+            if ($label !== '') {
+                $html .= ' <span class="text-muted">(' . e($label) . ')</span>';
+            }
+            $html .= '</div>';
         }
         if ($balanceDue > 0) {
             $html .= '<div class="fw-medium">Due: ' . e(self::formatMoney($balanceDue)) . '</div>';
@@ -304,6 +419,10 @@ class PaymentReceivableService
 
     public function isAccrualEligible(DispatchManagement $dispatch, Carbon $asOf): bool
     {
+        if (! $this->isAutoLateFeeEnabled()) {
+            return false;
+        }
+
         if (! in_array((int) $dispatch->status, DispatchManagement::pendingPaymentStatuses(), true)) {
             return false;
         }
@@ -402,9 +521,18 @@ class PaymentReceivableService
                     DispatchLateFeeLog::insert($chunk);
                 }
 
+                $previousFee = $this->accruedLateFee($dispatch);
+                $newFee = round($previousFee + $amountAdded, 2);
+
                 $dispatch->update([
-                    'accrued_late_fee'         => round($this->accruedLateFee($dispatch) + $amountAdded, 2),
+                    'accrued_late_fee'         => $newFee,
                     'late_fee_last_accrued_on' => $asOf->toDateString(),
+                    'late_fee_source'          => $this->nextLateFeeSource(
+                        $dispatch->late_fee_source,
+                        self::LATE_FEE_SOURCE_AUTO,
+                        $previousFee,
+                        $newFee
+                    ),
                 ]);
             }
         });

@@ -315,7 +315,7 @@ class SalesBulkSeeder extends Seeder
     {
         $service = app(PaymentReceivableService::class);
 
-        if (! $service->isLateFeeEnabled($dispatch)) {
+        if (! $service->isAutoLateFeeEnabled() || ! $service->isLateFeeEnabled($dispatch)) {
             return;
         }
 
@@ -326,6 +326,7 @@ class SalesBulkSeeder extends Seeder
 
         $dispatch->update([
             'accrued_late_fee'         => $accrued,
+            'late_fee_source'          => PaymentReceivableService::LATE_FEE_SOURCE_AUTO,
             'late_fee_last_accrued_on' => now()->subDays(fake()->numberBetween(1, 5))->toDateString(),
         ]);
 

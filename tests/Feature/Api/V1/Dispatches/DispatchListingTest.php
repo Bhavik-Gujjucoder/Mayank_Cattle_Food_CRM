@@ -285,7 +285,7 @@ describe('Dispatch Listing — response structure', function () {
         expect($d)->toHaveKeys([
             'id', 'dispatch_number', 'dispatch_date',
             'no_of_bags', 'ordered_qty', 'total_dispatched_qty', 'pending_qty', 'is_item_complete',
-            'payment_status', 'partial_paid_amount', 'accrued_late_fee', 'late_fee_last_accrued_on',
+            'payment_status', 'partial_paid_amount', 'accrued_late_fee', 'late_fee_source', 'late_fee_source_label', 'late_fee_last_accrued_on',
             'payment_receivable',
             'truck_number', 'driver_contact',
             'order', 'product', 'transporter',

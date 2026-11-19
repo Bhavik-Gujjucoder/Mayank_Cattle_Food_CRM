@@ -398,6 +398,7 @@
             if (window.dispatchPaymentStatusHelpers) {
                 window.dispatchPaymentStatusHelpers.setFormStatus($('#confirmItemForm'), 0, '');
             }
+            $('#confirmItemForm').find('.manual-late-fee-field').val('');
             window.wrConfirmModal.show();
         });
         @endif

@@ -449,12 +449,19 @@ class WeeklyReportController extends Controller
             abort(403, 'You need add-dispatch permission to confirm a row.');
         }
 
-        $validated = $request->validate([
+        $rules = [
             'status'              => 'required|in:0,1,2',
             'partial_paid_amount' => 'nullable|numeric|min:0|required_if:status,2',
-        ], [
+        ];
+        if (! app(\App\Services\PaymentReceivableService::class)->isAutoLateFeeEnabled()) {
+            $rules['accrued_late_fee'] = 'nullable|numeric|min:0';
+        }
+
+        $validated = $request->validate($rules, [
             'status.required'                 => 'Please select a payment status.',
             'partial_paid_amount.required_if' => 'Please enter the paid amount.',
+            'accrued_late_fee.numeric'        => 'Please enter a valid late fee.',
+            'accrued_late_fee.min'            => 'Late fee cannot be negative.',
         ]);
 
         $validated['partial_paid_amount'] = (int) $validated['status'] === \App\Models\DispatchManagement::STATUS_PARTIAL

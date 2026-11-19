@@ -135,6 +135,22 @@ describe('access-control', function () {
             ->assertForbidden();
     });
 
+    it('returns 404 when automatic late fee is off', function () {
+        DB::table('general_settings')->updateOrInsert(
+            ['key' => 'late_fee_auto'],
+            ['value' => '0', 'created_at' => now(), 'updated_at' => now()]
+        );
+        forgetGeneralSettingsCache();
+
+        $actor = dppActor(['view-dispatch-pending-payments']);
+        $this->actingAs($actor)
+            ->get(route('delivery-pending-payments.index'))
+            ->assertNotFound();
+        $this->actingAs($actor)
+            ->get(route('delivery-pending-payments.export'))
+            ->assertNotFound();
+    });
+
     it('returns 200 on index when user has view-dispatch-pending-payments', function () {
         $actor = dppActor(['view-dispatch-pending-payments']);
         $this->actingAs($actor)

@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Services\DeliveryPendingPaymentsReportService;
+use App\Services\PaymentReceivableService;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -82,7 +83,9 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
                     $row['city_name'],
                     $row['dealer_name'],
                     $row['order_label'],
-                    number_format((float) ($row['total_late_fee'] ?? 0), 2),
+                    ($lateFeeLabel = PaymentReceivableService::lateFeeSourceLabel($row['total_late_fee_source'] ?? null)) !== ''
+                        ? number_format((float) ($row['total_late_fee'] ?? 0), 2) . ' (' . $lateFeeLabel . ')'
+                        : number_format((float) ($row['total_late_fee'] ?? 0), 2),
                     number_format((float) ($row['total_balance_due'] ?? 0), 2),
                     '',
                 ], $line++, 'data');
