@@ -78,7 +78,10 @@ class DispatchEmailPresenter
                 'less_freight'     => PaymentReceivableService::formatMoney($receivable['less_freight']),
                 'has_less_freight' => $receivable['less_freight'] > 0,
                 'base_amount'      => PaymentReceivableService::formatMoney($receivable['base_amount']),
-                'accrued_late_fee' => PaymentReceivableService::formatMoney($receivable['accrued_late_fee']),
+                'accrued_late_fee' => PaymentReceivableService::formatLateFeeText(
+                    $receivable['accrued_late_fee'],
+                    $dispatch->late_fee_source
+                ),
                 'total_receivable' => PaymentReceivableService::formatMoney($receivable['total_receivable']),
                 'balance_due'      => (int) $dispatch->status === DispatchManagement::STATUS_PAID
                     ? '—'

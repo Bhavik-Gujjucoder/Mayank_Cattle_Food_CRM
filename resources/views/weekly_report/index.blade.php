@@ -169,6 +169,10 @@
                             'idPrefix' => 'wrConfirm',
                             'value' => '0',
                         ])
+                        @include('dispatch_management.partials.manual-late-fee-field', [
+                            'idPrefix' => 'wrConfirm',
+                            'useOld' => false,
+                        ])
                     </div>
                     <div class="text-danger small" id="confirmFormError"></div>
                 </div>

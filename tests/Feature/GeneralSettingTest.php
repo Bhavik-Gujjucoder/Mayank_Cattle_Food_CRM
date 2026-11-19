@@ -594,6 +594,30 @@ describe('sales tab — validation', function () {
  ══════════════════════════════════════════════════════════════════════ */
 describe('sales tab — persistence', function () {
 
+    test('late fee auto switch is persisted', function () {
+        actingAs(settingsUser())
+            ->post(route('generalsetting.store'), [
+                'form_type'          => 'sales',
+                'late_fee_auto'      => '0',
+                'cash_due_days'      => 7,
+                'cash_due_amount'    => 5,
+                'credit_due_days'    => 7,
+                'credit_due_amount'  => 5,
+            ])
+            ->assertSessionHasNoErrors();
+
+        assertDatabaseHas('general_settings', ['key' => 'late_fee_auto', 'value' => '0']);
+    });
+
+    test('late fee auto rejects values other than 0 or 1', function () {
+        actingAs(settingsUser())
+            ->post(route('generalsetting.store'), [
+                'form_type'     => 'sales',
+                'late_fee_auto' => 'yes',
+            ])
+            ->assertSessionHasErrors('late_fee_auto');
+    });
+
     test('cash and credit due settings are persisted', function () {
         actingAs(settingsUser())
             ->post(route('generalsetting.store'), [

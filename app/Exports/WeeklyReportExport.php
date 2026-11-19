@@ -67,7 +67,7 @@ class WeeklyReportExport implements FromArray, WithStyles, WithEvents
             }
 
             $this->pushRow(
-                ['Order No', 'Order ID', 'Product', 'Dealer', 'City', 'Qty', 'Less freight/qty', 'Amount', 'Less freight', 'Final', 'Transport', 'Truck No', 'Contact', 'Note', 'Status'],
+                ['Order No', 'Order ID', 'Product', 'Dealer', 'City', 'Qty', 'Less freight/qty', 'Amount', 'Less freight', 'Late fee', 'Final', 'Transport', 'Truck No', 'Contact', 'Note', 'Status'],
                 $line++,
                 'table-header'
             );
@@ -86,6 +86,8 @@ class WeeklyReportExport implements FromArray, WithStyles, WithEvents
                     $qty = (int) $item->quantity;
                     $price = (float) ($item->orderItem?->unit_price ?? 0);
                     $less = LessFreight::deduction($qty, $item->less_freight_per_qty);
+                    $base = LessFreight::finalAmount($qty, $price, $item->less_freight_per_qty);
+                    $late = $isConfirmed ? round((float) ($item->dispatch?->accrued_late_fee ?? 0), 2) : 0.0;
 
                     $this->pushRow([
                         (string) $item->sort_order,
@@ -97,7 +99,8 @@ class WeeklyReportExport implements FromArray, WithStyles, WithEvents
                         $item->less_freight_per_qty !== null ? number_format((float) $item->less_freight_per_qty, 2) : '—',
                         number_format(LessFreight::gross($qty, $price), 2),
                         $less > 0 ? number_format($less, 2) : '—',
-                        number_format(LessFreight::finalAmount($qty, $price, $item->less_freight_per_qty), 2),
+                        $late > 0 ? number_format($late, 2) : '—',
+                        number_format($base + $late, 2),
                         $item->transporter?->name ?? '—',
                         $item->truck_number ?? '—',
                         $item->driver_contact ?? '—',

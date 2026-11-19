@@ -110,6 +110,8 @@ class DispatchResource extends JsonResource
                 ? (string) $this->partial_paid_amount
                 : null,
             'accrued_late_fee'         => (string) ($this->accrued_late_fee ?? '0.00'),
+            'late_fee_source'          => $this->late_fee_source,
+            'late_fee_source_label'    => \App\Services\PaymentReceivableService::lateFeeSourceLabel($this->late_fee_source),
             'late_fee_last_accrued_on' => $this->late_fee_last_accrued_on?->format('Y-m-d'),
 
             // ── Payment receivable summary ─────────────────────────────────────

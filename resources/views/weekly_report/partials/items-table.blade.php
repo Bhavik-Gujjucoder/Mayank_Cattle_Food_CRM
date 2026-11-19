@@ -105,6 +105,9 @@
                                     $wrGross = \App\Support\LessFreight::gross($wrQty, $wrPrice);
                                     $wrLess = \App\Support\LessFreight::deduction($wrQty, $item->less_freight_per_qty);
                                     $wrFinal = \App\Support\LessFreight::finalAmount($wrQty, $wrPrice, $item->less_freight_per_qty);
+                                    $wrLate = $locked ? round((float) ($item->dispatch?->accrued_late_fee ?? 0), 2) : 0.0;
+                                    $wrLateLabel = \App\Services\PaymentReceivableService::lateFeeSourceLabel($item->dispatch?->late_fee_source);
+                                    $wrPayable = round($wrFinal + $wrLate, 2);
                                 @endphp
                                 <div class="wr-final-amount small">
                                     <div>{{ $wrQty }} × ₹{{ number_format($wrPrice, 2) }}</div>
@@ -112,7 +115,10 @@
                                     @if ($wrLess > 0)
                                         <div>− ₹{{ number_format($wrLess, 2) }}</div>
                                     @endif
-                                    <div class="wr-final-figure">₹{{ number_format($wrFinal, 2) }}</div>
+                                    @if ($wrLate > 0)
+                                        <div>+ ₹{{ number_format($wrLate, 2) }} late{{ $wrLateLabel !== '' ? ' (' . $wrLateLabel . ')' : '' }}</div>
+                                    @endif
+                                    <div class="wr-final-figure">₹{{ number_format($wrPayable, 2) }}</div>
                                 </div>
                             </td>
                             <td data-label="Transport" class="wr-cell-transport">

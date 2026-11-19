@@ -115,6 +115,11 @@
                             'value'    => old('status', '0'),
                         ])
 
+                        @include('dispatch_management.partials.manual-late-fee-field', [
+                            'idPrefix' => 'dashboard',
+                            'errorId' => 'accrued_late_fee',
+                        ])
+
                     </div>
                 </div>
 

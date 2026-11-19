@@ -248,6 +248,7 @@
                                 <th>Less freight / qty</th>
                                 <th>Amount</th>
                                 <th>Less freight</th>
+                                <th>Late fee</th>
                                 <th>Final</th>
                                 <th>Transport</th>
                                 <th>Truck No</th>
@@ -273,11 +274,14 @@
                                         $printQty = (int) $item->quantity;
                                         $printPrice = (float) ($item->orderItem?->unit_price ?? 0);
                                         $printLess = \App\Support\LessFreight::deduction($printQty, $item->less_freight_per_qty);
+                                        $printBase = \App\Support\LessFreight::finalAmount($printQty, $printPrice, $item->less_freight_per_qty);
+                                        $printLate = $confirmed ? round((float) ($item->dispatch?->accrued_late_fee ?? 0), 2) : 0.0;
                                     @endphp
                                     <td>{{ $item->less_freight_per_qty !== null ? number_format((float) $item->less_freight_per_qty, 2) : '—' }}</td>
                                     <td>{{ number_format(\App\Support\LessFreight::gross($printQty, $printPrice), 2) }}</td>
                                     <td>{{ $printLess > 0 ? number_format($printLess, 2) : '—' }}</td>
-                                    <td>{{ number_format(\App\Support\LessFreight::finalAmount($printQty, $printPrice, $item->less_freight_per_qty), 2) }}</td>
+                                    <td>{{ $printLate > 0 ? number_format($printLate, 2) : '—' }}</td>
+                                    <td>{{ number_format($printBase + $printLate, 2) }}</td>
                                     <td>{{ $item->transporter?->name ?? '—' }}</td>
                                     <td>{{ $item->truck_number ?? '—' }}</td>
                                     <td>{{ $item->driver_contact ?? '—' }}</td>

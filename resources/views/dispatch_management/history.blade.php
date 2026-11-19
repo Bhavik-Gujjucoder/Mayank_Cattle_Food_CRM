@@ -290,7 +290,9 @@
                     <span class="dh-order-fact-label">Due charges</span>
                     <span class="dh-order-fact-value">
                         @if ($orderReceivable['total_late_fee'] > 0)
-                            <span class="d-block small text-warning">Late ₹ {{ number_format($orderReceivable['total_late_fee'], 2) }}</span>
+                            <span class="d-block small text-warning">
+                                Late {{ \App\Services\PaymentReceivableService::formatLateFeeText($orderReceivable['total_late_fee'], $orderReceivable['late_fee_source'] ?? null) }}
+                            </span>
                         @endif
                         @if ($orderReceivable['total_balance_due'] > 0)
                             ₹ {{ number_format($orderReceivable['total_balance_due'], 2) }}
@@ -467,7 +469,7 @@
                                         @endif
                                     </td>
                                     <td class="text-end text-nowrap">
-                                        {{ PaymentReceivableService::formatMoney($recv['accrued_late_fee']) }}
+                                        {!! PaymentReceivableService::formatLateFeeHtml($recv['accrued_late_fee'], $dispatch->late_fee_source) !!}
                                     </td>
                                     <td class="text-end text-nowrap fw-medium">
                                         {{ $receivableService->formatBalanceDueDisplay($dispatch) }}
@@ -487,6 +489,8 @@
                                                     data-driver-contact="{{ $dispatch->driver_contact }}"
                                                     data-status="{{ $dispatch->status }}"
                                                     data-partial-paid-amount="{{ $dispatch->partial_paid_amount }}"
+                                                    data-accrued-late-fee="{{ $dispatch->accrued_late_fee }}"
+                                                    data-late-fee-source-label="{{ PaymentReceivableService::lateFeeSourceLabel($dispatch->late_fee_source) }}"
                                                     data-product-name="{{ $item->product?->name ?? '' }}"
                                                     data-product-unit="{{ $item->product?->unit ?? '' }}"
                                                     data-effective-pending="{{ $item->maxBagsWhenEditing($dispatch) }}"
@@ -676,6 +680,11 @@
                                     'value'    => old('status', '0'),
                                 ])
 
+                                @include('dispatch_management.partials.manual-late-fee-field', [
+                                    'idPrefix' => 'dispatch',
+                                    'errorId' => 'accrued_late_fee',
+                                ])
+
                             </div>
                         </div>
 
@@ -815,6 +824,11 @@
                                     'idPrefix' => 'edit',
                                     'errorId'  => 'edit_status',
                                     'value'    => '0',
+                                ])
+
+                                @include('dispatch_management.partials.manual-late-fee-field', [
+                                    'idPrefix' => 'edit',
+                                    'useOld' => false,
                                 ])
 
                                 <div class="col-12">
@@ -1142,6 +1156,7 @@
                     driver_contact:      { required: true },
                     status:              { required: true },
                     partial_paid_amount: { dispatchPartialAmount: true },
+                    accrued_late_fee: { number: true, min: 0 },
                 },
                 messages: {
                     order_item_id:  { required: 'Please select a product.' },
@@ -1264,6 +1279,7 @@
                     driver_contact:      { required: true },
                     status:              { required: true },
                     partial_paid_amount: { dispatchPartialAmount: true },
+                    accrued_late_fee: { number: true, min: 0 },
                 },
                 messages: {
                     no_of_bags:     { required: qtyRequiredMsg, number: 'Please enter a valid number.', min: 'Must be at least 1.' },
@@ -1395,7 +1411,7 @@
                 $(previewSelector).text(text);
             }
 
-            function populateEditModal(dispatchId, transportId, truckNumber, driverContact, status, partialPaidAmount, noBags, dispatchDate, productName, effectivePending, updateUrl, productUnit, validationErrors, lessFreight, unitPrice) {
+            function populateEditModal(dispatchId, transportId, truckNumber, driverContact, status, partialPaidAmount, noBags, dispatchDate, productName, effectivePending, updateUrl, productUnit, validationErrors, lessFreight, unitPrice, accruedLateFee, lateFeeSourceLabel) {
                 editOriginalNoOfBags = parseInt(noBags, 10) || 0;
                 editEffectivePending = parseInt(effectivePending, 10) || 0;
                 editMaxAllowedBags = Math.max(editEffectivePending, editOriginalNoOfBags);
@@ -1408,6 +1424,8 @@
                 refreshDispatchFreightPreview('#editNoBags', '#editLessFreight', unitPrice, '#editLessFreightPreview');
                 $('#editDriverContact').val(driverContact);
                 window.dispatchPaymentStatusHelpers.setFormStatus($('#editDispatchForm'), status, partialPaidAmount);
+                $('#edit_accrued_late_fee').val(accruedLateFee === undefined || accruedLateFee === null ? '' : accruedLateFee);
+                $('#edit_late_fee_source_label').text(lateFeeSourceLabel ? 'Saved as ' + lateFeeSourceLabel : '');
                 editDatePicker.setDate(dispatchDate, false);
                 $('#editDispatchQtyLabel').text(quantityFieldLabel(productUnit || ''));
                 $('#editPendingHint').text(maxAllowedHint(effectivePending, productUnit || ''));
@@ -1479,7 +1497,9 @@
                     $btn.attr('data-product-unit'),
                     null,
                     $btn.attr('data-less-freight') || '',
-                    $btn.attr('data-unit-price') || 0
+                    $btn.attr('data-unit-price') || 0,
+                    $btn.attr('data-accrued-late-fee') || '',
+                    $btn.attr('data-late-fee-source-label') || ''
                 );
             });
 
@@ -1506,7 +1526,9 @@
                         payload.productUnit,
                         payload.validationErrors || null,
                         payload.lessFreight || '',
-                        payload.unitPrice || 0
+                        payload.unitPrice || 0,
+                        payload.accruedLateFee || '',
+                        payload.lateFeeSourceLabel || ''
                     );
                 } catch (e) {
                     console.error('Failed to reopen edit dispatch modal', e);

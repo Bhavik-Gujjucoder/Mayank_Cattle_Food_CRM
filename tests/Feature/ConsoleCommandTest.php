@@ -162,6 +162,20 @@ describe('payment:accrue-late-fees', function () {
         }
     });
 
+    it('skips accrual when automatic late fee is off', function () {
+        DB::table('general_settings')->where('key', 'cash_due_days')->update(['value' => '3']);
+        DB::table('general_settings')->where('key', 'cash_due_amount')->update(['value' => '10']);
+        DB::table('general_settings')->updateOrInsert(
+            ['key' => 'late_fee_auto'],
+            ['value' => '0', 'created_at' => now(), 'updated_at' => now()]
+        );
+        forgetGeneralSettingsCache();
+
+        $this->artisan('payment:accrue-late-fees')
+            ->expectsOutputToContain('automatic late fee is off')
+            ->assertExitCode(0);
+    });
+
     it('skips accrual and outputs skip message when late fee is disabled', function () {
         $this->artisan('payment:accrue-late-fees')
             ->expectsOutputToContain('Late fee accrual skipped')
