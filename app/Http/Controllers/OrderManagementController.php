@@ -817,6 +817,11 @@ class OrderManagementController extends Controller
             $query->where('order_date', '<=', $request->date_to);
         }
 
+        $status = $request->input('payment_status');
+        if (in_array($status, ['unpaid', 'paid', 'partial'], true)) {
+            $query->where('payment_status', $status);
+        }
+
         return $query;
     }
 }

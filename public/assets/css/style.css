@@ -38015,8 +38015,56 @@ table.dataTable>thead .sorting_desc_disabled:before {
   }
 }
 
-div.dataTables_wrapper div.dataTables_info {
-  padding-top: 23px;
+div.dataTables_wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  row-gap: 8px;
+}
+div.dataTables_wrapper > .dataTables_length {
+  order: 1;
+  margin-top: 0 !important;
+}
+div.dataTables_wrapper > .dataTables_info {
+  order: 2;
+  margin-left: auto;
+  padding-top: 0 !important;
+  line-height: 36px;
+  text-align: right;
+  white-space: nowrap;
+}
+div.dataTables_wrapper > table.dataTable,
+div.dataTables_wrapper > .dataTables_paginate {
+  order: 3;
+  flex: 1 0 100%;
+  width: 100%;
+}
+div.dataTables_wrapper > .dataTables_paginate {
+  order: 4;
+}
+@media (max-width: 767.98px) {
+  div.dataTables_wrapper > .dataTables_length,
+  div.dataTables_wrapper > .dataTables_info {
+      flex: 1 0 100%;
+      margin-left: 0;
+      text-align: center;
+      line-height: 1.4;
+      white-space: normal;
+  }
+}
+
+.dt-info-total {
+  display: inline-block;
+  min-width: 1.6em;
+  margin: 0 3px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #e8f1ff;
+  color: #1d4ed8;
+  font-weight: 700;
+  line-height: 22px;
+  text-align: center;
 }
 
 table.dataTable thead>tr>th.no-sort.sorting_asc:before {

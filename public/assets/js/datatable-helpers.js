@@ -8,6 +8,12 @@ window.whenDataTablesReady = function (callback, maxAttempts) {
 
     function check() {
         if (window.jQuery && jQuery.fn && jQuery.fn.DataTable) {
+            $.extend(true, $.fn.dataTable.defaults, {
+                language: {
+                    info: 'Showing _START_ to _END_ of <span class="dt-info-total">_TOTAL_</span> entries',
+                    infoEmpty: 'Showing 0 to 0 of <span class="dt-info-total">0</span> entries'
+                }
+            });
             callback(jQuery);
             return;
         }
