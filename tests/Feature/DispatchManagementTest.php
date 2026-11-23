@@ -308,6 +308,26 @@ describe('index', function () {
         expect($response->json('recordsTotal'))->toBe(1);
     });
 
+    it('renders the late fee note as HTML in the dispatch list', function () {
+        $s      = disSetup();
+        $actor  = disActor(['view-dispatch']);
+        $source = mkDis($s['order']->id, $s['orderItem']->id, $s['product']->id, $s['transporter']->id);
+        mkDis($s['order']->id, $s['orderItem']->id, $s['product']->id, $s['transporter']->id, [
+            'accrued_late_fee'     => 200,
+            'late_fee_source'      => 'manual',
+            'late_fee_dispatch_id' => $source->id,
+        ]);
+
+        $response = $this->actingAs($actor)
+            ->getJson(route('dispatch.index'), ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk();
+
+        $cell = collect($response->json('data'))->pluck('late_fee')->implode(' ');
+
+        expect($cell)->toContain('<div class="small text-muted">Manual')
+            ->and($cell)->not->toContain('&lt;div');
+    });
+
     it('AJAX filters dispatches by order_id', function () {
         $s      = disSetup();
         $actor  = disActor(['view-dispatch']);

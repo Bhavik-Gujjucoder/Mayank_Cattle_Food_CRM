@@ -191,7 +191,7 @@ class DispatchManagementController extends Controller
                     return $btn;
                 })
 
-                ->rawColumns(['unique_order_id', 'action', 'is_complete', 'status'])
+                ->rawColumns(['unique_order_id', 'action', 'is_complete', 'status', 'late_fee'])
                 ->make(true);
         }
 
