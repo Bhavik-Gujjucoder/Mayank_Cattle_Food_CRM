@@ -107,7 +107,9 @@ withDataTable(function () {
             d.status = $('#statusFilter').val();
         }
     });
-    var raw_material_table = $('#raw_material_table').DataTable({
+    var raw_material_table = $('#raw_material_table').DataTable($.extend({}, dataTablePageMemory('#raw_material_table', [
+        { selector: '#statusFilter', key: 'status', select2: true }
+    ], '#customSearch'), {
         pageLength: 10,
         deferRender: true,
         processing: true,
@@ -136,8 +138,9 @@ withDataTable(function () {
                 $('#exportMaterialsBtn').html('<i class="ti ti-file-export me-2"></i>Export (' + n + ')');
             }
         }
-    });
+    }));
     rawMaterialAjax._bindTable(raw_material_table);
+    keepDataTablePage(raw_material_table);
 
     $('#statusFilter').on('change', function () {
         const p = new URLSearchParams();

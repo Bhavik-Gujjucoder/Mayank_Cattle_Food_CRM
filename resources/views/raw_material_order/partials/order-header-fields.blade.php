@@ -32,7 +32,7 @@
             <option value="">-- Select Supplier --</option>
             @foreach ($suppliers as $supplier)
                 <option value="{{ $supplier->id }}"
-                    data-broker-id="{{ $supplier->supplier_broker_id }}"
+                    data-broker-ids="{{ $supplier->supplierBrokers->pluck('id')->implode(',') }}"
                     {{ old('supplier_id', $order->supplier_id ?? '') == $supplier->id ? 'selected' : '' }}>
                     {{ $supplier->name }}
                 </option>

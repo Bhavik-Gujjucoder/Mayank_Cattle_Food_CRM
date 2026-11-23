@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SupplierBroker extends Model
@@ -25,9 +25,10 @@ class SupplierBroker extends Model
         return $this->belongsTo(CityManagement::class, 'city_id');
     }
 
-    public function suppliers(): HasMany
+    public function suppliers(): BelongsToMany
     {
-        return $this->hasMany(Supplier::class);
+        return $this->belongsToMany(Supplier::class, 'supplier_broker_supplier')
+            ->orderBy('name');
     }
 
     public function statusBadge(): string

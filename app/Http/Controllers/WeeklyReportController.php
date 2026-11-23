@@ -315,6 +315,8 @@ class WeeklyReportController extends Controller
             'order_item_id'  => ['required', Rule::exists('order_items', 'id')->whereNull('deleted_at')],
             'quantity'       => 'required|integer|min:1',
             'less_freight_per_qty' => 'nullable|numeric|min:0',
+            'accrued_late_fee' => 'nullable|numeric|min:0',
+            'late_fee_dispatch_id' => 'nullable|integer|exists:dispatch_management,id',
             'no_of_entries'  => 'nullable|integer|min:1|max:100',
             'transport_id'   => 'nullable|exists:users,id',
             'truck_number'   => 'nullable|string|max:100',
@@ -326,6 +328,9 @@ class WeeklyReportController extends Controller
             'quantity.min'           => ProductUnit::minMessage(),
             'less_freight_per_qty.numeric' => 'Please enter a valid less freight amount.',
             'less_freight_per_qty.min'     => 'Less freight cannot be negative.',
+            'accrued_late_fee.numeric' => 'Please enter a valid late fee.',
+            'accrued_late_fee.min'     => 'Late fee cannot be negative.',
+            'late_fee_dispatch_id.exists' => 'Select an unpaid or partial dispatch for this dealer.',
             'no_of_entries.min'      => 'No. of Entries must be at least 1.',
             'no_of_entries.max'      => 'No. of Entries cannot exceed 100.',
         ]);
@@ -373,6 +378,8 @@ class WeeklyReportController extends Controller
             $rules = array_merge($rules, [
                 'quantity'       => 'required|integer|min:1',
                 'less_freight_per_qty' => 'nullable|numeric|min:0',
+                'accrued_late_fee' => 'nullable|numeric|min:0',
+                'late_fee_dispatch_id' => 'nullable|integer|exists:dispatch_management,id',
                 'transport_id'   => 'nullable|exists:users,id',
                 'truck_number'   => 'nullable|string|max:100',
                 'driver_contact' => 'nullable|string|max:20',
@@ -453,9 +460,6 @@ class WeeklyReportController extends Controller
             'status'              => 'required|in:0,1,2',
             'partial_paid_amount' => 'nullable|numeric|min:0|required_if:status,2',
         ];
-        if (! app(\App\Services\PaymentReceivableService::class)->isAutoLateFeeEnabled()) {
-            $rules['accrued_late_fee'] = 'nullable|numeric|min:0';
-        }
 
         $validated = $request->validate($rules, [
             'status.required'                 => 'Please select a payment status.',

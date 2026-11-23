@@ -58,6 +58,20 @@
                 <span class="text-danger small d-block less_freight_per_qty_error"></span>
                 <div class="small wr-add-freight-preview"></div>
             </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <label class="col-form-label">Late Fee</label>
+                <input type="number" name="accrued_late_fee" class="form-control form-control-sm wr-add-late-fee"
+                    min="0" step="0.01" placeholder="Optional">
+                <span class="text-danger small d-block accrued_late_fee_error"></span>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="col-form-label">Late fee for dispatch</label>
+                <select name="late_fee_dispatch_id" class="form-select form-select-sm wr-add-late-fee-dispatch" disabled>
+                    <option value="">— Select an order line first —</option>
+                </select>
+                <small class="text-muted">Same dealer, unpaid or partial. Used only on the first entry.</small>
+                <span class="text-danger small d-block late_fee_dispatch_id_error"></span>
+            </div>
             <div class="col-6 col-md-4 col-lg-1 wr-add-entries-col">
                 <label class="col-form-label">No. of Entries <span class="text-danger">*</span></label>
                 <input type="number" name="no_of_entries" class="form-control form-control-sm wr-add-entries"

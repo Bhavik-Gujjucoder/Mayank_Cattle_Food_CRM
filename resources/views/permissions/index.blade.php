@@ -86,7 +86,7 @@
 <script>
 withDataTable(function () {
     var permissionAjax = buildDataTableAjax("{{ route('permissions.index') }}");
-    var permission_table = $('#permission').DataTable({
+    var permission_table = $('#permission').DataTable($.extend({}, dataTablePageMemory('#permission', [], '#customSearch'), {
         "pageLength": 10,
         deferRender: true, // Prevents unnecessary DOM rendering
         processing: true,
@@ -116,8 +116,9 @@ withDataTable(function () {
             },
         ],
 
-    });
+    }));
     permissionAjax._bindTable(permission_table);
+    keepDataTablePage(permission_table);
 
     /*** Custom Search Box ***/
     bindDebouncedDataTableSearch('#customSearch', permission_table);
@@ -153,7 +154,7 @@ withDataTable(function () {
             data: $(this).serialize() + "&_method=" + method,
             success: function(response) {
                 $('#adminModal').modal('hide');
-                permission_table.ajax.reload();
+                permission_table.ajax.reload(null, false);
                 show_success(response.message);
             },
             error: function(response) {

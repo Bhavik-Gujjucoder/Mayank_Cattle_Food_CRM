@@ -141,14 +141,15 @@ class RawMaterialReceiveController extends Controller
                 ->orderBy('name')
                 ->get(['id', 'name']),
             'suppliers' => Supplier::query()
+                ->with('supplierBrokers:id')
                 ->where('status', 1)
                 ->orderBy('name')
-                ->get(['id', 'name', 'supplier_broker_id'])
+                ->get(['id', 'name'])
                 ->map(function (Supplier $supplier) {
                     return [
-                        'id'                 => (int) $supplier->id,
-                        'name'               => $supplier->name,
-                        'supplier_broker_id' => (int) $supplier->supplier_broker_id,
+                        'id'                  => (int) $supplier->id,
+                        'name'                => $supplier->name,
+                        'supplier_broker_ids' => $supplier->supplierBrokers->pluck('id')->map(fn ($id) => (int) $id)->values()->all(),
                     ];
                 })
                 ->values(),

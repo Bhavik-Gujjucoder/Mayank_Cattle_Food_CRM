@@ -58,10 +58,10 @@ function mkSup(int $brokerId, int $stateId, int $cityId, array $attrs = []): Sup
 function supPayload(int $brokerId, int $stateId, int $cityId, array $overrides = []): array
 {
     return array_merge([
-        'supplier_broker_id' => $brokerId,
-        'name'               => 'Test Supplier',
-        'state_id'           => $stateId,
-        'city_id'            => $cityId,
+        'supplier_broker_ids' => $brokerId > 0 ? [$brokerId] : [],
+        'name'                => 'Test Supplier',
+        'state_id'            => $stateId,
+        'city_id'             => $cityId,
     ], $overrides);
 }
 
@@ -168,7 +168,10 @@ describe('index', function () {
             ->assertOk()
             ->assertViewIs('supplier.index')
             ->assertViewHas('states')
-            ->assertViewHas('supplier_brokers');
+            ->assertViewHas('supplier_brokers')
+            ->assertSee('name="supplier_broker_ids[]"', false)
+            ->assertSee('id="supplier_broker_ids"', false)
+            ->assertSee('multiple', false);
     });
 
     it('supplier_brokers in view only contains active brokers', function () {
@@ -355,9 +358,9 @@ describe('store-validation', function () {
         $actor = supActor(['add-supplier']);
 
         $this->actingAs($actor)
-            ->postJson(route('supplier.store'), supPayload(0, $state->id, $city->id, ['supplier_broker_id' => '']))
+            ->postJson(route('supplier.store'), supPayload(0, $state->id, $city->id, ['supplier_broker_ids' => []]))
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['supplier_broker_id']);
+            ->assertJsonValidationErrors(['supplier_broker_ids']);
     });
 
     it('fails when supplier_broker_id does not exist', function () {
@@ -368,7 +371,7 @@ describe('store-validation', function () {
         $this->actingAs($actor)
             ->postJson(route('supplier.store'), supPayload(99999, $state->id, $city->id))
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['supplier_broker_id']);
+            ->assertJsonValidationErrors(['supplier_broker_ids.0']);
     });
 
     it('fails when name is missing', function () {
@@ -524,14 +527,38 @@ describe('store-persistence', function () {
             'address' => '123 Supply Road',
         ]));
 
+        $supplier = Supplier::where('name', 'New Supplier')->first();
+
         $this->assertDatabaseHas('suppliers', [
-            'supplier_broker_id' => $broker->id,
-            'name'               => 'New Supplier',
-            'mobile'             => '9876543210',
-            'email'              => 'newsup@example.com',
-            'state_id'           => $state->id,
-            'city_id'            => $city->id,
+            'id'      => $supplier->id,
+            'name'    => 'New Supplier',
+            'mobile'  => '9876543210',
+            'email'   => 'newsup@example.com',
+            'state_id'=> $state->id,
+            'city_id' => $city->id,
         ]);
+        $this->assertDatabaseHas('supplier_broker_supplier', [
+            'supplier_id'        => $supplier->id,
+            'supplier_broker_id' => $broker->id,
+        ]);
+    });
+
+    it('links a supplier to more than one supplier broker', function () {
+        $state   = mkSupState();
+        $city    = mkSupCity($state->id);
+        $broker1 = mkSupBroker($state->id, $city->id);
+        $broker2 = mkSupBroker($state->id, $city->id);
+        $actor   = supActor(['add-supplier']);
+
+        $this->actingAs($actor)->postJson(route('supplier.store'), supPayload($broker1->id, $state->id, $city->id, [
+            'name'                => 'Shared Supplier',
+            'supplier_broker_ids' => [$broker1->id, $broker2->id],
+        ]))->assertOk();
+
+        $supplier = Supplier::where('name', 'Shared Supplier')->first();
+
+        expect($supplier->supplierBrokers->pluck('id')->sort()->values()->all())
+            ->toBe(collect([$broker1->id, $broker2->id])->sort()->values()->all());
     });
 
     it('defaults status to 1 when status is not provided', function () {
@@ -622,7 +649,7 @@ describe('edit', function () {
         expect($response->json('id'))->toBe($sup->id)
             ->and($response->json('state'))->not->toBeNull()
             ->and($response->json('city'))->not->toBeNull()
-            ->and($response->json('supplier_broker'))->not->toBeNull();
+            ->and($response->json('supplier_brokers'))->not->toBeEmpty();
     });
 
     it('returns 404 for a non-existent supplier', function () {
@@ -672,7 +699,7 @@ describe('update-validation', function () {
         $this->actingAs($actor)
             ->putJson(route('supplier.update', $sup), supPayload(99999, $state->id, $city->id))
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['supplier_broker_id']);
+            ->assertJsonValidationErrors(['supplier_broker_ids.0']);
     });
 
     it('allows keeping the same email on self-update', function () {
@@ -934,14 +961,14 @@ describe('model-methods', function () {
             ->toContain('Inactive');
     });
 
-    it('supplierBroker() returns the associated SupplierBroker', function () {
+    it('supplierBrokers() returns the associated supplier brokers', function () {
         $state  = mkSupState();
         $city   = mkSupCity($state->id);
         $broker = mkSupBroker($state->id, $city->id);
         $sup    = mkSup($broker->id, $state->id, $city->id);
 
-        expect($sup->supplierBroker)->toBeInstanceOf(SupplierBroker::class)
-            ->and($sup->supplierBroker->id)->toBe($broker->id);
+        expect($sup->supplierBrokers->first())->toBeInstanceOf(SupplierBroker::class)
+            ->and($sup->supplierBrokers->first()->id)->toBe($broker->id);
     });
 
     it('state() returns the associated StateManagement', function () {

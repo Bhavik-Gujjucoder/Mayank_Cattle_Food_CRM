@@ -32,7 +32,7 @@ class RawMaterialOrderBulkImportService
         }
 
         $brokers = $this->indexByName(SupplierBroker::query()->where('status', 1)->get(['id', 'name']));
-        $suppliers = Supplier::query()->where('status', 1)->get(['id', 'name', 'supplier_broker_id']);
+        $suppliers = Supplier::query()->with('supplierBrokers:id')->where('status', 1)->get(['id', 'name']);
         $materials = RawMaterial::query()->where('status', 1)->get(['id', 'name']);
         $basisMap = [];
         foreach (RawMaterialOrderPriceBasis::options() as $option) {
@@ -152,7 +152,7 @@ class RawMaterialOrderBulkImportService
                 $errors[] = "Row {$firstRow}: Supplier is required.";
             } elseif ($broker) {
                 $matches = $suppliers->filter(function (Supplier $supplier) use ($broker, $group) {
-                    return (int) $supplier->supplier_broker_id === (int) $broker->id
+                    return $supplier->supplierBrokers->contains('id', (int) $broker->id)
                         && mb_strtolower(trim($supplier->name)) === mb_strtolower($group['supplier']);
                 })->values();
                 if ($matches->count() !== 1) {

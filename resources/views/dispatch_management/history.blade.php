@@ -469,7 +469,7 @@
                                         @endif
                                     </td>
                                     <td class="text-end text-nowrap">
-                                        {!! PaymentReceivableService::formatLateFeeHtml($recv['accrued_late_fee'], $dispatch->late_fee_source) !!}
+                                        {!! PaymentReceivableService::formatLateFeeHtml($recv['accrued_late_fee'], $dispatch->late_fee_source, PaymentReceivableService::lateFeeBehalfLabel($dispatch->lateFeeDispatch)) !!}
                                     </td>
                                     <td class="text-end text-nowrap fw-medium">
                                         {{ $receivableService->formatBalanceDueDisplay($dispatch) }}
@@ -490,6 +490,7 @@
                                                     data-status="{{ $dispatch->status }}"
                                                     data-partial-paid-amount="{{ $dispatch->partial_paid_amount }}"
                                                     data-accrued-late-fee="{{ $dispatch->accrued_late_fee }}"
+                                                    data-late-fee-dispatch-id="{{ $dispatch->late_fee_dispatch_id }}"
                                                     data-late-fee-source-label="{{ PaymentReceivableService::lateFeeSourceLabel($dispatch->late_fee_source) }}"
                                                     data-product-name="{{ $item->product?->name ?? '' }}"
                                                     data-product-unit="{{ $item->product?->unit ?? '' }}"
@@ -924,11 +925,14 @@
 
 @endsection
 @section('script')
+    @include('dispatch_management.partials.late-fee-dispatch-script')
     @include('dispatch_management.partials.status-field-script')
     @include('dispatch_management.partials.receivable-summary-script')
 
     <script>
         $(document).ready(function() {
+
+            window.loadLateFeeDispatches($('#dispatch_late_fee_dispatch_id'), @json($order->id), $('#dispatch_late_fee_dispatch_id').attr('data-selected'));
 
             var qtyRequiredMsg = @json(\App\Support\ProductUnit::requiredMessage());
             var qtyGenericLabel = @json(\App\Support\ProductUnit::quantityFieldLabel());
@@ -1133,6 +1137,16 @@
                 return parseInt(value) <= (parseInt($opt.data('pending')) || 0);
             }, 'The entered quantity cannot exceed the pending quantity.');
 
+            /* ── Custom rule: a typed late fee must name an earlier dispatch ─ */
+            $.validator.addMethod('lateFeeDispatchRequired', function (value, element) {
+                var fee = parseFloat($(element).closest('form').find('[name="accrued_late_fee"]').val());
+                if (isNaN(fee) || fee <= 0) {
+                    return true;
+                }
+
+                return $.trim(value || '') !== '';
+            }, 'Please select the dispatch this late fee is for.');
+
             /* ── Validate — Add form ───────────────────────────────────── */
             $('#dispatchForm').validate({
                 ignore: function (element) {
@@ -1157,6 +1171,7 @@
                     status:              { required: true },
                     partial_paid_amount: { dispatchPartialAmount: true },
                     accrued_late_fee: { number: true, min: 0 },
+                    late_fee_dispatch_id: { lateFeeDispatchRequired: true },
                 },
                 messages: {
                     order_item_id:  { required: 'Please select a product.' },
@@ -1174,6 +1189,10 @@
                         error.appendTo('#dispatch_partial_paid_amount-error');
                         return;
                     }
+                    if (element.attr('name') === 'late_fee_dispatch_id') {
+                        error.appendTo('#dispatch_late_fee_dispatch_id-error');
+                        return;
+                    }
                     var $target = $('#' + element.attr('name') + '-error');
                     if ($target.length) {
                         $target.html(error);
@@ -1186,8 +1205,41 @@
                 highlight:   function(el) { var $e = $(el); $e.attr('id') === 'dispatchDate' ? $e.next('.flatpickr-input').addClass('is-invalid') : $e.addClass('is-invalid'); },
                 unhighlight: function(el) { var $e = $(el); $e.attr('id') === 'dispatchDate' ? $e.next('.flatpickr-input').removeClass('is-invalid') : $e.removeClass('is-invalid'); },
                 submitHandler: function (form) {
-                    $(form).find('select:disabled, input:disabled, textarea:disabled').prop('disabled', false);
-                    HTMLFormElement.prototype.submit.call(form);
+                    var $form = $(form);
+                    $form.find('select:disabled, input:disabled, textarea:disabled').prop('disabled', false);
+                    $form.find('.field-error').empty();
+                    var $btn = $form.find('[type="submit"]').prop('disabled', true);
+                    $.ajax({
+                        url: $form.attr('action'),
+                        method: 'POST',
+                        data: $form.serialize(),
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function (res) {
+                            window.location.href = (res && res.redirect) ? res.redirect : window.location.href;
+                        },
+                        error: function (xhr) {
+                            $btn.prop('disabled', false);
+                            var errors = xhr.responseJSON && xhr.responseJSON.errors;
+                            if (xhr.status === 422 && errors) {
+                                $.each(errors, function (key, msgs) {
+                                    var $target = $('#' + key + '-error');
+                                    if (!$target.length) {
+                                        $target = $('#dispatch_' + key + '-error');
+                                    }
+                                    if ($target.length) {
+                                        $target.text(msgs[0]);
+                                    }
+                                });
+                                return;
+                            }
+                            if (typeof show_error === 'function') {
+                                show_error((xhr.responseJSON && xhr.responseJSON.message) || 'Could not save dispatch.');
+                            }
+                        }
+                    });
                 },
             });
 
@@ -1280,6 +1332,7 @@
                     status:              { required: true },
                     partial_paid_amount: { dispatchPartialAmount: true },
                     accrued_late_fee: { number: true, min: 0 },
+                    late_fee_dispatch_id: { lateFeeDispatchRequired: true },
                 },
                 messages: {
                     no_of_bags:     { required: qtyRequiredMsg, number: 'Please enter a valid number.', min: 'Must be at least 1.' },
@@ -1411,7 +1464,7 @@
                 $(previewSelector).text(text);
             }
 
-            function populateEditModal(dispatchId, transportId, truckNumber, driverContact, status, partialPaidAmount, noBags, dispatchDate, productName, effectivePending, updateUrl, productUnit, validationErrors, lessFreight, unitPrice, accruedLateFee, lateFeeSourceLabel) {
+            function populateEditModal(dispatchId, transportId, truckNumber, driverContact, status, partialPaidAmount, noBags, dispatchDate, productName, effectivePending, updateUrl, productUnit, validationErrors, lessFreight, unitPrice, accruedLateFee, lateFeeSourceLabel, lateFeeDispatchId) {
                 editOriginalNoOfBags = parseInt(noBags, 10) || 0;
                 editEffectivePending = parseInt(effectivePending, 10) || 0;
                 editMaxAllowedBags = Math.max(editEffectivePending, editOriginalNoOfBags);
@@ -1426,6 +1479,8 @@
                 window.dispatchPaymentStatusHelpers.setFormStatus($('#editDispatchForm'), status, partialPaidAmount);
                 $('#edit_accrued_late_fee').val(accruedLateFee === undefined || accruedLateFee === null ? '' : accruedLateFee);
                 $('#edit_late_fee_source_label').text(lateFeeSourceLabel ? 'Saved as ' + lateFeeSourceLabel : '');
+                $('#edit_late_fee_dispatch_id').attr('data-selected', lateFeeDispatchId || '');
+                window.loadLateFeeDispatches($('#edit_late_fee_dispatch_id'), @json($order->id), lateFeeDispatchId || '', dispatchId);
                 editDatePicker.setDate(dispatchDate, false);
                 $('#editDispatchQtyLabel').text(quantityFieldLabel(productUnit || ''));
                 $('#editPendingHint').text(maxAllowedHint(effectivePending, productUnit || ''));
@@ -1499,7 +1554,8 @@
                     $btn.attr('data-less-freight') || '',
                     $btn.attr('data-unit-price') || 0,
                     $btn.attr('data-accrued-late-fee') || '',
-                    $btn.attr('data-late-fee-source-label') || ''
+                    $btn.attr('data-late-fee-source-label') || '',
+                    $btn.attr('data-late-fee-dispatch-id') || ''
                 );
             });
 
@@ -1528,7 +1584,8 @@
                         payload.lessFreight || '',
                         payload.unitPrice || 0,
                         payload.accruedLateFee || '',
-                        payload.lateFeeSourceLabel || ''
+                        payload.lateFeeSourceLabel || '',
+                        payload.lateFeeDispatchId || ''
                     );
                 } catch (e) {
                     console.error('Failed to reopen edit dispatch modal', e);

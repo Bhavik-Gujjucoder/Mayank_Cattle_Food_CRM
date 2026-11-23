@@ -82,4 +82,9 @@ class DispatchManagement extends Model
     {
         return $this->hasMany(DispatchLateFeeLog::class, 'dispatch_management_id');
     }
+
+    public function lateFeeDispatch()
+    {
+        return $this->belongsTo(self::class, 'late_fee_dispatch_id');
+    }
 }

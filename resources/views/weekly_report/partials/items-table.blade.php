@@ -19,6 +19,7 @@
                     <col class="wr-col-city">
                     <col class="wr-col-qty">
                     <col class="wr-col-freight">
+                    <col class="wr-col-late-fee">
                     <col class="wr-col-final">
                     <col class="wr-col-transport">
                     <col class="wr-col-truck">
@@ -36,6 +37,7 @@
                         <th>City</th>
                         <th>Qty</th>
                         <th class="wr-th-freight">Less freight / qty</th>
+                        <th class="wr-th-late-fee">Late fee</th>
                         <th class="wr-th-final">Final amount</th>
                         <th>Transport</th>
                         <th>Truck No</th>
@@ -55,7 +57,9 @@
                             data-locked="{{ $locked ? '1' : '0' }}"
                             data-unit="{{ $item->product?->unit }}"
                             data-qty="{{ $item->quantity }}"
+                            data-order-id="{{ $item->order_id }}"
                             data-unit-price="{{ $item->orderItem?->unit_price ?? 0 }}"
+                            data-late-fee="{{ $locked && $item->dispatch ? $item->dispatch->accrued_late_fee : $item->accrued_late_fee }}"
                             class="{{ $locked ? 'wr-row-confirmed' : 'wr-row-pending' }}">
                             <td data-label="Order No">
                                 @if ($canEdit && ! $locked)
@@ -98,6 +102,38 @@
                                     <div class="wr-readonly-value">{{ $item->less_freight_per_qty !== null ? '₹ '.number_format((float) $item->less_freight_per_qty, 2) : '—' }}</div>
                                 @endif
                             </td>
+                            <td data-label="Late fee" class="wr-cell-late-fee">
+                                @php
+                                    $rowLateFee = $locked && $item->dispatch ? $item->dispatch : $item;
+                                    $rowLateAmount = round((float) ($rowLateFee->accrued_late_fee ?? 0), 2);
+                                    $rowLateBehalf = \App\Services\PaymentReceivableService::lateFeeBehalfLabel($rowLateFee->lateFeeDispatch);
+                                @endphp
+                                @if ($canEdit && ! $locked)
+                                    <input type="number" class="form-control form-control-sm item-late-fee"
+                                        value="{{ $rowLateAmount > 0 ? $rowLateAmount : '' }}"
+                                        min="0" step="0.01" placeholder="Optional">
+                                    <select class="form-select form-select-sm item-late-fee-dispatch mt-1"
+                                        data-selected="{{ $item->late_fee_dispatch_id }}">
+                                        <option value="">— Late fee for dispatch —</option>
+                                        @if ($item->late_fee_dispatch_id)
+                                            <option value="{{ $item->late_fee_dispatch_id }}" selected>
+                                                {{ $rowLateBehalf !== '' ? $rowLateBehalf : 'Selected dispatch' }}
+                                            </option>
+                                        @endif
+                                    </select>
+                                @else
+                                    <div class="wr-readonly-value">
+                                        @if ($rowLateAmount > 0)
+                                            ₹{{ number_format($rowLateAmount, 2) }}
+                                            @if ($rowLateBehalf !== '')
+                                                <div class="small text-muted">for {{ $rowLateBehalf }}</div>
+                                            @endif
+                                        @else
+                                            —
+                                        @endif
+                                    </div>
+                                @endif
+                            </td>
                             <td data-label="Final amount" class="wr-cell-final">
                                 @php
                                     $wrQty = (int) $item->quantity;
@@ -105,8 +141,12 @@
                                     $wrGross = \App\Support\LessFreight::gross($wrQty, $wrPrice);
                                     $wrLess = \App\Support\LessFreight::deduction($wrQty, $item->less_freight_per_qty);
                                     $wrFinal = \App\Support\LessFreight::finalAmount($wrQty, $wrPrice, $item->less_freight_per_qty);
-                                    $wrLate = $locked ? round((float) ($item->dispatch?->accrued_late_fee ?? 0), 2) : 0.0;
-                                    $wrLateLabel = \App\Services\PaymentReceivableService::lateFeeSourceLabel($item->dispatch?->late_fee_source);
+                                    $wrFeeRow = $locked && $item->dispatch ? $item->dispatch : $item;
+                                    $wrLate = round((float) ($wrFeeRow->accrued_late_fee ?? 0), 2);
+                                    $wrLateLabel = $locked
+                                        ? \App\Services\PaymentReceivableService::lateFeeSourceLabel($item->dispatch?->late_fee_source)
+                                        : ($wrLate > 0 ? 'Manual' : '');
+                                    $wrBehalf = \App\Services\PaymentReceivableService::lateFeeBehalfLabel($wrFeeRow->lateFeeDispatch);
                                     $wrPayable = round($wrFinal + $wrLate, 2);
                                 @endphp
                                 <div class="wr-final-amount small">
@@ -116,7 +156,7 @@
                                         <div>− ₹{{ number_format($wrLess, 2) }}</div>
                                     @endif
                                     @if ($wrLate > 0)
-                                        <div>+ ₹{{ number_format($wrLate, 2) }} late{{ $wrLateLabel !== '' ? ' (' . $wrLateLabel . ')' : '' }}</div>
+                                        <div>+ ₹{{ number_format($wrLate, 2) }} late{{ $wrLateLabel !== '' ? ' (' . $wrLateLabel . ')' : '' }}{{ $wrBehalf !== '' ? ' for ' . $wrBehalf : '' }}</div>
                                     @endif
                                     <div class="wr-final-figure">₹{{ number_format($wrPayable, 2) }}</div>
                                 </div>

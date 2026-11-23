@@ -472,7 +472,7 @@ class RawMaterialOrderController extends Controller
     /** @return array<string, mixed> */
     protected function orderFormSharedData(): array
     {
-        $suppliers = Supplier::with('supplierBroker')->where('status', 1)->orderBy('name')->get();
+        $suppliers = Supplier::with('supplierBrokers:id')->where('status', 1)->orderBy('name')->get();
         $materials = RawMaterial::with('category')->where('status', 1)->orderBy('name')->get();
         $categories = RawMaterialCategory::where('status', 1)->orderBy('name')->get();
 
@@ -492,9 +492,9 @@ class RawMaterialOrderController extends Controller
                     'price'       => (float) $m->last_purchase_price,
                 ])->values(),
                 'suppliers' => $suppliers->map(fn($s) => [
-                    'id'                 => $s->id,
-                    'name'               => $s->name,
-                    'supplier_broker_id' => $s->supplier_broker_id,
+                    'id'                  => $s->id,
+                    'name'                => $s->name,
+                    'supplier_broker_ids' => $s->supplierBrokers->pluck('id')->map(fn ($id) => (int) $id)->values()->all(),
                 ])->values(),
                 'oldRows' => [],
             ],

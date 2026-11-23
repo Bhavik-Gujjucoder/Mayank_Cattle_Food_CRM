@@ -161,35 +161,11 @@
                     <input type="hidden" name="form_type" value="sales">
 
                     <div class="row">
-                        @php
-                            $lateFeeAutoSetting = old('late_fee_auto', getSetting('late_fee_auto') !== '' ? getSetting('late_fee_auto') : '1');
-                            $lateFeeAutoOn = (string) $lateFeeAutoSetting !== '0';
-                        @endphp
                         <div class="col-12">
                             <h5 class="mb-3">Payment Receivable Options</h5>
+                            <p class="text-muted small">Due days color the pending-payment aging. Late fees are typed on each dispatch.</p>
                         </div>
 
-                        <div class="col-12">
-                            <div class="mb-3">
-                                <input type="hidden" name="late_fee_auto" value="0">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" role="switch"
-                                        id="late_fee_auto" name="late_fee_auto" value="1"
-                                        {{ $lateFeeAutoOn ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="late_fee_auto">Late fee auto</label>
-                                </div>
-                                <small class="text-muted d-block mt-1">
-                                    On keeps the daily late fee and shows Payment Receivable.
-                                    Off hides Payment Receivable and lets you type a late fee on each dispatch.
-                                </small>
-                                @error('late_fee_auto')
-                                    <span class="text-danger small d-block">{{ $message }}</span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="col-12" id="lateFeeAutoSettings" style="{{ $lateFeeAutoOn ? '' : 'display:none;' }}">
-                            <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="col-form-label">Cash Due Days</label>
@@ -241,8 +217,6 @@
                                 @enderror
                             </div>
                         </div>
-                            </div>
-                        </div>
 
                         <div class="d-flex align-items-center justify-content-end mt-3">
                             <button type="submit" class="btn btn-primary">Save</button>
@@ -263,13 +237,6 @@
             tabsize: 2,
             height: 350
         });
-
-        function toggleLateFeeAutoSettings() {
-            $('#lateFeeAutoSettings').toggle($('#late_fee_auto').is(':checked'));
-        }
-
-        $('#late_fee_auto').on('change', toggleLateFeeAutoSettings);
-        toggleLateFeeAutoSettings();
     });
     function previewProfilePicture(event, targetId) {
         const file = event.target.files[0];

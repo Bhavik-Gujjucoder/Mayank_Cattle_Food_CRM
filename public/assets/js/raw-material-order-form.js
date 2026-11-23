@@ -30,11 +30,12 @@
             var brokerId = $('#supplier_broker_id').val();
             var html = '<option value="">-- Select Supplier --</option>';
             (config.suppliers || []).forEach(function (s) {
-                if (brokerId && String(s.supplier_broker_id) !== String(brokerId)) {
+                var brokerIds = (s.supplier_broker_ids || []).map(String);
+                if (brokerId && brokerIds.indexOf(String(brokerId)) === -1) {
                     return;
                 }
                 var sel = selectedId && String(selectedId) === String(s.id) ? ' selected' : '';
-                html += '<option value="' + s.id + '" data-broker-id="' + (s.supplier_broker_id || '') + '"' + sel + '>' + s.name + '</option>';
+                html += '<option value="' + s.id + '" data-broker-ids="' + brokerIds.join(',') + '"' + sel + '>' + s.name + '</option>';
             });
             return html;
         }
@@ -42,10 +43,7 @@
         function refreshSupplierSelect(preserve) {
             var brokerId = $('#supplier_broker_id').val();
             var current = preserve ? $('#supplier_id').val() : '';
-            $('#supplier_id').html(supplierOptionsHtml(current));
-            if (!$('#supplier_id').val()) {
-                $('#supplier_id').val('').trigger('change.select2');
-            }
+            $('#supplier_id').html(supplierOptionsHtml(current)).trigger('change.select2');
             setSelectDisabled($('#supplier_id'), !brokerId);
         }
 
@@ -310,6 +308,8 @@
                 rmScrollToFirstInvalid('#rmOrderForm');
             }
         });
+
+        refreshSupplierSelect(true);
 
         if (config.oldRows && config.oldRows.length) {
             $('#itemTableBody').empty();

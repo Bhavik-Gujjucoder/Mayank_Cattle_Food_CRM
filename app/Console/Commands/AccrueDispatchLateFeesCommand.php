@@ -2,37 +2,17 @@
 
 namespace App\Console\Commands;
 
-use App\Services\PaymentReceivableService;
 use Illuminate\Console\Command;
 
 class AccrueDispatchLateFeesCommand extends Command
 {
     protected $signature = 'payment:accrue-late-fees';
 
-    protected $description = 'Accrue daily late payment fees for unpaid/partial dispatches past the configured due days';
+    protected $description = 'Late fees are entered on each dispatch. This command no longer adds them.';
 
-    public function handle(PaymentReceivableService $service): int
+    public function handle(): int
     {
-        if (! $service->isAutoLateFeeEnabled()) {
-            $this->info('Late fee accrual skipped (automatic late fee is off).');
-
-            return self::SUCCESS;
-        }
-
-        if (! $service->isAnyLateFeeEnabled()) {
-            $this->info('Late fee accrual skipped (cash and credit due days/amounts are zero).');
-
-            return self::SUCCESS;
-        }
-
-        $stats = $service->accrueAll();
-
-        $this->info(sprintf(
-            'Processed %d dispatch(es); accrued fees on %d dispatch(es); total added: %s',
-            $stats['processed'],
-            $stats['accrued'],
-            PaymentReceivableService::formatMoney($stats['amount'])
-        ));
+        $this->info('Automatic late fee is no longer used. Add a late fee on the dispatch instead.');
 
         return self::SUCCESS;
     }

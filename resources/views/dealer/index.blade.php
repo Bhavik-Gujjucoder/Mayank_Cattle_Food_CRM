@@ -204,7 +204,12 @@
                 d.brand_id = $('#BrandId').val();
             }
         });
-        var dealerTable = $('#dealerTable').DataTable({
+        var dealerTable = $('#dealerTable').DataTable($.extend({}, dataTablePageMemory('#dealerTable', [
+            { selector: '#broker_id', key: 'broker_id', select2: true },
+            { selector: '#startDate', key: 'start_date' },
+            { selector: '#endDate', key: 'end_date' },
+            { selector: '#BrandId', key: 'brand_id', select2: true }
+        ], '#customSearch'), {
             pageLength: 10,
             deferRender: true,
             processing: true,
@@ -276,8 +281,9 @@
                     visible: isShowAction
                 }
             ],
-        });
+        }));
         dealerAjax._bindTable(dealerTable);
+        keepDataTablePage(dealerTable);
 
         /* Custom search */
         bindDebouncedDataTableSearch('#customSearch', dealerTable);

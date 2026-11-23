@@ -702,3 +702,62 @@ it('rejects daily dispatch less freight above the unit price and an overpaid con
 
     expect(DispatchManagement::count())->toBe(0);
 });
+
+it('updates a late fee on a daily dispatch row after it is added', function () {
+    $admin = wrAdmin(['edit-weekly-report', 'add-dispatch']);
+    $ctx = wrPendingLine('Bag', 20);
+    $transporter = User::factory()->create(['status' => 1]);
+    $transporter->assignRole('transporter');
+
+    $source = DispatchManagement::create([
+        'order_id' => $ctx['order']->id,
+        'order_item_id' => $ctx['orderItem']->id,
+        'product_id' => $ctx['product']->id,
+        'no_of_bags' => 2,
+        'dispatch_date' => '2026-07-01',
+        'transport_id' => $transporter->id,
+        'truck_number' => 'GJ01AA0001',
+        'driver_contact' => '9876543210',
+        'status' => DispatchManagement::STATUS_UNPAID,
+        'accrued_late_fee' => 0,
+    ]);
+
+    $report = WeeklyReport::create([
+        'report_date' => '2026-07-14',
+        'already_produced' => 0,
+        'created_by' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->postJson(route('weekly-report.items.store', $report->id), [
+            'order_item_id' => $ctx['orderItem']->id,
+            'quantity' => 4,
+            'transport_id' => $transporter->id,
+            'truck_number' => 'GJ01AA1234',
+            'driver_contact' => '9876543210',
+        ])
+        ->assertOk();
+
+    $item = WeeklyReportItem::where('weekly_report_id', $report->id)->first();
+    expect((float) $item->accrued_late_fee)->toBe(0.0);
+
+    $this->actingAs($admin)
+        ->putJson(route('weekly-report.items.update', [$report->id, $item->id]), [
+            'quantity' => 4,
+            'accrued_late_fee' => 75,
+            'late_fee_dispatch_id' => $source->id,
+            'transport_id' => $transporter->id,
+            'truck_number' => 'GJ01AA1234',
+            'driver_contact' => '9876543210',
+        ])
+        ->assertOk();
+
+    $item->refresh();
+    expect((float) $item->accrued_late_fee)->toBe(75.0)
+        ->and((int) $item->late_fee_dispatch_id)->toBe((int) $source->id);
+
+    $dispatch = app(\App\Services\WeeklyReportService::class)->confirmItem($item, ['status' => 0]);
+    expect((float) $dispatch->accrued_late_fee)->toBe(75.0)
+        ->and((int) $dispatch->late_fee_dispatch_id)->toBe((int) $source->id)
+        ->and($dispatch->late_fee_source)->toBe('manual');
+});

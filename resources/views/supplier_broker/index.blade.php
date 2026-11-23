@@ -200,7 +200,11 @@
                 d.city_id = $('#filterCity').val();
             }
         });
-        var supplier_broker_table = $('#supplier_broker_table').DataTable({
+        var supplier_broker_table = $('#supplier_broker_table').DataTable($.extend({}, dataTablePageMemory('#supplier_broker_table', [
+            { selector: '#filterStatus', key: 'status', select2: true },
+            { selector: '#filterState', key: 'state_id', select2: true },
+            { selector: '#filterCity', key: 'city_id', select2: true }
+        ], '#customSearch'), {
             pageLength: 10,
             deferRender: true,
             processing: true,
@@ -221,8 +225,9 @@
                 { data: 'status', name: 'status' },
                 { data: 'action', name: 'action', orderable: false, searchable: false, visible: isShowAction },
             ]
-        });
+        }));
         supplierBrokerAjax._bindTable(supplier_broker_table);
+        keepDataTablePage(supplier_broker_table);
 
         bindDebouncedDataTableSearch('#customSearch', supplier_broker_table);
 
@@ -351,7 +356,7 @@
                 data: $(this).serialize() + '&_method=' + method,
                 success: function(response) {
                     $('#supplierBrokerModal').modal('hide');
-                    supplier_broker_table.ajax.reload();
+                    supplier_broker_table.ajax.reload(null, false);
                     show_success(response.message);
                 },
                 error: function(response) {
@@ -420,7 +425,7 @@
                         data: { ids: ids, _token: '{{ csrf_token() }}' },
                         success: function(response) {
                             show_success(response.message);
-                            supplier_broker_table.ajax.reload();
+                            supplier_broker_table.ajax.reload(null, false);
                             $('#bulk_delete_button').hide();
                             $('#select-all').prop('checked', false);
                         },

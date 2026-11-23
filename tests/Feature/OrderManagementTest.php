@@ -342,7 +342,10 @@ describe('index', function () {
             ->assertViewIs('order_management.index')
             ->assertViewHas('brokers')
             ->assertViewHas('brands')
-            ->assertViewHas('dealers');
+            ->assertViewHas('dealers')
+            ->assertSee('Total number of bags')
+            ->assertSee('Total number of dispatch bags')
+            ->assertSee('Total number of pending bags');
     });
 
     it('returns DataTables JSON on AJAX request', function () {
@@ -413,6 +416,89 @@ describe('index', function () {
             ->assertOk();
 
         expect($response->json('recordsTotal'))->toBe(1);
+    });
+
+    it('returns bag totals for the filtered order list', function () {
+        $brand = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $product = mkOrdProduct($brand->id);
+        $actor = ordActor(['view-order']);
+        $transporter = User::factory()->create(['status' => 1]);
+
+        $unpaid = mkOrder($broker->id, $brand->id, $dealer->id, [
+            'order_date' => '2026-01-15',
+            'payment_status' => 'unpaid',
+        ]);
+        $openLine = mkOrderItem($unpaid->id, $product->id, ['qty' => 10]);
+        $untouchedLine = mkOrderItem($unpaid->id, $product->id, ['qty' => 5]);
+        DispatchManagement::create([
+            'order_id' => $unpaid->id,
+            'order_item_id' => $openLine->id,
+            'product_id' => $product->id,
+            'no_of_bags' => 4,
+            'dispatch_date' => '2026-01-16',
+            'transport_id' => $transporter->id,
+            'truck_number' => 'GJ01AA1234',
+            'driver_contact' => '9876543210',
+            'status' => 0,
+            'accrued_late_fee' => 0,
+        ]);
+        $removedLine = mkOrderItem($unpaid->id, $product->id, ['qty' => 100]);
+        $removedLine->delete();
+        $voidDispatch = DispatchManagement::create([
+            'order_id' => $unpaid->id,
+            'order_item_id' => $untouchedLine->id,
+            'product_id' => $product->id,
+            'no_of_bags' => 20,
+            'dispatch_date' => '2026-01-16',
+            'transport_id' => $transporter->id,
+            'truck_number' => 'GJ01AA1234',
+            'driver_contact' => '9876543210',
+            'status' => 0,
+            'accrued_late_fee' => 0,
+        ]);
+        $voidDispatch->delete();
+
+        $paid = mkOrder($broker->id, $brand->id, $dealer->id, [
+            'order_date' => '2026-02-01',
+            'payment_status' => 'paid',
+        ]);
+        $paidLine = mkOrderItem($paid->id, $product->id, ['qty' => 8]);
+        DispatchManagement::create([
+            'order_id' => $paid->id,
+            'order_item_id' => $paidLine->id,
+            'product_id' => $product->id,
+            'no_of_bags' => 8,
+            'dispatch_date' => '2026-02-02',
+            'transport_id' => $transporter->id,
+            'truck_number' => 'GJ01AA1234',
+            'driver_contact' => '9876543210',
+            'status' => 1,
+            'accrued_late_fee' => 0,
+        ]);
+
+        $base = route('order.index').'?date_from=2026-01-01&date_to=2026-03-01';
+
+        $all = actingAs($actor)
+            ->getJson($base, ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk();
+
+        expect($all->json('bag_summary'))->toBe([
+            'ordered' => 23,
+            'dispatched' => 12,
+            'pending' => 11,
+        ]);
+
+        $unpaidOnly = actingAs($actor)
+            ->getJson($base.'&payment_status=unpaid', ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk();
+
+        expect($unpaidOnly->json('bag_summary'))->toBe([
+            'ordered' => 15,
+            'dispatched' => 4,
+            'pending' => 11,
+        ]);
     });
 
     it('defaults listing to current financial year by order_date plus older pending orders', function () {

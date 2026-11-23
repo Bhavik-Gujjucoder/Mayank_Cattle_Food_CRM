@@ -7,6 +7,7 @@ use App\Models\StateManagement;
 use App\Models\Supplier;
 use App\Models\SupplierBroker;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Yajra\DataTables\DataTables;
@@ -26,14 +27,16 @@ class SupplierController extends Controller
             $canEdit   = auth()->user()->can('edit-supplier');
             $canDelete = auth()->user()->can('delete-supplier');
 
-            $query = Supplier::with(['city', 'state', 'supplierBroker']);
+            $query = Supplier::with(['city', 'state', 'supplierBrokers']);
 
             if ($request->filled('status') && $request->status !== 'all') {
                 $query->where('status', $request->status);
             }
 
             if ($request->filled('supplier_broker_id') && $request->supplier_broker_id !== 'all') {
-                $query->where('supplier_broker_id', $request->supplier_broker_id);
+                $query->whereHas('supplierBrokers', function ($q) use ($request) {
+                    $q->where('supplier_brokers.id', $request->supplier_broker_id);
+                });
             }
 
             if ($request->filled('state_id') && $request->state_id !== 'all') {
@@ -77,10 +80,14 @@ class SupplierController extends Controller
                                 '</div>
                             </div>';
                 })
-                ->addColumn('supplier_broker_name', fn ($row) => e($row->supplierBroker?->name ?? '—'))
+                ->addColumn('supplier_broker_name', function ($row) {
+                    $names = $row->supplierBrokers->pluck('name')->filter()->values();
+
+                    return $names->isEmpty() ? '—' : e($names->join(', '));
+                })
                 ->addColumn('city_name', fn ($row) => e($row->city?->city_name ?? '—'))
                 ->filterColumn('supplier_broker_name', function ($query, $keyword) {
-                    $query->whereHas('supplierBroker', function ($q) use ($keyword) {
+                    $query->whereHas('supplierBrokers', function ($q) use ($keyword) {
                         $q->where('name', 'like', "%{$keyword}%");
                     });
                 })
@@ -116,7 +123,10 @@ class SupplierController extends Controller
 
         $this->validateCityBelongsToState($request);
 
-        Supplier::create($this->prepareSupplierData($validated));
+        DB::transaction(function () use ($validated) {
+            $supplier = Supplier::create($this->prepareSupplierData($validated));
+            $supplier->supplierBrokers()->sync($validated['supplier_broker_ids']);
+        });
 
         return response()->json(['success' => true, 'message' => 'Supplier created successfully.']);
     }
@@ -126,7 +136,7 @@ class SupplierController extends Controller
     /* ------------------------------------------------------------------ */
     public function edit(Supplier $supplier)
     {
-        return response()->json($supplier->load(['state', 'city', 'supplierBroker']));
+        return response()->json($supplier->load(['state', 'city', 'supplierBrokers:id,name']));
     }
 
     /* ------------------------------------------------------------------ */
@@ -141,7 +151,10 @@ class SupplierController extends Controller
 
         $this->validateCityBelongsToState($request);
 
-        $supplier->update($this->prepareSupplierData($validated));
+        DB::transaction(function () use ($supplier, $validated) {
+            $supplier->update($this->prepareSupplierData($validated));
+            $supplier->supplierBrokers()->sync($validated['supplier_broker_ids']);
+        });
 
         return response()->json(['success' => true, 'message' => 'Supplier updated successfully.']);
     }
@@ -175,7 +188,8 @@ class SupplierController extends Controller
     private function validationRules(?int $supplierId = null): array
     {
         return [
-            'supplier_broker_id' => 'required|exists:supplier_brokers,id',
+            'supplier_broker_ids'   => 'required|array|min:1',
+            'supplier_broker_ids.*' => 'integer|distinct|exists:supplier_brokers,id',
             'name'               => 'required|string|max:255',
             'mobile'             => 'nullable|string|max:20',
             'email'           => [
@@ -195,7 +209,6 @@ class SupplierController extends Controller
     private function prepareSupplierData(array $validated): array
     {
         return [
-            'supplier_broker_id' => $validated['supplier_broker_id'],
             'name'               => $validated['name'],
             'mobile'             => filled($validated['mobile'] ?? null) ? $validated['mobile'] : null,
             'email'           => filled($validated['email'] ?? null) ? $validated['email'] : null,
@@ -224,8 +237,10 @@ class SupplierController extends Controller
     private function validationMessages(): array
     {
         return [
-            'supplier_broker_id.required' => 'Please select a supplier broker.',
-            'supplier_broker_id.exists'   => 'Selected supplier broker is invalid.',
+            'supplier_broker_ids.required' => 'Please select at least one supplier broker.',
+            'supplier_broker_ids.min'      => 'Please select at least one supplier broker.',
+            'supplier_broker_ids.*.exists' => 'Selected supplier broker is invalid.',
+            'supplier_broker_ids.*.distinct' => 'Each supplier broker can only be selected once.',
             'name.required'               => 'Supplier name is required.',
             'email.email'       => 'Please enter a valid email address.',
             'email.unique'      => 'Email address already exists.',

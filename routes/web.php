@@ -165,6 +165,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dispatch/order/{order}/form-data', [DispatchManagementController::class, 'getOrderDispatchFormData'])
         ->name('dispatch.orderFormData');
 
+    Route::get('dispatch/late-fee-dispatches', [DispatchManagementController::class, 'lateFeeDispatches'])
+        ->name('dispatch.lateFeeDispatches');
+
     /* AJAX: trucks that belong to a given transporter (for dynamic truck dropdown) */
     Route::get('dispatch/transporter-trucks/{transporter}', [DispatchManagementController::class, 'getTrucksByTransporter'])
         ->name('dispatch.transporterTrucks');

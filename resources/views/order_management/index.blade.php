@@ -289,6 +289,60 @@
 </style>
 @endsection
 
+<div class="row detials-gc-user">
+    <div class="col-lg-4 col-sm-6 d-flex">
+        <div class="card flex-fill total-dealers">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="avatar avatar-md rounded bg-dark mb-3">
+                        <i class="ti ti-package fs-16"></i>
+                    </span>
+                </div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h2 class="mb-1" id="totalBags">0</h2>
+                        <p class="fs-13">Total number of bags</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-sm-6 d-flex">
+        <div class="card flex-fill total-soda-order">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="avatar avatar-md rounded bg-dark mb-3">
+                        <i class="ti ti-truck fs-16"></i>
+                    </span>
+                </div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h2 class="mb-1" id="dispatchedBags">0</h2>
+                        <p class="fs-13">Total number of dispatch bags</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-sm-6 d-flex">
+        <div class="card flex-fill total-dispatch-request">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="avatar avatar-md rounded bg-dark mb-3">
+                        <i class="ti ti-clock-hour-4 fs-16"></i>
+                    </span>
+                </div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h2 class="mb-1" id="pendingBags">0</h2>
+                        <p class="fs-13">Total number of pending bags</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card order-list-module">
     {{-- <div class="card-header"> --}}
     <div class="card-header">
@@ -612,7 +666,26 @@
                 d.payment_status = $('#paymentStatusFilter').val() || 'all';
             }
         });
-        var order_table = $('#order_table').DataTable({
+
+        function formatBagCount(value) {
+            return Number(value || 0).toLocaleString('en-IN');
+        }
+
+        $('#order_table').on('xhr.dt', function (e, settings, json) {
+            var summary = (json && json.bag_summary) || {};
+            $('#totalBags').text(formatBagCount(summary.ordered));
+            $('#dispatchedBags').text(formatBagCount(summary.dispatched));
+            $('#pendingBags').text(formatBagCount(summary.pending));
+        });
+
+        var order_table = $('#order_table').DataTable($.extend({}, dataTablePageMemory('#order_table', [
+            { selector: '#broker_id', key: 'broker_id', select2: true },
+            { selector: '#BrandId', key: 'brand_id', select2: true },
+            { selector: '#dealerFilter', key: 'dealer_id', select2: true },
+            { selector: '#orderDateFrom', key: 'date_from' },
+            { selector: '#orderDateTo', key: 'date_to' },
+            { selector: '#paymentStatusFilter', key: 'payment_status', select2: true }
+        ], '#customSearch'), {
             pageLength: 10,
             deferRender: true,
             processing: true,
@@ -721,8 +794,9 @@
                 restoreExpandedOrderRows();
                 order_table.columns.adjust();
             }
-        });
+        }));
         orderAjax._bindTable(order_table);
+        keepDataTablePage(order_table);
 
         var orderTableResizeTimer;
         $(window).on('resize', function() {
@@ -1018,7 +1092,7 @@
                                 },
                                 success: function(response) {
                                     show_success(response.message);
-                                    order_table.ajax.reload();
+                                    order_table.ajax.reload(null, false);
                                     $('#bulk_delete_button').hide();
                                     $('#select-all').prop('checked', false);
                                 },

@@ -127,7 +127,7 @@ withDataTable(function () {
     const isShowAction = {{ auth()->user()->canAny(['edit-city', 'delete-city'])? 'true': 'false' }};
     const isShowCheckbox = {{ auth()->user()->can('delete-city')? 'true': 'false' }};
     var cityAjax = buildDataTableAjax("{{ route('city.index') }}");
-    var city_table = $('#city_table').DataTable({
+    var city_table = $('#city_table').DataTable($.extend({}, dataTablePageMemory('#city_table', [], '#customSearch'), {
         "pageLength": 10,
         deferRender: true, // Prevents unnecessary DOM rendering
         processing: true,
@@ -178,8 +178,9 @@ withDataTable(function () {
                 visible: isShowAction
             },
         ],
-    });
+    }));
     cityAjax._bindTable(city_table);
+    keepDataTablePage(city_table);
 
     // Custom Search Box
     bindDebouncedDataTableSearch('#customSearch', city_table);
@@ -235,7 +236,7 @@ withDataTable(function () {
             data: $(this).serialize() + "&_method=" + method,
             success: function(response) {
                 $('#adminModal').modal('hide');
-                city_table.ajax.reload();
+                city_table.ajax.reload(null, false);
                 show_success(response.message);
             },
             error: function(response) {
@@ -317,7 +318,7 @@ withDataTable(function () {
                         // Swal.fire("Deleted!", response.message, "success");
                         show_success(response.message);
                         // Optionally, reload the page to reflect changes
-                        city_table.ajax.reload();
+                        city_table.ajax.reload(null, false);
 
                         $('#bulk_delete_button').hide();
                         // location.reload();

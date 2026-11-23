@@ -156,7 +156,13 @@ withDataTable(function () {
             d.date_to = $('#dateTo').val();
         }
     });
-    var raw_material_receive_table = $('#raw_material_receive_table').DataTable({
+    var raw_material_receive_table = $('#raw_material_receive_table').DataTable($.extend({}, dataTablePageMemory('#raw_material_receive_table', [
+        { selector: '#statusFilter', key: 'status', select2: true },
+        { selector: '#materialFilter', key: 'material_id', select2: true },
+        { selector: '#orderFilter', key: 'order_id', select2: true },
+        { selector: '#dateFrom', key: 'date_from' },
+        { selector: '#dateTo', key: 'date_to' }
+    ], '#customSearch'), {
         pageLength: 10,
         deferRender: true,
         processing: true,
@@ -184,8 +190,9 @@ withDataTable(function () {
                 $('#exportReceivesBtn').html('<i class="ti ti-file-export me-2"></i>Export (' + n + ')');
             }
         }
-    });
+    }));
     rawMaterialReceiveAjax._bindTable(raw_material_receive_table);
+    keepDataTablePage(raw_material_receive_table);
 
     var dateFromPicker = flatpickr('#dateFrom', {
         dateFormat: 'Y-m-d',

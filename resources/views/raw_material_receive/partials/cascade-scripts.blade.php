@@ -50,7 +50,8 @@ function initReceiveCascadeForm(options) {
         }
 
         $.each(window.RECEIVE_FORM_SUPPLIERS || [], function (i, supplier) {
-            if (String(supplier.supplier_broker_id) !== String(brokerId)) {
+            var brokerIds = (supplier.supplier_broker_ids || []).map(String);
+            if (brokerIds.indexOf(String(brokerId)) === -1) {
                 return;
             }
             var $opt = $('<option>', { value: supplier.id, text: supplier.name });

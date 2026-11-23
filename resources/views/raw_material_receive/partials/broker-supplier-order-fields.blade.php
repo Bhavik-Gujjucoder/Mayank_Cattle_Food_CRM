@@ -20,7 +20,7 @@
         <option value="">-- Select Supplier --</option>
             @foreach ($suppliers as $supplier)
             <option value="{{ $supplier['id'] }}"
-                    data-broker-id="{{ $supplier['supplier_broker_id'] }}"
+                    data-broker-ids="{{ implode(',', $supplier['supplier_broker_ids'] ?? []) }}"
                     {{ (string) $selectedSupplierId === (string) $supplier['id'] ? 'selected' : '' }}>
                 {{ $supplier['name'] }}
             </option>

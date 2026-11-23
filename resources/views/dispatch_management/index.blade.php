@@ -189,7 +189,13 @@ withDataTable(function () {
             d.product_id = $('#productFilter').val() || 'all';
         }
     });
-    var dispatch_table = $('#dispatch_table').DataTable({
+    var dispatch_table = $('#dispatch_table').DataTable($.extend({}, dataTablePageMemory('#dispatch_table', [
+        { selector: '#dateFrom', key: 'date_from' },
+        { selector: '#dateTo', key: 'date_to' },
+        { selector: '#dealerFilter', key: 'dealer_id', select2: true },
+        { selector: '#orderFilter', key: 'order_id', select2: true },
+        { selector: '#productFilter', key: 'product_id', select2: true }
+    ]), {
         pageLength  : 10,
         deferRender : true,
         processing  : true,
@@ -232,8 +238,9 @@ withDataTable(function () {
             emptyTable: 'No dispatch records found.',
             zeroRecords: 'No matching records found.',
         },
-    });
+    }));
     dispatchAjax._bindTable(dispatch_table);
+    keepDataTablePage(dispatch_table);
 
     $('#dealerFilter, #orderFilter, #productFilter').on('change', function () {
         if (this.id === 'dealerFilter') {

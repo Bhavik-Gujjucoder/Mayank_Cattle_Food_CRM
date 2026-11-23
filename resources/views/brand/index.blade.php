@@ -115,7 +115,7 @@ withDataTable(function () {
     const isShowCheckbox = {{ auth()->user()->can('delete-brand') ? 'true' : 'false' }};
 
     var brandAjax = buildDataTableAjax("{{ route('brand.index') }}");
-    var brand_table = $('#brand_table').DataTable({
+    var brand_table = $('#brand_table').DataTable($.extend({}, dataTablePageMemory('#brand_table', [], '#customSearch'), {
         pageLength: 10,
         deferRender: true,
         processing: true,
@@ -132,8 +132,9 @@ withDataTable(function () {
             { data: 'status', name: 'status', searchable: true },
             { data: 'action', name: 'action', orderable: false, searchable: false, visible: isShowAction },
         ],
-    });
+    }));
     brandAjax._bindTable(brand_table);
+    keepDataTablePage(brand_table);
 
     bindDebouncedDataTableSearch('#customSearch', brand_table);
 
@@ -178,7 +179,7 @@ withDataTable(function () {
             data: $(this).serialize() + '&_method=' + method,
             success: function(response) {
                 $('#brandModal').modal('hide');
-                brand_table.ajax.reload();
+                brand_table.ajax.reload(null, false);
                 show_success(response.message);
             },
             error: function(response) {
@@ -229,7 +230,7 @@ withDataTable(function () {
                     },
                     success: function(response) {
                         show_success(response.message);
-                        brand_table.ajax.reload();
+                        brand_table.ajax.reload(null, false);
                         $('#bulk_delete_button').hide();
                     },
                     error: function() {

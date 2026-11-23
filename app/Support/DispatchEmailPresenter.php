@@ -80,7 +80,8 @@ class DispatchEmailPresenter
                 'base_amount'      => PaymentReceivableService::formatMoney($receivable['base_amount']),
                 'accrued_late_fee' => PaymentReceivableService::formatLateFeeText(
                     $receivable['accrued_late_fee'],
-                    $dispatch->late_fee_source
+                    $dispatch->late_fee_source,
+                    PaymentReceivableService::lateFeeBehalfLabel($dispatch->lateFeeDispatch)
                 ),
                 'total_receivable' => PaymentReceivableService::formatMoney($receivable['total_receivable']),
                 'balance_due'      => (int) $dispatch->status === DispatchManagement::STATUS_PAID
