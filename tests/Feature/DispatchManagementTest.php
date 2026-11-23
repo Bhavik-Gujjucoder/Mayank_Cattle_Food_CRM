@@ -1247,13 +1247,7 @@ describe('less freight', function () {
 });
 
 describe('manual late fee', function () {
-    it('stores a typed late fee when automatic late fee is off', function () {
-        DB::table('general_settings')->updateOrInsert(
-            ['key' => 'late_fee_auto'],
-            ['value' => '0', 'created_at' => now(), 'updated_at' => now()]
-        );
-        forgetGeneralSettingsCache();
-
+    it('stores a typed late fee against an earlier unpaid dispatch', function () {
         $s = disSetup();
         $actor = disActor(['add-dispatch', 'edit-dispatch', 'view-dispatch']);
 
@@ -1262,24 +1256,41 @@ describe('manual late fee', function () {
                 $s['order']->id,
                 $s['orderItem']->id,
                 $s['product']->id,
+                $s['transporter']->id
+            ))
+            ->assertRedirect(route('dispatch.orderHistory', $s['order']->id));
+
+        $source = DispatchManagement::latest('id')->first();
+
+        $this->actingAs($actor)
+            ->post(route('dispatch.store'), disPayload(
+                $s['order']->id,
+                $s['orderItem']->id,
+                $s['product']->id,
                 $s['transporter']->id,
-                ['accrued_late_fee' => 125.5]
+                [
+                    'accrued_late_fee' => 125.5,
+                    'late_fee_dispatch_id' => $source->id,
+                    'no_of_bags' => 1,
+                ]
             ))
             ->assertRedirect(route('dispatch.orderHistory', $s['order']->id));
 
         $dispatch = DispatchManagement::latest('id')->first();
         expect((float) $dispatch->accrued_late_fee)->toBe(125.5);
         expect($dispatch->late_fee_source)->toBe('manual');
+        expect((int) $dispatch->late_fee_dispatch_id)->toBe((int) $source->id);
 
         $this->actingAs($actor)
             ->put(route('dispatch.update', $dispatch), [
-                'no_of_bags' => 5,
+                'no_of_bags' => 1,
                 'dispatch_date' => '2026-01-15',
                 'transport_id' => $s['transporter']->id,
                 'truck_number' => 'GJ01AA1234',
                 'driver_contact' => '9876543210',
                 'status' => 0,
                 'accrued_late_fee' => 40,
+                'late_fee_dispatch_id' => $source->id,
             ])
             ->assertRedirect(route('dispatch.orderHistory', $s['order']->id));
 
@@ -1291,15 +1302,10 @@ describe('manual late fee', function () {
             ->assertSee('name="accrued_late_fee"', false);
     });
 
-    it('ignores a posted late fee while automatic late fee is on', function () {
-        DB::table('general_settings')->updateOrInsert(
-            ['key' => 'late_fee_auto'],
-            ['value' => '1', 'created_at' => now(), 'updated_at' => now()]
-        );
-        forgetGeneralSettingsCache();
-
+    it('rejects a late fee that does not name an earlier dispatch', function () {
         $s = disSetup();
         $this->actingAs(disActor(['add-dispatch']))
+            ->from(route('dispatch.orderHistory', $s['order']))
             ->post(route('dispatch.store'), disPayload(
                 $s['order']->id,
                 $s['orderItem']->id,
@@ -1307,10 +1313,9 @@ describe('manual late fee', function () {
                 $s['transporter']->id,
                 ['accrued_late_fee' => 99]
             ))
-            ->assertRedirect(route('dispatch.orderHistory', $s['order']->id));
+            ->assertRedirect(route('dispatch.orderHistory', $s['order']->id))
+            ->assertSessionHasErrors('late_fee_dispatch_id');
 
-        $created = DispatchManagement::latest('id')->first();
-        expect((float) $created->accrued_late_fee)->toBe(0.0);
-        expect($created->late_fee_source)->toBeNull();
+        expect(DispatchManagement::query()->count())->toBe(0);
     });
 });

@@ -172,13 +172,13 @@ describe('payment:accrue-late-fees', function () {
         forgetGeneralSettingsCache();
 
         $this->artisan('payment:accrue-late-fees')
-            ->expectsOutputToContain('automatic late fee is off')
+            ->expectsOutputToContain('no longer used')
             ->assertExitCode(0);
     });
 
     it('skips accrual and outputs skip message when late fee is disabled', function () {
         $this->artisan('payment:accrue-late-fees')
-            ->expectsOutputToContain('Late fee accrual skipped')
+            ->expectsOutputToContain('no longer used')
             ->assertExitCode(0);
     });
 
@@ -189,7 +189,7 @@ describe('payment:accrue-late-fees', function () {
         DB::table('general_settings')->where('key', 'credit_due_amount')->update(['value' => '10']);
 
         $this->artisan('payment:accrue-late-fees')
-            ->expectsOutputToContain('Processed 0 dispatch(es)')
+            ->expectsOutputToContain('no longer used')
             ->assertExitCode(0);
     });
 
@@ -266,15 +266,14 @@ describe('payment:accrue-late-fees', function () {
         \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse('2026-01-07'));
 
         $this->artisan('payment:accrue-late-fees')
-            ->expectsOutputToContain('Processed 1 dispatch(es)')
+            ->expectsOutputToContain('no longer used')
             ->assertExitCode(0);
 
         \Carbon\Carbon::setTestNow(); // reset
 
-        // Verify the actual accrual happened in DB
         $dispatch = \App\Models\DispatchManagement::first();
         $dispatch->refresh();
-        expect((float) $dispatch->accrued_late_fee)->toBeGreaterThan(0);
+        expect((float) $dispatch->accrued_late_fee)->toBe(0.0);
     });
 });
 

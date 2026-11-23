@@ -135,7 +135,7 @@ describe('access-control', function () {
             ->assertForbidden();
     });
 
-    it('returns 404 when automatic late fee is off', function () {
+    it('shows payment receivable when the old automatic late fee setting is off', function () {
         DB::table('general_settings')->updateOrInsert(
             ['key' => 'late_fee_auto'],
             ['value' => '0', 'created_at' => now(), 'updated_at' => now()]
@@ -145,10 +145,10 @@ describe('access-control', function () {
         $actor = dppActor(['view-dispatch-pending-payments']);
         $this->actingAs($actor)
             ->get(route('delivery-pending-payments.index'))
-            ->assertNotFound();
+            ->assertOk();
         $this->actingAs($actor)
             ->get(route('delivery-pending-payments.export'))
-            ->assertNotFound();
+            ->assertRedirect(route('delivery-pending-payments.index'));
     });
 
     it('returns 200 on index when user has view-dispatch-pending-payments', function () {

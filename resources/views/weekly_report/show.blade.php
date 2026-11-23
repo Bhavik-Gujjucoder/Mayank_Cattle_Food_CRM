@@ -281,6 +281,24 @@
                             <span class="text-danger small d-block quantity_error"></span>
                         </div>
                         <div class="col-md-3">
+                            <label class="col-form-label">Less freight / qty</label>
+                            <input type="number" name="less_freight_per_qty" id="addLessFreight" class="form-control" min="0" step="0.01" placeholder="Optional">
+                            <span class="text-danger small d-block less_freight_per_qty_error"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="col-form-label">Late Fee</label>
+                            <input type="number" name="accrued_late_fee" id="addLateFee" class="form-control" min="0" step="0.01" placeholder="Optional">
+                            <span class="text-danger small d-block accrued_late_fee_error"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="col-form-label">Late fee for dispatch</label>
+                            <select name="late_fee_dispatch_id" id="addLateFeeDispatch" class="form-select" disabled>
+                                <option value="">— Select an order line first —</option>
+                            </select>
+                            <small class="text-muted">Same dealer, unpaid or partial. Used only on the first entry.</small>
+                            <span class="text-danger small d-block late_fee_dispatch_id_error"></span>
+                        </div>
+                        <div class="col-md-3">
                             <label class="col-form-label">No. of Entries <span class="text-danger">*</span></label>
                             <input type="number" name="no_of_entries" id="addNoOfEntries" class="form-control"
                                 min="1" max="100" value="1" required>
@@ -343,10 +361,6 @@
                             'idPrefix' => 'wrConfirm',
                             'value' => '0',
                         ])
-                        @include('dispatch_management.partials.manual-late-fee-field', [
-                            'idPrefix' => 'wrConfirm',
-                            'useOld' => false,
-                        ])
                     </div>
                     <div class="text-danger small" id="confirmFormError"></div>
                 </div>
@@ -365,6 +379,7 @@
 @endsection
 
 @section('script')
+@include('dispatch_management.partials.late-fee-dispatch-script')
 @include('dispatch_management.partials.status-field-script')
 <script>
 (function ($) {
@@ -456,14 +471,15 @@
         $('#addNoOfEntries').val(1);
         $('#addOrderItemId').html('<option value="">Loading…</option>');
         $('#addTruck').prop('disabled', true).html('<option value="">— Select transporter first —</option>');
-        $('.order_item_id_error, .quantity_error, .no_of_entries_error').text('');
+        $('.order_item_id_error, .quantity_error, .no_of_entries_error, .accrued_late_fee_error, .late_fee_dispatch_id_error').text('');
         $.get(pendingItemsUrl, function (res) {
             var html = '<option value="">— Select pending order line —</option>';
             (res.results || []).forEach(function (r) {
-                html += '<option value="' + r.order_item_id + '" data-pending="' + r.pending_qty + '" data-unit="' + (r.product_unit || '') + '">'
+                html += '<option value="' + r.order_item_id + '" data-pending="' + r.pending_qty + '" data-order-id="' + (r.order_id || '') + '" data-unit="' + (r.product_unit || '') + '">'
                     + r.label + '</option>';
             });
             $('#addOrderItemId').html(html);
+            window.loadLateFeeDispatches($('#addLateFeeDispatch'), null);
         });
         new bootstrap.Modal(document.getElementById('addItemModal')).show();
     });
@@ -481,6 +497,10 @@
             $('#addPendingHint').text('');
         }
         $('.quantity_error, .no_of_entries_error').text('');
+        window.loadLateFeeDispatches(
+            $('#addLateFeeDispatch'),
+            $(this).find(':selected').data('order-id') || ''
+        );
     });
 
     $('#addTransport').on('change', function () {
@@ -492,7 +512,7 @@
     $('#addItemForm').on('submit', function (e) {
         e.preventDefault();
         var $form = $(this);
-        $('.order_item_id_error, .quantity_error, .no_of_entries_error').text('');
+        $('.order_item_id_error, .quantity_error, .no_of_entries_error, .accrued_late_fee_error, .late_fee_dispatch_id_error').text('');
 
         var qty = parseInt($('#addQuantity').val(), 10) || 0;
         var entries = parseInt($('#addNoOfEntries').val(), 10) || 0;
@@ -534,6 +554,9 @@
         var id = $row.data('item-id');
         var payload = {
             quantity: $row.find('.item-qty').val(),
+            less_freight_per_qty: $row.find('.item-less-freight').val(),
+            accrued_late_fee: $row.find('.item-late-fee').val(),
+            late_fee_dispatch_id: $row.find('.item-late-fee-dispatch').val() || null,
             transport_id: $row.find('.item-transport').val() || null,
             truck_number: $row.find('.item-truck').val() || null,
             driver_contact: $row.find('.item-contact').val() || null,
@@ -646,7 +669,6 @@
         if (window.dispatchPaymentStatusHelpers) {
             window.dispatchPaymentStatusHelpers.setFormStatus($('#confirmItemForm'), 0, '');
         }
-        $('#confirmItemForm').find('.manual-late-fee-field').val('');
         confirmModal.show();
     });
 

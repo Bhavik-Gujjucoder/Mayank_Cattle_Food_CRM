@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BrandManagement;
 use App\Models\DealerManagement;
+use App\Models\DispatchManagement;
 use App\Models\OrderManagement;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -68,6 +69,7 @@ class OrderManagementController extends Controller
                 }
             }
             $query = $this->applyOrderIndexFilters($query, $request);
+            $bagSummary = $this->bagSummary(clone $query);
 
             return DataTables::of($query)
                 ->addIndexColumn()
@@ -176,6 +178,7 @@ class OrderManagementController extends Controller
                     'expand_control', 'amount_summary', 'dispatch_summary', 'receivable_summary',
                     'checkbox', 'payment_status', 'order_status', 'action',
                 ])
+                ->with('bag_summary', $bagSummary)
                 ->make(true);
         }
         return view('order_management.index', $data);
@@ -824,5 +827,44 @@ class OrderManagementController extends Controller
         }
 
         return $query;
+    }
+
+    /**
+     * Bag totals for every order matching the current list filters, not just the current page.
+     *
+     * @param  Builder<OrderManagement>  $orders
+     * @return array{ordered: int, dispatched: int, pending: int}
+     */
+    private function bagSummary(Builder $orders): array
+    {
+        $orderIds = fn () => (clone $orders)->reorder()->select('order_management.id');
+
+        $ordered = (int) OrderItem::query()
+            ->whereIn('order_id', $orderIds())
+            ->sum('qty');
+
+        $dispatched = (int) DispatchManagement::query()
+            ->whereIn('order_item_id', OrderItem::query()
+                ->whereIn('order_id', $orderIds())
+                ->select('order_items.id'))
+            ->sum('no_of_bags');
+
+        $clamp = DB::connection()->getDriverName() === 'sqlite' ? 'MAX' : 'GREATEST';
+
+        $pendingRow = OrderItem::query()
+            ->whereIn('order_id', $orderIds())
+            ->selectRaw("COALESCE(SUM({$clamp}(0, qty - COALESCE((
+                SELECT SUM(dm.no_of_bags)
+                FROM dispatch_management dm
+                WHERE dm.order_item_id = order_items.id
+                  AND dm.deleted_at IS NULL
+            ), 0))), 0) as pending")
+            ->first();
+
+        return [
+            'ordered'    => $ordered,
+            'dispatched' => $dispatched,
+            'pending'    => (int) ($pendingRow->pending ?? 0),
+        ];
     }
 }

@@ -385,14 +385,14 @@ describe('accrual-eligibility', function () {
         expect((new PaymentReceivableService())->resolveManualLateFee('250.5', 10))->toBe(250.5);
     });
 
-    it('keeps the stored late fee when automatic late fee is on', function () {
+    it('uses a typed late fee even when the old automatic setting is on', function () {
         DB::table('general_settings')->updateOrInsert(
             ['key' => 'late_fee_auto'],
             ['value' => '1', 'created_at' => now(), 'updated_at' => now()]
         );
         forgetGeneralSettingsCache();
 
-        expect((new PaymentReceivableService())->resolveManualLateFee('250', 40))->toBe(40.0);
+        expect((new PaymentReceivableService())->resolveManualLateFee('250', 40))->toBe(250.0);
     });
 
     it('marks a changed automatic fee as mixed and keeps an unchanged source', function () {

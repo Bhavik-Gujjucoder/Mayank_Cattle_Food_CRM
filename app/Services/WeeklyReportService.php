@@ -173,7 +173,11 @@ class WeeklyReportService
             'items.order.dealer.user:id,name',
             'items.order.dealer.city:id,city_name',
             'items.transporter:id,name,phone_no',
-            'items.dispatch:id,accrued_late_fee,late_fee_source',
+            'items.dispatch:id,accrued_late_fee,late_fee_source,late_fee_dispatch_id',
+            'items.dispatch.lateFeeDispatch:id,order_id,dispatch_date',
+            'items.dispatch.lateFeeDispatch.order:id,unique_order_id',
+            'items.lateFeeDispatch:id,order_id,dispatch_date',
+            'items.lateFeeDispatch.order:id,unique_order_id',
         ];
     }
 
@@ -456,6 +460,21 @@ class WeeklyReportService
         }
 
         $lessFreight = \App\Support\LessFreight::normalize($data['less_freight_per_qty'] ?? null);
+        $lateFee = $this->receivableService->resolveManualLateFee(
+            array_key_exists('accrued_late_fee', $data) ? ($data['accrued_late_fee'] ?? '') : null,
+            0
+        );
+        $lateFeeError = $this->receivableService->lateFeeDispatchError(
+            $data['late_fee_dispatch_id'] ?? null,
+            (int) ($orderItem->order?->dealer_id ?? 0),
+            $lateFee
+        );
+        if ($lateFeeError) {
+            throw ValidationException::withMessages([
+                'late_fee_dispatch_id' => $lateFeeError,
+            ]);
+        }
+        $lateFeeDispatchId = $lateFee > 0 ? (int) $data['late_fee_dispatch_id'] : null;
 
         if ($totalQty > $available) {
             if ($entries > 1) {
@@ -470,7 +489,7 @@ class WeeklyReportService
             ]);
         }
 
-        return DB::transaction(function () use ($report, $orderItem, $data, $qty, $entries, $lessFreight) {
+        return DB::transaction(function () use ($report, $orderItem, $data, $qty, $entries, $lessFreight, $lateFee, $lateFeeDispatchId) {
             $maxSort = (int) $report->items()->max('sort_order');
             $created = collect();
 
@@ -482,6 +501,8 @@ class WeeklyReportService
                     'product_id'     => $orderItem->product_id,
                     'quantity'       => $qty,
                     'less_freight_per_qty' => $lessFreight,
+                    'accrued_late_fee' => $i === 1 ? $lateFee : 0,
+                    'late_fee_dispatch_id' => $i === 1 ? $lateFeeDispatchId : null,
                     'transport_id'   => $data['transport_id'] ?? null,
                     'truck_number'   => $data['truck_number'] ?? null,
                     'driver_contact' => $data['driver_contact'] ?? null,
@@ -541,9 +562,34 @@ class WeeklyReportService
             $lessFreight = \App\Support\LessFreight::normalize($data['less_freight_per_qty']);
         }
 
+        $lateFee = round((float) ($item->accrued_late_fee ?? 0), 2);
+        $lateFeeDispatchId = $item->late_fee_dispatch_id;
+        if (array_key_exists('accrued_late_fee', $data) || array_key_exists('late_fee_dispatch_id', $data)) {
+            $lateFee = $this->receivableService->resolveManualLateFee(
+                array_key_exists('accrued_late_fee', $data) ? ($data['accrued_late_fee'] ?? '') : $lateFee,
+                $lateFee
+            );
+            $item->loadMissing('order:id,dealer_id');
+            $lateFeeError = $this->receivableService->lateFeeDispatchError(
+                $data['late_fee_dispatch_id'] ?? $lateFeeDispatchId,
+                (int) ($item->order?->dealer_id ?? 0),
+                $lateFee
+            );
+            if ($lateFeeError) {
+                throw ValidationException::withMessages([
+                    'late_fee_dispatch_id' => $lateFeeError,
+                ]);
+            }
+            $lateFeeDispatchId = $lateFee > 0
+                ? (int) ($data['late_fee_dispatch_id'] ?? $lateFeeDispatchId)
+                : null;
+        }
+
         $item->update([
             'quantity'       => $qty,
             'less_freight_per_qty' => $lessFreight,
+            'accrued_late_fee' => $lateFee,
+            'late_fee_dispatch_id' => $lateFeeDispatchId,
             'transport_id'   => $data['transport_id'] ?? $item->transport_id,
             'truck_number'   => $data['truck_number'] ?? $item->truck_number,
             'driver_contact' => $data['driver_contact'] ?? $item->driver_contact,
@@ -654,7 +700,8 @@ class WeeklyReportService
         $partial = $status === DispatchManagement::STATUS_PARTIAL
             ? $payment['partial_paid_amount']
             : null;
-        $lateFee = $this->receivableService->resolveManualLateFee($payment['accrued_late_fee'] ?? null, 0);
+        $lateFee = round((float) ($item->accrued_late_fee ?? 0), 2);
+        $lateFeeDispatchId = $lateFee > 0 ? $item->late_fee_dispatch_id : null;
 
         if ($status === DispatchManagement::STATUS_PARTIAL) {
             $finalAmount = round(\App\Support\LessFreight::finalAmount(
@@ -670,7 +717,7 @@ class WeeklyReportService
             }
         }
 
-        return DB::transaction(function () use ($item, $status, $partial, $lateFee) {
+        return DB::transaction(function () use ($item, $status, $partial, $lateFee, $lateFeeDispatchId) {
             $dispatch = DispatchManagement::create([
                 'order_id'            => $item->order_id,
                 'order_item_id'       => $item->order_item_id,
@@ -684,6 +731,7 @@ class WeeklyReportService
                 'status'                => $status,
                 'partial_paid_amount'   => $partial,
                 'accrued_late_fee'      => $lateFee,
+                'late_fee_dispatch_id'  => $lateFeeDispatchId,
                 'late_fee_source'       => $this->receivableService->nextLateFeeSource(
                     null,
                     PaymentReceivableService::LATE_FEE_SOURCE_MANUAL,

@@ -523,6 +523,7 @@
 
 @endsection
 @section('script')
+    @include('dispatch_management.partials.late-fee-dispatch-script')
 <script>
 withDataTable(function($) {
     var dashboardRecentDtDefaults = {
@@ -923,6 +924,11 @@ withDataTable(function($) {
 
             $('#dashboardDispatchOrderId').on('change', function() {
                 loadOrderItems($(this).val());
+                window.loadLateFeeDispatches(
+                    $('#dashboard_late_fee_dispatch_id'),
+                    $(this).val(),
+                    $('#dashboard_late_fee_dispatch_id').attr('data-selected')
+                );
             });
 
             function refreshDashboardFreightPreview() {
@@ -972,6 +978,15 @@ withDataTable(function($) {
                 loadDispatchOrders();
             });
 
+            $.validator.addMethod('lateFeeDispatchRequired', function (value, element) {
+                var fee = parseFloat($(element).closest('form').find('[name="accrued_late_fee"]').val());
+                if (isNaN(fee) || fee <= 0) {
+                    return true;
+                }
+
+                return $.trim(value || '') !== '';
+            }, 'Please select the dispatch this late fee is for.');
+
             $.validator.addMethod('maxDashboardPending', function(value) {
                 if (!dashboardDispatchEligible) return false;
                 var $opt = $('#dashboardDispatchOrderItemId').find(':selected');
@@ -1020,6 +1035,9 @@ withDataTable(function($) {
                         number: true,
                         min: 0
                     },
+                    late_fee_dispatch_id: {
+                        lateFeeDispatchRequired: true
+                    },
                 },
                 messages: {
                     order_id: {
@@ -1061,6 +1079,10 @@ withDataTable(function($) {
                         error.appendTo('#dashboard_partial_paid_amount-error');
                         return;
                     }
+                    if (element.attr('name') === 'late_fee_dispatch_id') {
+                        error.appendTo('#dashboard_late_fee_dispatch_id-error');
+                        return;
+                    }
                     var $target = $('#' + element.attr('name') + '-error');
                     if ($target.length) {
                         $target.html(error);
@@ -1086,7 +1108,38 @@ withDataTable(function($) {
                     if (!dashboardDispatchEligible) {
                         return false;
                     }
-                    form.submit();
+                    var $form = $(form);
+                    $form.find('select:disabled, input:disabled, textarea:disabled').prop('disabled', false);
+                    $form.find('.field-error').empty();
+                    var $btn = $form.find('[type="submit"]').prop('disabled', true);
+                    $.ajax({
+                        url: $form.attr('action'),
+                        method: 'POST',
+                        data: $form.serialize(),
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function (res) {
+                            window.location.href = (res && res.redirect) ? res.redirect : window.location.href;
+                        },
+                        error: function (xhr) {
+                            $btn.prop('disabled', false);
+                            var errors = xhr.responseJSON && xhr.responseJSON.errors;
+                            if (xhr.status === 422 && errors) {
+                                $.each(errors, function (key, msgs) {
+                                    var $target = $('#' + key + '-error, #dashboard_' + key + '-error').first();
+                                    if ($target.length) {
+                                        $target.text(msgs[0]);
+                                    }
+                                });
+                                return;
+                            }
+                            if (typeof show_error === 'function') {
+                                show_error((xhr.responseJSON && xhr.responseJSON.message) || 'Could not save dispatch.');
+                            }
+                        }
+                    });
                 },
             });
 
@@ -1101,6 +1154,11 @@ withDataTable(function($) {
                         if (savedOrder) {
                             $('#dashboardDispatchOrderId').val(savedOrder);
                             loadOrderItems(savedOrder);
+                            window.loadLateFeeDispatches(
+                                $('#dashboard_late_fee_dispatch_id'),
+                                savedOrder,
+                                $('#dashboard_late_fee_dispatch_id').attr('data-selected')
+                            );
                         }
 
                         if (savedTransporter) {

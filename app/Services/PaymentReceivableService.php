@@ -75,7 +75,7 @@ class PaymentReceivableService
     }
 
     /**
-     * Automatic daily late fee. Missing or any value other than 0 keeps the current flow.
+     * Setting is kept for older rows. Nightly charging no longer uses it.
      */
     public function isAutoLateFeeEnabled(): bool
     {
@@ -93,15 +93,88 @@ class PaymentReceivableService
      */
     public function resolveManualLateFee(mixed $input, float $existing = 0): float
     {
-        if ($this->isAutoLateFeeEnabled()) {
+        if ($input === null) {
             return round($existing, 2);
         }
 
-        if ($input === null || $input === '') {
+        if ($input === '') {
             return 0.0;
         }
 
         return round(max(0, (float) $input), 2);
+    }
+
+    /**
+     * Unpaid or partial dispatches for this dealer. The new row is not included.
+     *
+     * @return list<array{id: int, label: string}>
+     */
+    public function lateFeeDispatchOptions(int $dealerId, ?int $excludeDispatchId = null): array
+    {
+        $query = DispatchManagement::query()
+            ->forUser()
+            ->whereIn('status', DispatchManagement::pendingPaymentStatuses())
+            ->whereNotNull('dispatch_date')
+            ->whereHas('order', fn ($q) => $q->where('dealer_id', $dealerId)->whereNull('deleted_at'))
+            ->with([
+                'order:id,unique_order_id,dealer_id',
+                'product:id,name',
+                'orderItem:id,unit_price',
+            ])
+            ->orderByDesc('dispatch_date')
+            ->orderByDesc('id');
+
+        if ($excludeDispatchId) {
+            $query->whereKeyNot($excludeDispatchId);
+        }
+
+        return $query->get()->map(function (DispatchManagement $dispatch) {
+            $summary = $this->summarizeDispatch($dispatch);
+
+            return [
+                'id'    => (int) $dispatch->id,
+                'label' => trim(implode(' · ', array_filter([
+                    $dispatch->order?->unique_order_id ?? '—',
+                    $dispatch->dispatch_date?->format('d M Y'),
+                    $dispatch->product?->name,
+                    (string) (int) $dispatch->no_of_bags,
+                    'Due ' . self::formatMoney($summary['balance_due']),
+                ]))),
+            ];
+        })->all();
+    }
+
+    public function lateFeeDispatchError(mixed $dispatchId, int $dealerId, float $fee, ?int $excludeDispatchId = null): ?string
+    {
+        if ($fee <= 0) {
+            return null;
+        }
+
+        $id = (int) $dispatchId;
+        if ($id <= 0) {
+            return 'Please select the dispatch this late fee is for.';
+        }
+
+        $allowed = collect($this->lateFeeDispatchOptions($dealerId, $excludeDispatchId))->pluck('id');
+        if (! $allowed->contains($id)) {
+            return 'Select an unpaid or partial dispatch for this dealer.';
+        }
+
+        return null;
+    }
+
+    public static function lateFeeBehalfLabel(?DispatchManagement $dispatch): string
+    {
+        if ($dispatch === null) {
+            return '';
+        }
+
+        $dispatch->loadMissing('order:id,unique_order_id');
+
+        return trim(implode(' · ', array_filter([
+            $dispatch->order?->unique_order_id,
+            $dispatch->dispatch_date?->format('d M Y'),
+        ])));
     }
 
     /**
@@ -158,24 +231,30 @@ class PaymentReceivableService
         };
     }
 
-    public static function formatLateFeeText(float $amount, ?string $source): string
+    public static function formatLateFeeText(float $amount, ?string $source, ?string $behalf = null): string
     {
         $money = self::formatMoney($amount);
-        $label = self::lateFeeSourceLabel($source);
+        $parts = array_values(array_filter([
+            self::lateFeeSourceLabel($source),
+            $behalf ? 'for ' . $behalf : '',
+        ]));
 
-        return $label !== '' && $amount > 0 ? $money . ' (' . $label . ')' : $money;
+        return $parts !== [] && $amount > 0 ? $money . ' (' . implode(' · ', $parts) . ')' : $money;
     }
 
-    public static function formatLateFeeHtml(float $amount, ?string $source): string
+    public static function formatLateFeeHtml(float $amount, ?string $source, ?string $behalf = null): string
     {
         $html = e(self::formatMoney($amount));
-        $label = self::lateFeeSourceLabel($source);
+        $parts = array_values(array_filter([
+            self::lateFeeSourceLabel($source),
+            $behalf ? 'for ' . $behalf : '',
+        ]));
 
-        if ($label === '' || $amount <= 0) {
+        if ($parts === [] || $amount <= 0) {
             return $html;
         }
 
-        return $html . '<div class="small text-muted">' . e($label) . '</div>';
+        return $html . '<div class="small text-muted">' . e(implode(' · ', $parts)) . '</div>';
     }
 
     /**

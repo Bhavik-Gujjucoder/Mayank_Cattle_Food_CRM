@@ -106,7 +106,9 @@
                     d.status = $('#statusFilter').val();
                 }
             });
-            var category_table = $('#raw_material_category_table').DataTable({
+            var category_table = $('#raw_material_category_table').DataTable($.extend({}, dataTablePageMemory('#raw_material_category_table', [
+                { selector: '#statusFilter', key: 'status', select2: true }
+            ], '#customSearch'), {
                 pageLength: 10,
                 deferRender: true,
                 processing: true,
@@ -160,8 +162,9 @@
                             '<i class="ti ti-file-export me-2"></i>Export (' + n + ')');
                     }
                 }
-            });
+            }));
             categoryAjax._bindTable(category_table);
+            keepDataTablePage(category_table);
 
             $('#statusFilter').on('change', function() {
                 const p = new URLSearchParams();

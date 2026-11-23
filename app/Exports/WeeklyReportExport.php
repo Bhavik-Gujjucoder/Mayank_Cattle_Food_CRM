@@ -87,7 +87,8 @@ class WeeklyReportExport implements FromArray, WithStyles, WithEvents
                     $price = (float) ($item->orderItem?->unit_price ?? 0);
                     $less = LessFreight::deduction($qty, $item->less_freight_per_qty);
                     $base = LessFreight::finalAmount($qty, $price, $item->less_freight_per_qty);
-                    $late = $isConfirmed ? round((float) ($item->dispatch?->accrued_late_fee ?? 0), 2) : 0.0;
+                    $lateFeeRow = $isConfirmed && $item->dispatch ? $item->dispatch : $item;
+                    $late = round((float) ($lateFeeRow->accrued_late_fee ?? 0), 2);
 
                     $this->pushRow([
                         (string) $item->sort_order,

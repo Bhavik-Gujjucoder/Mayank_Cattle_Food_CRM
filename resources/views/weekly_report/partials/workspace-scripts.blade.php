@@ -1,3 +1,4 @@
+@include('dispatch_management.partials.late-fee-dispatch-script')
 @include('dispatch_management.partials.status-field-script')
 <script>
 (function ($) {
@@ -95,6 +96,7 @@
         if ($form.find('.wr-add-dealer').length && !dealerId) {
             $select.prop('disabled', true)
                 .html('<option value="">— Select dealer first —</option>');
+            window.loadLateFeeDispatches($form.find('.wr-add-late-fee-dispatch'), null);
             return;
         }
 
@@ -102,13 +104,14 @@
         $.get(pendingItemsUrl, { dealer_id: dealerId || '' }, function (res) {
             var html = '<option value="">— Select pending order line —</option>';
             (res.results || []).forEach(function (r) {
-                html += '<option value="' + r.order_item_id + '" data-pending="' + r.pending_qty + '" data-unit="' + (r.product_unit || '') + '" data-unit-price="' + (r.unit_price || 0) + '">'
+                html += '<option value="' + r.order_item_id + '" data-pending="' + r.pending_qty + '" data-order-id="' + (r.order_id || '') + '" data-unit="' + (r.product_unit || '') + '" data-unit-price="' + (r.unit_price || 0) + '">'
                     + r.label + '</option>';
             });
             if (!(res.results || []).length) {
                 html = '<option value="">— No pending orders for this dealer —</option>';
             }
             $select.html(html).prop('disabled', false);
+            window.loadLateFeeDispatches($form.find('.wr-add-late-fee-dispatch'), null);
         }).fail(function () {
             $select.html('<option value="">Failed to load pending orders</option>').prop('disabled', false);
         });
@@ -153,10 +156,20 @@
             var gross = qty * price;
             var less = qty * rate;
             var finalAmt = Math.max(0, gross - less);
+            var $lateInput = $row.find('.item-late-fee');
+            var late = $lateInput.length ? (parseFloat($lateInput.val()) || 0) : (parseFloat($row.data('late-fee')) || 0);
+            var behalf = '';
+            var $dispatch = $row.find('.item-late-fee-dispatch');
+            if ($dispatch.val()) {
+                behalf = $.trim($dispatch.find('option:selected').text());
+            }
             var html = '<div>' + qty + ' × ' + wrMoney(price) + '</div>'
                 + '<div>= ' + wrMoney(gross) + '</div>';
             if (rate > 0) html += '<div>− ' + wrMoney(less) + '</div>';
-            html += '<div class="wr-final-figure">' + wrMoney(finalAmt) + '</div>';
+            if (late > 0) {
+                html += '<div>+ ' + wrMoney(late) + ' late' + (behalf ? ' for ' + $('<div>').text(behalf).html() : '') + '</div>';
+            }
+            html += '<div class="wr-final-figure">' + wrMoney(finalAmt + late) + '</div>';
             $row.find('.wr-final-amount').html(html);
         }
 
@@ -178,11 +191,17 @@
             $preview.text(text);
         }
 
-        $block.on('input change', '.item-qty, .item-less-freight', function () {
+        $block.on('input change', '.item-qty, .item-less-freight, .item-late-fee, .item-late-fee-dispatch', function () {
             refreshRowFinal($(this).closest('tr'));
         });
         $block.on('input change', '.wr-add-quantity, .wr-add-less-freight, .wr-add-order-item', function () {
             refreshAddFreight($(this).closest('.wr-add-item-form'));
+        });
+
+        $block.on('change', '.wr-add-order-item', function () {
+            var $form = $(this).closest('.wr-add-item-form');
+            var orderId = $(this).find('option:selected').data('order-id') || '';
+            window.loadLateFeeDispatches($form.find('.wr-add-late-fee-dispatch'), orderId);
         });
 
         $block.on('change', '.wr-add-dealer', function () {
@@ -277,6 +296,8 @@
             var payload = {
                 quantity: $row.find('.item-qty').val(),
                 less_freight_per_qty: $row.find('.item-less-freight').val(),
+                accrued_late_fee: $row.find('.item-late-fee').val(),
+                late_fee_dispatch_id: $row.find('.item-late-fee-dispatch').val() || null,
                 transport_id: $row.find('.wr-transport-select').val() || null,
                 truck_number: $row.find('.wr-truck-select').val() || null,
                 driver_contact: $row.find('.item-contact').val() || null,
@@ -292,6 +313,8 @@
                 headers: { 'Accept': 'application/json' },
                 success: function (res) {
                     $row.data('qty', payload.quantity);
+                    $row.data('late-fee', payload.accrued_late_fee || 0);
+                    refreshRowFinal($row);
                     if (res.total !== undefined) {
                         $block.find('.footer-total').val(parseFloat(res.total).toFixed(2));
                         $block.find('.footer-difference').val(parseFloat(res.difference).toFixed(2));
@@ -398,7 +421,6 @@
             if (window.dispatchPaymentStatusHelpers) {
                 window.dispatchPaymentStatusHelpers.setFormStatus($('#confirmItemForm'), 0, '');
             }
-            $('#confirmItemForm').find('.manual-late-fee-field').val('');
             window.wrConfirmModal.show();
         });
         @endif

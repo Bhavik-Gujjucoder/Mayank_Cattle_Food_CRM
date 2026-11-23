@@ -153,7 +153,7 @@ withDataTable(function () {
     const isShowAction = {{ auth()->user()->canAny(['edit-' . $type, 'delete-' . $type])? 'true': 'false' }};
     const isShowCheckbox = {{ auth()->user()->can('delete-' . $type)? 'true': 'false' }};
     var usersAjax = buildDataTableAjax("{{ route('users.index', $type) }}");
-    var users_table = $('#users').DataTable({
+    var users_table = $('#users').DataTable($.extend({}, dataTablePageMemory('#users', [], '#customSearch'), {
         "pageLength": 10,
         deferRender: true,
         processing: true,
@@ -251,8 +251,9 @@ withDataTable(function () {
             });
         }
 
-    });
+    }));
     usersAjax._bindTable(users_table);
+    keepDataTablePage(users_table);
 
     let userType = "{{ $type }}"; // 'user' or 'broker'
 
@@ -301,7 +302,7 @@ withDataTable(function () {
             data: $(this).serialize() + "&_method=" + method,
             success: function(response) {
                 $('#adminModal').modal('hide');
-                users_table.ajax.reload();
+                users_table.ajax.reload(null, false);
                 show_success(response.message);
             },
             error: function(response) {
@@ -378,7 +379,7 @@ withDataTable(function () {
                         // Swal.fire("Deleted!", response.message, "success");
                         show_success(response.message);
                         // Optionally, reload the page to reflect changes
-                        users_table.ajax.reload();
+                        users_table.ajax.reload(null, false);
                         // location.reload();
                         $('#bulk_delete_button').hide();
                     },

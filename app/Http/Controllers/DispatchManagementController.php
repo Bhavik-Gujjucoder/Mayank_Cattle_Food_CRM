@@ -67,6 +67,7 @@ class DispatchManagementController extends Controller
                     'orderItem.product',
                     'orderItem.order.dealer.user',
                     'transporter',
+                    'lateFeeDispatch.order:id,unique_order_id',
                 ])
             )->latest();
 
@@ -128,7 +129,8 @@ class DispatchManagementController extends Controller
 
                     return PaymentReceivableService::formatLateFeeHtml(
                         $summary['accrued_late_fee'],
-                        $row->late_fee_source
+                        $row->late_fee_source,
+                        PaymentReceivableService::lateFeeBehalfLabel($row->lateFeeDispatch)
                     );
                 })
                 ->addColumn('balance_due', function ($row) use ($receivableService) {
@@ -212,6 +214,7 @@ class DispatchManagementController extends Controller
             'items.dispatches.orderItem',
             'items.dispatches.product',
             'items.dispatches.transporter',
+            'items.dispatches.lateFeeDispatch.order:id,unique_order_id',
         ]);
         $data['transporters'] = User::whereHas('roles', fn($q) => $q->where('name', 'transporter'))
                                     ->orderBy('name')
@@ -291,15 +294,15 @@ class DispatchManagementController extends Controller
             'partial_paid_amount.min'         => 'Paid amount cannot be negative.',
             'accrued_late_fee.numeric'        => 'Please enter a valid late fee.',
             'accrued_late_fee.min'            => 'Late fee cannot be negative.',
+            'late_fee_dispatch_id.exists'     => 'Select an unpaid or partial dispatch for this dealer.',
         ];
-        if (! $receivableService->isAutoLateFeeEnabled()) {
-            $rules['accrued_late_fee'] = 'nullable|numeric|min:0';
-        }
+        $rules['accrued_late_fee'] = 'nullable|numeric|min:0';
+        $rules['late_fee_dispatch_id'] = 'nullable|integer|exists:dispatch_management,id';
 
         $validated = $request->validate($rules, $messages);
         $validated = $this->normalizeDispatchPayment($validated);
         $validated['accrued_late_fee'] = $receivableService->resolveManualLateFee(
-            $validated['accrued_late_fee'] ?? null,
+            $request->exists('accrued_late_fee') ? ($request->input('accrued_late_fee') ?? '') : null,
             0
         );
         $validated['late_fee_source'] = $receivableService->nextLateFeeSource(
@@ -308,6 +311,7 @@ class DispatchManagementController extends Controller
             0,
             (float) $validated['accrued_late_fee']
         );
+        $validated['late_fee_dispatch_id'] = null;
 
         /* Guard against over-dispatch */
         $orderItem  = OrderItem::findOrFail($validated['order_item_id']);
@@ -347,6 +351,20 @@ class DispatchManagementController extends Controller
             ]);
         }
 
+        $lateFeeError = $receivableService->lateFeeDispatchError(
+            $request->input('late_fee_dispatch_id'),
+            (int) $parentOrder->dealer_id,
+            (float) $validated['accrued_late_fee']
+        );
+        if ($lateFeeError) {
+            return $this->dispatchStoreErrorResponse($request, [
+                'late_fee_dispatch_id' => $lateFeeError,
+            ]);
+        }
+        if ((float) $validated['accrued_late_fee'] > 0) {
+            $validated['late_fee_dispatch_id'] = (int) $request->input('late_fee_dispatch_id');
+        }
+
         if ((int) $validated['status'] === DispatchManagement::STATUS_PARTIAL) {
             $preview = new DispatchManagement([
                 'no_of_bags'           => (int) $validated['no_of_bags'],
@@ -368,9 +386,20 @@ class DispatchManagementController extends Controller
         $dispatch->refresh();
         $this->syncOrderPaymentFromDispatches($dispatch);
 
+        $message = 'Dispatch entry added successfully.';
+        if ($request->expectsJson()) {
+            session()->flash('success', $message);
+
+            return response()->json([
+                'success'  => true,
+                'message'  => $message,
+                'redirect' => route('dispatch.orderHistory', $validated['order_id']),
+            ]);
+        }
+
         return redirect()
             ->route('dispatch.orderHistory', $validated['order_id'])
-            ->with('success', 'Dispatch entry added successfully.');
+            ->with('success', $message);
     }
 
     /* ------------------------------------------------------------------ */
@@ -435,7 +464,12 @@ class DispatchManagementController extends Controller
                 'less_freight'     => $summary['less_freight'],
                 'base_amount'      => $summary['base_amount'],
                 'accrued_late_fee' => $summary['accrued_late_fee'],
-                'late_fee_source_label' => PaymentReceivableService::lateFeeSourceLabel($dispatch->late_fee_source),
+                'late_fee_source_label' => trim(implode(' · ', array_filter([
+                    PaymentReceivableService::lateFeeSourceLabel($dispatch->late_fee_source),
+                    ($behalf = PaymentReceivableService::lateFeeBehalfLabel($dispatch->lateFeeDispatch)) !== ''
+                        ? 'for ' . $behalf
+                        : '',
+                ]))),
                 'total_receivable' => $summary['total_receivable'],
                 'amount_paid'      => $summary['amount_paid'],
                 'balance_due'      => $summary['balance_due'],
@@ -524,10 +558,9 @@ class DispatchManagementController extends Controller
             'driver_contact' => 'required|string|max:20',
             'status'              => 'required|in:0,1,2',
             'partial_paid_amount' => 'nullable|numeric|min:0|required_if:status,2',
+            'accrued_late_fee' => 'nullable|numeric|min:0',
+            'late_fee_dispatch_id' => 'nullable|integer|exists:dispatch_management,id',
         ];
-        if (! $receivableService->isAutoLateFeeEnabled()) {
-            $rules['accrued_late_fee'] = 'nullable|numeric|min:0';
-        }
 
         $validator = Validator::make($request->all(), $rules, [
             'no_of_bags.required'     => ProductUnit::requiredMessage(),
@@ -546,6 +579,7 @@ class DispatchManagementController extends Controller
             'partial_paid_amount.min'         => 'Paid amount cannot be negative.',
             'accrued_late_fee.numeric'        => 'Please enter a valid late fee.',
             'accrued_late_fee.min'            => 'Late fee cannot be negative.',
+            'late_fee_dispatch_id.exists'     => 'Select an unpaid or partial dispatch for this dealer.',
         ]);
 
         if ($validator->fails()) {
@@ -559,7 +593,7 @@ class DispatchManagementController extends Controller
         $validated = $this->normalizeDispatchPayment($validator->validated());
         $previousLateFee = (float) ($dispatch->accrued_late_fee ?? 0);
         $validated['accrued_late_fee'] = $receivableService->resolveManualLateFee(
-            $validated['accrued_late_fee'] ?? null,
+            $request->exists('accrued_late_fee') ? ($request->input('accrued_late_fee') ?? '') : null,
             $previousLateFee
         );
         $validated['late_fee_source'] = $receivableService->nextLateFeeSource(
@@ -568,6 +602,23 @@ class DispatchManagementController extends Controller
             $previousLateFee,
             (float) $validated['accrued_late_fee']
         );
+        $dispatch->loadMissing('order:id,dealer_id');
+        $lateFeeError = $receivableService->lateFeeDispatchError(
+            $validated['late_fee_dispatch_id'] ?? $dispatch->late_fee_dispatch_id,
+            (int) ($dispatch->order?->dealer_id ?? 0),
+            (float) $validated['accrued_late_fee'],
+            (int) $dispatch->id
+        );
+        if ($lateFeeError) {
+            return redirect()
+                ->route('dispatch.orderHistory', $dispatch->order_id)
+                ->withInput()
+                ->withErrors(['late_fee_dispatch_id' => $lateFeeError])
+                ->with('edit_dispatch_id', $dispatch->id);
+        }
+        $validated['late_fee_dispatch_id'] = (float) $validated['accrued_late_fee'] > 0
+            ? (int) ($validated['late_fee_dispatch_id'] ?? $dispatch->late_fee_dispatch_id)
+            : null;
         $orderItem = $dispatch->orderItem;
         $freightError = LessFreight::validationMessage(
             $validated['less_freight_per_qty'] ?? null,
@@ -628,6 +679,7 @@ class DispatchManagementController extends Controller
             'partial_paid_amount' => $validated['partial_paid_amount'],
             'accrued_late_fee'    => $validated['accrued_late_fee'],
             'late_fee_source'     => $validated['late_fee_source'],
+            'late_fee_dispatch_id' => $validated['late_fee_dispatch_id'],
         ]);
 
         $dispatch->refresh();
@@ -637,6 +689,22 @@ class DispatchManagementController extends Controller
         return redirect()
             ->route('dispatch.orderHistory', $dispatch->order_id)
             ->with('success', 'Dispatch entry updated successfully.');
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  AJAX — unpaid/partial dispatches a late fee can be charged for   */
+    /* ------------------------------------------------------------------ */
+    public function lateFeeDispatches(Request $request, PaymentReceivableService $receivableService)
+    {
+        $order = OrderManagement::query()->findOrFail($request->integer('order_id'));
+        SalesScope::authorizeOrderAccess($order);
+
+        return response()->json([
+            'results' => $receivableService->lateFeeDispatchOptions(
+                (int) $order->dealer_id,
+                $request->integer('exclude_id') ?: null
+            ),
+        ]);
     }
 
     /* ------------------------------------------------------------------ */
@@ -720,6 +788,10 @@ class DispatchManagementController extends Controller
     /* ------------------------------------------------------------------ */
     private function dispatchStoreErrorResponse(Request $request, array $errors)
     {
+        if ($request->expectsJson()) {
+            throw \Illuminate\Validation\ValidationException::withMessages($errors);
+        }
+
         $redirect = back()->withInput()->withErrors($errors);
 
         if ($request->input('from_dashboard')) {
@@ -770,6 +842,7 @@ class DispatchManagementController extends Controller
                     'status'            => (string) ($useOldInput ? old('status', (string) $dispatch->status) : $dispatch->status),
                     'partialPaidAmount' => (string) ($useOldInput ? old('partial_paid_amount', $dispatch->partial_paid_amount ?? '') : ($dispatch->partial_paid_amount ?? '')),
                     'accruedLateFee'    => (string) ($useOldInput ? old('accrued_late_fee', $dispatch->accrued_late_fee ?? '') : ($dispatch->accrued_late_fee ?? '')),
+                    'lateFeeDispatchId' => (string) ($useOldInput ? old('late_fee_dispatch_id', $dispatch->late_fee_dispatch_id ?? '') : ($dispatch->late_fee_dispatch_id ?? '')),
                     'lateFeeSourceLabel' => PaymentReceivableService::lateFeeSourceLabel($dispatch->late_fee_source),
                     'noOfBags'          => (int) ($useOldInput ? old('no_of_bags', $dispatch->no_of_bags) : $dispatch->no_of_bags),
                     'lessFreight'       => (string) ($useOldInput ? old('less_freight_per_qty', $dispatch->less_freight_per_qty ?? '') : ($dispatch->less_freight_per_qty ?? '')),

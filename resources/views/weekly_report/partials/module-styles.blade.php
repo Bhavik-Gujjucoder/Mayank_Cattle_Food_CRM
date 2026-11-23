@@ -229,6 +229,7 @@
     .weekly-report-module .weekly-report-items-table col.wr-col-city { width: 140px; }
     .weekly-report-module .weekly-report-items-table col.wr-col-qty { width: 96px; }
     .weekly-report-module .weekly-report-items-table col.wr-col-freight { width: 150px; }
+    .weekly-report-module .weekly-report-items-table col.wr-col-late-fee { width: 220px; }
     .weekly-report-module .weekly-report-items-table col.wr-col-final { width: 190px; }
     .weekly-report-module .weekly-report-items-table col.wr-col-transport { width: 168px; }
     .weekly-report-module .weekly-report-items-table col.wr-col-truck { width: 136px; }
@@ -334,7 +335,9 @@
         overflow: hidden;
     }
 
-    .weekly-report-module .weekly-report-items-table .item-less-freight {
+    .weekly-report-module .weekly-report-items-table .item-less-freight,
+    .weekly-report-module .weekly-report-items-table .item-late-fee,
+    .weekly-report-module .weekly-report-items-table .item-late-fee-dispatch {
         width: 100%;
         min-width: 0;
     }

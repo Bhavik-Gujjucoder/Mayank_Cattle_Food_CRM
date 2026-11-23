@@ -21,6 +21,7 @@ class WeeklyReportItem extends Model
         'sort_order'            => 'integer',
         'quantity'              => 'integer',
         'less_freight_per_qty'  => 'decimal:2',
+        'accrued_late_fee'      => 'decimal:2',
     ];
 
     /* ── Relationships ───────────────────────────────────────────── */
@@ -53,6 +54,11 @@ class WeeklyReportItem extends Model
     public function dispatch()
     {
         return $this->belongsTo(DispatchManagement::class, 'dispatch_id');
+    }
+
+    public function lateFeeDispatch()
+    {
+        return $this->belongsTo(DispatchManagement::class, 'late_fee_dispatch_id');
     }
 
     /* ── Helpers ─────────────────────────────────────────────────── */

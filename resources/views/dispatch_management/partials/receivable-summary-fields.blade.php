@@ -17,13 +17,11 @@
         <label class="col-form-label">Final Amount</label>
         <input type="text" class="form-control" id="{{ $idPrefix }}_base_amount" readonly>
     </div>
-    @if (app(\App\Services\PaymentReceivableService::class)->isAutoLateFeeEnabled())
     <div class="col-md-4">
         <label class="col-form-label">Accrued Late Fee</label>
         <input type="text" class="form-control" id="{{ $idPrefix }}_accrued_late_fee" readonly>
         <small class="text-muted d-block" id="{{ $idPrefix }}_late_fee_source_label"></small>
     </div>
-    @endif
     <div class="col-md-4">
         <label class="col-form-label">Total Receivable</label>
         <input type="text" class="form-control fw-medium" id="{{ $idPrefix }}_total_receivable" readonly>

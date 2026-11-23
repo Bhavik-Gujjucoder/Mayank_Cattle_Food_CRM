@@ -275,7 +275,8 @@
                                         $printPrice = (float) ($item->orderItem?->unit_price ?? 0);
                                         $printLess = \App\Support\LessFreight::deduction($printQty, $item->less_freight_per_qty);
                                         $printBase = \App\Support\LessFreight::finalAmount($printQty, $printPrice, $item->less_freight_per_qty);
-                                        $printLate = $confirmed ? round((float) ($item->dispatch?->accrued_late_fee ?? 0), 2) : 0.0;
+                                        $printFeeRow = $confirmed && $item->dispatch ? $item->dispatch : $item;
+                                        $printLate = round((float) ($printFeeRow->accrued_late_fee ?? 0), 2);
                                     @endphp
                                     <td>{{ $item->less_freight_per_qty !== null ? number_format((float) $item->less_freight_per_qty, 2) : '—' }}</td>
                                     <td>{{ number_format(\App\Support\LessFreight::gross($printQty, $printPrice), 2) }}</td>

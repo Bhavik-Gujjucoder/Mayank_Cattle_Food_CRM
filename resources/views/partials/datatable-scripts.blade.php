@@ -1,3 +1,3 @@
 <script src="{{ asset('assets/js/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('assets/js/dataTables.bootstrap5.min.js') }}"></script>
-<script src="{{ asset('assets/js/datatable-helpers.js') }}"></script>
+<script src="{{ asset('assets/js/datatable-helpers.js') }}?v={{ filemtime(public_path('assets/js/datatable-helpers.js')) }}"></script>

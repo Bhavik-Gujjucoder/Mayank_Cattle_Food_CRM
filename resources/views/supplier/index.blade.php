@@ -143,16 +143,16 @@
                     <div class="modal-body">
                         <div class="row">
 
-                            {{-- Supplier Broker --}}
+                            {{-- Supplier Brokers --}}
                             <div class="col-md-6 mb-3">
-                                <label class="col-form-label">Supplier Broker <span class="text-dangers">*</span></label>
-                                <select name="supplier_broker_id" id="supplier_broker_id" class="form-select">
-                                    <option value="">-- Select Supplier Broker --</option>
+                                <label class="col-form-label">Supplier Brokers <span class="text-dangers">*</span></label>
+                                <select name="supplier_broker_ids[]" id="supplier_broker_ids" class="form-select" multiple
+                                    data-placeholder="Select Supplier Brokers">
                                     @foreach ($supplier_brokers as $supplierBroker)
                                         <option value="{{ $supplierBroker->id }}">{{ $supplierBroker->name }}</option>
                                     @endforeach
                                 </select>
-                                <span class="supplier_broker_id_error text-danger small"></span>
+                                <span class="supplier_broker_ids_error text-danger small"></span>
                             </div>
 
                             {{-- Name --}}
@@ -355,6 +355,65 @@
         .modal-backdrop.supplier-quick-backdrop {
             z-index: 1060 !important;
         }
+
+        #supplierModal .select2-container--default .select2-selection--multiple {
+            min-height: 42px;
+            height: auto;
+            line-height: normal;
+            border-radius: 5px;
+            padding: 4px 0.85rem;
+        }
+
+        #supplierModal .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            line-height: normal;
+        }
+
+        #supplierModal .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            margin: 0;
+        }
+
+        #supplierModal .select2-container--default .select2-selection--multiple .select2-search--inline {
+            float: none;
+            display: flex;
+            align-items: center;
+            flex: 1 1 auto;
+            width: auto;
+            min-width: 12em;
+            margin: 0;
+        }
+
+        #supplierModal .select2-container--default .select2-selection--multiple:has(.select2-selection__choice) .select2-search--inline {
+            flex: 1 1 1.25em;
+            min-width: 1.25em;
+        }
+
+        #supplierModal .select2-container--default .select2-selection--multiple .select2-search__field {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            height: 28px !important;
+            line-height: 28px;
+            font-family: inherit;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #6F6F6F;
+            padding: 0;
+            background: transparent;
+        }
+
+        #supplierModal .select2-container--default .select2-selection--multiple .select2-search__field::placeholder {
+            font-size: 0.8rem;
+            font-weight: 500;
+            opacity: 0.7;
+            color: #6F6F6F;
+        }
     </style>
 @endsection
 
@@ -376,7 +435,12 @@
                 d.city_id = $('#filterCity').val();
             }
         });
-        var supplier_table = $('#supplier_table').DataTable({
+        var supplier_table = $('#supplier_table').DataTable($.extend({}, dataTablePageMemory('#supplier_table', [
+            { selector: '#filterSupplierBroker', key: 'supplier_broker_id', select2: true },
+            { selector: '#filterStatus', key: 'status', select2: true },
+            { selector: '#filterState', key: 'state_id', select2: true },
+            { selector: '#filterCity', key: 'city_id', select2: true }
+        ], '#customSearch'), {
             pageLength: 10,
             deferRender: true,
             processing: true,
@@ -445,8 +509,9 @@
                     visible: isShowAction
                 },
             ]
-        });
+        }));
         supplierAjax._bindTable(supplier_table);
+        keepDataTablePage(supplier_table);
 
         /* Custom search */
         bindDebouncedDataTableSearch('#customSearch', supplier_table);
@@ -738,7 +803,7 @@
             clearSupplierErrors();
             $('input[name="status"][value="1"]').prop('checked', true);
             resetSupplierLocationFields();
-            $('#supplier_broker_id').val('');
+            $('#supplier_broker_ids').val(null).trigger('change');
             $('#supplierModal').modal('show');
         });
 
@@ -751,7 +816,10 @@
                 $('#supplierModalTitle').text('Edit Supplier');
                 $('#supplierSubmitBtn').text('Update');
                 $('input[name="supplier_id"]').val(data.id);
-                $('#supplier_broker_id').val(data.supplier_broker_id);
+                var brokerIds = (data.supplier_brokers || []).map(function (broker) {
+                    return String(broker.id);
+                });
+                $('#supplier_broker_ids').val(brokerIds).trigger('change');
                 $('input[name="name"]').val(data.name);
                 $('input[name="mobile"]').val(data.mobile);
                 $('input[name="email"]').val(data.email);
@@ -784,7 +852,7 @@
                 data: $(this).serialize() + '&_method=' + method,
                 success: function(response) {
                     $('#supplierModal').modal('hide');
-                    supplier_table.ajax.reload();
+                    supplier_table.ajax.reload(null, false);
                     show_success(response.message);
                 },
                 error: function(response) {
@@ -859,7 +927,7 @@
                         },
                         success: function(response) {
                             show_success(response.message);
-                            supplier_table.ajax.reload();
+                            supplier_table.ajax.reload(null, false);
                             $('#bulk_delete_button').hide();
                             $('#select-all').prop('checked', false);
                         },
@@ -879,11 +947,28 @@
 
         function displaySupplierErrors(errors) {
             $.each(errors, function(key, value) {
-                $('input[name="' + key + '"], select[name="' + key + '"], textarea[name="' + key + '"]').addClass(
-                    'is-invalid');
-                $('.' + key + '_error').text(value[0]);
+                var field = String(key).replace(/\.\d+$/, '');
+                $('#supplierForm').find('[name="' + field + '"], [name="' + field + '[]"]').addClass('is-invalid');
+                $('.' + field + '_error').text(value[0]);
             });
         }
+
+        function initSupplierBrokerSelect() {
+            var $brokers = $('#supplier_broker_ids');
+            if ($brokers.hasClass('select2-hidden-accessible')) {
+                $brokers.select2('destroy');
+            }
+            $brokers.select2({
+                width: '100%',
+                placeholder: 'Select Supplier Brokers',
+                dropdownParent: $('#supplierModal'),
+                closeOnSelect: false
+            });
+        }
+
+        $('#supplierModal').on('shown.bs.modal', function () {
+            initSupplierBrokerSelect();
+        });
     });
     </script>
 @endsection

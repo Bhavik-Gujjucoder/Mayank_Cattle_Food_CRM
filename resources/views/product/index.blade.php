@@ -204,7 +204,9 @@ withDataTable(function () {
             d.brand_id = $('#BrandId').val();
         }
     });
-    var product_table = $('#product_table').DataTable({
+    var product_table = $('#product_table').DataTable($.extend({}, dataTablePageMemory('#product_table', [
+        { selector: '#BrandId', key: 'brand_id', select2: true }
+    ], '#customSearch'), {
         pageLength: 10,
         deferRender: true,
         processing: true,
@@ -268,8 +270,9 @@ withDataTable(function () {
                 visible: isShowAction
             },
         ]
-    });
+    }));
     productAjax._bindTable(product_table);
+    keepDataTablePage(product_table);
 
     /* Brand */
     $('#BrandId').on('change', function() {
@@ -360,7 +363,7 @@ withDataTable(function () {
             data: $(this).serialize() + '&_method=' + method,
             success: function(response) {
                 $('#adminModal').modal('hide');
-                product_table.ajax.reload();
+                product_table.ajax.reload(null, false);
                 show_success(response.message);
             },
             error: function(response) {
@@ -425,7 +428,7 @@ withDataTable(function () {
                     },
                     success: function(response) {
                         show_success(response.message);
-                        product_table.ajax.reload();
+                        product_table.ajax.reload(null, false);
                         $('#bulk_delete_button').hide();
                         $('#select-all').prop('checked', false);
                     },

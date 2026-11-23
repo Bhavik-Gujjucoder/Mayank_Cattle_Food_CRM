@@ -166,7 +166,9 @@ withDataTable(function () {
             d.transporter_id = $('#filterTransporter').val();
         }
     });
-    var truck_table = $('#truck_table').DataTable({
+    var truck_table = $('#truck_table').DataTable($.extend({}, dataTablePageMemory('#truck_table', [
+        { selector: '#filterTransporter', key: 'transporter_id', select2: true }
+    ], '#customSearch'), {
         pageLength: 10,
         deferRender: true,
         processing:  true,
@@ -184,8 +186,9 @@ withDataTable(function () {
             { data: 'status',         name: 'status',         searchable: false },
             { data: 'action',         name: 'action',         orderable: false, searchable: false, visible: isShowAction },
         ]
-    });
+    }));
     truckAjax._bindTable(truck_table);
+    keepDataTablePage(truck_table);
 
     /* ── Filters ────────────────────────────────────────────────── */
     $('#filterTransporter').on('change', function() { truck_table.draw(); });
@@ -252,7 +255,7 @@ withDataTable(function () {
             data: $(this).serialize() + '&_method=' + method,
             success: function(response) {
                 $('#truckModal').modal('hide');
-                truck_table.ajax.reload();
+                truck_table.ajax.reload(null, false);
                 show_success(response.message);
             },
             error: function(response) {
@@ -297,7 +300,7 @@ withDataTable(function () {
                     data:   { ids: selectedIds, _token: '{{ csrf_token() }}' },
                     success: function(response) {
                         show_success(response.message);
-                        truck_table.ajax.reload();
+                        truck_table.ajax.reload(null, false);
                         $('#bulk_delete_button').hide();
                         $('#select-all').prop('checked', false);
                     },

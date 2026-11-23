@@ -187,7 +187,12 @@ withDataTable(function () {
             d.date_to = $('#dateTo').val();
         }
     });
-    var raw_material_order_table = $('#raw_material_order_table').DataTable({
+    var raw_material_order_table = $('#raw_material_order_table').DataTable($.extend({}, dataTablePageMemory('#raw_material_order_table', [
+        { selector: '#statusFilter', key: 'status', select2: true },
+        { selector: '#supplierFilter', key: 'supplier_id', select2: true },
+        { selector: '#dateFrom', key: 'date_from' },
+        { selector: '#dateTo', key: 'date_to' }
+    ], '#customSearch'), {
         pageLength: 10,
         deferRender: true,
         processing: true,
@@ -219,8 +224,9 @@ withDataTable(function () {
                 $('#exportOrdersBtn').html('<i class="ti ti-file-export me-2"></i>Export Orders (' + n + ')');
             }
         }
-    });
+    }));
     rawMaterialOrderAjax._bindTable(raw_material_order_table);
+    keepDataTablePage(raw_material_order_table);
 
     $('#statusFilter, #supplierFilter').on('change', function () {
         syncFilterUrl();
@@ -323,7 +329,7 @@ withDataTable(function () {
                 },
                 success: function (response) {
                     show_success(response.message);
-                    raw_material_order_table.ajax.reload();
+                    raw_material_order_table.ajax.reload(null, false);
                     $('#bulk_delete_button').hide();
                     $('#select-all').prop('checked', false);
                 },

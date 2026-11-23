@@ -99,6 +99,123 @@ window.buildDataTableAjax = function (url, options) {
 /**
  * Debounced DataTables search — reduces AJAX calls while typing on slow networks.
  */
+/**
+ * Restore the list page, search, and filters before a table is created.
+ * Does not use DataTables stateSave, which was hiding every row.
+ */
+window.dataTablePageMemory = function (tableSelector, filters, searchSelector) {
+    filters = filters || [];
+    var tableId = String(tableSelector || '').replace('#', '');
+    var legacyPrefix = 'DataTables_' + tableId + '_';
+
+    try {
+        for (var i = localStorage.length - 1; i >= 0; i--) {
+            var storageKey = localStorage.key(i);
+            if (storageKey && storageKey.indexOf(legacyPrefix) === 0) {
+                localStorage.removeItem(storageKey);
+            }
+        }
+    } catch (e) {}
+
+    var memoryKey = 'list-page:' + window.location.pathname + ':' + tableId;
+    var saved = {};
+    try {
+        saved = JSON.parse(sessionStorage.getItem(memoryKey) || '{}') || {};
+    } catch (e) {
+        saved = {};
+    }
+
+    var filterValues = saved.filters || {};
+    filters.forEach(function (filter) {
+        if (filterValues[filter.key] === undefined || filterValues[filter.key] === '') {
+            return;
+        }
+        var $field = $(filter.selector);
+        if (!$field.length) {
+            return;
+        }
+        $field.val(filterValues[filter.key]);
+        if (filter.select2 && $field.hasClass('select2-hidden-accessible')) {
+            $field.trigger('change.select2');
+        }
+    });
+
+    if (searchSelector && saved.search) {
+        $(searchSelector).val(saved.search);
+    }
+
+    $(tableSelector).data('listPageMemory', {
+        key: memoryKey,
+        filters: filters,
+        searchSelector: searchSelector || ''
+    });
+
+    var page = parseInt(saved.page, 10);
+    var length = parseInt(saved.length, 10);
+    if (isNaN(page) || page < 0) {
+        page = 0;
+    }
+    if (isNaN(length) || length < 1) {
+        length = 10;
+    }
+
+    var options = {};
+    if (page > 0) {
+        options.displayStart = page * length;
+    }
+    if (saved.search) {
+        options.search = { search: saved.search };
+    }
+
+    return options;
+};
+
+/** Remember the current page, and step back when a delete leaves the page empty. */
+window.keepDataTablePage = function (table) {
+    var $node = $(table.table().node());
+    var memory = $node.data('listPageMemory') || {};
+    var memoryKey = memory.key;
+    var filters = memory.filters || [];
+    var searchSelector = memory.searchSelector || '';
+    var adjusting = false;
+
+    function persist() {
+        if (!memoryKey) {
+            return;
+        }
+        var info = table.page.info();
+        var filterValues = {};
+        filters.forEach(function (filter) {
+            filterValues[filter.key] = $(filter.selector).val() || '';
+        });
+        try {
+            sessionStorage.setItem(memoryKey, JSON.stringify({
+                page: info.page,
+                length: info.length,
+                search: searchSelector ? ($(searchSelector).val() || '') : (table.search() || ''),
+                filters: filterValues
+            }));
+        } catch (e) {}
+    }
+
+    table.on('draw.dt', function () {
+        persist();
+        if (adjusting) {
+            adjusting = false;
+            return;
+        }
+        var info = table.page.info();
+        var pageLength = info.length || 10;
+        if (info.page > 0 && info.recordsDisplay <= info.page * pageLength) {
+            var lastPage = Math.max(0, Math.ceil(info.recordsDisplay / pageLength) - 1);
+            if (lastPage !== info.page) {
+                adjusting = true;
+                table.page(lastPage).draw('page');
+            }
+        }
+    });
+};
+
 window.bindDebouncedDataTableSearch = function (selector, dataTableApi, delayMs) {
     delayMs = delayMs || 400;
     var timer;

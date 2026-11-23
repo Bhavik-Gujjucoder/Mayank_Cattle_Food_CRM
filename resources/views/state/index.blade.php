@@ -123,7 +123,7 @@ withDataTable(function () {
     const isShowAction = {{ auth()->user()->canAny(['edit-state', 'delete-state'])? 'true': 'false' }};
     const isShowCheckbox = {{ auth()->user()->can('delete-state')? 'true': 'false' }};
     var stateAjax = buildDataTableAjax("{{ route('state.index') }}");
-    var state_table = $('#state_table').DataTable({
+    var state_table = $('#state_table').DataTable($.extend({}, dataTablePageMemory('#state_table', [], '#customSearch'), {
         "pageLength": 10,
         deferRender: true, // Prevents unnecessary DOM rendering
         processing: true,
@@ -175,8 +175,9 @@ withDataTable(function () {
             },
         ],
 
-    });
+    }));
     stateAjax._bindTable(state_table);
+    keepDataTablePage(state_table);
 
     // Custom Search Box
     bindDebouncedDataTableSearch('#customSearch', state_table);
@@ -227,7 +228,7 @@ withDataTable(function () {
             data: $(this).serialize() + "&_method=" + method,
             success: function(response) {
                 $('#adminModal').modal('hide');
-                state_table.ajax.reload();
+                state_table.ajax.reload(null, false);
                 show_success(response.message);
             },
             error: function(response) {
@@ -293,7 +294,7 @@ withDataTable(function () {
                         // Swal.fire("Deleted!", response.message, "success");
                         show_success(response.message);
                         // Optionally, reload the page to reflect changes
-                        state_table.ajax.reload();
+                        state_table.ajax.reload(null, false);
                         // location.reload();
                         $('#bulk_delete_button').hide();
                     },

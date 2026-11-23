@@ -113,7 +113,7 @@
 <script>
 withDataTable(function () {
     var rolesAjax = buildDataTableAjax("{{ route('roles.index') }}");
-    var roles_table = $('#roles').DataTable({
+    var roles_table = $('#roles').DataTable($.extend({}, dataTablePageMemory('#roles', [], '#customSearch'), {
         "pageLength": 10,
         deferRender: true, // Prevents unnecessary DOM rendering
         processing: true,
@@ -187,8 +187,9 @@ withDataTable(function () {
         ]
 
 
-    });
+    }));
     rolesAjax._bindTable(roles_table);
+    keepDataTablePage(roles_table);
 
     /*** Custom Search Box ***/
     bindDebouncedDataTableSearch('#customSearch', roles_table);

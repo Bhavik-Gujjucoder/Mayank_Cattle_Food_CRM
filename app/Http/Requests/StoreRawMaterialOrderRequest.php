@@ -48,7 +48,7 @@ class StoreRawMaterialOrderRequest extends FormRequest
             }
 
             $supplier = Supplier::query()->find($this->input('supplier_id'));
-            if (! $supplier || (int) $supplier->supplier_broker_id !== (int) $this->input('supplier_broker_id')) {
+            if (! $supplier || ! $supplier->belongsToBroker((int) $this->input('supplier_broker_id'))) {
                 $validator->errors()->add('supplier_id', 'Selected supplier does not belong to the chosen supplier broker.');
             }
         });
