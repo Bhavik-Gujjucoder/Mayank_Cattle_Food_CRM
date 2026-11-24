@@ -2,11 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\RawMaterialFullExport;
 use App\Exports\RawMaterialOrderImportSampleExport;
-use App\Exports\RawMaterialOrderSingleExport;
-use App\Exports\RawMaterialOrdersExport;
-use App\Http\Controllers\Concerns\ExportsExcel;
+use App\Exports\RawMaterialOrderReportExport;
 use App\Http\Requests\StoreRawMaterialOrderRequest;
 use App\Http\Requests\UpdateRawMaterialOrderRequest;
 use App\Jobs\ExportRawMaterialFullPdfJob;
@@ -19,6 +16,7 @@ use App\Models\Supplier;
 use App\Models\SupplierBroker;
 use App\Support\RawMaterialOrderPriceBasis;
 use App\Services\RawMaterial\RawMaterialFilterService;
+use App\Support\RawMaterialOrderExportRows;
 use App\Services\RawMaterialIdGenerator;
 use App\Services\RawMaterialOrderBulkImportService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -31,12 +29,11 @@ use Yajra\DataTables\DataTables;
 
 class RawMaterialOrderController extends Controller
 {
-    use ExportsExcel;
-
     public function index(Request $request)
     {
         $data['page_title'] = 'Raw Material — Orders';
         $data['suppliers']  = Supplier::where('status', 1)->orderBy('name')->get();
+        $data['materials']  = RawMaterial::where('status', 1)->orderBy('name')->get();
 
         if ($request->ajax()) {
             $canView   = auth()->user()->can('view-raw-material-purchas-order');
@@ -347,40 +344,35 @@ class RawMaterialOrderController extends Controller
 
     public function export(Request $request)
     {
-        return $this->downloadExcel(
-            $request,
-            RawMaterialFilterService::orders($request),
-            RawMaterialOrdersExport::class,
-            'raw-material-orders'
-        );
+        $query = RawMaterialFilterService::orders($request);
+        $orderIds = (clone $query)->pluck('id')->all();
+
+        if ($orderIds === []) {
+            return redirect()->back()->with('error', 'No records found to export for the current filters.');
+        }
+
+        return $this->downloadReportExcel($orderIds, 'Raw Material Orders', 'raw-material-orders-' . now()->format('Y-m-d') . '.xlsx');
     }
 
     public function exportListPdf(Request $request)
     {
         $query = RawMaterialFilterService::orders($request);
-        $count = (clone $query)->count();
+        $orderIds = (clone $query)->pluck('id')->all();
 
-        if ($count === 0) {
+        if ($orderIds === []) {
             return redirect()->back()->with('error', 'No records found to export for the current filters.');
         }
 
-        $orders   = $query->with(['supplier', 'supplierBroker'])->get();
-        $filename = 'raw-material-orders-' . now()->format('Y-m-d') . '.pdf';
-
-        $pdf = Pdf::loadView('raw_material_order.pdf_orders_list', compact('orders'))
-            ->setPaper('a4', 'landscape');
-
-        return $pdf->download($filename);
+        return $this->downloadReportPdf($orderIds, 'Raw Material Orders', 'raw-material-orders-' . now()->format('Y-m-d') . '.pdf');
     }
 
     public function exportFull()
     {
-        $count    = $this->fullExportRecordCount();
+        $count = RawMaterialOrder::count();
         $filename = 'raw-material-full-export-' . now()->format('Y-m-d') . '.xlsx';
-        $export   = new RawMaterialFullExport();
 
         if ($count > 1000) {
-            Excel::queue($export, $filename);
+            Excel::queue(new RawMaterialOrderReportExport(null, 'Raw Material Orders — Full Export'), $filename);
 
             return redirect()->back()->with(
                 'success',
@@ -388,12 +380,12 @@ class RawMaterialOrderController extends Controller
             );
         }
 
-        return Excel::download($export, $filename);
+        return Excel::download(new RawMaterialOrderReportExport(null, 'Raw Material Orders — Full Export'), $filename);
     }
 
     public function exportFullPdf()
     {
-        $count    = $this->fullExportRecordCount();
+        $count = RawMaterialOrder::count();
         $filename = 'raw-material-full-export-' . now()->format('Y-m-d') . '.pdf';
 
         if ($count > 1000) {
@@ -405,61 +397,74 @@ class RawMaterialOrderController extends Controller
             );
         }
 
-        $data = $this->fullExportData();
-        $pdf  = Pdf::loadView('raw_material_order.pdf_full_export', $data)
-            ->setPaper('a4', 'landscape');
-
-        return $pdf->download($filename);
-    }
-
-    /** @return array{orders: \Illuminate\Support\Collection, items: \Illuminate\Support\Collection, receives: \Illuminate\Support\Collection} */
-    protected function fullExportData(): array
-    {
-        return [
-            'orders'   => RawMaterialOrder::with(['supplier', 'supplierBroker'])->orderByDesc('id')->get(),
-            'items'    => RawMaterialOrderItem::with(['rawMaterial.category', 'order'])->orderByDesc('id')->get(),
-            'receives' => RawMaterialReceive::with(['rawMaterial', 'order'])->orderByDesc('id')->get(),
-        ];
-    }
-
-    protected function fullExportRecordCount(): int
-    {
-        return max(
-            RawMaterialOrder::count(),
-            RawMaterialOrderItem::count(),
-            RawMaterialReceive::count()
-        );
+        return $this->downloadReportPdf(null, 'Raw Material Orders — Full Export', $filename);
     }
 
     public function exportOrderExcel(RawMaterialOrder $raw_material_order)
     {
         $filename = 'order-' . Str::slug($raw_material_order->order_unique_id, '-') . '.xlsx';
 
-        return Excel::download(new RawMaterialOrderSingleExport($raw_material_order), $filename);
+        return Excel::download(
+            new RawMaterialOrderReportExport([(int) $raw_material_order->id], 'Raw Material Order'),
+            $filename
+        );
     }
 
     public function exportOrderPdf(RawMaterialOrder $raw_material_order)
     {
-        $order = $raw_material_order->load(['supplier', 'items.rawMaterial', 'receives.rawMaterial']);
+        $filename = 'order-' . Str::slug($raw_material_order->order_unique_id, '-') . '.pdf';
 
-        $filename = 'order-' . Str::slug($order->order_unique_id, '-') . '.pdf';
-
-        $pdf = Pdf::loadView('raw_material_order.pdf_order_full', compact('order'))
-            ->setPaper('a4', 'landscape');
-
-        return $pdf->download($filename);
+        return $this->downloadReportPdf([(int) $raw_material_order->id], 'Raw Material Order', $filename);
     }
 
     public function exportPdf(RawMaterialOrder $raw_material_order)
     {
-        $order = $raw_material_order->load(['supplier', 'supplierBroker', 'items.rawMaterial.category']);
+        $filename = 'purchase-order-' . Str::slug($raw_material_order->order_unique_id, '-') . '.pdf';
 
-        $filename = 'purchase-order-' . Str::slug($order->order_unique_id, '-') . '.pdf';
+        return $this->downloadReportPdf([(int) $raw_material_order->id], 'Raw Material Order', $filename);
+    }
 
-        $pdf = Pdf::loadView('raw_material_order.pdf', compact('order'))
-            ->setPaper('a4', 'portrait');
+    /** @param  list<int>|null  $orderIds */
+    protected function downloadReportExcel(array $orderIds, string $title, string $filename)
+    {
+        $export = new RawMaterialOrderReportExport($orderIds, $title);
 
-        return $pdf->download($filename);
+        if (count($orderIds) > 1000) {
+            Excel::queue($export, $filename);
+
+            return redirect()->back()->with(
+                'success',
+                'Export queued for ' . count($orderIds) . ' records. Ensure the queue worker is running to generate the file.'
+            );
+        }
+
+        return Excel::download($export, $filename);
+    }
+
+    /** @param  list<int>|null  $orderIds */
+    protected function downloadReportPdf(?array $orderIds, string $title, string $filename)
+    {
+        $query = RawMaterialOrder::query()
+            ->with([
+                'supplier',
+                'supplierBroker',
+                'items.rawMaterial.category',
+                'receives',
+            ])
+            ->orderByDesc('id');
+
+        if ($orderIds !== null) {
+            $query->whereIn('id', $orderIds);
+        }
+
+        $built = RawMaterialOrderExportRows::build($query->get());
+
+        return Pdf::loadView('raw_material_order.pdf_report', [
+            'title' => $title,
+            'lineHeadings' => RawMaterialOrderExportRows::lineHeadings(),
+            'receiveHeadings' => RawMaterialOrderExportRows::receiveHeadings(),
+            'groups' => $built['groups'],
+        ])->setPaper('a4', 'landscape')->download($filename);
     }
 
     protected static function normalizeSupplierOrderId(Request $request): ?string

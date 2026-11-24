@@ -75,6 +75,9 @@ class RawMaterialFilterService
         if ($request->filled('supplier_id') && $request->supplier_id !== 'all') {
             $query->where('supplier_id', $request->supplier_id);
         }
+        if ($request->filled('raw_material_id') && $request->raw_material_id !== 'all') {
+            $query->whereHas('items', fn ($items) => $items->where('raw_material_id', $request->raw_material_id));
+        }
         if ($request->filled('date_from')) {
             $query->where('order_date', '>=', $request->date_from);
         }

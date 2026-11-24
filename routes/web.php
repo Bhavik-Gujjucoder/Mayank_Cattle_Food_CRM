@@ -152,6 +152,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('order.destroy')->middleware('permission:delete-order');
     Route::post('order-bulk-delete', [OrderManagementController::class, 'bulkDelete'])
         ->name('order.bulkDelete')->middleware('permission:delete-order');
+    Route::get('order-export', [OrderManagementController::class, 'export'])
+        ->name('order.export')->middleware('permission:view-order');
+    Route::get('order-export-pdf', [OrderManagementController::class, 'exportPdf'])
+        ->name('order.export-pdf')->middleware('permission:view-order');
+    Route::get('order-export-full', [OrderManagementController::class, 'exportFull'])
+        ->name('order.export-full')->middleware('permission:view-order');
+    Route::get('order-export-full-pdf', [OrderManagementController::class, 'exportFullPdf'])
+        ->name('order.export-full-pdf')->middleware('permission:view-order');
 
 
     /* ------------------------------------------------------------------ */

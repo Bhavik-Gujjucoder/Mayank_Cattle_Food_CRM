@@ -37,6 +37,15 @@
                     </select>
                 </div>
                 <div class="common-hed-form cls-form-select-input">
+                    <label class="col-form-label">Material</label>
+                    <select class="form-select select search-dropdown" id="materialFilter">
+                        <option value="all">All Materials</option>
+                        @foreach ($materials as $material)
+                            <option value="{{ $material->id }}">{{ $material->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="common-hed-form cls-form-select-input">
                     <label class="col-form-label">From Date</label>
                     <div class="icon-form">
                         <span class="form-icon"><i class="ti ti-calendar-check"></i></span>
@@ -161,7 +170,7 @@
 withDataTable(function () {
     $('.search-dropdown').select2({ placeholder: 'Select', width: '100%' });
 
-    const filterParams = { status: '#statusFilter', supplier_id: '#supplierFilter', date_from: '#dateFrom', date_to: '#dateTo' };
+    const filterParams = { status: '#statusFilter', supplier_id: '#supplierFilter', raw_material_id: '#materialFilter', date_from: '#dateFrom', date_to: '#dateTo' };
     const urlParams = new URLSearchParams(window.location.search);
     Object.entries(filterParams).forEach(function ([key, selector]) {
         if (urlParams.has(key)) $(selector).val(urlParams.get(key));
@@ -183,6 +192,7 @@ withDataTable(function () {
         data: function (d) {
             d.status = $('#statusFilter').val();
             d.supplier_id = $('#supplierFilter').val();
+            d.raw_material_id = $('#materialFilter').val();
             d.date_from = $('#dateFrom').val();
             d.date_to = $('#dateTo').val();
         }
@@ -190,6 +200,7 @@ withDataTable(function () {
     var raw_material_order_table = $('#raw_material_order_table').DataTable($.extend({}, dataTablePageMemory('#raw_material_order_table', [
         { selector: '#statusFilter', key: 'status', select2: true },
         { selector: '#supplierFilter', key: 'supplier_id', select2: true },
+        { selector: '#materialFilter', key: 'raw_material_id', select2: true },
         { selector: '#dateFrom', key: 'date_from' },
         { selector: '#dateTo', key: 'date_to' }
     ], '#customSearch'), {
@@ -228,7 +239,7 @@ withDataTable(function () {
     rawMaterialOrderAjax._bindTable(raw_material_order_table);
     keepDataTablePage(raw_material_order_table);
 
-    $('#statusFilter, #supplierFilter').on('change', function () {
+    $('#statusFilter, #supplierFilter, #materialFilter').on('change', function () {
         syncFilterUrl();
         raw_material_order_table.draw();
     });
@@ -279,7 +290,7 @@ withDataTable(function () {
         raw_material_order_table.search('');
         dateFromPicker.clear();
         dateToPicker.clear();
-        $('#statusFilter, #supplierFilter').val('all');
+        $('#statusFilter, #supplierFilter, #materialFilter').val('all');
         $('.search-dropdown').trigger('change.select2');
         syncFilterUrl();
         raw_material_order_table.draw();

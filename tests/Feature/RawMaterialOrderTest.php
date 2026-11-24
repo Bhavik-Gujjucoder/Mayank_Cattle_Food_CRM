@@ -191,6 +191,20 @@ describe('access-control', function () {
             ->assertOk();
     });
 
+    it('shows only active materials in the order list filter', function () {
+        $category = mkRmoCategory();
+        $active = mkRmoMaterial($category->id);
+        $inactive = mkRmoMaterial($category->id);
+        $inactive->update(['status' => 0, 'name' => 'InactiveMat-' . uniqid()]);
+
+        actingAs(rmoActor(['view-raw-material-purchas-order']))
+            ->get(route('raw-material.order.index'))
+            ->assertOk()
+            ->assertSee('id="materialFilter"', false)
+            ->assertSee($active->name, false)
+            ->assertDontSee($inactive->name, false);
+    });
+
     it('returns 403 on create without add-raw-material-purchas-order', function () {
         actingAs(rmoActor(['view-raw-material-purchas-order']))
             ->get(route('raw-material.order.create'))
@@ -275,6 +289,42 @@ describe('index', function () {
         $response = actingAs(rmoActor(['view-raw-material-purchas-order']))
             ->withHeaders(['X-Requested-With' => 'XMLHttpRequest'])
             ->getJson(route('raw-material.order.index', ['status' => 2]))
+            ->assertOk();
+
+        expect($response->json('recordsFiltered'))->toBe(1);
+    });
+
+    it('places each receive under its material in the order export', function () {
+        $s = rmoSetup();
+        RawMaterialReceive::create([
+            'raw_material_id' => $s['material']->id,
+            'raw_material_order_id' => $s['order']->id,
+            'raw_material_order_item_id' => $s['item']->id,
+            'qty' => 2.5,
+            'freight' => 100,
+            'received_date' => '2026-08-01',
+            'status' => 1,
+        ]);
+
+        $order = $s['order']->fresh()->load(['supplier', 'supplierBroker', 'items.rawMaterial.category', 'receives']);
+        $built = \App\Support\RawMaterialOrderExportRows::build(collect([$order]));
+        $receive = $built['groups'][0]['materials'][0]['receives'][0];
+
+        expect($built['groups'][0]['materials'][0]['line'][1])->toBe($s['material']->name)
+            ->and($receive[0])->toBe('01-08-2026')
+            ->and($receive[1])->toEqual(2.5)
+            ->and($receive[4])->toBe('Received');
+    });
+
+    it('filters orders by active material in AJAX response', function () {
+        $s = rmoSetup();
+        $otherMaterial = mkRmoMaterial($s['category']->id);
+        $otherOrder = mkRmoOrder($s['broker']->id, $s['supplier']->id);
+        mkRmoOrderItem($otherOrder->id, $otherMaterial->id);
+
+        $response = actingAs(rmoActor(['view-raw-material-purchas-order']))
+            ->withHeaders(['X-Requested-With' => 'XMLHttpRequest'])
+            ->getJson(route('raw-material.order.index', ['raw_material_id' => $s['material']->id]))
             ->assertOk();
 
         expect($response->json('recordsFiltered'))->toBe(1);
@@ -974,6 +1024,16 @@ describe('export', function () {
             ->get(route('raw-material.order.export-list-pdf'))
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
+    });
+
+    it('applies the material filter to the PDF list export', function () {
+        $s = rmoSetup();
+        $otherMaterial = mkRmoMaterial($s['category']->id);
+
+        actingAs(rmoActor(['export-raw-material-purchas-order']))
+            ->get(route('raw-material.order.export-list-pdf', ['raw_material_id' => $otherMaterial->id]))
+            ->assertRedirect()
+            ->assertSessionHas('error');
     });
 
     it('redirects with error when no orders exist for PDF list export', function () {
