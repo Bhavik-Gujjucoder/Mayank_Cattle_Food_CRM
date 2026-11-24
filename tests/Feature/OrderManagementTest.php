@@ -464,9 +464,14 @@ describe('index', function () {
         expect($filteredBook->getSheetCount())->toBe(1);
         $filteredSheet = $filteredBook->getSheet(0);
         $filteredText = sodaSheetText($filteredSheet);
-        $bagRow = collect($filteredSheet->toArray())->first(fn ($row) => ($row[0] ?? '') === 'Total number of bags');
+        $rows = collect($filteredSheet->toArray());
+        $bagRow = $rows->first(fn ($row) => ($row[0] ?? '') === 'Total number of bags');
+        $dispatchedRow = $rows->first(fn ($row) => ($row[0] ?? '') === 'Total number of dispatch bags');
         expect($bagRow)->not->toBeNull()
+            ->and($bagRow[1])->not->toBeNull()
             ->and((int) $bagRow[1])->toBe(10)
+            ->and($dispatchedRow[1])->not->toBeNull()
+            ->and((int) $dispatchedRow[1])->toBe(0)
             ->and($filteredText)->toContain('ORD/MATCH')
             ->and(str_contains($filteredText, 'ORD/SKIP'))->toBeFalse();
 
