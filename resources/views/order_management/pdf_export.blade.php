@@ -18,9 +18,11 @@
         table.data th { background: #d6e4f5; color: #014e9c; font-weight: bold; text-align: left; padding: 4px; border: 1px solid #b9cfe6; font-size: 8px; }
         table.data td { padding: 4px; border: 1px solid #e2e8f0; font-size: 8px; }
         table.dispatch th { background: #eef3f9; color: #3e6eaf; }
-        table.cards { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-        table.cards th { background: #3e6eaf; color: #fff; font-weight: bold; text-align: left; padding: 5px 4px; border: 1px solid #3e6eaf; font-size: 8px; }
-        table.cards td { padding: 4px; border: 1px solid #d6e4f5; font-size: 8px; }
+        table.cards { width: 260px; border-collapse: collapse; margin-bottom: 8px; }
+        table.cards th { background: #3e6eaf; color: #fff; font-weight: bold; text-align: left; padding: 5px 6px; border: 1px solid #3e6eaf; font-size: 8px; }
+        table.cards td { padding: 4px 6px; border: 1px solid #d6e4f5; font-size: 8px; }
+        table.cards .metric { width: 190px; }
+        table.cards .value { width: 70px; }
         .pad { padding: 6px 8px 8px; }
     </style>
 </head>
@@ -33,7 +35,7 @@
         <thead>
             <tr>
                 @foreach ($cardHeadings as $heading)
-                    <th>{{ $heading }}</th>
+                    <th class="{{ $loop->first ? 'metric' : 'value' }}">{{ $heading }}</th>
                 @endforeach
             </tr>
         </thead>
@@ -41,7 +43,7 @@
             @forelse ($cards as $row)
                 <tr>
                     @foreach ($row as $cell)
-                        <td>{{ $cell }}</td>
+                        <td class="{{ $loop->first ? 'metric' : 'value' }}">{{ $cell }}</td>
                     @endforeach
                 </tr>
             @empty
