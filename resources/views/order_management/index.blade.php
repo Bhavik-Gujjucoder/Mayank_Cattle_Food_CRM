@@ -401,6 +401,15 @@
                         </select>
                     </div>
                 @endif
+                <div class="common-hed-form cls-form-select-input">
+                    <label class="col-form-label">Product</label>
+                    <select class="form-select select search-dropdown" name="product_id" id="productFilter">
+                        <option value="all">All Products</option>
+                        @foreach ($products as $product)
+                            <option value="{{ $product->id }}">{{ $product->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 @if (\App\Support\SalesScope::showDealerFilter())
                     <div class="common-hed-form cls-form-select-input">
                         <label class="col-form-label">Dealer</label>
@@ -423,6 +432,42 @@
             </div>
             <div class="cls-form-right">
                 <div class="comm-header-right-btn">
+                    @can('view-order')
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="exportOrdersBtn">
+                                <i class="ti ti-file-export me-2"></i>Export (0)
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('order.export') }}">
+                                        <i class="ti ti-file-spreadsheet me-2"></i>Export Excel
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('order.export-pdf') }}">
+                                        <i class="ti ti-file-type-pdf me-2"></i>Export PDF
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="ti ti-database-export me-2"></i>Full Export
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('order.export-full') }}">
+                                        <i class="ti ti-file-spreadsheet me-2"></i>Export Excel
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('order.export-full-pdf') }}">
+                                        <i class="ti ti-file-type-pdf me-2"></i>Export PDF
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    @endcan
                     @can('add-order')
                         <a href="{{ route('order.import-sample') }}" class="btn btn-outline-primary">
                             <i class="ti ti-download me-1"></i>Sample Excel
@@ -661,6 +706,7 @@
                 if ($('#dealerFilter').length) {
                     d.dealer_id = $('#dealerFilter').val() || 'all';
                 }
+                d.product_id = $('#productFilter').val() || 'all';
                 d.date_from = $('#orderDateFrom').val() || '';
                 d.date_to   = $('#orderDateTo').val() || '';
                 d.payment_status = $('#paymentStatusFilter').val() || 'all';
@@ -682,6 +728,7 @@
             { selector: '#broker_id', key: 'broker_id', select2: true },
             { selector: '#BrandId', key: 'brand_id', select2: true },
             { selector: '#dealerFilter', key: 'dealer_id', select2: true },
+            { selector: '#productFilter', key: 'product_id', select2: true },
             { selector: '#orderDateFrom', key: 'date_from' },
             { selector: '#orderDateTo', key: 'date_to' },
             { selector: '#paymentStatusFilter', key: 'payment_status', select2: true }
@@ -793,6 +840,10 @@
             drawCallback: function() {
                 restoreExpandedOrderRows();
                 order_table.columns.adjust();
+                if ($('#exportOrdersBtn').length) {
+                    var n = order_table.page.info().recordsDisplay;
+                    $('#exportOrdersBtn').html('<i class="ti ti-file-export me-2"></i>Export (' + n + ')');
+                }
             }
         }));
         orderAjax._bindTable(order_table);
@@ -845,8 +896,42 @@
             },
         });
 
+        function buildOrderExportQuery() {
+            var params = new URLSearchParams();
+            var fields = {
+                broker_id: '#broker_id',
+                brand_id: '#BrandId',
+                dealer_id: '#dealerFilter',
+                product_id: '#productFilter',
+                payment_status: '#paymentStatusFilter',
+                date_from: '#orderDateFrom',
+                date_to: '#orderDateTo'
+            };
+            Object.keys(fields).forEach(function(key) {
+                var $field = $(fields[key]);
+                if (!$field.length) {
+                    return;
+                }
+                var value = $field.val();
+                if (value && value !== 'all') {
+                    params.set(key, value);
+                }
+            });
+            var search = order_table.search();
+            if (search) {
+                params.set('search', search);
+            }
+            return params.toString();
+        }
+
+        $(document).on('click', '.export-filtered-link', function(e) {
+            e.preventDefault();
+            var qs = buildOrderExportQuery();
+            window.location.href = $(this).data('export-url') + (qs ? ('?' + qs) : '');
+        });
+
         /* Broker / Brand / Dealer filters */
-        $('#paymentStatusFilter, #broker_id, #BrandId, #dealerFilter').on('change', function() {
+        $('#paymentStatusFilter, #broker_id, #BrandId, #dealerFilter, #productFilter').on('change', function() {
             order_table.draw();
         });
 
@@ -871,6 +956,7 @@
             if ($('#dealerFilter').length) {
                 $('#dealerFilter').val('all');
             }
+            $('#productFilter').val('all');
 
             $('.search-dropdown').trigger('change.select2');
             expandedOrderIds.clear();

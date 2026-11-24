@@ -3,8 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\RawMaterialOrder;
-use App\Models\RawMaterialOrderItem;
-use App\Models\RawMaterialReceive;
+use App\Support\RawMaterialOrderExportRows;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,17 +22,28 @@ class ExportRawMaterialFullPdfJob implements ShouldQueue
 
     public function handle(): void
     {
-        $orders = RawMaterialOrder::with('supplier')->orderByDesc('id')->get();
-        $items  = RawMaterialOrderItem::with(['rawMaterial', 'order'])->orderByDesc('id')->get();
-        $receives = RawMaterialReceive::with(['rawMaterial', 'order'])->orderByDesc('id')->get();
+        $orders = RawMaterialOrder::query()
+            ->with([
+                'supplier',
+                'supplierBroker',
+                'items.rawMaterial.category',
+                'receives',
+            ])
+            ->orderByDesc('id')
+            ->get();
+
+        $built = RawMaterialOrderExportRows::build($orders);
 
         $directory = storage_path('app/exports');
         if (! File::isDirectory($directory)) {
             File::makeDirectory($directory, 0755, true);
         }
 
-        Pdf::loadView('raw_material_order.pdf_full_export', compact('orders', 'items', 'receives'))
-            ->setPaper('a4', 'landscape')
-            ->save($directory . DIRECTORY_SEPARATOR . $this->filename);
+        Pdf::loadView('raw_material_order.pdf_report', [
+            'title' => 'Raw Material Orders — Full Export',
+            'lineHeadings' => RawMaterialOrderExportRows::lineHeadings(),
+            'receiveHeadings' => RawMaterialOrderExportRows::receiveHeadings(),
+            'groups' => $built['groups'],
+        ])->setPaper('a4', 'landscape')->save($directory . DIRECTORY_SEPARATOR . $this->filename);
     }
 }

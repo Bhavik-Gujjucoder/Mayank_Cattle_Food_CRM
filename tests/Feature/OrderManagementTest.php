@@ -118,6 +118,18 @@ function mkOrder(int $brokerId, int $brandId, int $dealerId, array $attrs = []):
     ], $attrs));
 }
 
+function sodaWorkbook($response): \PhpOffice\PhpSpreadsheet\Spreadsheet
+{
+    return \PhpOffice\PhpSpreadsheet\IOFactory::load($response->baseResponse->getFile()->getPathname());
+}
+
+function sodaSheetText(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet): string
+{
+    return collect($sheet->toArray())
+        ->map(fn ($row) => implode(' ', array_map(fn ($cell) => (string) $cell, $row)))
+        ->implode("\n");
+}
+
 function mkOrderItem(int $orderId, int $productId, array $attrs = []): OrderItem
 {
     return OrderItem::create(array_merge([
@@ -345,13 +357,16 @@ describe('index', function () {
             ->assertViewHas('dealers')
             ->assertSee('Total number of bags')
             ->assertSee('Total number of dispatch bags')
-            ->assertSee('Total number of pending bags');
+            ->assertSee('Total number of pending bags')
+            ->assertSee('All Products')
+            ->assertSee('Full Export')
+            ->assertSee('Export Excel');
     });
 
     it('returns DataTables JSON on AJAX request', function () {
         $actor = ordActor(['view-order']);
         actingAs($actor)
-            ->getJson(route('order.index'), ['X-Requested-With' => 'XMLHttpRequest'])
+            ->getJson(route('order.index').'?draw=1&search[value]=&search[regex]=false', ['X-Requested-With' => 'XMLHttpRequest'])
             ->assertOk()
             ->assertJsonStructure(['data', 'recordsTotal', 'recordsFiltered']);
     });
@@ -385,6 +400,124 @@ describe('index', function () {
             ->assertOk();
 
         expect($response->json('recordsTotal'))->toBe(1);
+    });
+
+    it('AJAX filters orders by an active product', function () {
+        $brand = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $active = mkOrdProduct($brand->id, ['name' => 'Active Feed', 'status' => 1]);
+        $other = mkOrdProduct($brand->id, ['name' => 'Other Feed', 'status' => 1]);
+        $inactive = mkOrdProduct($brand->id, ['name' => 'Inactive Feed', 'status' => 0]);
+        $actor = ordActor(['view-order']);
+
+        $withActive = mkOrder($broker->id, $brand->id, $dealer->id);
+        mkOrderItem($withActive->id, $active->id);
+        $withOther = mkOrder($broker->id, $brand->id, $dealer->id);
+        mkOrderItem($withOther->id, $other->id);
+        $withInactive = mkOrder($broker->id, $brand->id, $dealer->id);
+        mkOrderItem($withInactive->id, $inactive->id);
+
+        $response = actingAs($actor)
+            ->getJson(route('order.index')."?product_id={$active->id}", ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk();
+
+        expect($response->json('recordsTotal'))->toBe(1)
+            ->and($response->json('data.0.unique_order_id'))->toBe($withActive->unique_order_id);
+
+        $ignored = actingAs($actor)
+            ->getJson(route('order.index')."?product_id={$inactive->id}", ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk();
+
+        expect($ignored->json('recordsTotal'))->toBe(3);
+    });
+
+    it('exports the filtered soda order workbook and keeps full export unfiltered', function () {
+        $brand = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $product = mkOrdProduct($brand->id, ['name' => 'Filter Feed']);
+        $other = mkOrdProduct($brand->id, ['name' => 'Other Feed']);
+        $actor = ordActor(['view-order']);
+
+        $match = mkOrder($broker->id, $brand->id, $dealer->id, [
+            'unique_order_id' => 'ORD/MATCH',
+            'order_date' => '2026-01-15',
+        ]);
+        mkOrderItem($match->id, $product->id, ['qty' => 10]);
+
+        $skip = mkOrder($broker->id, $brand->id, $dealer->id, [
+            'unique_order_id' => 'ORD/SKIP',
+            'order_date' => '2026-03-01',
+        ]);
+        mkOrderItem($skip->id, $other->id, ['qty' => 4]);
+
+        $filtered = actingAs($actor)->get(route('order.export', [
+            'date_from' => '2026-01-01',
+            'date_to' => '2026-01-31',
+            'product_id' => $product->id,
+        ]));
+        $filtered->assertOk()
+            ->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        $filteredBook = sodaWorkbook($filtered);
+        expect($filteredBook->getSheetCount())->toBe(1);
+        $filteredSheet = $filteredBook->getSheet(0);
+        $filteredText = sodaSheetText($filteredSheet);
+        $bagRow = collect($filteredSheet->toArray())->first(fn ($row) => ($row[0] ?? '') === 'Total number of bags');
+        expect($bagRow)->not->toBeNull()
+            ->and((int) $bagRow[1])->toBe(10)
+            ->and($filteredText)->toContain('ORD/MATCH')
+            ->and(str_contains($filteredText, 'ORD/SKIP'))->toBeFalse();
+
+        actingAs($actor)
+            ->get(route('order.export', ['date_from' => '2099-01-01']))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $full = actingAs($actor)->get(route('order.export-full', [
+            'date_from' => '2099-01-01',
+            'product_id' => $product->id,
+        ]));
+        $full->assertOk();
+        $fullBook = sodaWorkbook($full);
+        $fullSheet = $fullBook->getSheet(0);
+        $fullText = sodaSheetText($fullSheet);
+        $fullBags = collect($fullSheet->toArray())->first(fn ($row) => ($row[0] ?? '') === 'Total number of bags');
+        expect($fullBook->getSheetCount())->toBe(1)
+            ->and($fullText)->toContain('ORD/MATCH')
+            ->and($fullText)->toContain('ORD/SKIP')
+            ->and((int) $fullBags[1])->toBe(14);
+    });
+
+    it('downloads filtered and full soda order pdfs', function () {
+        $brand = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $product = mkOrdProduct($brand->id);
+        $actor = ordActor(['view-order']);
+        $order = mkOrder($broker->id, $brand->id, $dealer->id, ['order_date' => '2026-01-15']);
+        mkOrderItem($order->id, $product->id);
+
+        actingAs($actor)
+            ->get(route('order.export-pdf', ['date_from' => '2026-01-01', 'date_to' => '2026-01-31']))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+
+        actingAs($actor)
+            ->get(route('order.export-full-pdf', ['date_from' => '2099-01-01']))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    });
+
+    it('returns 403 for soda order export without view-order', function () {
+        actingAs(ordActor())
+            ->get(route('order.export'))
+            ->assertForbidden();
+
+        actingAs(ordActor())
+            ->get(route('order.export-full'))
+            ->assertForbidden();
     });
 
     it('AJAX filters orders by dealer_id', function () {

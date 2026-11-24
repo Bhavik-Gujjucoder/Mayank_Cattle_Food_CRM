@@ -13,13 +13,16 @@ use App\Support\ActiveDropdownValidation;
 use App\Support\FinancialYear;
 use App\Support\ProductUnit;
 use App\Support\SalesScope;
+use App\Support\SodaOrderExportRows;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\WeeklyReportItem;
 use App\Exports\OrderImportSampleExport;
+use App\Exports\SodaOrderExport;
 use App\Services\OrderBulkImportService;
 use App\Services\PaymentReceivableService;
 use App\Services\SequentialDispatchService;
 use App\Services\WeeklyReportService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -31,7 +34,9 @@ class OrderManagementController extends Controller
     public function __construct(
         private WeeklyReportService $weeklyReportService,
     ) {
-        $this->middleware('permission:view-order')->only(['index', 'listItemsDetail', 'show']);
+        $this->middleware('permission:view-order')->only([
+            'index', 'listItemsDetail', 'show', 'export', 'exportPdf', 'exportFull', 'exportFullPdf',
+        ]);
         $this->middleware('permission:add-order')->only(['create']);
         $this->middleware('permission:edit-order')->only(['edit']);
     }
@@ -50,25 +55,13 @@ class OrderManagementController extends Controller
             $canEdit     = auth()->user()->can('edit-order');
             $canDelete   = auth()->user()->can('delete-order');
 
-            $query = OrderManagement::with([
+            $query = $this->scopedOrderQuery($request, true)->with([
                 'broker', 'brand', 'dealer.user',
                 'items.product', 'items.dispatches',
                 'dispatches.orderItem',
             ]);
-            SalesScope::scopeOrders($query);
 
             $receivableService = app(PaymentReceivableService::class);
-
-            SalesScope::applyBrandFilter($query, $request->input('brand_id'));
-            SalesScope::applyDealerFilter($query, $request->input('dealer_id'));
-            // Broker filter (staff/admin only — scoped users cannot override)
-            if (SalesScope::showBrokerFilter() && $request->has('broker_id') && $request->broker_id !== 'all') {
-                $brokerId = (int) $request->broker_id;
-                if (User::isActiveBroker($brokerId)) {
-                    $query->where('broker_id', $brokerId);
-                }
-            }
-            $query = $this->applyOrderIndexFilters($query, $request);
             $bagSummary = $this->bagSummary(clone $query);
 
             return DataTables::of($query)
@@ -181,6 +174,12 @@ class OrderManagementController extends Controller
                 ->with('bag_summary', $bagSummary)
                 ->make(true);
         }
+
+        $data['products'] = Product::query()
+            ->where('status', 1)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return view('order_management.index', $data);
     }
 
@@ -796,6 +795,130 @@ class OrderManagementController extends Controller
         ]);
     }
 
+    public function export(Request $request)
+    {
+        $query = $this->scopedOrderQuery($request, true);
+        if ((clone $query)->count() === 0) {
+            return redirect()->back()->with('error', 'No records found to export for the current filters.');
+        }
+
+        return Excel::download(
+            new SodaOrderExport($this->bagSummary(clone $query), $this->ordersForExport($query), 'Soda/Order Export'),
+            'soda-orders-' . now()->format('Y-m-d') . '.xlsx'
+        );
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $query = $this->scopedOrderQuery($request, true);
+        if ((clone $query)->count() === 0) {
+            return redirect()->back()->with('error', 'No records found to export for the current filters.');
+        }
+
+        return $this->downloadOrderPdf(
+            $this->bagSummary(clone $query),
+            $this->ordersForExport($query),
+            'Soda/Order Export',
+            'soda-orders-' . now()->format('Y-m-d') . '.pdf'
+        );
+    }
+
+    public function exportFull()
+    {
+        $query = $this->scopedOrderQuery(request(), false);
+
+        return Excel::download(
+            new SodaOrderExport($this->bagSummary(clone $query), $this->ordersForExport($query), 'Soda/Order Full Export'),
+            'soda-orders-full-' . now()->format('Y-m-d') . '.xlsx'
+        );
+    }
+
+    public function exportFullPdf()
+    {
+        $query = $this->scopedOrderQuery(request(), false);
+
+        return $this->downloadOrderPdf(
+            $this->bagSummary(clone $query),
+            $this->ordersForExport($query),
+            'Soda/Order Full Export',
+            'soda-orders-full-' . now()->format('Y-m-d') . '.pdf'
+        );
+    }
+
+    /**
+     * @param  array{ordered: int, dispatched: int, pending: int}  $summary
+     * @param  \Illuminate\Support\Collection<int, OrderManagement>  $orders
+     */
+    private function downloadOrderPdf($summary, $orders, string $title, string $filename)
+    {
+        $rows = SodaOrderExportRows::build($summary, $orders);
+
+        return Pdf::loadView('order_management.pdf_export', [
+            'title' => $title,
+            'cardHeadings' => SodaOrderExportRows::cardHeadings(),
+            'lineHeadings' => SodaOrderExportRows::lineHeadings(),
+            'dispatchHeadings' => SodaOrderExportRows::dispatchHeadings(),
+            'cards' => $rows['cards'],
+            'groups' => $rows['groups'],
+        ])->setPaper('a4', 'landscape')->download($filename);
+    }
+
+    /**
+     * @param  Builder<OrderManagement>  $query
+     * @return \Illuminate\Support\Collection<int, OrderManagement>
+     */
+    private function ordersForExport(Builder $query)
+    {
+        return $query
+            ->with([
+                'broker',
+                'brand',
+                'dealer.user',
+                'items.product',
+                'items.dispatches',
+                'dispatches.orderItem.product',
+                'dispatches.product',
+                'dispatches.transporter',
+            ])
+            ->orderByDesc('order_management.id')
+            ->get();
+    }
+
+    /**
+     * @return Builder<OrderManagement>
+     */
+    private function scopedOrderQuery(Request $request, bool $applyListFilters): Builder
+    {
+        $query = OrderManagement::query();
+        SalesScope::scopeOrders($query);
+
+        if (! $applyListFilters) {
+            return $query;
+        }
+
+        SalesScope::applyBrandFilter($query, $request->input('brand_id'));
+        SalesScope::applyDealerFilter($query, $request->input('dealer_id'));
+        if (SalesScope::showBrokerFilter() && $request->has('broker_id') && $request->broker_id !== 'all') {
+            $brokerId = (int) $request->broker_id;
+            if (User::isActiveBroker($brokerId)) {
+                $query->where('broker_id', $brokerId);
+            }
+        }
+
+        $query = $this->applyOrderIndexFilters($query, $request);
+
+        $search = $request->input('search');
+        if (is_string($search) && trim($search) !== '') {
+            $term = trim($search);
+            $query->where(function (Builder $inner) use ($term) {
+                $inner->where('unique_order_id', 'like', '%' . $term . '%')
+                    ->orWhere('payment_status', 'like', '%' . $term . '%');
+            });
+        }
+
+        return $query;
+    }
+
     /**
      * @param  Builder<OrderManagement>  $query
      * @return Builder<OrderManagement>
@@ -824,6 +947,15 @@ class OrderManagementController extends Controller
         $status = $request->input('payment_status');
         if (in_array($status, ['unpaid', 'paid', 'partial'], true)) {
             $query->where('payment_status', $status);
+        }
+
+        $productId = $request->input('product_id');
+        if ($productId !== null && $productId !== '' && $productId !== 'all') {
+            $productId = (int) $productId;
+            $isActiveProduct = Product::query()->where('status', 1)->whereKey($productId)->exists();
+            if ($isActiveProduct) {
+                $query->whereHas('items', fn (Builder $items) => $items->where('product_id', $productId));
+            }
         }
 
         return $query;
