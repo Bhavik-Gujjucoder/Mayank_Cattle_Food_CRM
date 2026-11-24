@@ -29,9 +29,9 @@ class SodaOrderExportRows
 
         return [
             'cards' => [
-                ['Total number of bags', $summary['ordered']],
-                ['Total number of dispatch bags', $summary['dispatched']],
-                ['Total number of pending bags', $summary['pending']],
+                ['Total number of bags', (int) ($summary['ordered'] ?? 0)],
+                ['Total number of dispatch bags', (int) ($summary['dispatched'] ?? 0)],
+                ['Total number of pending bags', (int) ($summary['pending'] ?? 0)],
                 ['Orders', $orders->count()],
             ],
             'groups' => $groups,
