@@ -717,36 +717,39 @@ class OrderManagementController extends Controller
     {
         SalesScope::authorizeOrderAccess($order);
 
-        $blockingOrder = app(SequentialDispatchService::class)->findBlockingOrderFor($order);
+        // Sequential dispatch is disabled. Uncomment to block a newer order until
+        // every older order for the same dealer is fully dispatched.
+        // $blockingOrder = app(SequentialDispatchService::class)->findBlockingOrderFor($order);
+        //
+        // if (! $blockingOrder) {
+        //     return response()->json(['eligible' => true]);
+        // }
+        //
+        // $pendingItems = $blockingOrder->items
+        //     ->map(function ($item) {
+        //         $dispatched = (int) $item->dispatches->sum('no_of_bags');
+        //         $pending    = max(0, (int) $item->qty - $dispatched);
+        //         return [
+        //             'product_name'   => $item->product?->name ?? '—',
+        //             'ordered_qty'    => (int) $item->qty,
+        //             'dispatched_qty' => $dispatched,
+        //             'pending_qty'    => $pending,
+        //         ];
+        //     })
+        //     ->filter(fn($i) => $i['pending_qty'] > 0)
+        //     ->values();
+        //
+        // return response()->json([
+        //     'eligible'       => false,
+        //     'blocking_order' => [
+        //         'unique_order_id' => $blockingOrder->unique_order_id,
+        //         'order_date'      => $blockingOrder->order_date?->format('d M Y') ?? '—',
+        //         'history_url'     => route('dispatch.orderHistory', $blockingOrder->id),
+        //         'pending_items'   => $pendingItems,
+        //     ],
+        // ]);
 
-        if (! $blockingOrder) {
-            return response()->json(['eligible' => true]);
-        }
-
-        /* Build the list of products that still have pending bags */
-        $pendingItems = $blockingOrder->items
-            ->map(function ($item) {
-                $dispatched = (int) $item->dispatches->sum('no_of_bags');
-                $pending    = max(0, (int) $item->qty - $dispatched);
-                return [
-                    'product_name'   => $item->product?->name ?? '—',
-                    'ordered_qty'    => (int) $item->qty,
-                    'dispatched_qty' => $dispatched,
-                    'pending_qty'    => $pending,
-                ];
-            })
-            ->filter(fn($i) => $i['pending_qty'] > 0)
-            ->values();
-
-        return response()->json([
-            'eligible'       => false,
-            'blocking_order' => [
-                'unique_order_id' => $blockingOrder->unique_order_id,
-                'order_date'      => $blockingOrder->order_date?->format('d M Y') ?? '—',
-                'history_url'     => route('dispatch.orderHistory', $blockingOrder->id),
-                'pending_items'   => $pendingItems,
-            ],
-        ]);
+        return response()->json(['eligible' => true]);
     }
 
     /* ------------------------------------------------------------------ */
