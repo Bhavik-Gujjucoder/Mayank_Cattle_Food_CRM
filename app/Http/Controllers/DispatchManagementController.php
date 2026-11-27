@@ -221,11 +221,11 @@ class DispatchManagementController extends Controller
                                     ->get();
 
         /* ── Sequential dispatch eligibility ──────────────────────────
-           Find the first prior order (same dealer, smaller id) that is
-           not yet fully dispatched. Pass the result to the view so it
-           can render a blocked-dispatch warning and disable the Add form.
+           Disabled. Uncomment the lookup to block the Add form while an
+           older order for the same dealer is not fully dispatched.
         ──────────────────────────────────────────────────────────────── */
-        $blockingOrder = $this->sequentialDispatch->findBlockingOrderFor($order);
+        // $blockingOrder = $this->sequentialDispatch->findBlockingOrderFor($order);
+        $blockingOrder = null;
 
         $data['dispatchBlocked'] = $blockingOrder !== null;
         $data['blockingOrder']   = $blockingOrder;
@@ -342,14 +342,16 @@ class DispatchManagementController extends Controller
         $parentOrder   = OrderManagement::findOrFail($validated['order_id']);
         SalesScope::authorizeOrderAccess($parentOrder);
 
-        $blockingPrior = $this->sequentialDispatch->findBlockingOrderFor($parentOrder, ['items.dispatches']);
-
-        if ($blockingPrior) {
-            return $this->dispatchStoreErrorResponse($request, [
-                'order_item_id' => 'Order ' . $blockingPrior->unique_order_id
-                    . ' must be fully dispatched before dispatching this order.',
-            ]);
-        }
+        // Sequential dispatch is disabled. Uncomment to block this save while an
+        // older order for the same dealer is not fully dispatched.
+        // $blockingPrior = $this->sequentialDispatch->findBlockingOrderFor($parentOrder, ['items.dispatches']);
+        //
+        // if ($blockingPrior) {
+        //     return $this->dispatchStoreErrorResponse($request, [
+        //         'order_item_id' => 'Order ' . $blockingPrior->unique_order_id
+        //             . ' must be fully dispatched before dispatching this order.',
+        //     ]);
+        // }
 
         $lateFeeError = $receivableService->lateFeeDispatchError(
             $request->input('late_fee_dispatch_id'),
@@ -716,7 +718,10 @@ class DispatchManagementController extends Controller
 
         $order->load(['items.product', 'items.dispatches']);
 
-        $blockingOrder = $this->sequentialDispatch->findBlockingOrderFor($order);
+        // Sequential dispatch is disabled. Uncomment to return eligible=false
+        // while an older order for the same dealer is not fully dispatched.
+        // $blockingOrder = $this->sequentialDispatch->findBlockingOrderFor($order);
+        $blockingOrder = null;
 
         $items = $order->items->map(function ($item) {
             $pending = $item->pendingQty();

@@ -1949,7 +1949,7 @@ describe('checkDispatchEligibility', function () {
         expect($response->json('eligible'))->toBeTrue();
     });
 
-    it('returns eligible=false with blocking_order when prior order not fully dispatched', function () {
+    it('returns eligible=true when a prior order is not fully dispatched', function () {
         $brand = mkOrdBrand();
         $broker = mkOrdBroker();
         $dealer = mkOrdDealer($broker->id, $brand->id);
@@ -1963,8 +1963,8 @@ describe('checkDispatchEligibility', function () {
             ->getJson(route('order.dispatchCheck', $order2))
             ->assertOk();
 
-        expect($response->json('eligible'))->toBeFalse()
-            ->and($response->json('blocking_order.unique_order_id'))->toBe('ORD/BLOCKER');
+        // Sequential dispatch is commented out. Expect eligible=false again if that lookup is restored.
+        expect($response->json('eligible'))->toBeTrue();
     });
 });
 

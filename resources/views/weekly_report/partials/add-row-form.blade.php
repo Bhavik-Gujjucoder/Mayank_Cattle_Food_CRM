@@ -20,8 +20,12 @@
                         <select class="form-select form-select-sm wr-add-dealer" required>
                             <option value="">— Select dealer —</option>
                             @foreach ($dealers as $dealer)
+                                @php
+                                    $dealerName = $dealer->user?->name ?? $dealer->firm_shop_name ?? '—';
+                                    $cityName = $dealer->city?->city_name;
+                                @endphp
                                 <option value="{{ $dealer->id }}">
-                                    {{ $dealer->user?->name ?? $dealer->firm_shop_name ?? '—' }}
+                                    {{ $cityName ? $dealerName.' — '.$cityName : $dealerName }}
                                 </option>
                             @endforeach
                         </select>

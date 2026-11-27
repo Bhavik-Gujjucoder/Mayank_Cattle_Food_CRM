@@ -678,13 +678,15 @@ class WeeklyReportService
         $parentOrder = $item->order;
         SalesScope::authorizeOrderAccess($parentOrder);
 
-        $blockingPrior = $this->sequentialDispatch->findBlockingOrderFor($parentOrder, ['items.dispatches']);
-        if ($blockingPrior) {
-            throw ValidationException::withMessages([
-                'order_id' => 'Order ' . $blockingPrior->unique_order_id
-                    . ' must be fully dispatched before dispatching this order.',
-            ]);
-        }
+        // Sequential dispatch is disabled. Uncomment to require an older order
+        // for the same dealer to be fully dispatched before this one.
+        // $blockingPrior = $this->sequentialDispatch->findBlockingOrderFor($parentOrder, ['items.dispatches']);
+        // if ($blockingPrior) {
+        //     throw ValidationException::withMessages([
+        //         'order_id' => 'Order ' . $blockingPrior->unique_order_id
+        //             . ' must be fully dispatched before dispatching this order.',
+        //     ]);
+        // }
 
         $freightMessage = \App\Support\LessFreight::validationMessage(
             $item->less_freight_per_qty,

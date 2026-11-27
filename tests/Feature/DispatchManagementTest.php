@@ -457,7 +457,7 @@ describe('orderHistory', function () {
             ->assertSee('1,000.00');
     });
 
-    it('detects blocking prior order that is not fully dispatched', function () {
+    it('allows dispatch history when a prior order is not fully dispatched', function () {
         $brand   = disBrand();
         $broker  = disBroker();
         $dealer  = disDealer($broker->id, $brand->id);
@@ -471,8 +471,9 @@ describe('orderHistory', function () {
             ->get(route('dispatch.orderHistory', $order2))
             ->assertOk();
 
-        expect($response->viewData('dispatchBlocked'))->toBeTrue()
-            ->and($response->viewData('blockingOrder'))->not->toBeNull();
+        // Sequential dispatch is commented out. Expect a block again if that lookup is restored.
+        expect($response->viewData('dispatchBlocked'))->toBeFalse()
+            ->and($response->viewData('blockingOrder'))->toBeNull();
     });
 
     it('returns 403 when broker accesses another broker\'s order history', function () {
@@ -592,23 +593,29 @@ describe('store-business-rules', function () {
             ->assertSessionHasErrors(['no_of_bags']);
     });
 
-    it('blocks dispatch when a prior order for the same dealer is not fully dispatched', function () {
+    it('allows dispatch when a prior order for the same dealer is not fully dispatched', function () {
         $brand   = disBrand();
         $broker  = disBroker();
         $dealer  = disDealer($broker->id, $brand->id);
         $product = disProduct($brand->id);
         $order1  = disOrder($broker->id, $brand->id, $dealer->id);
         $order2  = disOrder($broker->id, $brand->id, $dealer->id);
-        disOrderItem($order1->id, $product->id, ['qty' => 10]); // no dispatches → blocking
+        disOrderItem($order1->id, $product->id, ['qty' => 10]); // older order still open
         $item2   = disOrderItem($order2->id, $product->id);
         $transporter = disTransporter();
         $actor   = disActor(['add-dispatch']);
 
+        // Sequential dispatch is commented out. This save should be rejected again if that guard is restored.
         $this->actingAs($actor)
             ->from(route('dispatch.orderHistory', $order2))
             ->post(route('dispatch.store'), disPayload($order2->id, $item2->id, $product->id, $transporter->id))
-            ->assertRedirect()
-            ->assertSessionHasErrors(['order_item_id']);
+            ->assertRedirect(route('dispatch.orderHistory', $order2->id))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('dispatch_management', [
+            'order_id'      => $order2->id,
+            'order_item_id' => $item2->id,
+        ]);
     });
 
     it('creates dispatch record successfully and redirects to orderHistory', function () {
@@ -875,7 +882,7 @@ describe('getOrderDispatchFormData', function () {
             ->and($response->json('items'))->not->toBeEmpty();
     });
 
-    it('returns eligible=false with blocking_order info when prior undispatched order exists', function () {
+    it('returns eligible=true when a prior order is not fully dispatched', function () {
         $brand   = disBrand();
         $broker  = disBroker();
         $dealer  = disDealer($broker->id, $brand->id);
@@ -883,14 +890,16 @@ describe('getOrderDispatchFormData', function () {
         $order1  = disOrder($broker->id, $brand->id, $dealer->id, ['unique_order_id' => 'ORD/BLOCK-DIS']);
         $order2  = disOrder($broker->id, $brand->id, $dealer->id);
         disOrderItem($order1->id, $product->id, ['qty' => 10]);
+        disOrderItem($order2->id, $product->id);
         $actor   = disActor(['view-order']);
 
         $response = $this->actingAs($actor)
             ->getJson(route('dispatch.orderFormData', $order2))
             ->assertOk();
 
-        expect($response->json('eligible'))->toBeFalse()
-            ->and($response->json('blocking_order.unique_order_id'))->toBe('ORD/BLOCK-DIS');
+        // Sequential dispatch is commented out. Expect eligible=false again if that lookup is restored.
+        expect($response->json('eligible'))->toBeTrue()
+            ->and($response->json('items'))->not->toBeEmpty();
     });
 
     it('returns 403 when broker accesses another broker\'s order data', function () {

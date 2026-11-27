@@ -82,7 +82,7 @@ class SalesScope
             return collect();
         }
 
-        return DealerManagement::with('user')
+        return DealerManagement::with(['user', 'city'])
             ->whereIn('id', $dealerIds)
             ->get()
             ->sortBy(fn ($dealer) => strtolower($dealer->user?->name ?? $dealer->firm_shop_name ?? ''))
