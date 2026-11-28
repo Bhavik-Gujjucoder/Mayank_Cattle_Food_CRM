@@ -505,6 +505,70 @@ it('filters planned orders by order type', function () {
         ->assertDontSee($retail['order']->unique_order_id);
 });
 
+it('adds a retail daily dispatch row without freight or transport', function () {
+    $admin = wrAdmin(['edit-weekly-report', 'add-dispatch']);
+    $ctx = wrPendingLine();
+    $report = WeeklyReport::create([
+        'report_date' => '2026-07-21',
+        'already_produced' => 0,
+        'created_by' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->postJson(route('weekly-report.items.store-retail', $report), [
+            'retail_mode' => 'new',
+            'party_name' => 'Walk In',
+            'brand_id' => $ctx['brand']->id,
+            'order_date' => '2026-07-21',
+            'product_id' => $ctx['product']->id,
+            'order_qty' => 5,
+            'unit_price' => 10,
+            'payment_status' => 'partial',
+            'payment_type' => 'cash',
+            'quantity' => 2,
+        ])
+        ->assertJsonValidationErrors(['payment_status']);
+
+    $this->actingAs($admin)
+        ->postJson(route('weekly-report.items.store-retail', $report), [
+            'retail_mode' => 'new',
+            'party_name' => 'Walk In',
+            'brand_id' => $ctx['brand']->id,
+            'order_date' => '2026-07-21',
+            'product_id' => $ctx['product']->id,
+            'order_qty' => 5,
+            'unit_price' => 10,
+            'payment_status' => 'paid',
+            'payment_type' => 'cash',
+            'quantity' => 2,
+            'driver_contact' => '9876543210',
+            'less_freight_per_qty' => 40,
+            'transport_id' => $admin->id,
+            'truck_number' => 'GJ01AA0001',
+        ])
+        ->assertOk();
+
+    $order = OrderManagement::where('party_name', 'Walk In')->first();
+    $item = WeeklyReportItem::where('order_id', $order->id)->first();
+
+    expect($order->payment_status)->toBe('paid')
+        ->and($order->order_type)->toBe(OrderManagement::TYPE_RETAIL)
+        ->and($item->less_freight_per_qty)->toBeNull()
+        ->and($item->transport_id)->toBeNull()
+        ->and($item->truck_number)->toBeNull();
+
+    $this->actingAs($admin)
+        ->postJson(route('weekly-report.items.confirm', [$report, $item]), ['status' => 0])
+        ->assertOk();
+
+    $this->assertDatabaseHas('dispatch_management', [
+        'order_id' => $order->id,
+        'transport_id' => null,
+        'truck_number' => null,
+        'less_freight_per_qty' => null,
+    ]);
+});
+
 it('loads workspace for today on index', function () {
     $admin = wrAdmin(['view-weekly-report', 'add-weekly-report', 'edit-weekly-report', 'add-dealer']);
 

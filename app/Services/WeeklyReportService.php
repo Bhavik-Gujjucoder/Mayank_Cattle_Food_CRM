@@ -574,8 +574,13 @@ class WeeklyReportService
             ]);
         }
 
+        $item->loadMissing('order:id,order_type,dealer_id,payment_type');
+        $isRetail = (bool) $item->order?->isRetail();
+
         $lessFreight = $item->less_freight_per_qty;
-        if (array_key_exists('less_freight_per_qty', $data)) {
+        if ($isRetail) {
+            $lessFreight = null;
+        } elseif (array_key_exists('less_freight_per_qty', $data)) {
             $freightMessage = \App\Support\LessFreight::validationMessage(
                 $data['less_freight_per_qty'],
                 (float) $orderItem->unit_price
@@ -595,7 +600,6 @@ class WeeklyReportService
                 array_key_exists('accrued_late_fee', $data) ? ($data['accrued_late_fee'] ?? '') : $lateFee,
                 $lateFee
             );
-            $item->loadMissing('order:id,dealer_id,order_type,payment_type');
             $parentOrder = $item->order;
             if ($parentOrder && $parentOrder->isRetail() && ($parentOrder->payment_type ?? 'cash') !== PaymentReceivableService::PAYMENT_TYPE_CREDIT) {
                 $lateFee = 0.0;
@@ -635,8 +639,8 @@ class WeeklyReportService
             'less_freight_per_qty' => $lessFreight,
             'accrued_late_fee' => $lateFee,
             'late_fee_dispatch_id' => $lateFeeDispatchId,
-            'transport_id'   => $data['transport_id'] ?? $item->transport_id,
-            'truck_number'   => $data['truck_number'] ?? $item->truck_number,
+            'transport_id'   => $isRetail ? null : ($data['transport_id'] ?? $item->transport_id),
+            'truck_number'   => $isRetail ? null : ($data['truck_number'] ?? $item->truck_number),
             'driver_contact' => $data['driver_contact'] ?? $item->driver_contact,
             'note'           => array_key_exists('note', $data) ? $data['note'] : $item->note,
             'sort_order'     => isset($data['sort_order']) ? (int) $data['sort_order'] : $item->sort_order,
@@ -697,11 +701,12 @@ class WeeklyReportService
 
         $item->loadMissing(['order.items.dispatches', 'orderItem.dispatches', 'product', 'report']);
 
+        $isRetail = (bool) $item->order?->isRetail();
         $missing = [];
-        if (! $item->transport_id) {
+        if (! $isRetail && ! $item->transport_id) {
             $missing['transport_id'] = 'Please select a transporter before confirming.';
         }
-        if (! $item->truck_number) {
+        if (! $isRetail && ! $item->truck_number) {
             $missing['truck_number'] = 'Truck number is required before confirming.';
         }
         if (! $item->driver_contact) {
@@ -842,9 +847,7 @@ class WeeklyReportService
                     'note' => $data['note'] ?? null,
                     'payment_status' => $data['payment_status'],
                     'payment_type' => $paymentType,
-                    'partial_paid_amount' => ($data['payment_status'] ?? '') === 'partial'
-                        ? ($data['partial_paid_amount'] ?? null)
-                        : null,
+                    'partial_paid_amount' => null,
                     'total_order_amount' => $total,
                     'grand_total' => $total,
                     'status' => 1,

@@ -25,18 +25,20 @@
                 {{ $statusValue === '1' ? 'checked' : '' }}>
             <label class="form-check-label" for="{{ $statusIdPrefix }}_status_paid">Paid</label>
         </div>
-        <div class="form-check form-check-inline">
-            <input class="form-check-input dispatch-payment-status-radio" type="radio"
-                name="{{ $statusName }}" data-prefix="{{ $statusIdPrefix }}"
-                id="{{ $statusIdPrefix }}_status_partial" value="2"
-                {{ $statusValue === '2' ? 'checked' : '' }}>
-            <label class="form-check-label" for="{{ $statusIdPrefix }}_status_partial">Partial Payment</label>
-        </div>
+        @unless (! empty($hidePartial))
+            <div class="form-check form-check-inline">
+                <input class="form-check-input dispatch-payment-status-radio" type="radio"
+                    name="{{ $statusName }}" data-prefix="{{ $statusIdPrefix }}"
+                    id="{{ $statusIdPrefix }}_status_partial" value="2"
+                    {{ $statusValue === '2' ? 'checked' : '' }}>
+                <label class="form-check-label" for="{{ $statusIdPrefix }}_status_partial">Partial Payment</label>
+            </div>
+        @endunless
     </div>
     <span class="field-error" id="{{ $errorId ?? $statusName }}-error"></span>
 
     <div class="partial-amount-wrap mt-2" id="{{ $statusIdPrefix }}_partial_amount_wrap"
-        style="{{ $showPartialWrap ? '' : 'display:none;' }}">
+        style="{{ $showPartialWrap && empty($hidePartial) ? '' : 'display:none;' }}">
         <label class="col-form-label" for="{{ $statusIdPrefix }}_partial_paid_amount">
             Paid Amount <span class="text-danger">*</span>
         </label>

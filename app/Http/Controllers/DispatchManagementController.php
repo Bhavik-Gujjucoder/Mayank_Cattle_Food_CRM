@@ -265,6 +265,8 @@ class DispatchManagementController extends Controller
     public function store(Request $request)
     {
         $receivableService = app(PaymentReceivableService::class);
+        $parentOrder = OrderManagement::find($request->input('order_id'));
+        $isRetail = (bool) $parentOrder?->isRetail();
         $rules = [
             'order_id'       => 'required|exists:order_management,id',
             'order_item_id'  => ['required', Rule::exists('order_items', 'id')->whereNull('deleted_at')],
@@ -272,10 +274,10 @@ class DispatchManagementController extends Controller
             'no_of_bags'     => 'required|integer|min:1',
             'less_freight_per_qty' => 'nullable|numeric|min:0',
             'dispatch_date'  => 'required|date',
-            'transport_id'   => 'required|exists:users,id',
-            'truck_number'   => 'required|string|max:100',
+            'transport_id'   => ($isRetail ? 'nullable' : 'required').'|exists:users,id',
+            'truck_number'   => ($isRetail ? 'nullable' : 'required').'|string|max:100',
             'driver_contact' => 'required|string|max:20',
-            'status'              => 'required|in:0,1,2',
+            'status'              => $isRetail ? 'required|in:0,1' : 'required|in:0,1,2',
             'partial_paid_amount' => 'nullable|numeric|min:0|required_if:status,2',
         ];
         $messages = [
@@ -318,6 +320,11 @@ class DispatchManagementController extends Controller
 
         /* Guard against over-dispatch */
         $orderItem  = OrderItem::findOrFail($validated['order_item_id']);
+        if ($isRetail) {
+            $validated['less_freight_per_qty'] = null;
+            $validated['transport_id'] = null;
+            $validated['truck_number'] = null;
+        }
         $freightError = LessFreight::validationMessage(
             $validated['less_freight_per_qty'] ?? null,
             (float) $orderItem->unit_price
@@ -342,7 +349,7 @@ class DispatchManagementController extends Controller
            same dealer has not yet been fully dispatched.
            This catches direct-URL / API attempts that bypass the JS popup.
         ──────────────────────────────────────────────────────────────── */
-        $parentOrder   = OrderManagement::findOrFail($validated['order_id']);
+        $parentOrder   = $parentOrder ?? OrderManagement::findOrFail($validated['order_id']);
         SalesScope::authorizeOrderAccess($parentOrder);
 
         // Sequential dispatch is disabled. Uncomment to block this save while an
@@ -566,14 +573,17 @@ class DispatchManagementController extends Controller
     {
         SalesScope::authorizeDispatchAccess($dispatch);
 
+        $dispatch->loadMissing('order:id,dealer_id,order_type,payment_type');
+        $isRetail = (bool) $dispatch->order?->isRetail();
+
         $rules = [
             'no_of_bags'     => 'required|integer|min:1',
             'less_freight_per_qty' => 'nullable|numeric|min:0',
             'dispatch_date'  => 'required|date',
-            'transport_id'   => 'required|exists:users,id',
-            'truck_number'   => 'required|string|max:100',
+            'transport_id'   => ($isRetail ? 'nullable' : 'required').'|exists:users,id',
+            'truck_number'   => ($isRetail ? 'nullable' : 'required').'|string|max:100',
             'driver_contact' => 'required|string|max:20',
-            'status'              => 'required|in:0,1,2',
+            'status'              => $isRetail ? 'required|in:0,1' : 'required|in:0,1,2',
             'partial_paid_amount' => 'nullable|numeric|min:0|required_if:status,2',
             'accrued_late_fee' => 'nullable|numeric|min:0',
             'late_fee_dispatch_id' => 'nullable|integer|exists:dispatch_management,id',
@@ -619,7 +629,12 @@ class DispatchManagementController extends Controller
             $previousLateFee,
             (float) $validated['accrued_late_fee']
         );
-        $dispatch->loadMissing('order:id,dealer_id,order_type,payment_type');
+        if ($isRetail) {
+            $validated['less_freight_per_qty'] = null;
+            $validated['transport_id'] = null;
+            $validated['truck_number'] = null;
+        }
+
         if ($dispatch->order?->isRetail() && ($dispatch->order->payment_type ?? 'cash') !== PaymentReceivableService::PAYMENT_TYPE_CREDIT) {
             $validated['accrued_late_fee'] = 0;
             $validated['late_fee_dispatch_id'] = null;
@@ -703,8 +718,10 @@ class DispatchManagementController extends Controller
             'no_of_bags'          => (int) $validated['no_of_bags'],
             'less_freight_per_qty' => $validated['less_freight_per_qty'],
             'dispatch_date'       => $validated['dispatch_date'],
-            'transport_id'        => (int) $validated['transport_id'],
-            'truck_number'        => $validated['truck_number'],
+            'transport_id'        => $validated['transport_id'] !== null && $validated['transport_id'] !== ''
+                ? (int) $validated['transport_id']
+                : null,
+            'truck_number'        => $validated['truck_number'] ?: null,
             'driver_contact'      => $validated['driver_contact'],
             'status'              => (int) $validated['status'],
             'partial_paid_amount' => $validated['partial_paid_amount'],

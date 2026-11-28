@@ -100,7 +100,9 @@
                                 @endif
                             </td>
                             <td data-label="Less freight / qty" class="wr-cell-freight">
-                                @if ($canEdit && ! $locked)
+                                @if ($item->order?->isRetail())
+                                    <div class="wr-readonly-value">—</div>
+                                @elseif ($canEdit && ! $locked)
                                     <input type="number" class="form-control form-control-sm item-less-freight"
                                         value="{{ $item->less_freight_per_qty }}" min="0" step="0.01" placeholder="Optional">
                                     <small class="text-muted wr-freight-hint">Optional, per qty</small>
@@ -170,7 +172,9 @@
                                 </div>
                             </td>
                             <td data-label="Transport" class="wr-cell-transport">
-                                @if ($canEdit && ! $locked)
+                                @if ($item->order?->isRetail())
+                                    <div class="wr-readonly-value">—</div>
+                                @elseif ($canEdit && ! $locked)
                                     @include('weekly_report.partials.transport-field', [
                                         'name' => 'transport_id',
                                         'selectClass' => 'item-transport',
@@ -183,7 +187,9 @@
                                 @endif
                             </td>
                             <td data-label="Truck No" class="wr-cell-truck">
-                                @if ($canEdit && ! $locked)
+                                @if ($item->order?->isRetail())
+                                    <div class="wr-readonly-value">—</div>
+                                @elseif ($canEdit && ! $locked)
                                     @include('weekly_report.partials.truck-field', [
                                         'name' => 'truck_number',
                                         'selectClass' => 'item-truck',
@@ -236,7 +242,8 @@
                                         @endif
                                         @if ($canConfirm)
                                             <button type="button" class="btn btn-success confirm-item-btn"
-                                                data-item-id="{{ $item->id }}">
+                                                data-item-id="{{ $item->id }}"
+                                                data-order-type="{{ $item->order?->isRetail() ? 'retail' : 'soda' }}">
                                                 <i class="ti ti-check"></i><span>Confirm</span>
                                             </button>
                                         @endif

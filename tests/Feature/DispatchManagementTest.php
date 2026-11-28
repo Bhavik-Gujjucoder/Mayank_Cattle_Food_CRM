@@ -621,6 +621,49 @@ describe('store-business-rules', function () {
             ->assertSessionHasErrors(['no_of_bags']);
     });
 
+    it('saves a retail dispatch without freight, transport, or truck', function () {
+        $s = disSetup();
+        $s['order']->update([
+            'order_type' => 'retail',
+            'party_name' => 'Walk In',
+            'dealer_id' => null,
+            'broker_id' => null,
+        ]);
+        $actor = disActor(['view-order', 'add-dispatch']);
+
+        $this->actingAs($actor)
+            ->get(route('dispatch.orderHistory', $s['order']))
+            ->assertOk()
+            ->assertDontSee('id="dispatchLessFreight"', false)
+            ->assertDontSee('id="dispatchTransport"', false)
+            ->assertDontSee('id="dispatchTruckNumber"', false)
+            ->assertDontSee('Partial Payment');
+
+        $payload = disPayload($s['order']->id, $s['orderItem']->id, $s['product']->id, $s['transporter']->id, [
+            'status' => 1,
+        ]);
+        unset($payload['transport_id'], $payload['truck_number']);
+
+        $this->actingAs($actor)
+            ->postJson(route('dispatch.store'), $payload)
+            ->assertOk();
+
+        $this->assertDatabaseHas('dispatch_management', [
+            'order_id' => $s['order']->id,
+            'transport_id' => null,
+            'truck_number' => null,
+            'less_freight_per_qty' => null,
+            'status' => 1,
+        ]);
+
+        $this->actingAs($actor)
+            ->postJson(route('dispatch.store'), disPayload($s['order']->id, $s['orderItem']->id, $s['product']->id, $s['transporter']->id, [
+                'status' => 2,
+                'partial_paid_amount' => 10,
+            ]))
+            ->assertJsonValidationErrors(['status']);
+    });
+
     it('allows dispatch when a prior order for the same dealer is not fully dispatched', function () {
         $brand   = disBrand();
         $broker  = disBroker();

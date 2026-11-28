@@ -396,11 +396,8 @@ class WeeklyReportController extends Controller
         $mode = $request->input('retail_mode') === 'existing' ? 'existing' : 'new';
         $rules = [
             'quantity' => 'required|integer|min:1',
-            'less_freight_per_qty' => 'nullable|numeric|min:0',
             'accrued_late_fee' => 'nullable|numeric|min:0',
             'late_fee_dispatch_id' => 'nullable|integer|exists:dispatch_management,id',
-            'transport_id' => 'nullable|exists:users,id',
-            'truck_number' => 'nullable|string|max:100',
             'driver_contact' => 'nullable|string|max:20',
             'dispatch_note' => 'nullable|string|max:2000',
         ];
@@ -415,9 +412,8 @@ class WeeklyReportController extends Controller
             $rules['product_id'] = 'required|exists:products,id';
             $rules['order_qty'] = 'required|integer|min:1';
             $rules['unit_price'] = 'required|numeric|min:0';
-            $rules['payment_status'] = 'required|in:unpaid,paid,partial';
+            $rules['payment_status'] = 'required|in:unpaid,paid';
             $rules['payment_type'] = 'required|in:cash,credit';
-            $rules['partial_paid_amount'] = 'nullable|numeric|min:0|required_if:payment_status,partial';
         }
 
         $validated = $request->validate($rules, [
@@ -434,6 +430,10 @@ class WeeklyReportController extends Controller
         }
 
         $validated['retail_mode'] = $mode;
+        $validated['less_freight_per_qty'] = null;
+        $validated['transport_id'] = null;
+        $validated['truck_number'] = null;
+        $validated['partial_paid_amount'] = null;
         if ($mode === 'new' && ($validated['payment_type'] ?? '') !== 'credit') {
             $validated['accrued_late_fee'] = null;
             $validated['late_fee_dispatch_id'] = null;
@@ -568,6 +568,13 @@ class WeeklyReportController extends Controller
         $validated['partial_paid_amount'] = (int) $validated['status'] === \App\Models\DispatchManagement::STATUS_PARTIAL
             ? $validated['partial_paid_amount']
             : null;
+
+        $weeklyReportItem->loadMissing('order:id,order_type');
+        if ($weeklyReportItem->order?->isRetail() && (int) $validated['status'] === \App\Models\DispatchManagement::STATUS_PARTIAL) {
+            throw ValidationException::withMessages([
+                'status' => 'Retail payment status can only be unpaid or paid.',
+            ]);
+        }
 
         try {
             $dispatch = $this->weeklyReports->confirmItem($weeklyReportItem, $validated);

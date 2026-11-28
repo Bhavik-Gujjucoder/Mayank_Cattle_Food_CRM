@@ -601,14 +601,16 @@
                                     <span class="field-error" id="no_of_bags-error"></span>
                                 </div>
 
-                                <div class="col-md-6 mb-3">
-                                    <label class="col-form-label">Less freight / qty</label>
-                                    <input type="number" name="less_freight_per_qty" id="dispatchLessFreight" class="form-control"
-                                        placeholder="Optional" min="0" step="0.01" value="{{ old('less_freight_per_qty') }}">
-                                    <small class="text-muted">Optional. Deducted for each qty on this dispatch.</small>
-                                    <span class="field-error" id="less_freight_per_qty-error"></span>
-                                    <div class="small mt-1" id="dispatchLessFreightPreview"></div>
-                                </div>
+                                @unless ($order->isRetail())
+                                    <div class="col-md-6 mb-3">
+                                        <label class="col-form-label">Less freight / qty</label>
+                                        <input type="number" name="less_freight_per_qty" id="dispatchLessFreight" class="form-control"
+                                            placeholder="Optional" min="0" step="0.01" value="{{ old('less_freight_per_qty') }}">
+                                        <small class="text-muted">Optional. Deducted for each qty on this dispatch.</small>
+                                        <span class="field-error" id="less_freight_per_qty-error"></span>
+                                        <div class="small mt-1" id="dispatchLessFreightPreview"></div>
+                                    </div>
+                                @endunless
 
                                 {{-- ── Dispatch Date ─────────────────────────────── --}}
                                 <div class="col-md-6 mb-3">
@@ -624,6 +626,7 @@
                                 </div>
 
                                 {{-- ── Transport (transporter dropdown) ─────────── --}}
+                                @unless ($order->isRetail())
                                 <div class="col-md-4 mb-3">
                                     <label class="col-form-label">
                                         Transport <span class="text-danger">*</span>
@@ -665,6 +668,7 @@
                                         </a>
                                     @endcan
                                 </div>
+                                @endunless
 
                                 {{-- ── Driver Contact (auto-filled from transporter) --}}
                                 <div class="col-md-4 mb-3">
@@ -680,6 +684,7 @@
                                 @include('dispatch_management.partials.status-field', [
                                     'idPrefix' => 'dispatch',
                                     'value'    => old('status', '0'),
+                                    'hidePartial' => $order->isRetail(),
                                 ])
 
                                 @include('dispatch_management.partials.manual-late-fee-field', [
@@ -749,14 +754,16 @@
                                     <span class="field-error" id="edit_no_of_bags-error"></span>
                                 </div>
 
-                                <div class="col-md-6 mb-3">
-                                    <label class="col-form-label">Less freight / qty</label>
-                                    <input type="number" name="less_freight_per_qty" id="editLessFreight" class="form-control"
-                                        placeholder="Optional" min="0" step="0.01">
-                                    <small class="text-muted">Optional. Deducted for each qty on this dispatch.</small>
-                                    <span class="field-error" id="edit_less_freight_per_qty-error"></span>
-                                    <div class="small mt-1" id="editLessFreightPreview"></div>
-                                </div>
+                                @unless ($order->isRetail())
+                                    <div class="col-md-6 mb-3">
+                                        <label class="col-form-label">Less freight / qty</label>
+                                        <input type="number" name="less_freight_per_qty" id="editLessFreight" class="form-control"
+                                            placeholder="Optional" min="0" step="0.01">
+                                        <small class="text-muted">Optional. Deducted for each qty on this dispatch.</small>
+                                        <span class="field-error" id="edit_less_freight_per_qty-error"></span>
+                                        <div class="small mt-1" id="editLessFreightPreview"></div>
+                                    </div>
+                                @endunless
 
                                 {{-- ── Dispatch Date ─────────────────────────────── --}}
                                 <div class="col-md-6 mb-3">
@@ -772,6 +779,7 @@
                                 </div>
 
                                 {{-- ── Transport ─────────────────────────────────── --}}
+                                @unless ($order->isRetail())
                                 <div class="col-md-4 mb-3">
                                     <label class="col-form-label">
                                         Transport <span class="text-danger">*</span>
@@ -812,6 +820,7 @@
                                         </a>
                                     @endcan
                                 </div>
+                                @endunless
 
                                 {{-- ── Driver Contact ────────────────────────────── --}}
                                 <div class="col-md-4 mb-3">
@@ -827,6 +836,7 @@
                                     'idPrefix' => 'edit',
                                     'errorId'  => 'edit_status',
                                     'value'    => '0',
+                                    'hidePartial' => $order->isRetail(),
                                 ])
 
                                 @include('dispatch_management.partials.manual-late-fee-field', [

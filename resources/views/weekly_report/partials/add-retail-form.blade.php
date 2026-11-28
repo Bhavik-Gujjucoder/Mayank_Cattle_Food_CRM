@@ -72,7 +72,6 @@
                 <label class="col-form-label">Payment Status</label>
                 <select name="payment_status" class="form-select form-select-sm">
                     <option value="unpaid">Unpaid</option>
-                    <option value="partial">Partial</option>
                     <option value="paid">Paid</option>
                 </select>
             </div>
@@ -89,30 +88,11 @@
                 <small class="text-muted">Can be less than the order quantity.</small>
                 <span class="text-danger small d-block quantity_error"></span>
             </div>
-            <div class="col-6 col-md-2">
-                <label class="col-form-label">Less freight / qty</label>
-                <input type="number" name="less_freight_per_qty" class="form-control form-control-sm" min="0" step="0.01">
-                <span class="text-danger small d-block less_freight_per_qty_error"></span>
-            </div>
             <div class="col-6 col-md-2 wr-retail-late-fee" style="display:none;">
                 <label class="col-form-label">Late Fee</label>
                 <input type="number" name="accrued_late_fee" class="form-control form-control-sm" min="0" step="0.01" placeholder="0">
                 <small class="text-muted">Added to this retail dispatch.</small>
                 <span class="text-danger small d-block accrued_late_fee_error"></span>
-            </div>
-            <div class="col-6 col-md-3">
-                @include('weekly_report.partials.transport-field', [
-                    'name' => 'transport_id',
-                    'selectClass' => 'wr-add-transport',
-                    'transporters' => $transporters,
-                ])
-            </div>
-            <div class="col-6 col-md-3">
-                @include('weekly_report.partials.truck-field', [
-                    'name' => 'truck_number',
-                    'selectClass' => 'wr-add-truck',
-                    'disabled' => true,
-                ])
             </div>
             <div class="col-6 col-md-2">
                 <label class="col-form-label">Contact</label>

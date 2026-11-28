@@ -508,11 +508,16 @@
         @if (auth()->user()->can('edit-weekly-report') && auth()->user()->can('add-dispatch'))
         $block.on('click', '.confirm-item-btn', function () {
             var itemId = $(this).data('item-id');
+            var retail = String($(this).data('order-type')) === 'retail';
             var confirmUrl = itemUpdateBase + '/' + itemId + '/confirm';
             $('#confirmFormError').text('');
             $('#confirmItemForm').attr('action', confirmUrl);
+            $('#wrConfirm_status_partial').closest('.form-check').toggle(!retail);
             if (window.dispatchPaymentStatusHelpers) {
                 window.dispatchPaymentStatusHelpers.setFormStatus($('#confirmItemForm'), 0, '');
+            }
+            if (retail) {
+                $('#wrConfirm_partial_amount_wrap').hide();
             }
             window.wrConfirmModal.show();
         });
