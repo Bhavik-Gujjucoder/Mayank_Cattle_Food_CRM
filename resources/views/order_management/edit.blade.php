@@ -19,6 +19,11 @@
             <div class="card-body">
 
                 <p class="form-section-title"><i class="ti ti-file-description me-1"></i>Order Information</p>
+                <input type="hidden" name="order_type" value="{{ $order->order_type ?: 'soda' }}">
+                <div class="mb-3">
+                    <label class="col-form-label d-block">Order Type</label>
+                    <span class="fw-semibold">{{ $order->orderTypeLabel() }}</span>
+                </div>
 
                 {{-- Dispatch-lock panel — shown only when at least one item is dispatched --}}
                 @if ($orderHasDispatches)
@@ -72,7 +77,7 @@
                     </div>
 
                     {{-- Broker --}}
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 mb-3 soda-only">
                         <label class="col-form-label">Broker <span class="text-danger">*</span></label>
                         @if ($orderHasDispatches)
                             {{-- Locked: hidden input submits the value; visual select is disabled --}}
@@ -110,6 +115,17 @@
                         </span>
                     </div>
 
+                    <div class="col-md-4 mb-3 retail-only" style="display:none;">
+                        <label class="col-form-label">Party Name <span class="text-danger">*</span></label>
+                        @if ($orderHasDispatches)
+                            <input type="hidden" name="party_name" value="{{ $order->party_name }}">
+                            <input type="text" class="form-control" value="{{ $order->party_name }}" readonly>
+                        @else
+                            <input type="text" name="party_name" id="party_name" value="{{ old('party_name', $order->party_name) }}" class="form-control" maxlength="255">
+                        @endif
+                        <span class="text-danger small party_name_error">@error('party_name'){{ $message }}@enderror</span>
+                    </div>
+
                     {{-- Brand --}}
                     <div class="col-md-4 mb-3">
                         <label class="col-form-label">Brand <span class="text-danger">*</span></label>
@@ -142,7 +158,7 @@
                     </div>
 
                     {{-- Dealer (pre-loaded for current broker + brand) --}}
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 mb-3 soda-only">
                         <label class="col-form-label">Dealer <span class="text-danger">*</span></label>
                         @if ($orderHasDispatches)
                             <input type="hidden" name="dealer_id" value="{{ $order->dealer_id }}">
@@ -200,7 +216,7 @@
                     </div>
 
                     {{-- Delivery Address --}}
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 mb-3 soda-only">
                         <label class="col-form-label">
                             Delivery Address <span class="text-danger">*</span>
                             <small class="text-muted fw-normal ms-1">(auto-fills on dealer selection)</small>
@@ -212,6 +228,11 @@
                                 {{ $message }}
                             @enderror
                         </span>
+                    </div>
+
+                    <div class="col-md-4 mb-3 retail-only" style="display:none;">
+                        <label class="col-form-label">Note</label>
+                        <textarea name="note" id="order_note" rows="2" class="form-control" maxlength="2000">{{ old('note', $order->note) }}</textarea>
                     </div>
 
                 </div>{{-- /row --}}
@@ -893,15 +914,21 @@
                 clearValidationErrors();
                 var isValid = true;
 
-                if (!$('#broker_id').val()) {
+                var retailOrder = $('input[name="order_type"]').val() === 'retail';
+
+                if (!retailOrder && !$('#broker_id').val()) {
                     showFieldError('broker_id', 'Please select a broker.');
+                    isValid = false;
+                }
+                if (retailOrder && !$.trim($('#party_name').val() || $('input[name="party_name"]').val())) {
+                    showFieldError('party_name', 'Party name is required.');
                     isValid = false;
                 }
                 if (!$('#brand_id').val()) {
                     showFieldError('brand_id', 'Please select a brand.');
                     isValid = false;
                 }
-                if (!$('#dealer_id').val()) {
+                if (!retailOrder && !$('#dealer_id').val()) {
                     showFieldError('dealer_id', 'Please select a dealer.');
                     isValid = false;
                 }
@@ -909,7 +936,7 @@
                     showFieldError('order_date', 'Please select an order date.');
                     isValid = false;
                 }
-                if (!$.trim($('#delivery_address').val())) {
+                if (!retailOrder && !$.trim($('#delivery_address').val())) {
                     showFieldError('delivery_address', 'Delivery address is required.');
                     isValid = false;
                 }
@@ -986,6 +1013,13 @@
                3. Totals   — reads the now-stable qty/price fields and populates
                               Sub Total + Grand Total from existing order data
                4. Last prices — fetch hint for every pre-loaded product row    */
+            var retailOrder = $('input[name="order_type"]').val() === 'retail';
+            $('.soda-only').toggle(!retailOrder);
+            $('.retail-only').toggle(retailOrder);
+            if (retailOrder) {
+                $('#addRowBtn').hide();
+            }
+
             updateRowButtons();
             filterProductsByBrand(null, true);
             calculateTotals();

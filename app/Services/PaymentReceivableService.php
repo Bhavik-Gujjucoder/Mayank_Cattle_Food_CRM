@@ -40,7 +40,7 @@ class PaymentReceivableService
         }
 
         if ($context instanceof DispatchManagement) {
-            $context->loadMissing('order:id,payment_type');
+            $context->loadMissing('order:id,payment_type,order_type');
 
             return $this->normalizePaymentType($context->order?->payment_type ?? null);
         }
@@ -53,6 +53,10 @@ class PaymentReceivableService
      */
     public function settingKeysFor(DispatchManagement|OrderManagement|string|null $context = null): array
     {
+        if ($this->isRetailContext($context)) {
+            return ['days_key' => 'retail_credit_due_days', 'amount_key' => 'retail_credit_due_amount'];
+        }
+
         $type = $this->paymentTypeFor($context);
 
         return $type === self::PAYMENT_TYPE_CREDIT
@@ -84,7 +88,26 @@ class PaymentReceivableService
 
     public function isLateFeeEnabled(DispatchManagement|OrderManagement|string|null $context = null): bool
     {
+        if ($this->isRetailContext($context) && $this->paymentTypeFor($context) !== self::PAYMENT_TYPE_CREDIT) {
+            return false;
+        }
+
         return $this->paymentDueDays($context) > 0 && $this->paymentDueAmountRate($context) > 0;
+    }
+
+    private function isRetailContext(DispatchManagement|OrderManagement|string|null $context): bool
+    {
+        if ($context instanceof OrderManagement) {
+            return $context->isRetail();
+        }
+
+        if ($context instanceof DispatchManagement) {
+            $context->loadMissing('order:id,payment_type,order_type');
+
+            return (bool) $context->order?->isRetail();
+        }
+
+        return false;
     }
 
     /**
@@ -161,6 +184,72 @@ class PaymentReceivableService
         }
 
         return null;
+    }
+
+    /**
+     * Unpaid or partial dispatches of one retail order. The new row is not included.
+     *
+     * @return list<array{id: int, label: string}>
+     */
+    public function lateFeeDispatchOptionsForOrder(int $orderId, ?int $excludeDispatchId = null): array
+    {
+        $query = DispatchManagement::query()
+            ->forUser()
+            ->where('order_id', $orderId)
+            ->whereIn('status', DispatchManagement::pendingPaymentStatuses())
+            ->whereNotNull('dispatch_date')
+            ->with([
+                'order:id,unique_order_id,dealer_id,order_type,party_name',
+                'product:id,name',
+                'orderItem:id,unit_price',
+            ])
+            ->orderByDesc('dispatch_date')
+            ->orderByDesc('id');
+
+        if ($excludeDispatchId) {
+            $query->whereKeyNot($excludeDispatchId);
+        }
+
+        return $query->get()->map(fn (DispatchManagement $dispatch) => $this->lateFeeOption($dispatch))->all();
+    }
+
+    /**
+     * A typed retail late fee may stand on this dispatch. A selected dispatch must belong to the same order.
+     */
+    public function lateFeeDispatchErrorForOrder(mixed $dispatchId, int $orderId, float $fee, ?int $excludeDispatchId = null): ?string
+    {
+        if ($fee <= 0) {
+            return null;
+        }
+
+        $id = (int) $dispatchId;
+        if ($id <= 0) {
+            return null;
+        }
+
+        $allowed = collect($this->lateFeeDispatchOptionsForOrder($orderId, $excludeDispatchId))->pluck('id');
+        if (! $allowed->contains($id)) {
+            return 'Select an unpaid or partial dispatch of this retail order.';
+        }
+
+        return null;
+    }
+
+    /** @return array{id: int, label: string} */
+    private function lateFeeOption(DispatchManagement $dispatch): array
+    {
+        $summary = $this->summarizeDispatch($dispatch);
+
+        return [
+            'id'    => (int) $dispatch->id,
+            'label' => trim(implode(' · ', array_filter([
+                $dispatch->order?->unique_order_id ?? '—',
+                $dispatch->dispatch_date?->format('d M Y'),
+                $dispatch->product?->name,
+                (string) (int) $dispatch->no_of_bags,
+                'Due ' . self::formatMoney($summary['balance_due']),
+            ]))),
+        ];
     }
 
     public static function lateFeeBehalfLabel(?DispatchManagement $dispatch): string
@@ -278,7 +367,7 @@ class PaymentReceivableService
         return $dispatch->dispatch_date
             ->copy()
             ->startOfDay()
-            ->addDays($this->paymentDueDays($dispatch) + 1);
+            ->addDays($this->paymentDueDays($dispatch));
     }
 
     public function daysSinceDispatch(DispatchManagement $dispatch, ?Carbon $asOf = null): int
@@ -290,7 +379,12 @@ class PaymentReceivableService
         $asOf = ($asOf ?? now())->copy()->startOfDay();
         $dispatchDay = $dispatch->dispatch_date->copy()->startOfDay();
 
-        return max(0, (int) $dispatchDay->diffInDays($asOf));
+        if ($asOf->lt($dispatchDay)) {
+            return 0;
+        }
+
+        // The dispatch date itself is day 1.
+        return (int) $dispatchDay->diffInDays($asOf) + 1;
     }
 
     public function overdueDays(DispatchManagement $dispatch, ?Carbon $asOf = null): int

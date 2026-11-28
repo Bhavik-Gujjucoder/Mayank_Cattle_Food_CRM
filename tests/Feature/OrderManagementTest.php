@@ -2316,3 +2316,67 @@ describe('order import', function () {
             ->and($order->items->where('product_id', $feed->id))->toHaveCount(2);
     });
 });
+
+describe('retail orders', function () {
+    it('stores a retail order without a broker or dealer', function () {
+        $brand = mkOrdBrand();
+        $product = mkOrdProduct($brand->id);
+        $actor = ordActor(['add-order']);
+
+        actingAs($actor)->post(route('order.store'), [
+            'order_type' => 'retail',
+            'unique_order_id' => 'ORD/RETAIL/1',
+            'brand_id' => $brand->id,
+            'party_name' => 'Walk-in Party',
+            'note' => 'Counter sale',
+            'order_date' => '2026-11-28',
+            'payment_status' => 'unpaid',
+            'payment_type' => 'credit',
+            'product_id' => [$product->id],
+            'qty' => [8],
+            'price' => ['90.00'],
+        ])->assertRedirect(route('order.index'));
+
+        $order = OrderManagement::first();
+        expect($order->order_type)->toBe('retail')
+            ->and($order->party_name)->toBe('Walk-in Party')
+            ->and($order->broker_id)->toBeNull()
+            ->and($order->dealer_id)->toBeNull()
+            ->and($order->note)->toBe('Counter sale')
+            ->and($order->items)->toHaveCount(1);
+    });
+
+    it('rejects a retail order with more than one product', function () {
+        $brand = mkOrdBrand();
+        $first = mkOrdProduct($brand->id);
+        $second = mkOrdProduct($brand->id);
+        $actor = ordActor(['add-order']);
+
+        actingAs($actor)->post(route('order.store'), [
+            'order_type' => 'retail',
+            'unique_order_id' => 'ORD/RETAIL/2',
+            'brand_id' => $brand->id,
+            'party_name' => 'Walk-in Party',
+            'order_date' => '2026-11-28',
+            'payment_status' => 'unpaid',
+            'payment_type' => 'cash',
+            'product_id' => [$first->id, $second->id],
+            'qty' => [1, 1],
+            'price' => ['10', '10'],
+        ])->assertSessionHasErrors('product_id');
+    });
+
+    it('keeps a soda order on the soda path', function () {
+        $brand = mkOrdBrand();
+        $broker = mkOrdBroker();
+        $dealer = mkOrdDealer($broker->id, $brand->id);
+        $product = mkOrdProduct($brand->id);
+        $actor = ordActor(['add-order']);
+
+        actingAs($actor)
+            ->post(route('order.store'), ordPayload($broker->id, $brand->id, $dealer->id, $product->id))
+            ->assertRedirect(route('order.index'));
+
+        expect(OrderManagement::first()->order_type)->toBe('soda');
+    });
+});

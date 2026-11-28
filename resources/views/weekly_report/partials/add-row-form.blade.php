@@ -3,7 +3,21 @@
     $dealers = $dealers ?? collect();
     $showDealerFilter = SalesScope::showDealerFilter();
 @endphp
-<div class="wr-add-panel">
+<div class="wr-add-panel" data-block-id="{{ $blockId }}">
+    @if (!empty($allowRetail))
+        <div class="mb-2">
+            <label class="col-form-label d-block">Order Type</label>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input wr-order-type" type="radio" name="wr_order_type_{{ $blockId }}" value="soda" checked>
+                <label class="form-check-label">Soda</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input wr-order-type" type="radio" name="wr_order_type_{{ $blockId }}" value="retail">
+                <label class="form-check-label">Retail</label>
+            </div>
+        </div>
+    @endif
+    <div class="wr-soda-add">
     <div class="wr-section-label">
         <i class="ti ti-square-rounded-plus"></i> Add order line
     </div>
@@ -112,4 +126,14 @@
             </div>
         </div>
     </form>
+    </div>
+    @if (!empty($allowRetail))
+        @include('weekly_report.partials.add-retail-form', [
+            'report' => $report,
+            'blockId' => $blockId,
+            'brands' => $brands ?? collect(),
+            'products' => $products ?? collect(),
+            'transporters' => $transporters,
+        ])
+    @endif
 </div>

@@ -13,6 +13,10 @@ class OrderManagement extends Model
 {
     use SoftDeletes;
 
+    public const TYPE_SODA = 'soda';
+
+    public const TYPE_RETAIL = 'retail';
+
     protected $table = 'order_management';
 
     protected $guarded = [];
@@ -35,6 +39,37 @@ class OrderManagement extends Model
     }
 
     /* ── Relationships ───────────────────────────────────────────── */
+
+    public function isRetail(): bool
+    {
+        return $this->order_type === self::TYPE_RETAIL;
+    }
+
+    public function orderTypeLabel(): string
+    {
+        return $this->isRetail() ? 'Retail' : 'Soda';
+    }
+
+    public function orderTypeBadge(): string
+    {
+        $type = $this->isRetail() ? 'retail' : 'soda';
+
+        return '<span class="order-type-badge order-type-badge--'.$type.'">'.e($this->orderTypeLabel()).'</span>';
+    }
+
+    /** Dealer name for a soda order, party name for a retail order. */
+    public function partyLabel(): string
+    {
+        if ($this->isRetail()) {
+            return $this->party_name !== null && $this->party_name !== ''
+                ? $this->party_name
+                : '—';
+        }
+
+        return $this->dealer?->user?->name
+            ?? $this->dealer?->firm_shop_name
+            ?? '—';
+    }
 
     public function broker()
     {

@@ -281,4 +281,148 @@ describe('build', function () {
 
         expect($result)->toHaveCount(1);
     });
+
+    it('lists every unpaid dispatch for one dealer on a single row', function () {
+        $s = dprsSetup();
+        dprsDispatch($s, ['dispatch_date' => '2026-01-01', 'status' => DispatchManagement::STATUS_UNPAID]);
+        dprsDispatch($s, ['dispatch_date' => '2026-01-10', 'status' => DispatchManagement::STATUS_UNPAID]);
+
+        $secondOrder = OrderManagement::create([
+            'unique_order_id'    => 'ORD-DPRS-B-' . uniqid(),
+            'broker_id'          => $s['broker']->id,
+            'brand_id'           => $s['brand']->id,
+            'dealer_id'          => $s['dealer']->id,
+            'order_date'         => '2026-02-01',
+            'delivery_address'   => 'Test Address',
+            'payment_status'     => 'unpaid',
+            'total_order_amount' => 500,
+            'grand_total'        => 500,
+            'status'             => 1,
+        ]);
+        $secondItem = OrderItem::create([
+            'order_id'    => $secondOrder->id,
+            'product_id'  => $s['product']->id,
+            'qty'         => 5,
+            'unit_price'  => 100,
+            'total_price' => 500,
+        ]);
+        dprsDispatch($s, [
+            'order_id'      => $secondOrder->id,
+            'order_item_id' => $secondItem->id,
+            'dispatch_date' => '2026-02-01',
+            'no_of_bags'    => 2,
+            'status'        => DispatchManagement::STATUS_UNPAID,
+        ]);
+
+        $service = new DeliveryPendingPaymentsReportService(new PaymentReceivableService());
+        $rows = $service->build()->first()['rows'];
+
+        expect($rows)->toHaveCount(1)
+            ->and($rows[0]['dealer_name'])->toBe($s['dealerUser']->name)
+            ->and($rows[0]['broker_name'])->toBe($s['broker']->name)
+            ->and(collect($rows[0]['orders'])->pluck('order_id')->all())
+                ->toEqualCanonicalizing([(int) $s['order']->id, (int) $secondOrder->id])
+            ->and($rows[0]['pending_days_items'])->toHaveCount(3)
+            ->and($rows[0]['total_balance_due'])->toBeGreaterThan(0)
+            ->and(collect($rows[0]['pending_days_items'])->pluck('order_id')->unique()->count())->toBe(2);
+    });
+
+    it('keeps different dealers on separate rows', function () {
+        $first = dprsSetup();
+        $second = dprsSetup();
+        dprsDispatch($first, ['status' => DispatchManagement::STATUS_UNPAID]);
+        dprsDispatch($second, ['status' => DispatchManagement::STATUS_UNPAID]);
+
+        $service = new DeliveryPendingPaymentsReportService(new PaymentReceivableService());
+        $names = $service->build()->flatMap(fn ($section) => collect($section['rows'])->pluck('dealer_name'));
+
+        expect($names)->toHaveCount(2)
+            ->and($names->all())->toContain($first['dealerUser']->name)
+            ->and($names->all())->toContain($second['dealerUser']->name);
+    });
+
+    it('groups retail orders that share a party name', function () {
+        $s = dprsSetup();
+        $makeRetail = function (string $party, string $suffix) use ($s) {
+            $order = OrderManagement::create([
+                'unique_order_id'    => 'ORD-RTL-' . $suffix . '-' . uniqid(),
+                'order_type'         => OrderManagement::TYPE_RETAIL,
+                'party_name'         => $party,
+                'broker_id'          => $s['broker']->id,
+                'brand_id'           => $s['brand']->id,
+                'dealer_id'          => null,
+                'order_date'         => '2026-03-01',
+                'payment_status'     => 'unpaid',
+                'total_order_amount' => 200,
+                'grand_total'        => 200,
+                'status'             => 1,
+            ]);
+            $item = OrderItem::create([
+                'order_id'    => $order->id,
+                'product_id'  => $s['product']->id,
+                'qty'         => 2,
+                'unit_price'  => 100,
+                'total_price' => 200,
+            ]);
+            dprsDispatch($s, [
+                'order_id'      => $order->id,
+                'order_item_id' => $item->id,
+                'dispatch_date' => '2026-03-01',
+                'status'        => DispatchManagement::STATUS_UNPAID,
+            ]);
+
+            return $order;
+        };
+
+        $sameA = $makeRetail('Village Shop', 'A');
+        $sameB = $makeRetail('Village Shop', 'B');
+        $makeRetail('Other Shop', 'C');
+
+        $service = new DeliveryPendingPaymentsReportService(new PaymentReceivableService());
+        $rows = collect($service->build((string) $s['brand']->id)->first()['rows']);
+        $village = $rows->firstWhere('dealer_name', 'Village Shop');
+
+        expect($rows)->toHaveCount(2)
+            ->and($village['orders'])->toHaveCount(2)
+            ->and(collect($village['orders'])->pluck('order_id')->all())
+                ->toEqualCanonicalizing([(int) $sameA->id, (int) $sameB->id]);
+    });
+
+    it('drops an order from the dealer row when its dispatches are under minDays', function () {
+        $s = dprsSetup();
+        dprsDispatch($s, ['dispatch_date' => '2020-01-01', 'status' => DispatchManagement::STATUS_UNPAID]);
+
+        $recent = OrderManagement::create([
+            'unique_order_id'    => 'ORD-DPRS-NEW-' . uniqid(),
+            'broker_id'          => $s['broker']->id,
+            'brand_id'           => $s['brand']->id,
+            'dealer_id'          => $s['dealer']->id,
+            'order_date'         => now()->toDateString(),
+            'delivery_address'   => 'Test Address',
+            'payment_status'     => 'unpaid',
+            'total_order_amount' => 100,
+            'grand_total'        => 100,
+            'status'             => 1,
+        ]);
+        $recentItem = OrderItem::create([
+            'order_id'    => $recent->id,
+            'product_id'  => $s['product']->id,
+            'qty'         => 1,
+            'unit_price'  => 100,
+            'total_price' => 100,
+        ]);
+        dprsDispatch($s, [
+            'order_id'      => $recent->id,
+            'order_item_id' => $recentItem->id,
+            'dispatch_date' => now()->toDateString(),
+            'status'        => DispatchManagement::STATUS_UNPAID,
+        ]);
+
+        $service = new DeliveryPendingPaymentsReportService(new PaymentReceivableService());
+        $row = $service->build('all', 30)->first()['rows'][0];
+
+        expect(collect($row['orders'])->pluck('order_id')->all())->toBe([(int) $s['order']->id])
+            ->and(collect($row['pending_days_items'])->pluck('order_id')->unique()->all())
+                ->toBe([(int) $s['order']->id]);
+    });
 });

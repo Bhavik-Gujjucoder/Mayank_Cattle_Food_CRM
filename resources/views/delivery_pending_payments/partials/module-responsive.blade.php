@@ -364,7 +364,8 @@
             font-weight: 700;
         }
 
-        .delivery-pending-payments-module .dpp-day-chips--mobile .dpp-day-chip-date {
+        .delivery-pending-payments-module .dpp-day-chips--mobile .dpp-day-chip-date,
+        .delivery-pending-payments-module .dpp-day-chips--mobile .dpp-day-chip-order {
             font-size: 0.6rem;
             color: #64748b;
             white-space: nowrap;

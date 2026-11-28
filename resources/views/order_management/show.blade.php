@@ -23,21 +23,39 @@
                     <div>{{ $order->order_date?->format('d M Y') ?? '—' }}</div>
                 </div>
                 <div class="col-md-3">
-                    <label class="text-muted small">Broker</label>
-                    <div>{{ $order->broker?->name ?? '—' }}</div>
+                    <label class="text-muted small">Order Type</label>
+                    <div>{{ $order->orderTypeLabel() }}</div>
                 </div>
+                @if ($order->isRetail())
+                    <div class="col-md-3">
+                        <label class="text-muted small">Party Name</label>
+                        <div>{{ $order->party_name ?: '—' }}</div>
+                    </div>
+                @else
+                    <div class="col-md-3">
+                        <label class="text-muted small">Broker</label>
+                        <div>{{ $order->broker?->name ?? '—' }}</div>
+                    </div>
+                @endif
                 <div class="col-md-3">
                     <label class="text-muted small">Brand</label>
                     <div>{{ $order->brand?->name ?? '—' }}</div>
                 </div>
-                <div class="col-md-3">
-                    <label class="text-muted small">Dealer</label>
-                    <div>{{ $order->dealer?->user?->name ?? $order->dealer?->firm_shop_name ?? '—' }}</div>
-                </div>
-                <div class="col-md-12 mt-3">
-                    <label class="text-muted small">Delivery Address</label>
-                    <div>{{ $order->delivery_address ?: '—' }}</div>
-                </div>
+                @unless ($order->isRetail())
+                    <div class="col-md-3">
+                        <label class="text-muted small">Dealer</label>
+                        <div>{{ $order->dealer?->user?->name ?? $order->dealer?->firm_shop_name ?? '—' }}</div>
+                    </div>
+                    <div class="col-md-12 mt-3">
+                        <label class="text-muted small">Delivery Address</label>
+                        <div>{{ $order->delivery_address ?: '—' }}</div>
+                    </div>
+                @else
+                    <div class="col-md-12 mt-3">
+                        <label class="text-muted small">Note</label>
+                        <div>{{ $order->note ?: '—' }}</div>
+                    </div>
+                @endunless
                 <div class="col-md-3 mt-3">
                     <label class="text-muted small">Grand Total</label>
                     <div class="fw-semibold">₹ {{ number_format((float) $order->grand_total, 2) }}</div>

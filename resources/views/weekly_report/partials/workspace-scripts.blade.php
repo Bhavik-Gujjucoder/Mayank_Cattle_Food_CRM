@@ -211,7 +211,7 @@
         });
 
         $block.on('change', '.wr-transport-select', function () {
-            var $scope = $(this).closest('tr, .wr-add-item-form');
+            var $scope = $(this).closest('tr, .wr-add-item-form, .wr-add-retail-form');
             var phone = $(this).find(':selected').data('phone') || '';
             $scope.find('.item-contact, .wr-add-contact').val(phone);
             loadTrucks(
@@ -242,6 +242,99 @@
                 $hint.text('');
             }
             $block.find('.quantity_error, .no_of_entries_error').text('');
+        });
+
+        $block.on('change', '.wr-order-type', function () {
+            var retail = $(this).val() === 'retail';
+            var $panel = $(this).closest('.wr-add-panel');
+            $panel.find('.wr-soda-add').toggle(!retail);
+            $panel.find('.wr-retail-add').toggle(retail);
+        });
+
+        function syncRetailForm($form) {
+            var existing = $form.find('.wr-retail-mode:checked').val() === 'existing';
+            var credit = existing
+                ? ($form.find('.wr-retail-order :selected').data('payment-type') === 'credit')
+                : ($form.find('.wr-retail-payment-type').val() === 'credit');
+            $form.find('.wr-retail-new').toggle(!existing);
+            $form.find('.wr-retail-existing').toggle(existing);
+            $form.find('.wr-retail-late-fee').toggle(credit);
+            if (!credit) {
+                $form.find('[name="accrued_late_fee"]').val('');
+            }
+        }
+
+        $block.on('change', '.wr-retail-mode, .wr-retail-payment-type', function () {
+            syncRetailForm($(this).closest('.wr-add-retail-form'));
+        });
+
+        $block.on('change', '.wr-retail-brand', function () {
+            var brand = String($(this).val() || '');
+            var $product = $(this).closest('form').find('.wr-retail-product');
+            $product.find('option').each(function () {
+                var optionBrand = String($(this).data('brand') || '');
+                $(this).toggle(!optionBrand || !brand || optionBrand === brand);
+            });
+            $product.val('');
+        });
+
+        $block.on('input', '.wr-retail-order-qty', function () {
+            var $form = $(this).closest('form');
+            var qty = $(this).val();
+            $form.find('.wr-retail-dispatch-qty').attr('max', qty).val(qty);
+        });
+
+        $block.on('change', '.wr-retail-product', function () {
+            var price = $(this).find(':selected').data('price');
+            if (price !== undefined && price !== '') {
+                $(this).closest('form').find('.wr-retail-price').val(price);
+            }
+        });
+
+        $block.on('change', '.wr-retail-order', function () {
+            var $form = $(this).closest('form');
+            var pending = $(this).find(':selected').data('pending');
+            var orderId = $(this).find(':selected').data('order-id') || '';
+            if (pending) {
+                $form.find('.wr-retail-dispatch-qty').attr('max', pending).val(pending);
+            }
+            syncRetailForm($form);
+        });
+
+        $block.find('.wr-retail-add').each(function () {
+            var $select = $(this).find('.wr-retail-order');
+            $.get(pendingItemsUrl, { order_type: 'retail' }, function (res) {
+                var html = '<option value="">— Select pending retail order —</option>';
+                (res.results || []).forEach(function (r) {
+                    html += '<option value="' + r.order_item_id + '" data-pending="' + r.pending_qty + '" data-order-id="' + (r.order_id || '') + '" data-payment-type="' + (r.payment_type || 'cash') + '">'
+                        + $('<div>').text(r.label).html() + '</option>';
+                });
+                $select.html(html);
+            });
+        });
+
+        $block.on('submit', '.wr-add-retail-form', function (e) {
+            e.preventDefault();
+            var $form = $(this);
+            $form.find('[class$="_error"]').text('');
+            $.ajax({
+                url: $form.attr('action'),
+                method: 'POST',
+                data: $form.serialize(),
+                headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                success: function () {
+                    window.location.reload();
+                },
+                error: function (xhr) {
+                    var errors = (xhr.responseJSON && xhr.responseJSON.errors) || {};
+                    $.each(errors, function (key, msgs) {
+                        $form.find('.' + key + '_error').text(msgs[0]);
+                    });
+                    if (!Object.keys(errors).length) {
+                        show_error((xhr.responseJSON && xhr.responseJSON.message) || 'Could not add the retail order.');
+                    }
+                }
+            });
         });
 
         $block.on('submit', '.wr-add-item-form', function (e) {

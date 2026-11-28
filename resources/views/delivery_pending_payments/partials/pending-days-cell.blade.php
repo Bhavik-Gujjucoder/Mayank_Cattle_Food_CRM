@@ -16,7 +16,7 @@
                 @if (!empty($canUpdateDispatchPayment)) data-dispatch-id="{{ $item['dispatch_id'] ?? '' }}" @endif
                 data-bs-toggle="tooltip"
                 data-bs-placement="top"
-                data-bs-title="Dispatch date: {{ $item['dispatch_date'] }}"
+                data-bs-title="{{ !empty($item['order_code']) ? $item['order_code'] . ' · ' : '' }}Dispatch date: {{ $item['dispatch_date'] }}"
                 tabindex="0">{{ $item['days'] }}</span>
         @endforeach
     </span>

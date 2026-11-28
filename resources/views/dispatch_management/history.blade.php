@@ -73,6 +73,7 @@
                             <i class="ti ti-file-invoice"></i> Dispatch History For
                         </span>
                         <span class="dh-order-id">{{ $order->unique_order_id }}</span>
+                        <span class="d-block mt-1">{!! $order->orderTypeBadge() !!}</span>
                     </div>
 
                     <div class="dh-meta-divider"></div>
@@ -80,14 +81,14 @@
                     {{-- Column 2 : Dealer --}}
                     <div class="dh-meta-col">
                         <span class="dh-meta-label">
-                            <i class="ti ti-building-store"></i> Dealer
+                            <i class="ti ti-building-store"></i> {{ $order->isRetail() ? 'Party' : 'Dealer' }}
                         </span>
                         <div class="dh-dealer-row">
                             <div class="dh-dealer-avatar">
                                 <i class="ti ti-user"></i>
                             </div>
                             <span class="dh-dealer-name">
-                                {{ $order->dealer?->user?->name ?? '—' }}
+                                {{ $order->partyLabel() }}
                             </span>
                         </div>
                     </div>
@@ -684,6 +685,7 @@
                                 @include('dispatch_management.partials.manual-late-fee-field', [
                                     'idPrefix' => 'dispatch',
                                     'errorId' => 'accrued_late_fee',
+                                    'showDispatchLink' => ! $order->isRetail(),
                                 ])
 
                             </div>
@@ -830,6 +832,7 @@
                                 @include('dispatch_management.partials.manual-late-fee-field', [
                                     'idPrefix' => 'edit',
                                     'useOld' => false,
+                                    'showDispatchLink' => ! $order->isRetail(),
                                 ])
 
                                 <div class="col-12">

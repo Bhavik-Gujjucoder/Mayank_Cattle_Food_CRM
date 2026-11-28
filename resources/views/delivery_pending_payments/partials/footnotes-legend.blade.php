@@ -33,5 +33,5 @@
 </p>
 <p class="mb-0 dpp-footnote dpp-footnote-line {{ $modifier }}">
     <span class="dpp-footnote-label">Scope:</span>
-    Only orders with at least one unpaid or partial dispatch payment are listed.
+    Each row is one dealer. All of that dealer’s unpaid or partial dispatches are listed together. Retail parties stay on their own row.
 </p>

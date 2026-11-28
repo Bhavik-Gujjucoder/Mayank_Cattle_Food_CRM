@@ -1,6 +1,9 @@
 @php
     use App\Models\WeeklyReportItem;
     use App\Support\ProductUnit;
+
+    $plannedItems = $plannedItems ?? $report->items;
+    $orderTypeFilter = $orderTypeFilter ?? null;
 @endphp
 
 <div class="wr-listing-wrap">
@@ -33,7 +36,7 @@
                         <th>Order No</th>
                         <th>Order ID</th>
                         <th>Product</th>
-                        <th>Dealer</th>
+                        <th>Dealer / Party</th>
                         <th>City</th>
                         <th>Qty</th>
                         <th class="wr-th-freight">Less freight / qty</th>
@@ -48,7 +51,7 @@
                     </tr>
                 </thead>
                 <tbody class="weekly-report-items-body">
-                    @forelse ($report->items as $item)
+                    @forelse ($plannedItems as $item)
                         @php
                             $dealer = $item->order?->dealer;
                             $locked = $item->isLocked();
@@ -74,12 +77,15 @@
                             </td>
                             <td data-label="Order ID">
                                 <div class="wr-readonly-value wr-cell-order">{{ $item->order?->unique_order_id ?? '—' }}</div>
+                                @if ($item->order)
+                                    <div class="mt-1">{!! $item->order->orderTypeBadge() !!}</div>
+                                @endif
                             </td>
                             <td data-label="Product">
                                 <div class="wr-readonly-value">{{ $item->product?->name ?? '—' }}</div>
                             </td>
                             <td data-label="Dealer">
-                                <div class="wr-readonly-value">{{ $dealer?->user?->name ?? $dealer?->firm_shop_name ?? '—' }}</div>
+                                <div class="wr-readonly-value">{{ $item->order?->partyLabel() ?? '—' }}</div>
                             </td>
                             <td data-label="City">
                                 <div class="wr-readonly-value">{{ $dealer?->city?->city_name ?? '—' }}</div>
@@ -112,15 +118,17 @@
                                     <input type="number" class="form-control form-control-sm item-late-fee"
                                         value="{{ $rowLateAmount > 0 ? $rowLateAmount : '' }}"
                                         min="0" step="0.01" placeholder="Optional">
-                                    <select class="form-select form-select-sm item-late-fee-dispatch mt-1"
-                                        data-selected="{{ $item->late_fee_dispatch_id }}">
-                                        <option value="">— Late fee for dispatch —</option>
-                                        @if ($item->late_fee_dispatch_id)
-                                            <option value="{{ $item->late_fee_dispatch_id }}" selected>
-                                                {{ $rowLateBehalf !== '' ? $rowLateBehalf : 'Selected dispatch' }}
-                                            </option>
-                                        @endif
-                                    </select>
+                                    @unless ($item->order?->isRetail())
+                                        <select class="form-select form-select-sm item-late-fee-dispatch mt-1"
+                                            data-selected="{{ $item->late_fee_dispatch_id }}">
+                                            <option value="">— Late fee for dispatch —</option>
+                                            @if ($item->late_fee_dispatch_id)
+                                                <option value="{{ $item->late_fee_dispatch_id }}" selected>
+                                                    {{ $rowLateBehalf !== '' ? $rowLateBehalf : 'Selected dispatch' }}
+                                                </option>
+                                            @endif
+                                        </select>
+                                    @endunless
                                 @else
                                     <div class="wr-readonly-value">
                                         @if ($rowLateAmount > 0)
@@ -251,7 +259,13 @@
                             <td colspan="14">
                                 <div class="wr-empty-state py-3">
                                     <i class="ti ti-inbox"></i>
-                                    No orders yet — use the form above.
+                                    @if ($orderTypeFilter === 'retail')
+                                        No retail orders for this day.
+                                    @elseif ($orderTypeFilter === 'soda')
+                                        No soda orders for this day.
+                                    @else
+                                        No orders yet — use the form above.
+                                    @endif
                                 </div>
                             </td>
                         </tr>

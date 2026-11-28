@@ -216,6 +216,11 @@
                 {{ \Illuminate\Support\Carbon::parse($filters['date'] ?? now())->format('d M Y') }}
                 ({{ strtoupper(\Illuminate\Support\Carbon::parse($filters['date'] ?? now())->format('l')) }})
             @endif
+            @if (($filters['order_type'] ?? null) === 'retail')
+                · Retail
+            @elseif (($filters['order_type'] ?? null) === 'soda')
+                · Soda
+            @endif
             · Printed {{ now()->format('d M Y, h:i A') }}
         </p>
     </div>
@@ -233,7 +238,8 @@
             @if (! $report)
                 <div class="wr-print-empty">No report exists for this date.</div>
             @else
-                @if ($report->items->isEmpty())
+                @php $plannedItems = $report->itemsForOrderType($filters['order_type'] ?? null); @endphp
+                @if ($plannedItems->isEmpty())
                     <div class="wr-print-empty">No planned orders for this date.</div>
                 @else
                     <table class="wr-print-table">
@@ -258,7 +264,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($report->items as $item)
+                            @foreach ($plannedItems as $item)
                                 @php
                                     $dealer = $item->order?->dealer;
                                     $confirmed = $item->isConfirmed();

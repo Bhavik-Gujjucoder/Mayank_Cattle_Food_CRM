@@ -231,6 +231,7 @@ class OrderBulkImportService
                 $date = Carbon::parse($orderData['date']);
                 $order = OrderManagement::create([
                     'unique_order_id' => $this->nextOrderId($date),
+                    'order_type' => OrderManagement::TYPE_SODA,
                     'broker_id' => $orderData['broker_id'],
                     'brand_id' => $orderData['brand_id'],
                     'dealer_id' => $orderData['dealer_id'],
@@ -244,6 +245,163 @@ class OrderBulkImportService
                     'status' => 1,
                 ]);
                 $order->items()->createMany($orderData['lines']);
+                $ids[] = $order->unique_order_id;
+            }
+        });
+
+        return ['created' => count($ids), 'ids' => $ids];
+    }
+
+    /**
+     * @return array{created: int, ids: list<string>}
+     */
+    public function importRetail(UploadedFile $file): array
+    {
+        if (! SalesScope::hasGlobalAccess()) {
+            abort(403, 'Retail orders are available to admin and staff only.');
+        }
+
+        $rows = SpreadsheetImport::rows($file);
+        if ($rows->isEmpty()) {
+            $this->fail(['The file has no order rows. Put data on the first sheet under the sample headings.']);
+        }
+        if ($rows->count() > self::MAX_ROWS) {
+            $this->fail(['The file has more than ' . self::MAX_ROWS . ' data rows.']);
+        }
+
+        $brands = $this->indexByName(BrandManagement::query()->where('status', 1)->get(['id', 'name']));
+        $products = Product::query()->where('status', 1)->get(['id', 'name', 'brand_id']);
+        $groups = [];
+        $errors = [];
+
+        foreach ($rows as $entry) {
+            $rowNo = $entry['row'];
+            $data = $entry['data'];
+            $groupKey = SpreadsheetImport::text($data, 'total_product_order_id');
+            if ($groupKey === '') {
+                $errors[] = "Row {$rowNo}: Total Product Order ID is required.";
+                continue;
+            }
+
+            $date = SpreadsheetImport::date($data['order_date'] ?? null);
+            $party = SpreadsheetImport::text($data, 'party_name');
+            $brandName = SpreadsheetImport::text($data, 'brand');
+            $note = SpreadsheetImport::text($data, 'note');
+            $paymentStatus = mb_strtolower(SpreadsheetImport::text($data, 'payment_status'));
+            $paymentType = mb_strtolower(SpreadsheetImport::text($data, 'payment_type'));
+            $productName = SpreadsheetImport::text($data, 'product');
+            $qty = SpreadsheetImport::wholeNumber($data['qty'] ?? null);
+            $price = SpreadsheetImport::number($data['unit_price'] ?? null);
+            $partial = null;
+
+            if (! $date) {
+                $errors[] = "Row {$rowNo}: Order date must be YYYY-MM-DD.";
+            }
+            if ($party === '') {
+                $errors[] = "Row {$rowNo}: Party name is required.";
+            }
+            if (! in_array($paymentStatus, ['unpaid', 'paid', 'partial'], true)) {
+                $errors[] = "Row {$rowNo}: Payment status must be unpaid, paid, or partial.";
+            }
+            if (! in_array($paymentType, ['cash', 'credit'], true)) {
+                $errors[] = "Row {$rowNo}: Payment type must be cash or credit.";
+            }
+            if ($paymentStatus === 'partial') {
+                $partial = SpreadsheetImport::number($data['partial_paid_amount'] ?? '');
+                if ($partial === null || $partial < 0) {
+                    $errors[] = "Row {$rowNo}: Partial paid amount is required when payment status is partial.";
+                    $partial = null;
+                }
+            }
+            if ($productName === '') {
+                $errors[] = "Row {$rowNo}: Product is required.";
+            }
+            if ($qty === null || $qty < 1) {
+                $errors[] = "Row {$rowNo}: Qty must be a whole number of at least 1.";
+            }
+            if ($price === null || $price < 0) {
+                $errors[] = "Row {$rowNo}: Unit price must be a number of 0 or more.";
+            }
+
+            if (! isset($groups[$groupKey])) {
+                $groups[$groupKey] = compact('date', 'party', 'brandName', 'note', 'paymentStatus', 'paymentType', 'partial') + ['lines' => []];
+            } elseif (count($groups[$groupKey]['lines']) >= 1) {
+                $errors[] = "Row {$rowNo}: a retail order can have only one product.";
+            }
+
+            $groups[$groupKey]['lines'][] = [
+                'row' => $rowNo,
+                'product' => $productName,
+                'qty' => $qty,
+                'price' => $price,
+            ];
+        }
+
+        $prepared = [];
+        foreach ($groups as $groupKey => $group) {
+            $brand = $this->resolveNamed($brands, $group['brandName'], 'Brand', $group['lines'][0]['row'] ?? 0, $errors);
+            $line = $group['lines'][0] ?? null;
+            if (! $brand || ! $line || $line['product'] === '' || $line['qty'] === null || $line['price'] === null || ! $group['date'] || $group['party'] === '') {
+                continue;
+            }
+            if (count($group['lines']) !== 1) {
+                continue;
+            }
+            $matches = $products->filter(function (Product $product) use ($brand, $line) {
+                return (int) $product->brand_id === (int) $brand->id
+                    && mb_strtolower(trim($product->name)) === mb_strtolower($line['product']);
+            })->values();
+            if ($matches->count() !== 1) {
+                $errors[] = $matches->isEmpty()
+                    ? "Row {$line['row']}: product \"{$line['product']}\" was not found for this brand."
+                    : "Row {$line['row']}: more than one active product is named \"{$line['product']}\" for this brand.";
+                continue;
+            }
+            $prepared[] = [
+                'date' => $group['date'],
+                'party_name' => $group['party'],
+                'brand_id' => (int) $brand->id,
+                'note' => $group['note'] !== '' ? $group['note'] : null,
+                'payment_status' => $group['paymentStatus'],
+                'payment_type' => $group['paymentType'],
+                'partial' => $group['paymentStatus'] === 'partial' ? $group['partial'] : null,
+                'product_id' => (int) $matches->first()->id,
+                'qty' => (int) $line['qty'],
+                'unit_price' => round((float) $line['price'], 2),
+            ];
+        }
+
+        if ($errors !== []) {
+            $this->fail($errors);
+        }
+
+        $ids = [];
+        DB::transaction(function () use ($prepared, &$ids) {
+            foreach ($prepared as $orderData) {
+                $total = round($orderData['qty'] * $orderData['unit_price'], 2);
+                $order = OrderManagement::create([
+                    'unique_order_id' => $this->nextOrderId(Carbon::parse($orderData['date'])),
+                    'order_type' => OrderManagement::TYPE_RETAIL,
+                    'broker_id' => null,
+                    'brand_id' => $orderData['brand_id'],
+                    'dealer_id' => null,
+                    'party_name' => $orderData['party_name'],
+                    'order_date' => $orderData['date'],
+                    'delivery_address' => null,
+                    'note' => $orderData['note'],
+                    'payment_status' => $orderData['payment_status'],
+                    'payment_type' => $orderData['payment_type'],
+                    'partial_paid_amount' => $orderData['partial'],
+                    'total_order_amount' => $total,
+                    'grand_total' => $total,
+                    'status' => 1,
+                ]);
+                $order->items()->create([
+                    'product_id' => $orderData['product_id'],
+                    'qty' => $orderData['qty'],
+                    'unit_price' => $orderData['unit_price'],
+                    'total_price' => $total,
+                ]);
                 $ids[] = $order->unique_order_id;
             }
         });

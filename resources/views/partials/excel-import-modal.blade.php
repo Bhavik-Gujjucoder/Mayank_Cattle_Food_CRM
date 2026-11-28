@@ -7,6 +7,11 @@
                     <h5 class="modal-title" id="{{ $modalId }}Label">{{ $title }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                @if (!empty($hiddenInputs))
+                    @foreach ($hiddenInputs as $hiddenName => $hiddenValue)
+                        <input type="hidden" name="{{ $hiddenName }}" value="{{ $hiddenValue }}">
+                    @endforeach
+                @endif
                 <div class="modal-body">
                     <p class="mb-2">Download the sample file, replace the example rows, then upload it here.</p>
                     <p class="mb-3">

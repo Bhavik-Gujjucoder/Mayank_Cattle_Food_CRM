@@ -45,7 +45,7 @@ class DispatchManagementController extends Controller
             OrderManagement::has('dispatches')->orderBy('unique_order_id')
         );
 
-        $data['orders'] = (clone $scopedOrdersQuery)->get(['id', 'unique_order_id', 'dealer_id']);
+        $data['orders'] = (clone $scopedOrdersQuery)->get(['id', 'unique_order_id', 'dealer_id', 'order_type']);
 
         $productIds = SalesScope::scopeDispatches(DispatchManagement::query())
             ->distinct()
@@ -104,6 +104,9 @@ class DispatchManagementController extends Controller
                     return '<a href="' . $url . '" class="fw-semibold text-primary">' . e($id) . '</a>' . $chip;
                 })
 
+                ->addColumn('order_type', fn ($row) => $row->order?->orderTypeBadge()
+                    ?? '<span class="order-type-badge order-type-badge--soda">Soda</span>')
+
                 ->addColumn('product_name',    fn($row) => $row->orderItem?->product?->name ?? '—')
                 ->editColumn('no_of_bags', function ($row) {
                     $unit = $row->orderItem?->product?->unit;
@@ -123,7 +126,7 @@ class DispatchManagementController extends Controller
                 })
                 ->addColumn('transporter_name',fn($row) => $row->transporter?->name ?? '—')
                 ->editColumn('dispatch_date',  fn($row) => $row->dispatch_date?->format('d M Y') ?? '—')
-                ->addColumn('dealer_name',    fn($row) => $row->orderItem?->order?->dealer?->user?->name ?? '—')
+                ->addColumn('dealer_name',    fn ($row) => $row->order?->partyLabel() ?? $row->orderItem?->order?->partyLabel() ?? '—')
                 ->addColumn('late_fee', function ($row) use ($receivableService) {
                     $summary = $receivableService->summarizeDispatch($row);
 
@@ -191,7 +194,7 @@ class DispatchManagementController extends Controller
                     return $btn;
                 })
 
-                ->rawColumns(['unique_order_id', 'action', 'is_complete', 'status', 'late_fee'])
+                ->rawColumns(['unique_order_id', 'order_type', 'action', 'is_complete', 'status', 'late_fee'])
                 ->make(true);
         }
 
@@ -353,19 +356,31 @@ class DispatchManagementController extends Controller
         //     ]);
         // }
 
-        $lateFeeError = $receivableService->lateFeeDispatchError(
-            $request->input('late_fee_dispatch_id'),
-            (int) $parentOrder->dealer_id,
-            (float) $validated['accrued_late_fee']
-        );
+        if ($parentOrder->isRetail() && ($parentOrder->payment_type ?? 'cash') !== PaymentReceivableService::PAYMENT_TYPE_CREDIT) {
+            $validated['accrued_late_fee'] = 0;
+            $validated['late_fee_dispatch_id'] = null;
+            $lateFeeError = null;
+        } elseif ($parentOrder->isRetail()) {
+            $lateFeeError = $receivableService->lateFeeDispatchErrorForOrder(
+                $request->input('late_fee_dispatch_id'),
+                (int) $parentOrder->id,
+                (float) $validated['accrued_late_fee']
+            );
+        } else {
+            $lateFeeError = $receivableService->lateFeeDispatchError(
+                $request->input('late_fee_dispatch_id'),
+                (int) $parentOrder->dealer_id,
+                (float) $validated['accrued_late_fee']
+            );
+        }
         if ($lateFeeError) {
             return $this->dispatchStoreErrorResponse($request, [
                 'late_fee_dispatch_id' => $lateFeeError,
             ]);
         }
-        if ((float) $validated['accrued_late_fee'] > 0) {
-            $validated['late_fee_dispatch_id'] = (int) $request->input('late_fee_dispatch_id');
-        }
+        $validated['late_fee_dispatch_id'] = ((float) $validated['accrued_late_fee'] > 0 && $request->filled('late_fee_dispatch_id'))
+            ? (int) $request->input('late_fee_dispatch_id')
+            : null;
 
         if ((int) $validated['status'] === DispatchManagement::STATUS_PARTIAL) {
             $preview = new DispatchManagement([
@@ -604,13 +619,26 @@ class DispatchManagementController extends Controller
             $previousLateFee,
             (float) $validated['accrued_late_fee']
         );
-        $dispatch->loadMissing('order:id,dealer_id');
-        $lateFeeError = $receivableService->lateFeeDispatchError(
-            $validated['late_fee_dispatch_id'] ?? $dispatch->late_fee_dispatch_id,
-            (int) ($dispatch->order?->dealer_id ?? 0),
-            (float) $validated['accrued_late_fee'],
-            (int) $dispatch->id
-        );
+        $dispatch->loadMissing('order:id,dealer_id,order_type,payment_type');
+        if ($dispatch->order?->isRetail() && ($dispatch->order->payment_type ?? 'cash') !== PaymentReceivableService::PAYMENT_TYPE_CREDIT) {
+            $validated['accrued_late_fee'] = 0;
+            $validated['late_fee_dispatch_id'] = null;
+            $lateFeeError = null;
+        } elseif ($dispatch->order?->isRetail()) {
+            $lateFeeError = $receivableService->lateFeeDispatchErrorForOrder(
+                $validated['late_fee_dispatch_id'] ?? $dispatch->late_fee_dispatch_id,
+                (int) $dispatch->order_id,
+                (float) $validated['accrued_late_fee'],
+                (int) $dispatch->id
+            );
+        } else {
+            $lateFeeError = $receivableService->lateFeeDispatchError(
+                $validated['late_fee_dispatch_id'] ?? $dispatch->late_fee_dispatch_id,
+                (int) ($dispatch->order?->dealer_id ?? 0),
+                (float) $validated['accrued_late_fee'],
+                (int) $dispatch->id
+            );
+        }
         if ($lateFeeError) {
             return redirect()
                 ->route('dispatch.orderHistory', $dispatch->order_id)
@@ -618,8 +646,9 @@ class DispatchManagementController extends Controller
                 ->withErrors(['late_fee_dispatch_id' => $lateFeeError])
                 ->with('edit_dispatch_id', $dispatch->id);
         }
-        $validated['late_fee_dispatch_id'] = (float) $validated['accrued_late_fee'] > 0
-            ? (int) ($validated['late_fee_dispatch_id'] ?? $dispatch->late_fee_dispatch_id)
+        $linkedLateFeeDispatch = $validated['late_fee_dispatch_id'] ?? $dispatch->late_fee_dispatch_id;
+        $validated['late_fee_dispatch_id'] = ((float) $validated['accrued_late_fee'] > 0 && ! empty($linkedLateFeeDispatch))
+            ? (int) $linkedLateFeeDispatch
             : null;
         $orderItem = $dispatch->orderItem;
         $freightError = LessFreight::validationMessage(
@@ -702,10 +731,15 @@ class DispatchManagementController extends Controller
         SalesScope::authorizeOrderAccess($order);
 
         return response()->json([
-            'results' => $receivableService->lateFeeDispatchOptions(
-                (int) $order->dealer_id,
-                $request->integer('exclude_id') ?: null
-            ),
+            'results' => $order->isRetail()
+                ? $receivableService->lateFeeDispatchOptionsForOrder(
+                    (int) $order->id,
+                    $request->integer('exclude_id') ?: null
+                )
+                : $receivableService->lateFeeDispatchOptions(
+                    (int) $order->dealer_id,
+                    $request->integer('exclude_id') ?: null
+                ),
         ]);
     }
 
@@ -896,6 +930,10 @@ class DispatchManagementController extends Controller
 
         if ($request->filled('order_id') && $request->order_id !== 'all') {
             $query->where('order_id', $request->order_id);
+        }
+
+        if ($request->filled('order_type') && in_array($request->order_type, [OrderManagement::TYPE_SODA, OrderManagement::TYPE_RETAIL], true)) {
+            $query->whereHas('order', fn (Builder $q) => $q->where('order_type', $request->order_type));
         }
 
         if ($request->filled('product_id') && $request->product_id !== 'all') {

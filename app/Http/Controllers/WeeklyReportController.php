@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Exports\WeeklyReportExport;
+use App\Models\BrandManagement;
+use App\Models\OrderManagement;
+use App\Models\Product;
 use App\Models\User;
 use App\Models\WeeklyReport;
 use App\Models\WeeklyReportItem;
@@ -31,7 +34,7 @@ class WeeklyReportController extends Controller
             'create', 'store',
         ]);
         $this->middleware('permission:edit-weekly-report')->only([
-            'updateAlreadyProduced', 'storeItem', 'updateItem', 'reorderItems', 'confirmItem',
+            'updateAlreadyProduced', 'storeItem', 'storeRetailItem', 'updateItem', 'reorderItems', 'confirmItem',
         ]);
         $this->middleware('permission:delete-weekly-report')->only([
             'destroy', 'destroyItem',
@@ -107,6 +110,7 @@ class WeeklyReportController extends Controller
                 $request->input('date'),
                 $request->input('date_from'),
                 $request->input('date_to'),
+                $request->input('order_type'),
             );
         } catch (ValidationException $e) {
             return redirect()
@@ -133,6 +137,9 @@ class WeeklyReportController extends Controller
             'focusDate'    => $focusDate,
             'transporters' => $this->transporters(),
             'dealers'      => SalesScope::filterableDealers(),
+            'brands'       => BrandManagement::activeForDropdown(),
+            'products'     => Product::query()->where('status', 1)->orderBy('name')->get(['id', 'name', 'unit', 'brand_id', 'price']),
+            'allowRetail'  => SalesScope::hasGlobalAccess(),
             'prevDate'     => $focusDate?->copy()->subDay()->toDateString(),
             'nextDate'     => $focusDate?->copy()->addDay()->toDateString(),
             'exportQuery'  => $this->exportQueryFromFilters($filters, false),
@@ -290,6 +297,20 @@ class WeeklyReportController extends Controller
     public function searchPendingItems(Request $request)
     {
         $term = $request->input('q', $request->input('term'));
+        $orderType = $request->input('order_type') === OrderManagement::TYPE_RETAIL
+            ? OrderManagement::TYPE_RETAIL
+            : OrderManagement::TYPE_SODA;
+
+        if ($orderType === OrderManagement::TYPE_RETAIL) {
+            if (! SalesScope::hasGlobalAccess()) {
+                abort(403, 'Retail orders are available to admin and staff only.');
+            }
+
+            return response()->json([
+                'results' => $this->weeklyReports->searchPendingOrderItems($term, 50, null, OrderManagement::TYPE_RETAIL),
+            ]);
+        }
+
         $dealerId = $request->filled('dealer_id') ? (int) $request->input('dealer_id') : null;
 
         if (SalesScope::showDealerFilter()) {
@@ -364,6 +385,82 @@ class WeeklyReportController extends Controller
         return redirect()
             ->route('weekly-report.index', ['date' => $weeklyReport->report_date->toDateString()])
             ->with('success', $count === 1 ? 'Row added to report.' : $count . ' rows added to report.');
+    }
+
+    public function storeRetailItem(Request $request, WeeklyReport $weeklyReport)
+    {
+        if (! SalesScope::hasGlobalAccess()) {
+            abort(403, 'Retail orders are available to admin and staff only.');
+        }
+
+        $mode = $request->input('retail_mode') === 'existing' ? 'existing' : 'new';
+        $rules = [
+            'quantity' => 'required|integer|min:1',
+            'less_freight_per_qty' => 'nullable|numeric|min:0',
+            'accrued_late_fee' => 'nullable|numeric|min:0',
+            'late_fee_dispatch_id' => 'nullable|integer|exists:dispatch_management,id',
+            'transport_id' => 'nullable|exists:users,id',
+            'truck_number' => 'nullable|string|max:100',
+            'driver_contact' => 'nullable|string|max:20',
+            'dispatch_note' => 'nullable|string|max:2000',
+        ];
+
+        if ($mode === 'existing') {
+            $rules['order_item_id'] = ['required', Rule::exists('order_items', 'id')->whereNull('deleted_at')];
+        } else {
+            $rules['party_name'] = 'required|string|max:255';
+            $rules['brand_id'] = 'required|exists:brand_management,id';
+            $rules['order_date'] = 'required|date';
+            $rules['note'] = 'nullable|string|max:2000';
+            $rules['product_id'] = 'required|exists:products,id';
+            $rules['order_qty'] = 'required|integer|min:1';
+            $rules['unit_price'] = 'required|numeric|min:0';
+            $rules['payment_status'] = 'required|in:unpaid,paid,partial';
+            $rules['payment_type'] = 'required|in:cash,credit';
+            $rules['partial_paid_amount'] = 'nullable|numeric|min:0|required_if:payment_status,partial';
+        }
+
+        $validated = $request->validate($rules, [
+            'order_item_id.required' => 'Select a pending retail order.',
+            'party_name.required' => 'Party name is required.',
+            'order_qty.min' => 'Order quantity must be at least 1.',
+            'quantity.min' => 'Dispatch quantity must be at least 1.',
+        ]);
+
+        if ($mode === 'new' && (int) $validated['quantity'] > (int) $validated['order_qty']) {
+            throw ValidationException::withMessages([
+                'quantity' => 'Dispatch quantity cannot be more than the order quantity.',
+            ]);
+        }
+
+        $validated['retail_mode'] = $mode;
+        if ($mode === 'new' && ($validated['payment_type'] ?? '') !== 'credit') {
+            $validated['accrued_late_fee'] = null;
+            $validated['late_fee_dispatch_id'] = null;
+        }
+
+        try {
+            $this->weeklyReports->addRetailLine($weeklyReport, $validated);
+        } catch (ValidationException $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'The given data was invalid.',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+            throw $e;
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Retail order added to Daily Dispatch.',
+            ]);
+        }
+
+        return redirect()
+            ->route('weekly-report.index', ['date' => $weeklyReport->report_date->toDateString()])
+            ->with('success', 'Retail order added to Daily Dispatch.');
     }
 
     public function updateItem(Request $request, WeeklyReport $weeklyReport, WeeklyReportItem $weeklyReportItem)
@@ -518,6 +615,7 @@ class WeeklyReportController extends Controller
             $request->input('date') ?? $request->input('wr_date'),
             $request->input('date_from') ?? $request->input('wr_date_from'),
             $request->input('date_to') ?? $request->input('wr_date_to'),
+            $request->input('order_type'),
         );
 
         $days = $this->weeklyReports->workspaceDays($filters, false, $maxDays);
@@ -526,20 +624,24 @@ class WeeklyReportController extends Controller
     }
 
     /**
-     * @param  array{mode: string, date: string|null, date_from: string|null, date_to: string|null}  $filters
+     * @param  array{mode: string, date: string|null, date_from: string|null, date_to: string|null, order_type?: string|null}  $filters
      * @return array<string, string>
      */
     private function exportQueryFromFilters(array $filters, bool $dashboard): array
     {
+        $orderType = $filters['order_type'] ?? null;
+
         if (($filters['mode'] ?? 'single') === 'range') {
             return array_filter([
                 $dashboard ? 'wr_date_from' : 'date_from' => $filters['date_from'] ?? null,
                 $dashboard ? 'wr_date_to' : 'date_to'     => $filters['date_to'] ?? null,
+                'order_type' => $orderType,
             ]);
         }
 
         return array_filter([
             $dashboard ? 'wr_date' : 'date' => $filters['date'] ?? null,
+            'order_type' => $orderType,
         ]);
     }
 

@@ -343,6 +343,34 @@ describe('index', function () {
         expect($response->json('recordsTotal'))->toBe(1);
     });
 
+    it('AJAX filters dispatches by order type', function () {
+        $s = disSetup();
+        $actor = disActor(['view-dispatch']);
+        mkDis($s['order']->id, $s['orderItem']->id, $s['product']->id, $s['transporter']->id);
+
+        $retail = disOrder($s['broker']->id, $s['brand']->id, $s['dealer']->id, [
+            'order_type' => 'retail',
+            'party_name' => 'Retail Party',
+            'broker_id' => null,
+            'dealer_id' => null,
+            'delivery_address' => null,
+        ]);
+        $retailItem = disOrderItem($retail->id, $s['product']->id);
+        mkDis($retail->id, $retailItem->id, $s['product']->id, $s['transporter']->id);
+
+        $soda = $this->actingAs($actor)
+            ->getJson(route('dispatch.index').'?order_type=soda', ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk();
+        $retailRows = $this->actingAs($actor)
+            ->getJson(route('dispatch.index').'?order_type=retail', ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk();
+
+        expect($soda->json('recordsTotal'))->toBe(1)
+            ->and($soda->json('data.0.order_type'))->toContain('Soda')
+            ->and($retailRows->json('recordsTotal'))->toBe(1)
+            ->and($retailRows->json('data.0.order_type'))->toContain('Retail');
+    });
+
     it('AJAX filters dispatches by product_id', function () {
         $s       = disSetup();
         $product2 = disProduct($s['brand']->id);

@@ -370,6 +370,16 @@
                             autocomplete="off">
                     </div>
                 </div>
+                @if (\App\Support\SalesScope::hasGlobalAccess())
+                    <div class="common-hed-form cls-form-select-input">
+                        <label class="col-form-label">Order Type</label>
+                        <select class="form-select select search-dropdown" name="order_type" id="orderTypeFilter">
+                            <option value="all">All Types</option>
+                            <option value="soda">Soda</option>
+                            <option value="retail">Retail</option>
+                        </select>
+                    </div>
+                @endif
                 <div class="common-hed-form cls-form-select-input">
                     <label class="col-form-label">Payment Status</label>
                     <select class="form-select select search-dropdown" name="payment_status" id="paymentStatusFilter">
@@ -438,16 +448,31 @@
                                 <i class="ti ti-file-export me-2"></i>Export (0)
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
+                                <li><h6 class="dropdown-header">Soda</h6></li>
                                 <li>
-                                    <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('order.export') }}">
+                                    <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('order.export', ['order_type' => 'soda']) }}">
                                         <i class="ti ti-file-spreadsheet me-2"></i>Export Excel
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('order.export-pdf') }}">
+                                    <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('order.export-pdf', ['order_type' => 'soda']) }}">
                                         <i class="ti ti-file-type-pdf me-2"></i>Export PDF
                                     </a>
                                 </li>
+                                @if (\App\Support\SalesScope::hasGlobalAccess())
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><h6 class="dropdown-header">Retail</h6></li>
+                                    <li>
+                                        <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('order.export', ['order_type' => 'retail']) }}">
+                                            <i class="ti ti-file-spreadsheet me-2"></i>Export Excel
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item export-filtered-link" href="#" data-export-url="{{ route('order.export-pdf', ['order_type' => 'retail']) }}">
+                                            <i class="ti ti-file-type-pdf me-2"></i>Export PDF
+                                        </a>
+                                    </li>
+                                @endif
                             </ul>
                         </div>
                         <div class="btn-group">
@@ -455,26 +480,49 @@
                                 <i class="ti ti-database-export me-2"></i>Full Export
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
+                                <li><h6 class="dropdown-header">Soda</h6></li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('order.export-full') }}">
+                                    <a class="dropdown-item" href="{{ route('order.export-full', ['order_type' => 'soda']) }}">
                                         <i class="ti ti-file-spreadsheet me-2"></i>Export Excel
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('order.export-full-pdf') }}">
+                                    <a class="dropdown-item" href="{{ route('order.export-full-pdf', ['order_type' => 'soda']) }}">
                                         <i class="ti ti-file-type-pdf me-2"></i>Export PDF
                                     </a>
                                 </li>
+                                @if (\App\Support\SalesScope::hasGlobalAccess())
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><h6 class="dropdown-header">Retail</h6></li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('order.export-full', ['order_type' => 'retail']) }}">
+                                            <i class="ti ti-file-spreadsheet me-2"></i>Export Excel
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('order.export-full-pdf', ['order_type' => 'retail']) }}">
+                                            <i class="ti ti-file-type-pdf me-2"></i>Export PDF
+                                        </a>
+                                    </li>
+                                @endif
                             </ul>
                         </div>
                     @endcan
                     @can('add-order')
-                        <a href="{{ route('order.import-sample') }}" class="btn btn-outline-primary">
-                            <i class="ti ti-download me-1"></i>Sample Excel
+                        <a href="{{ route('order.import-sample', ['order_type' => 'soda']) }}" class="btn btn-outline-primary">
+                            <i class="ti ti-download me-1"></i>Soda Sample
                         </a>
                         <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#orderImportModal">
-                            <i class="ti ti-upload me-1"></i>Import
+                            <i class="ti ti-upload me-1"></i>Import Soda
                         </button>
+                        @if (\App\Support\SalesScope::hasGlobalAccess())
+                            <a href="{{ route('order.import-sample', ['order_type' => 'retail']) }}" class="btn btn-outline-primary">
+                                <i class="ti ti-download me-1"></i>Retail Sample
+                            </a>
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#retailOrderImportModal">
+                                <i class="ti ti-upload me-1"></i>Import Retail
+                            </button>
+                        @endif
                         <a href="{{ route('order.create') }}" class="btn btn-primary">
                             <i class="ti ti-square-rounded-plus me-2"></i>Add Soda/Order
                         </a>
@@ -554,9 +602,10 @@
                         <th class="no-sort" style="width:40px;" scope="col"></th>
                         <th class="no-sort" scope="col">Sr No</th>
                         <th scope="col">Order ID</th>
+                        <th scope="col">Type</th>
                         <th scope="col">Broker</th>
                         <th scope="col">Brand</th>
-                        <th scope="col">Dealer</th>
+                        <th scope="col">Dealer / Party</th>
                         <th scope="col">Order Date</th>
                         <th scope="col" class="no-sort">Amount</th>
                         <th scope="col" class="no-sort">Dispatch</th>
@@ -710,6 +759,9 @@
                 d.date_from = $('#orderDateFrom').val() || '';
                 d.date_to   = $('#orderDateTo').val() || '';
                 d.payment_status = $('#paymentStatusFilter').val() || 'all';
+                if ($('#orderTypeFilter').length) {
+                    d.order_type = $('#orderTypeFilter').val() || 'all';
+                }
             }
         });
 
@@ -731,7 +783,8 @@
             { selector: '#productFilter', key: 'product_id', select2: true },
             { selector: '#orderDateFrom', key: 'date_from' },
             { selector: '#orderDateTo', key: 'date_to' },
-            { selector: '#paymentStatusFilter', key: 'payment_status', select2: true }
+            { selector: '#paymentStatusFilter', key: 'payment_status', select2: true },
+            { selector: '#orderTypeFilter', key: 'order_type', select2: true }
         ], '#customSearch'), {
             pageLength: 10,
             deferRender: true,
@@ -773,6 +826,12 @@
                     data: 'unique_order_id',
                     name: 'unique_order_id',
                     searchable: true
+                },
+                {
+                    data: 'order_type_label',
+                    name: 'order_type_label',
+                    orderable: false,
+                    searchable: false
                 },
                 {
                     data: 'broker_name',
@@ -927,11 +986,13 @@
         $(document).on('click', '.export-filtered-link', function(e) {
             e.preventDefault();
             var qs = buildOrderExportQuery();
-            window.location.href = $(this).data('export-url') + (qs ? ('?' + qs) : '');
+            var base = $(this).data('export-url');
+            var join = base.indexOf('?') >= 0 ? '&' : '?';
+            window.location.href = base + (qs ? (join + qs) : '');
         });
 
         /* Broker / Brand / Dealer filters */
-        $('#paymentStatusFilter, #broker_id, #BrandId, #dealerFilter, #productFilter').on('change', function() {
+        $('#paymentStatusFilter, #orderTypeFilter, #broker_id, #BrandId, #dealerFilter, #productFilter').on('change', function() {
             order_table.draw();
         });
 
@@ -946,6 +1007,9 @@
             orderDateToPicker.clear();
 
             $('#paymentStatusFilter').val('all');
+            if ($('#orderTypeFilter').length) {
+                $('#orderTypeFilter').val('all').trigger('change.select2');
+            }
 
             if ($('#BrandId').length) {
                 $('#BrandId').val('all');
@@ -1360,8 +1424,18 @@
     </script>
     @include('partials.excel-import-modal', [
         'modalId' => 'orderImportModal',
-        'title' => 'Import Soda/Orders',
+        'title' => 'Import Soda Orders',
         'action' => route('order.import'),
-        'sampleUrl' => route('order.import-sample'),
+        'sampleUrl' => route('order.import-sample', ['order_type' => 'soda']),
+        'hiddenInputs' => ['order_type' => 'soda'],
     ])
+    @if (\App\Support\SalesScope::hasGlobalAccess())
+        @include('partials.excel-import-modal', [
+            'modalId' => 'retailOrderImportModal',
+            'title' => 'Import Retail Orders',
+            'action' => route('order.import'),
+            'sampleUrl' => route('order.import-sample', ['order_type' => 'retail']),
+            'hiddenInputs' => ['order_type' => 'retail'],
+        ])
+    @endif
 @endsection

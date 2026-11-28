@@ -43,14 +43,14 @@
                 <div class="col-12 col-lg-auto">
                     <div class="wr-header-toolbar">
                         <div class="wr-date-nav">
-                            <a href="{{ route('weekly-report.index', ['date' => $prevDate]) }}"
+                            <a href="{{ route('weekly-report.index', array_filter(['date' => $prevDate, 'order_type' => $filters['order_type'] ?? null])) }}"
                                 class="btn btn-light btn-sm">
                                 <i class="ti ti-chevron-left"></i>
                             </a>
                             <input type="text" class="form-control form-control-sm flatpickr wr-single-date-picker"
                                 id="wrSingleDate" value="{{ $filters['date'] }}"
                                 placeholder="DD-MM-YYYY" autocomplete="off">
-                            <a href="{{ route('weekly-report.index', ['date' => $nextDate]) }}"
+                            <a href="{{ route('weekly-report.index', array_filter(['date' => $nextDate, 'order_type' => $filters['order_type'] ?? null])) }}"
                                 class="btn btn-light btn-sm">
                                 <i class="ti ti-chevron-right"></i>
                             </a>
@@ -61,6 +61,9 @@
         </div>
 
         <form method="get" action="{{ route('weekly-report.index') }}" id="wrFilterForm" class="mt-3 pt-3 border-top">
+            @if (! $isRange && ! empty($filters['date']))
+                <input type="hidden" name="date" value="{{ $filters['date'] }}">
+            @endif
             <div class="cls-cardhed-part">
                 <div class="cls-form-left wr-filter-bar">
                     <div class="common-hed-form cls-form-select-input">
@@ -80,6 +83,14 @@
                                 value="{{ $filters['date_to'] ?? '' }}"
                                 class="form-control flatpickr" placeholder="DD-MM-YYYY" autocomplete="off">
                         </div>
+                    </div>
+                    <div class="common-hed-form cls-form-select-input">
+                        <label class="col-form-label" for="filterOrderType">Order Type</label>
+                        <select class="form-select" id="filterOrderType" name="order_type">
+                            <option value="all" @selected(($filters['order_type'] ?? null) === null)>All Types</option>
+                            <option value="soda" @selected(($filters['order_type'] ?? null) === 'soda')>Soda</option>
+                            <option value="retail" @selected(($filters['order_type'] ?? null) === 'retail')>Retail</option>
+                        </select>
                     </div>
                     <div class="wr-filter-actions">
                         <button type="submit" class="btn btn-primary btn-sm">
@@ -140,6 +151,7 @@
                 'day' => $day,
                 'transporters' => $transporters,
                 'dealers' => $dealers ?? collect(),
+                'orderTypeFilter' => $filters['order_type'] ?? null,
             ])
         @empty
             <div class="wr-empty-state">
@@ -202,9 +214,13 @@ $(function () {
 
     $('#wrSingleDate').on('change', function () {
         var val = $(this).val();
-        if (val) {
-            window.location.href = "{{ route('weekly-report.index') }}?date=" + encodeURIComponent(val);
+        if (!val) return;
+        var params = new URLSearchParams({ date: val });
+        var orderType = $('#filterOrderType').val();
+        if (orderType && orderType !== 'all') {
+            params.set('order_type', orderType);
         }
+        window.location.href = "{{ route('weekly-report.index') }}?" + params.toString();
     });
 });
 </script>

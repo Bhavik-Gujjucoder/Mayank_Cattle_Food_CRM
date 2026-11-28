@@ -4,13 +4,13 @@
 
     $rows = $section['rows'] ?? [];
     $brandTitle = DeliveryPendingPaymentsReportService::formatBrandSectionTitle($section['brand_name'] ?? '');
-    $orderCount = count($rows);
+    $dealerCount = count($rows);
 @endphp
 
 <section class="dpp-brand-section">
     <div class="dpp-brand-section-head">
         <h6 class="dpp-brand-section-title mb-0">{{ $brandTitle }}</h6>
-        <span class="badge bg-light text-dark">{{ $orderCount }} {{ $orderCount === 1 ? 'order' : 'orders' }}</span>
+        <span class="badge bg-light text-dark">{{ $dealerCount }} {{ $dealerCount === 1 ? 'dealer' : 'dealers' }}</span>
     </div>
 
     <div class="table-responsive custom-table dpp-table-wrap d-none d-md-block">
@@ -19,7 +19,7 @@
                 <tr>
                     <th class="dpp-col-city">City</th>
                     <th class="dpp-col-dealer">Dealer</th>
-                    <th class="dpp-col-order">Order</th>
+                    <th class="dpp-col-order">Broker</th>
                     <th class="dpp-col-amount text-end">Late Fee</th>
                     <th class="dpp-col-amount text-end">Balance Due</th>
                     <th class="dpp-col-days">Pending Payment Days</th>
@@ -30,14 +30,7 @@
                     <tr>
                         <td>{{ $row['city_name'] }}</td>
                         <td>{{ $row['dealer_name'] }}</td>
-                        <td>
-                            @if ($canLinkOrder)
-                                <a href="{{ route('dispatch.orderHistory', $row['order_id']) }}"
-                                    class="fw-medium">{{ $row['order_label'] }}</a>
-                            @else
-                                {{ $row['order_label'] }}
-                            @endif
-                        </td>
+                        <td>{{ $row['broker_name'] ?? '—' }}</td>
                         <td class="text-end text-nowrap">
                             {!! PaymentReceivableService::formatLateFeeHtml((float) ($row['total_late_fee'] ?? 0), $row['total_late_fee_source'] ?? null) !!}
                         </td>

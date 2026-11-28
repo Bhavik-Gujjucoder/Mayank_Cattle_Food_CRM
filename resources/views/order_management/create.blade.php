@@ -15,6 +15,21 @@
 
         {{-- ── Section: Order Info ──────────────────────────────── --}}
         <p class="form-section-title"><i class="ti ti-file-description me-1"></i>Order Information</p>
+        @if (!empty($allow_retail))
+            <div class="mb-3">
+                <label class="col-form-label d-block">Order Type</label>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="order_type" id="orderTypeSoda" value="soda" {{ old('order_type', 'soda') !== 'retail' ? 'checked' : '' }}>
+                    <label class="form-check-label" for="orderTypeSoda">Soda</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="order_type" id="orderTypeRetail" value="retail" {{ old('order_type') === 'retail' ? 'checked' : '' }}>
+                    <label class="form-check-label" for="orderTypeRetail">Retail</label>
+                </div>
+            </div>
+        @else
+            <input type="hidden" name="order_type" value="soda">
+        @endif
         <div class="row">
 
             {{-- Order ID --}}
@@ -27,7 +42,7 @@
 
             {{-- Broker --}}
 
-            <div class="col-md-4 mb-3">
+            <div class="col-md-4 mb-3 soda-only">
                 <label class="col-form-label">Broker <span class="text-danger">*</span></label>
                 <select name="broker_id" id="broker_id" class="form-select search-select" {{ auth()->user()->hasRole('broker') ? 'disabled' : '' }} {{ auth()->user()->hasRole('broker') ? 'readonly' : '' }}>
                     <option value="">-- Select Broker --</option>
@@ -75,8 +90,14 @@
                 <span class="text-danger small brand_id_error">@error('brand_id'){{ $message }}@enderror</span>
             </div>
 
+            <div class="col-md-4 mb-3 retail-only" style="display:none;">
+                <label class="col-form-label">Party Name <span class="text-danger">*</span></label>
+                <input type="text" name="party_name" id="party_name" value="{{ old('party_name') }}" class="form-control" maxlength="255" placeholder="Party name">
+                <span class="text-danger small party_name_error">@error('party_name'){{ $message }}@enderror</span>
+            </div>
+
             {{-- Dealer --}}
-            <div class="col-md-4 mb-3">
+            <div class="col-md-4 mb-3 soda-only">
                 <label class="col-form-label">Dealer <span class="text-danger">*</span></label>
                 @if (!empty($locked_dealer))
                     <input type="hidden" name="dealer_id" value="{{ $locked_dealer->id }}">
@@ -112,7 +133,7 @@
             </div>
 
             {{-- Delivery Address (auto-populated from dealer) --}}
-            <div class="col-md-4 mb-3">
+            <div class="col-md-4 mb-3 soda-only">
                 <label class="col-form-label">
                     Delivery Address <span class="text-danger">*</span>
                     <small class="text-muted fw-normal ms-1">(auto-fills on dealer selection)</small>
@@ -120,6 +141,12 @@
                 <textarea name="delivery_address" id="delivery_address" rows="2"
                           class="form-control" placeholder="Select a dealer to auto-populate delivery address">{{ old('delivery_address') }}</textarea>
                 <span class="text-danger small delivery_address_error">@error('delivery_address'){{ $message }}@enderror</span>
+            </div>
+
+            <div class="col-md-4 mb-3 retail-only" style="display:none;">
+                <label class="col-form-label">Note</label>
+                <textarea name="note" id="order_note" rows="2" class="form-control" maxlength="2000" placeholder="Optional note">{{ old('note') }}</textarea>
+                <span class="text-danger small note_error">@error('note'){{ $message }}@enderror</span>
             </div>
 
         </div>{{-- /row --}}
@@ -1112,9 +1139,16 @@ $(document).ready(function () {
         clearValidationErrors();
         var isValid = true;
 
+        var retailOrder = $('input[name="order_type"]:checked').val() === 'retail';
+
         /* Broker */
-        if (!$('#broker_id').val()) {
+        if (!retailOrder && !$('#broker_id').val()) {
             showFieldError('broker_id', 'Please select a broker.');
+            isValid = false;
+        }
+
+        if (retailOrder && !$.trim($('#party_name').val())) {
+            showFieldError('party_name', 'Party name is required.');
             isValid = false;
         }
 
@@ -1125,7 +1159,7 @@ $(document).ready(function () {
         }
 
         /* Dealer */
-        if (!$('#dealer_id').val()) {
+        if (!retailOrder && !$('#dealer_id').val()) {
             showFieldError('dealer_id', 'Please select a dealer.');
             isValid = false;
         }
@@ -1137,8 +1171,13 @@ $(document).ready(function () {
         }
 
         /* Delivery Address */
-        if (!$.trim($('#delivery_address').val())) {
+        if (!retailOrder && !$.trim($('#delivery_address').val())) {
             showFieldError('delivery_address', 'Delivery address is required.');
+            isValid = false;
+        }
+
+        if (retailOrder && $('#productTableBody .product-row').length > 1) {
+            showFieldError('product_id', 'A retail order can have only one product.');
             isValid = false;
         }
 
@@ -1182,8 +1221,23 @@ $(document).ready(function () {
     });
 
     /* Submit button triggers validation then submits */
+    function applyOrderType() {
+        var retail = $('input[name="order_type"]:checked').val() === 'retail';
+        $('.soda-only').toggle(!retail);
+        $('.retail-only').toggle(retail);
+        $('#addRowBtn').toggle(!retail);
+        if (retail) {
+            $('#productTableBody .product-row').not(':first').remove();
+            $('#productTableBody .product-row-error').not(':first').remove();
+        }
+    }
+
+    $(document).on('change', 'input[name="order_type"]', applyOrderType);
+    applyOrderType();
+
     $('#submitOrderBtn').on('click', function () {
         if (validateForm()) {
+            applyOrderType();
             $('#orderForm').submit();
         }
     });
