@@ -9,19 +9,13 @@
 <article class="dpp-mobile-order">
     <div class="dpp-mobile-order-head">
         <div class="dpp-mobile-order-main">
-            @if ($canLinkOrder)
-                <a href="{{ route('dispatch.orderHistory', $row['order_id']) }}" class="dpp-mobile-order-id">
-                    {{ $row['order_label'] }}
-                </a>
-            @else
-                <span class="dpp-mobile-order-id">{{ $row['order_label'] }}</span>
-            @endif
+            <span class="dpp-mobile-order-id">{{ $row['dealer_name'] }}</span>
             <div class="dpp-mobile-order-meta">
                 <span class="dpp-mobile-meta-item">
                     <i class="ti ti-map-pin"></i>{{ $row['city_name'] }}
                 </span>
                 <span class="dpp-mobile-meta-sep" aria-hidden="true">·</span>
-                <span class="dpp-mobile-meta-item text-truncate">{{ $row['dealer_name'] }}</span>
+                <span class="dpp-mobile-meta-item text-truncate">{{ $row['broker_name'] ?? '—' }}</span>
             </div>
         </div>
         @if ($maxDays > 0)
@@ -49,10 +43,13 @@
                         @if (!empty($canUpdateDispatchPayment)) data-dispatch-id="{{ $item['dispatch_id'] ?? '' }}" @endif
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
-                        data-bs-title="Dispatch date: {{ $item['dispatch_date'] }}"
+                        data-bs-title="{{ !empty($item['order_code']) ? $item['order_code'] . ' · ' : '' }}Dispatch date: {{ $item['dispatch_date'] }}"
                         tabindex="0">
                         <span class="dpp-day-chip-num">{{ $item['days'] }}</span>
                         <span class="dpp-day-chip-date">{{ $item['dispatch_date'] }}</span>
+                        @if (!empty($item['order_code']))
+                            <span class="dpp-day-chip-order">{{ $item['order_code'] }}</span>
+                        @endif
                     </span>
                 @endforeach
             </div>

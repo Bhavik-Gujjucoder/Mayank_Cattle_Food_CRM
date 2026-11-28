@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Exports\DailyReportExport;
 use App\Exports\RawMaterialDailySummaryExport;
+use App\Models\BrandManagement;
 use App\Models\DealerManagement;
 use App\Models\DispatchManagement;
 use App\Models\OrderManagement;
+use App\Models\Product;
 use App\Models\RawMaterial;
 use App\Models\RawMaterialOrder;
 use App\Models\RawMaterialReceive;
@@ -111,6 +113,12 @@ class HomeController extends Controller
                 ->get(['id', 'name', 'phone_no']);
 
             $data['wr_dealers'] = SalesScope::filterableDealers();
+            $data['allowRetail'] = SalesScope::hasGlobalAccess();
+            $data['brands'] = BrandManagement::activeForDropdown();
+            $data['products'] = Product::query()
+                ->where('status', 1)
+                ->orderBy('name')
+                ->get(['id', 'name', 'unit', 'brand_id', 'price']);
 
             $data['today_weekly_report'] = collect($data['wr_days'])
                 ->first(fn (array $day) => $day['date']->isToday())['report'] ?? null;
@@ -175,14 +183,14 @@ class HomeController extends Controller
         return DataTables::of($orders)
             ->addIndexColumn()
             ->addColumn('order_ref', function ($row) use ($canEdit) {
-                $id = e($row->unique_order_id ?? '—');
+                $id = e(($row->unique_order_id ?? '—') . ' · ' . $row->orderTypeLabel());
 
                 return $canEdit
                     ? '<a href="' . route('order.edit', $row->id) . '" class="text-info">' . $id . '</a>'
                     : '<span class="text-info">' . $id . '</span>';
             })
             ->addColumn('dealer_name', function ($row) use ($canEdit) {
-                $name = e($row->dealer?->user?->name ?? '—');
+                $name = e($row->partyLabel());
 
                 return $canEdit
                     ? '<a href="' . route('order.edit', $row->id) . '">' . $name . '</a>'
@@ -345,13 +353,14 @@ class HomeController extends Controller
 
         $this->sequentialDispatch->scopeWithPendingDispatch($query);
 
-        $orders = $query->limit(500)->get(['id', 'unique_order_id', 'dealer_id']);
+        $orders = $query->limit(500)->get(['id', 'unique_order_id', 'dealer_id', 'order_type', 'party_name']);
 
         return response()->json([
             'orders' => $orders->map(fn (OrderManagement $order) => [
                 'id'       => $order->id,
-                'label'    => ($order->unique_order_id ?? '—') . ' — ' . ($order->dealer?->user?->name ?? '—'),
+                'label'    => ($order->unique_order_id ?? '—') . ' · ' . $order->orderTypeLabel() . ' — ' . $order->partyLabel(),
                 'form_url' => route('dispatch.orderFormData', $order->id),
+                'order_type' => $order->order_type,
             ])->values(),
         ]);
     }

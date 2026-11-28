@@ -9,6 +9,8 @@
     $canDelete = auth()->user()->can('delete-weekly-report');
     $canConfirm = $canEdit && auth()->user()->can('add-dispatch');
     $canAdd = auth()->user()->can('edit-weekly-report') && $report;
+    $orderTypeFilter = $orderTypeFilter ?? null;
+    $plannedItems = $report ? $report->itemsForOrderType($orderTypeFilter) : collect();
     $totalBags = $report ? $report->totalQuantityInBags() : 0;
     $difference = $report ? $report->differenceInBags() : 0;
     $hours = $report ? $report->productionHours() : 0;
@@ -56,11 +58,13 @@
 
             <div class="wr-section-label">
                 <i class="ti ti-list-details"></i> Planned orders
-                <span class="wr-section-count">({{ $report->items->count() }})</span>
+                <span class="wr-section-count">({{ $plannedItems->count() }})</span>
             </div>
 
             @include('weekly_report.partials.items-table', [
                 'report' => $report,
+                'plannedItems' => $plannedItems,
+                'orderTypeFilter' => $orderTypeFilter,
                 'transporters' => $transporters,
                 'canEdit' => $canEdit,
                 'canDelete' => $canDelete,

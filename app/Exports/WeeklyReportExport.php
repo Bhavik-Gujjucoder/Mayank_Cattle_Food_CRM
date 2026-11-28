@@ -67,15 +67,17 @@ class WeeklyReportExport implements FromArray, WithStyles, WithEvents
             }
 
             $this->pushRow(
-                ['Order No', 'Order ID', 'Product', 'Dealer', 'City', 'Qty', 'Less freight/qty', 'Amount', 'Less freight', 'Late fee', 'Final', 'Transport', 'Truck No', 'Contact', 'Note', 'Status'],
+                ['Order No', 'Order ID', 'Type', 'Product', 'Dealer / Party', 'City', 'Qty', 'Less freight/qty', 'Amount', 'Less freight', 'Late fee', 'Final', 'Transport', 'Truck No', 'Contact', 'Note', 'Status'],
                 $line++,
                 'table-header'
             );
 
-            if ($report->items->isEmpty()) {
+            $plannedItems = $report->itemsForOrderType($this->filters['order_type'] ?? null);
+
+            if ($plannedItems->isEmpty()) {
                 $this->pushRow(['No planned orders for this date.'], $line++, 'empty-day');
             } else {
-                foreach ($report->items as $item) {
+                foreach ($plannedItems as $item) {
                     $dealer = $item->order?->dealer;
                     $isConfirmed = $item->isConfirmed();
                     $type = $isConfirmed
@@ -93,8 +95,9 @@ class WeeklyReportExport implements FromArray, WithStyles, WithEvents
                     $this->pushRow([
                         (string) $item->sort_order,
                         $item->order?->unique_order_id ?? '—',
+                        $item->order?->orderTypeLabel() ?? 'Soda',
                         $item->product?->name ?? '—',
-                        $dealer?->user?->name ?? $dealer?->firm_shop_name ?? '—',
+                        $item->order?->partyLabel() ?? '—',
                         $dealer?->city?->city_name ?? '—',
                         ProductUnit::formatWithUnit($item->quantity, $item->product?->unit),
                         $item->less_freight_per_qty !== null ? number_format((float) $item->less_freight_per_qty, 2) : '—',
@@ -153,12 +156,25 @@ class WeeklyReportExport implements FromArray, WithStyles, WithEvents
             $from = Carbon::parse($this->filters['date_from'])->format('d M Y');
             $to = Carbon::parse($this->filters['date_to'])->format('d M Y');
 
-            return "Date range: {$from} – {$to} (" . count($this->days) . ' day(s))';
+            return $this->withOrderType("Date range: {$from} – {$to} (" . count($this->days) . ' day(s))');
         }
 
         $date = Carbon::parse($this->filters['date'] ?? now())->format('d M Y');
 
-        return 'Date: ' . $date;
+        return $this->withOrderType('Date: ' . $date);
+    }
+
+    protected function withOrderType(string $label): string
+    {
+        $type = $this->filters['order_type'] ?? null;
+        if ($type === \App\Models\OrderManagement::TYPE_RETAIL) {
+            return $label . ' · Retail';
+        }
+        if ($type === \App\Models\OrderManagement::TYPE_SODA) {
+            return $label . ' · Soda';
+        }
+
+        return $label;
     }
 
     /**

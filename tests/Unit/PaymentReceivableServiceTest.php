@@ -172,12 +172,13 @@ describe('settings', function () {
 // ─────────────────────────────────────────────
 
 describe('date-calculations', function () {
-    it('firstChargeDate returns dispatch_date plus due_days plus one day', function () {
+    it('firstChargeDate returns dispatch_date plus due_days', function () {
         prsUpdateSettings(dueDays: 3, dueAmount: 10);
         $dispatch = prsMakeDispatch(['dispatch_date' => '2026-01-10']);
         $service  = new PaymentReceivableService();
 
-        $expected = Carbon::parse('2026-01-14')->startOfDay(); // +3 days grace +1 first charge
+        // Day 1 is the dispatch date, so the first charge is the day after the due period.
+        $expected = Carbon::parse('2026-01-13')->startOfDay();
         expect($service->firstChargeDate($dispatch)?->toDateString())->toBe($expected->toDateString());
     });
 
@@ -187,11 +188,13 @@ describe('date-calculations', function () {
         expect((new PaymentReceivableService())->firstChargeDate($dispatch))->toBeNull();
     });
 
-    it('daysSinceDispatch returns correct number of days', function () {
+    it('daysSinceDispatch counts the dispatch date as day 1', function () {
         $dispatch = prsMakeDispatch(['dispatch_date' => '2026-01-01']);
         $service  = new PaymentReceivableService();
-        $asOf     = Carbon::parse('2026-01-11');
-        expect($service->daysSinceDispatch($dispatch, $asOf))->toBe(10);
+
+        expect($service->daysSinceDispatch($dispatch, Carbon::parse('2026-01-01')))->toBe(1);
+        expect($service->daysSinceDispatch($dispatch, Carbon::parse('2026-01-11')))->toBe(11);
+        expect($service->daysSinceDispatch($dispatch, Carbon::parse('2025-12-31')))->toBe(0);
     });
 
     it('daysSinceDispatch returns 0 when dispatch_date is null', function () {
@@ -203,7 +206,7 @@ describe('date-calculations', function () {
         prsUpdateSettings(dueDays: 5, dueAmount: 10);
         $dispatch = prsMakeDispatch(['dispatch_date' => '2026-01-01']);
         $service  = new PaymentReceivableService();
-        $asOf     = Carbon::parse('2026-01-04'); // 3 days since, due=5, overdue=0
+        $asOf     = Carbon::parse('2026-01-04'); // day 4, due=5, overdue=0
         expect($service->overdueDays($dispatch, $asOf))->toBe(0);
     });
 
@@ -211,8 +214,8 @@ describe('date-calculations', function () {
         prsUpdateSettings(dueDays: 5, dueAmount: 10);
         $dispatch = prsMakeDispatch(['dispatch_date' => '2026-01-01']);
         $service  = new PaymentReceivableService();
-        $asOf     = Carbon::parse('2026-01-09'); // 8 days since, due=5, overdue=3
-        expect($service->overdueDays($dispatch, $asOf))->toBe(3);
+        $asOf     = Carbon::parse('2026-01-09'); // day 9, due=5, overdue=4
+        expect($service->overdueDays($dispatch, $asOf))->toBe(4);
     });
 
     it('isPastGracePeriod returns false within grace period', function () {
@@ -441,7 +444,7 @@ describe('accrual-eligibility', function () {
             'status'        => DispatchManagement::STATUS_UNPAID,
             'no_of_bags'    => 5,
         ]);
-        $asOf = Carbon::parse('2026-01-03'); // only 2 days since, first charge is day 6
+        $asOf = Carbon::parse('2026-01-03'); // day 3, first charge is 6 Jan
         expect((new PaymentReceivableService())->isAccrualEligible($dispatch, $asOf))->toBeFalse();
     });
 
@@ -452,7 +455,7 @@ describe('accrual-eligibility', function () {
             'status'        => DispatchManagement::STATUS_UNPAID,
             'no_of_bags'    => 5,
         ]);
-        $asOf = Carbon::parse('2026-01-10'); // well past first charge date (day 4)
+        $asOf = Carbon::parse('2026-01-10'); // first charge is 4 Jan
         expect((new PaymentReceivableService())->isAccrualEligible($dispatch, $asOf))->toBeTrue();
     });
 
@@ -481,18 +484,18 @@ describe('accrue-dispatch', function () {
             'no_of_bags'    => 5,
         ]);
         $service = new PaymentReceivableService();
-        $asOf    = Carbon::parse('2026-01-07'); // first charge = Jan 5, charge 3 days (5,6,7)
+        $asOf    = Carbon::parse('2026-01-07'); // first charge = 4 Jan, charge 4 days (4–7)
 
         $result = $service->accrueDispatch($dispatch, $asOf);
 
-        expect($result['days_accrued'])->toBe(3);
-        expect($result['amount_added'])->toBe(150.0); // 3 days × 5 bags × ₹10 = ₹150
+        expect($result['days_accrued'])->toBe(4);
+        expect($result['amount_added'])->toBe(200.0); // 4 days × 5 bags × ₹10 = ₹200
 
         $dispatch->refresh();
-        expect((float) $dispatch->accrued_late_fee)->toBe(150.0);
+        expect((float) $dispatch->accrued_late_fee)->toBe(200.0);
         expect($dispatch->late_fee_source)->toBe(PaymentReceivableService::LATE_FEE_SOURCE_AUTO);
         expect($dispatch->late_fee_last_accrued_on->toDateString())->toBe('2026-01-07');
-        expect(DispatchLateFeeLog::where('dispatch_management_id', $dispatch->id)->count())->toBe(3);
+        expect(DispatchLateFeeLog::where('dispatch_management_id', $dispatch->id)->count())->toBe(4);
         Mail::assertQueued(\App\Mail\DispatchPaymentPendingReminderMail::class);
     });
 
@@ -516,7 +519,7 @@ describe('accrue-dispatch', function () {
             'status'                   => DispatchManagement::STATUS_UNPAID,
             'no_of_bags'               => 5,
             'late_fee_last_accrued_on' => '2026-01-07',
-            'accrued_late_fee'         => 150.0,
+            'accrued_late_fee'         => 200.0,
         ]);
         $service = new PaymentReceivableService();
         $result  = $service->accrueDispatch($dispatch, $asOf);
@@ -531,14 +534,14 @@ describe('accrue-dispatch', function () {
         prsMakeDispatch(['dispatch_date' => '2026-01-01', 'status' => DispatchManagement::STATUS_UNPAID, 'no_of_bags' => 5]);
         prsMakeDispatch(['dispatch_date' => '2026-01-01', 'status' => DispatchManagement::STATUS_UNPAID, 'no_of_bags' => 3]);
         $service = new PaymentReceivableService();
-        $asOf    = Carbon::parse('2026-01-07'); // 3 chargeable days each
+        $asOf    = Carbon::parse('2026-01-07'); // 4 chargeable days each (4–7 Jan)
 
         $stats = $service->accrueAll($asOf);
 
         expect($stats['processed'])->toBe(2);
         expect($stats['accrued'])->toBe(2);
-        // dispatch1: 5 bags × 10 × 3 days = 150, dispatch2: 3 bags × 10 × 3 days = 90 → total 240
-        expect($stats['amount'])->toBe(240.0);
+        // dispatch1: 5 bags × 10 × 4 days = 200, dispatch2: 3 bags × 10 × 4 days = 120 → total 320
+        expect($stats['amount'])->toBe(320.0);
     });
 
     it('accrueAll skips paid dispatches', function () {
@@ -701,7 +704,7 @@ describe('summarize', function () {
             'accrued_late_fee' => 50.0,
         ]);
         $service = new PaymentReceivableService();
-        $asOf    = Carbon::parse('2026-01-11'); // 10 days since, overdue 5
+        $asOf    = Carbon::parse('2026-01-11'); // day 11, overdue 6
 
         $summary = $service->summarizeDispatch($dispatch, $asOf);
 
@@ -709,7 +712,7 @@ describe('summarize', function () {
         expect($summary['base_amount'])->toBe(500.0);
         expect($summary['accrued_late_fee'])->toBe(50.0);
         expect($summary['total_receivable'])->toBe(550.0);
-        expect($summary['days_since_dispatch'])->toBe(10);
-        expect($summary['overdue_days'])->toBe(5);
+        expect($summary['days_since_dispatch'])->toBe(11);
+        expect($summary['overdue_days'])->toBe(6);
     });
 });

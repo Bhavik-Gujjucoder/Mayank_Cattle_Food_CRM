@@ -32,6 +32,28 @@ class WeeklyReport extends Model
             ->orderBy('id');
     }
 
+    /**
+     * Planned rows for the Daily Dispatch list. Null keeps both soda and retail.
+     *
+     * @return \Illuminate\Support\Collection<int, WeeklyReportItem>
+     */
+    public function itemsForOrderType(?string $orderType)
+    {
+        $items = $this->items;
+
+        if (! in_array($orderType, [OrderManagement::TYPE_SODA, OrderManagement::TYPE_RETAIL], true)) {
+            return $items;
+        }
+
+        return $items
+            ->filter(function (WeeklyReportItem $item) use ($orderType) {
+                $type = $item->order?->order_type ?: OrderManagement::TYPE_SODA;
+
+                return $type === $orderType;
+            })
+            ->values();
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');

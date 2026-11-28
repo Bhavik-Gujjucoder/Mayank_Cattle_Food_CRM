@@ -138,9 +138,18 @@ class SodaOrderExportRows
 
         $meta = [
             ['label' => 'Order ID', 'value' => (string) $order->unique_order_id],
-            ['label' => 'Broker', 'value' => $order->broker?->name ?? '—'],
-            ['label' => 'Brand', 'value' => $order->brand?->name ?? '—'],
-            ['label' => 'Dealer', 'value' => $order->dealer?->user?->name ?? $order->dealer?->firm_shop_name ?? '—'],
+            ['label' => 'Order Type', 'value' => $order->orderTypeLabel()],
+        ];
+        if ($order->isRetail()) {
+            $meta[] = ['label' => 'Party Name', 'value' => $order->party_name ?: '—'];
+            $meta[] = ['label' => 'Brand', 'value' => $order->brand?->name ?? '—'];
+            $meta[] = ['label' => 'Note', 'value' => $order->note ?: '—'];
+        } else {
+            $meta[] = ['label' => 'Broker', 'value' => $order->broker?->name ?? '—'];
+            $meta[] = ['label' => 'Brand', 'value' => $order->brand?->name ?? '—'];
+            $meta[] = ['label' => 'Dealer', 'value' => $order->dealer?->user?->name ?? $order->dealer?->firm_shop_name ?? '—'];
+        }
+        $meta = array_merge($meta, [
             ['label' => 'Order Date', 'value' => $order->order_date?->format('d-m-Y') ?? '—'],
             ['label' => 'Payment Status', 'value' => self::orderPaymentLabel($order->payment_status)],
             ['label' => 'Payment Type', 'value' => $order->paymentTypeLabel()],
@@ -148,7 +157,7 @@ class SodaOrderExportRows
             ['label' => 'Less Freight', 'value' => number_format($order->lessFreightTotal(), 2, '.', '')],
             ['label' => 'Net Amount', 'value' => number_format($order->netAmount(), 2, '.', '')],
             ['label' => 'Due Charges', 'value' => number_format($due['total_balance_due'], 2, '.', '')],
-        ];
+        ]);
 
         $dispatchesByItem = $order->dispatches->groupBy(
             fn (DispatchManagement $dispatch) => (int) $dispatch->order_item_id

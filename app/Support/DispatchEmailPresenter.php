@@ -19,7 +19,7 @@ class DispatchEmailPresenter
     public function forDispatch(DispatchManagement $dispatch, array $extras = []): array
     {
         $dispatch->loadMissing([
-            'order:id,unique_order_id,brand_id,dealer_id,order_date,payment_status,payment_type,partial_paid_amount,grand_total',
+            'order:id,unique_order_id,brand_id,dealer_id,order_date,payment_status,payment_type,partial_paid_amount,grand_total,order_type,party_name',
             'order.brand:id,name',
             'order.dealer:id,user_id,firm_shop_name',
             'order.dealer.user:id,name,email',
@@ -48,6 +48,7 @@ class DispatchEmailPresenter
             'dealer_name' => $this->dealerDisplayName($order),
             'order' => [
                 'unique_order_id'     => $order?->unique_order_id ?? '—',
+                'order_type'          => $order?->orderTypeLabel() ?? 'Soda',
                 'order_date'          => $order?->order_date?->format('d M Y') ?? '—',
                 'brand_name'          => $order?->brand?->name ?? '—',
                 'payment_status'      => $this->orderPaymentLabel($order?->payment_status),
@@ -97,9 +98,7 @@ class DispatchEmailPresenter
             return 'Dealer';
         }
 
-        return $order->dealer?->user?->name
-            ?? $order->dealer?->firm_shop_name
-            ?? 'Dealer';
+        return $order->partyLabel();
     }
 
     private function dispatchPaymentLabel(int $status): string

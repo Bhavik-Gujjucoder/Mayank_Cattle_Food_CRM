@@ -464,6 +464,47 @@ it('filters pending items by dealer and excludes paid orders', function () {
         ->assertJsonPath('results', []);
 });
 
+it('filters planned orders by order type', function () {
+    $admin = wrAdmin(['view-weekly-report']);
+    $soda = wrPendingLine();
+    $retail = wrPendingLine();
+    $retail['order']->update([
+        'order_type' => OrderManagement::TYPE_RETAIL,
+        'party_name' => 'Walk-in Party',
+    ]);
+
+    $report = WeeklyReport::create([
+        'report_date' => '2026-07-20',
+        'already_produced' => 0,
+        'created_by' => $admin->id,
+    ]);
+
+    foreach ([$soda, $retail] as $ctx) {
+        WeeklyReportItem::create([
+            'weekly_report_id' => $report->id,
+            'sort_order' => 1,
+            'order_id' => $ctx['order']->id,
+            'order_item_id' => $ctx['orderItem']->id,
+            'product_id' => $ctx['product']->id,
+            'quantity' => 10,
+            'status' => WeeklyReportItem::STATUS_PENDING,
+        ]);
+    }
+
+    $this->actingAs($admin)
+        ->get(route('weekly-report.index', ['date' => '2026-07-20', 'order_type' => 'retail']))
+        ->assertOk()
+        ->assertSee('Order Type')
+        ->assertSee($retail['order']->unique_order_id)
+        ->assertDontSee($soda['order']->unique_order_id);
+
+    $this->actingAs($admin)
+        ->get(route('weekly-report.index', ['date' => '2026-07-20', 'order_type' => 'soda']))
+        ->assertOk()
+        ->assertSee($soda['order']->unique_order_id)
+        ->assertDontSee($retail['order']->unique_order_id);
+});
+
 it('loads workspace for today on index', function () {
     $admin = wrAdmin(['view-weekly-report', 'add-weekly-report', 'edit-weekly-report', 'add-dealer']);
 

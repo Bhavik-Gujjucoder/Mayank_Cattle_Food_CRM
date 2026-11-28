@@ -43,6 +43,8 @@ class GeneralSettingController extends Controller
                 'cash_due_amount'     => 'nullable|numeric|min:0',
                 'credit_due_days'     => 'nullable|integer|min:0',
                 'credit_due_amount'   => 'nullable|numeric|min:0',
+                'retail_credit_due_days'   => 'nullable|integer|min:0',
+                'retail_credit_due_amount' => 'nullable|numeric|min:0',
             ]);
         } else {
             //
@@ -59,7 +61,7 @@ class GeneralSettingController extends Controller
 
             /* Sales defaults */
             if ($request->form_type === 'sales') {
-                foreach (['cash_due_days', 'cash_due_amount', 'credit_due_days', 'credit_due_amount'] as $key) {
+                foreach (['cash_due_days', 'cash_due_amount', 'credit_due_days', 'credit_due_amount', 'retail_credit_due_days', 'retail_credit_due_amount'] as $key) {
                     $data[$key] = ($data[$key] ?? '') === '' ? 0 : $data[$key];
                 }
             }

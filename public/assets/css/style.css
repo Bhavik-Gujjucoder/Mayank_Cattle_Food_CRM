@@ -39797,6 +39797,31 @@ tr.dispatch-row-complete>td:first-child {
   font-size: 0.77rem;
 }
 
+.order-type-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 20px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.order-type-badge--soda {
+  background: #daf4f0;
+  color: #0a8f7c;
+  border: 1px solid #8ad9cc;
+}
+
+.order-type-badge--retail {
+  background: #e7f0fb;
+  color: #3e6eaf;
+  border: 1px solid #b7ccea;
+}
+
 /* -------------*/
 
 .header .header-left {

@@ -47,32 +47,38 @@ class WeeklyReportService
     public const MAX_DASHBOARD_DAYS = 7;
 
     /**
-     * @return array{mode: string, date: string|null, date_from: string|null, date_to: string|null}
+     * @return array{mode: string, date: string|null, date_from: string|null, date_to: string|null, order_type: string|null}
      */
     public function resolveWorkspaceFilters(
         ?string $date = null,
         ?string $dateFrom = null,
         ?string $dateTo = null,
+        ?string $orderType = null,
     ): array {
         $today = now()->toDateString();
+        $orderType = in_array($orderType, [OrderManagement::TYPE_SODA, OrderManagement::TYPE_RETAIL], true)
+            ? $orderType
+            : null;
 
         if ($dateFrom || $dateTo) {
             $from = $dateFrom ?: $dateTo ?: $today;
             $to = $dateTo ?: $dateFrom ?: $today;
 
             return [
-                'mode'      => 'range',
-                'date'      => null,
-                'date_from' => Carbon::parse($from)->toDateString(),
-                'date_to'   => Carbon::parse($to)->toDateString(),
+                'mode'       => 'range',
+                'date'       => null,
+                'date_from'  => Carbon::parse($from)->toDateString(),
+                'date_to'    => Carbon::parse($to)->toDateString(),
+                'order_type' => $orderType,
             ];
         }
 
         return [
-            'mode'      => 'single',
-            'date'      => Carbon::parse($date ?: $today)->toDateString(),
-            'date_from' => null,
-            'date_to'   => null,
+            'mode'       => 'single',
+            'date'       => Carbon::parse($date ?: $today)->toDateString(),
+            'date_from'  => null,
+            'date_to'    => null,
+            'order_type' => $orderType,
         ];
     }
 
@@ -168,7 +174,7 @@ class WeeklyReportService
         return [
             'items.product:id,name,unit',
             'items.orderItem:id,unit_price',
-            'items.order:id,unique_order_id,dealer_id',
+            'items.order:id,unique_order_id,dealer_id,order_type,party_name,payment_type',
             'items.order.dealer:id,user_id,firm_shop_name,city_id',
             'items.order.dealer.user:id,name',
             'items.order.dealer.city:id,city_name',
@@ -464,17 +470,37 @@ class WeeklyReportService
             array_key_exists('accrued_late_fee', $data) ? ($data['accrued_late_fee'] ?? '') : null,
             0
         );
-        $lateFeeError = $this->receivableService->lateFeeDispatchError(
-            $data['late_fee_dispatch_id'] ?? null,
-            (int) ($orderItem->order?->dealer_id ?? 0),
-            $lateFee
-        );
-        if ($lateFeeError) {
-            throw ValidationException::withMessages([
-                'late_fee_dispatch_id' => $lateFeeError,
-            ]);
+        $parentOrder = $orderItem->order;
+        if ($parentOrder && $parentOrder->isRetail() && ($parentOrder->payment_type ?? 'cash') !== PaymentReceivableService::PAYMENT_TYPE_CREDIT) {
+            $lateFee = 0.0;
+            $lateFeeDispatchId = null;
+        } elseif ($parentOrder && $parentOrder->isRetail()) {
+            $lateFeeError = $this->receivableService->lateFeeDispatchErrorForOrder(
+                $data['late_fee_dispatch_id'] ?? null,
+                (int) $parentOrder->id,
+                $lateFee
+            );
+            if ($lateFeeError) {
+                throw ValidationException::withMessages([
+                    'late_fee_dispatch_id' => $lateFeeError,
+                ]);
+            }
+            $lateFeeDispatchId = $lateFee > 0 && ! empty($data['late_fee_dispatch_id'])
+                ? (int) $data['late_fee_dispatch_id']
+                : null;
+        } else {
+            $lateFeeError = $this->receivableService->lateFeeDispatchError(
+                $data['late_fee_dispatch_id'] ?? null,
+                (int) ($parentOrder?->dealer_id ?? 0),
+                $lateFee
+            );
+            if ($lateFeeError) {
+                throw ValidationException::withMessages([
+                    'late_fee_dispatch_id' => $lateFeeError,
+                ]);
+            }
+            $lateFeeDispatchId = $lateFee > 0 ? (int) $data['late_fee_dispatch_id'] : null;
         }
-        $lateFeeDispatchId = $lateFee > 0 ? (int) $data['late_fee_dispatch_id'] : null;
 
         if ($totalQty > $available) {
             if ($entries > 1) {
@@ -569,7 +595,25 @@ class WeeklyReportService
                 array_key_exists('accrued_late_fee', $data) ? ($data['accrued_late_fee'] ?? '') : $lateFee,
                 $lateFee
             );
-            $item->loadMissing('order:id,dealer_id');
+            $item->loadMissing('order:id,dealer_id,order_type,payment_type');
+            $parentOrder = $item->order;
+            if ($parentOrder && $parentOrder->isRetail() && ($parentOrder->payment_type ?? 'cash') !== PaymentReceivableService::PAYMENT_TYPE_CREDIT) {
+                $lateFee = 0.0;
+                $lateFeeDispatchId = null;
+            } elseif ($parentOrder && $parentOrder->isRetail()) {
+                $lateFeeError = $this->receivableService->lateFeeDispatchErrorForOrder(
+                    $data['late_fee_dispatch_id'] ?? $lateFeeDispatchId,
+                    (int) $parentOrder->id,
+                    $lateFee
+                );
+                if ($lateFeeError) {
+                    throw ValidationException::withMessages([
+                        'late_fee_dispatch_id' => $lateFeeError,
+                    ]);
+                }
+                $linked = $data['late_fee_dispatch_id'] ?? $lateFeeDispatchId;
+                $lateFeeDispatchId = $lateFee > 0 && ! empty($linked) ? (int) $linked : null;
+            } else {
             $lateFeeError = $this->receivableService->lateFeeDispatchError(
                 $data['late_fee_dispatch_id'] ?? $lateFeeDispatchId,
                 (int) ($item->order?->dealer_id ?? 0),
@@ -583,6 +627,7 @@ class WeeklyReportService
             $lateFeeDispatchId = $lateFee > 0
                 ? (int) ($data['late_fee_dispatch_id'] ?? $lateFeeDispatchId)
                 : null;
+            }
         }
 
         $item->update([
@@ -758,27 +803,121 @@ class WeeklyReportService
     }
 
     /**
+     * Create a retail order when this is a new party sale, then add one Daily Dispatch row.
+     * An existing pending retail line is reused so a smaller dispatch does not open a second order.
+     *
+     * @param  array<string, mixed>  $data
+     * @return Collection<int, WeeklyReportItem>
+     */
+    public function addRetailLine(WeeklyReport $report, array $data): Collection
+    {
+        if (! SalesScope::hasGlobalAccess()) {
+            abort(403, 'Retail orders are available to admin and staff only.');
+        }
+
+        return DB::transaction(function () use ($report, $data) {
+            if (! empty($data['order_item_id'])) {
+                $orderItem = OrderItem::with('order')->findOrFail($data['order_item_id']);
+                if (! $orderItem->order?->isRetail()) {
+                    throw ValidationException::withMessages([
+                        'order_item_id' => 'Select a pending retail order.',
+                    ]);
+                }
+                SalesScope::authorizeOrderAccess($orderItem->order);
+                $paymentType = $orderItem->order->payment_type ?? 'cash';
+            } else {
+                $qty = (int) $data['order_qty'];
+                $price = (float) $data['unit_price'];
+                $total = round($qty * $price, 2);
+                $paymentType = $data['payment_type'];
+                $order = OrderManagement::create([
+                    'unique_order_id' => $this->nextOrderNumber($data['order_date']),
+                    'order_type' => OrderManagement::TYPE_RETAIL,
+                    'broker_id' => null,
+                    'brand_id' => $data['brand_id'],
+                    'dealer_id' => null,
+                    'party_name' => $data['party_name'],
+                    'order_date' => $data['order_date'],
+                    'delivery_address' => null,
+                    'note' => $data['note'] ?? null,
+                    'payment_status' => $data['payment_status'],
+                    'payment_type' => $paymentType,
+                    'partial_paid_amount' => ($data['payment_status'] ?? '') === 'partial'
+                        ? ($data['partial_paid_amount'] ?? null)
+                        : null,
+                    'total_order_amount' => $total,
+                    'grand_total' => $total,
+                    'status' => 1,
+                ]);
+                $orderItem = $order->items()->create([
+                    'product_id' => $data['product_id'],
+                    'qty' => $qty,
+                    'unit_price' => $price,
+                    'total_price' => $total,
+                ]);
+                $orderItem->setRelation('order', $order);
+            }
+
+            return $this->addItem($report, [
+                'order_item_id' => $orderItem->id,
+                'quantity' => $data['quantity'],
+                'less_freight_per_qty' => $data['less_freight_per_qty'] ?? null,
+                'accrued_late_fee' => $paymentType === PaymentReceivableService::PAYMENT_TYPE_CREDIT
+                    ? ($data['accrued_late_fee'] ?? null)
+                    : null,
+                'late_fee_dispatch_id' => $data['late_fee_dispatch_id'] ?? null,
+                'no_of_entries' => 1,
+                'transport_id' => $data['transport_id'] ?? null,
+                'truck_number' => $data['truck_number'] ?? null,
+                'driver_contact' => $data['driver_contact'] ?? null,
+                'note' => $data['dispatch_note'] ?? null,
+            ]);
+        });
+    }
+
+    private function nextOrderNumber(string $orderDate): string
+    {
+        $date = Carbon::parse($orderDate);
+        $startYear = $date->month >= 4 ? $date->year : $date->year - 1;
+        $prefix = 'ORD/' . $startYear . '-' . substr((string) ($startYear + 1), -2) . '/';
+        $max = 0;
+
+        foreach (OrderManagement::withTrashed()->where('unique_order_id', 'like', $prefix . '%')->pluck('unique_order_id') as $id) {
+            if (preg_match('/(\d+)$/', (string) $id, $matches)) {
+                $max = max($max, (int) $matches[1]);
+            }
+        }
+
+        return $prefix . str_pad((string) ($max + 1), 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * Pending order line items for manual pick (AJAX search).
      * When dealer_id is provided, only that dealer's unpaid/partial orders are returned.
      *
      * @return list<array<string, mixed>>
      */
-    public function searchPendingOrderItems(?string $term = null, int $limit = 30, ?int $dealerId = null): array
+    public function searchPendingOrderItems(?string $term = null, int $limit = 30, ?int $dealerId = null, string $orderType = OrderManagement::TYPE_SODA): array
     {
+        $orderType = $orderType === OrderManagement::TYPE_RETAIL
+            ? OrderManagement::TYPE_RETAIL
+            : OrderManagement::TYPE_SODA;
+
         $query = OrderItem::query()
             ->with([
                 'product:id,name,unit',
-                'order:id,unique_order_id,order_date,dealer_id,payment_status',
+                'order:id,unique_order_id,order_date,dealer_id,payment_status,order_type,party_name,payment_type',
                 'order.dealer:id,user_id,firm_shop_name,city_id',
                 'order.dealer.user:id,name',
                 'order.dealer.city:id,city_name',
                 'dispatches',
             ])
-            ->whereHas('order', function ($q) use ($dealerId) {
+            ->whereHas('order', function ($q) use ($dealerId, $orderType) {
                 SalesScope::scopeOrders($q);
+                $q->where('order_type', $orderType);
                 $q->whereIn('payment_status', OrderManagement::pendingPaymentStatuses());
 
-                if ($dealerId) {
+                if ($orderType === OrderManagement::TYPE_SODA && $dealerId) {
                     $q->where('dealer_id', $dealerId);
                 }
             })
@@ -804,7 +943,7 @@ class WeeklyReportService
         if ($term) {
             $like = '%' . $term . '%';
             $query->where(function ($q) use ($like) {
-                $q->whereHas('order', fn ($oq) => $oq->where('unique_order_id', 'like', $like))
+                $q->whereHas('order', fn ($oq) => $oq->where('unique_order_id', 'like', $like)->orWhere('party_name', 'like', $like))
                     ->orWhereHas('product', fn ($pq) => $pq->where('name', 'like', $like))
                     ->orWhereHas('order.dealer.user', fn ($dq) => $dq->where('name', 'like', $like))
                     ->orWhereHas('order.dealer', fn ($dq) => $dq->where('firm_shop_name', 'like', $like));
@@ -819,19 +958,25 @@ class WeeklyReportService
                 $available = $this->availableWeeklyQty($item);
 
                 $orderDate = $item->order?->order_date?->format('d-m-Y') ?? '—';
+                $party = $item->order?->partyLabel() ?? '—';
 
                 return [
                     'order_item_id'  => $item->id,
                     'order_id'       => $item->order_id,
                     'unique_order_id'=> $item->order?->unique_order_id,
+                    'order_type'     => $item->order?->order_type ?? OrderManagement::TYPE_SODA,
+                    'payment_type'   => $item->order?->payment_type ?? 'cash',
                     'product_id'     => $item->product_id,
                     'product_name'   => $item->product?->name ?? '—',
                     'product_unit'   => $item->product?->unit,
                     'unit_price'     => (string) $item->unit_price,
                     'pending_qty'    => $available,
-                    'dealer_name'    => $dealer?->user?->name ?? $dealer?->firm_shop_name ?? '—',
+                    'dealer_name'    => $party,
+                    'party_name'     => $party,
                     'city_name'      => $dealer?->city?->city_name ?? '—',
-                    'label'          => ($item->order?->unique_order_id ?? '')
+                    'label'          => ($item->order?->orderTypeLabel() ?? 'Soda')
+                        . ' · ' . ($item->order?->unique_order_id ?? '')
+                        . ' - ' . $party
                         . ' - ' . $orderDate
                         . ' — ' . ($item->product?->name ?? '')
                         . ' (remaining: ' . $available . ' '

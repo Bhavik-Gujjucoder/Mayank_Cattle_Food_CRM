@@ -785,7 +785,7 @@ withDataTable(function($) {
                         var savedOrder = @json(old('order_id'));
                         $.each(data.orders || [], function(i, order) {
                             var selected = String(savedOrder) === String(order.id) ? ' selected' : '';
-                            html += '<option value="' + order.id + '" data-form-url="' + order.form_url + '"' + selected + '>' +
+                            html += '<option value="' + order.id + '" data-form-url="' + order.form_url + '" data-order-type="' + (order.order_type || 'soda') + '"' + selected + '>' +
                                 $('<span>').text(order.label).html() + '</option>';
                         });
                         $sel.html(html).prop('disabled', false);
@@ -922,8 +922,21 @@ withDataTable(function($) {
                 }
             });
 
+            function syncDashboardLateFeeDispatch() {
+                var retail = $('#dashboardDispatchOrderId option:selected').data('order-type') === 'retail';
+                var $link = $('#dashboard_late_fee_dispatch_id').closest('.late-fee-dispatch-link');
+                $link.toggle(!retail);
+                if (retail) {
+                    $('#dashboard_late_fee_dispatch_id').val('');
+                }
+            }
+
             $('#dashboardDispatchOrderId').on('change', function() {
                 loadOrderItems($(this).val());
+                syncDashboardLateFeeDispatch();
+                if ($('#dashboardDispatchOrderId option:selected').data('order-type') === 'retail') {
+                    return;
+                }
                 window.loadLateFeeDispatches(
                     $('#dashboard_late_fee_dispatch_id'),
                     $(this).val(),
@@ -1154,11 +1167,14 @@ withDataTable(function($) {
                         if (savedOrder) {
                             $('#dashboardDispatchOrderId').val(savedOrder);
                             loadOrderItems(savedOrder);
-                            window.loadLateFeeDispatches(
-                                $('#dashboard_late_fee_dispatch_id'),
-                                savedOrder,
-                                $('#dashboard_late_fee_dispatch_id').attr('data-selected')
-                            );
+                            syncDashboardLateFeeDispatch();
+                            if ($('#dashboardDispatchOrderId option:selected').data('order-type') !== 'retail') {
+                                window.loadLateFeeDispatches(
+                                    $('#dashboard_late_fee_dispatch_id'),
+                                    savedOrder,
+                                    $('#dashboard_late_fee_dispatch_id').attr('data-selected')
+                                );
+                            }
                         }
 
                         if (savedTransporter) {

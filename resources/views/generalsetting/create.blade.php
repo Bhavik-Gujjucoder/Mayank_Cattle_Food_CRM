@@ -218,6 +218,33 @@
                             </div>
                         </div>
 
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="col-form-label">Retail Credit Due Days</label>
+                                <input type="number" min="0"
+                                    class="form-control @error('retail_credit_due_days') is-invalid @enderror"
+                                    name="retail_credit_due_days"
+                                    value="{{ old('retail_credit_due_days', getSetting('retail_credit_due_days') !== '' ? getSetting('retail_credit_due_days') : 2) }}">
+                                <small class="text-muted">Used only for Retail orders paid on credit. Cash retail has no late fee.</small>
+                                @error('retail_credit_due_days')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="col-form-label">Retail Credit Due Amount (Per Bag / Ton / KG)</label>
+                                <input type="number" min="0" step="0.01"
+                                    class="form-control @error('retail_credit_due_amount') is-invalid @enderror"
+                                    name="retail_credit_due_amount"
+                                    value="{{ old('retail_credit_due_amount', getSetting('retail_credit_due_amount') !== '' ? getSetting('retail_credit_due_amount') : 0) }}">
+                                @error('retail_credit_due_amount')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+
                         <div class="d-flex align-items-center justify-content-end mt-3">
                             <button type="submit" class="btn btn-primary">Save</button>
                         </div>

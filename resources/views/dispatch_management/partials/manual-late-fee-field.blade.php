@@ -29,7 +29,8 @@
         <span class="text-danger small d-block">{{ $message }}</span>
     @enderror
 </div>
-<div class="col-md-6 mb-3">
+@if ($showDispatchLink ?? true)
+<div class="col-md-6 mb-3 late-fee-dispatch-link">
     <label class="col-form-label" for="{{ $lateFeePrefix }}_late_fee_dispatch_id">Late fee for dispatch</label>
     <select name="{{ $lateFeeDispatchName }}"
         id="{{ $lateFeePrefix }}_late_fee_dispatch_id"
@@ -43,3 +44,4 @@
         <span class="text-danger small d-block">{{ $message }}</span>
     @enderror
 </div>
+@endif

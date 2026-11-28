@@ -219,6 +219,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('weekly-report.alreadyProduced');
     Route::post('weekly-report/{weeklyReport}/items', [WeeklyReportController::class, 'storeItem'])
         ->name('weekly-report.items.store');
+    Route::post('weekly-report/{weeklyReport}/retail-items', [WeeklyReportController::class, 'storeRetailItem'])
+        ->name('weekly-report.items.store-retail');
     Route::put('weekly-report/{weeklyReport}/items/reorder', [WeeklyReportController::class, 'reorderItems'])
         ->name('weekly-report.items.reorder');
     Route::match(['put', 'patch'], 'weekly-report/{weeklyReport}/items/{weeklyReportItem}', [WeeklyReportController::class, 'updateItem'])

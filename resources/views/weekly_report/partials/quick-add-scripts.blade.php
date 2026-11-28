@@ -189,7 +189,7 @@
                 wrAppendTransporterOption(String(t.id), t.name, t.phone_no || '');
                 wrQuickTransporterTarget.val(String(t.id)).trigger('change');
 
-                var $scope = wrQuickTransporterTarget.closest('.wr-add-item-form, tr');
+                var $scope = wrQuickTransporterTarget.closest('.wr-add-item-form, .wr-add-retail-form, tr');
                 if (t.phone_no) {
                     $scope.find('.wr-add-contact, .item-contact').val(t.phone_no);
                 }
@@ -208,7 +208,7 @@
 
     $(document).on('click', '.wr-quick-add-truck', function () {
         var $field = $(this).closest('.wr-truck-field');
-        var $scope = $field.closest('.wr-add-item-form, tr');
+        var $scope = $field.closest('.wr-add-item-form, .wr-add-retail-form, tr');
         var $transport = $scope.find('.wr-transport-select').first();
         var transporterId = $transport.val();
 
@@ -329,7 +329,7 @@
     });
 
     $(document).on('change', '.wr-transport-select', function () {
-        var $scope = $(this).closest('.wr-add-item-form, tr, .wr-day-body');
+        var $scope = $(this).closest('.wr-add-item-form, .wr-add-retail-form, tr, .wr-day-body');
         wrToggleTruckAddLink($scope);
     });
 

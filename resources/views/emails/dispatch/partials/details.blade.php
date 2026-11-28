@@ -4,6 +4,10 @@
         'value' => e($payload['order']['unique_order_id']),
     ])
     @include('emails.dispatch.partials.detail-row', [
+        'label' => 'Order Type',
+        'value' => e($payload['order']['order_type'] ?? 'Soda'),
+    ])
+    @include('emails.dispatch.partials.detail-row', [
         'label' => 'Order Date',
         'value' => e($payload['order']['order_date']),
     ])

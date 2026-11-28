@@ -262,7 +262,7 @@ describe('payment:accrue-late-fees', function () {
             'accrued_late_fee' => 0,
         ]);
 
-        // Run on Jan 7 — first charge date is Jan 5 (0+3+1=4th), 3 chargeable days (5,6,7)
+        // Run on Jan 7. The command no longer posts late fees.
         \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse('2026-01-07'));
 
         $this->artisan('payment:accrue-late-fees')

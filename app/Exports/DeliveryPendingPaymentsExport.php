@@ -71,7 +71,7 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
             ], $line++, 'brand');
 
             $this->pushRow(
-                ['City', 'Dealer', 'Order', 'Late Fee', 'Balance Due', 'Pending Payment Days'],
+                ['City', 'Dealer', 'Broker', 'Late Fee', 'Balance Due', 'Pending Payment Days'],
                 $line++,
                 'header'
             );
@@ -82,7 +82,7 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
                 $this->pushRow([
                     $row['city_name'],
                     $row['dealer_name'],
-                    $row['order_label'],
+                    $row['broker_name'] ?? '—',
                     ($lateFeeLabel = PaymentReceivableService::lateFeeSourceLabel($row['total_late_fee_source'] ?? null)) !== ''
                         ? number_format((float) ($row['total_late_fee'] ?? 0), 2) . ' (' . $lateFeeLabel . ')'
                         : number_format((float) ($row['total_late_fee'] ?? 0), 2),
@@ -105,7 +105,7 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
         ], $line++, 'footnote');
 
         $this->pushRow([
-            'Scope: Only orders with at least one unpaid or partial dispatch payment are listed.',
+            'Scope: Each row is one dealer. All of that dealer’s unpaid or partial dispatches are listed together. Retail parties stay on their own row.',
         ], $line++, 'footnote');
 
         return $this->rows;
@@ -235,7 +235,8 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
                     }
 
                     if ($type === 'data') {
-                        $sheet->getRowDimension($row)->setRowHeight(38);
+                        $orderLines = max(1, substr_count((string) ($this->rows[$row - 1][2] ?? ''), "\n") + 1);
+                        $sheet->getRowDimension($row)->setRowHeight(max(38, 16 * $orderLines));
                     }
                 }
 
@@ -245,7 +246,7 @@ class DeliveryPendingPaymentsExport implements FromArray, WithStyles, WithEvents
 
                 $sheet->getColumnDimension('A')->setWidth(14);
                 $sheet->getColumnDimension('B')->setWidth(22);
-                $sheet->getColumnDimension('C')->setWidth(22);
+                $sheet->getColumnDimension('C')->setWidth(28);
                 $sheet->getColumnDimension('D')->setWidth(12);
                 $sheet->getColumnDimension('E')->setWidth(14);
 

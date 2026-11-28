@@ -39,8 +39,18 @@
                             autocomplete="off">
                     </div>
                 </div>
-                @if (\App\Support\SalesScope::showDealerFilter())
+                @if (\App\Support\SalesScope::hasGlobalAccess())
                     <div class="common-hed-form cls-form-select-input">
+                        <label class="col-form-label">Order Type</label>
+                        <select class="form-select select search-dropdown" id="orderTypeFilter" name="order_type">
+                            <option value="all">All Types</option>
+                            <option value="soda">Soda</option>
+                            <option value="retail">Retail</option>
+                        </select>
+                    </div>
+                @endif
+                @if (\App\Support\SalesScope::showDealerFilter())
+                    <div class="common-hed-form cls-form-select-input" id="dispatchDealerFilterWrap">
                         <label class="col-form-label">Dealer</label>
                         <select class="form-select select search-dropdown" id="dealerFilter" name="dealer_id">
                             <option value="all">All Dealers</option>
@@ -52,12 +62,12 @@
                         </select>
                     </div>
                 @endif
-                <div class="common-hed-form cls-form-select-input">
+                <div class="common-hed-form cls-form-select-input" id="dispatchOrderFilterWrap">
                     <label class="col-form-label">Order</label>
                     <select class="form-select select search-dropdown" id="orderFilter" name="order_id">
                         <option value="all">All Orders</option>
                         @foreach ($orders as $order)
-                            <option value="{{ $order->id }}" data-dealer-id="{{ $order->dealer_id }}">
+                            <option value="{{ $order->id }}" data-dealer-id="{{ $order->dealer_id }}" data-order-type="{{ $order->order_type ?: 'soda' }}">
                                 {{ $order->unique_order_id }}
                             </option>
                         @endforeach
@@ -89,12 +99,13 @@
                         <th hidden>ID</th>
                         <th class="no-sort" style="width:60px;">Sr No</th>
                         <th>Order ID</th>
+                        <th>Type</th>
                         <th>Product</th>
                         <th style="width:130px;">Bag / Ton / KG</th>
                         <th class="text-end">Amount</th>
                         <th class="text-end">Less freight</th>
                         <th class="text-end">Final amount</th>
-                        <th>Dealer Name</th>
+                        <th>Dealer / Party</th>
                         <th style="width:130px;">Dispatch Date</th>
                         <th>Transport</th>
                         <th>Truck Number</th>
@@ -127,6 +138,7 @@ withDataTable(function () {
         date_from:  '#dateFrom',
         date_to:    '#dateTo',
         dealer_id:  '#dealerFilter',
+        order_type: '#orderTypeFilter',
         order_id:   '#orderFilter',
         product_id: '#productFilter',
     };
@@ -151,11 +163,24 @@ withDataTable(function () {
         window.history.replaceState({}, '', qs ? ('?' + qs) : window.location.pathname);
     }
 
+    function syncOrderTypeFilters() {
+        var retail = ($('#orderTypeFilter').val() || 'all') === 'retail';
+        $('#dispatchDealerFilterWrap, #dispatchOrderFilterWrap').toggle(!retail);
+        if (!retail) {
+            return;
+        }
+        if ($('#dealerFilter').length) {
+            $('#dealerFilter').val('all').trigger('change.select2');
+        }
+        $('#orderFilter').val('all').trigger('change.select2');
+    }
+
     function filterOrderOptions() {
         var $orderFilter = $('#orderFilter');
         if (!$orderFilter.length) return;
 
         var dealerId = $('#dealerFilter').val() || 'all';
+        var orderType = $('#orderTypeFilter').val() || 'all';
         var current = $orderFilter.val();
 
         $orderFilter.find('option').each(function () {
@@ -164,8 +189,9 @@ withDataTable(function () {
                 $opt.prop('disabled', false);
                 return;
             }
-            var visible = dealerId === 'all' || String($opt.data('dealer-id')) === String(dealerId);
-            $opt.prop('disabled', !visible);
+            var dealerOk = dealerId === 'all' || String($opt.data('dealer-id')) === String(dealerId);
+            var typeOk = orderType === 'all' || String($opt.data('order-type') || 'soda') === String(orderType);
+            $opt.prop('disabled', !(dealerOk && typeOk));
         });
 
         if (current && current !== 'all') {
@@ -178,14 +204,18 @@ withDataTable(function () {
         $orderFilter.trigger('change.select2');
     }
 
+    syncOrderTypeFilters();
     filterOrderOptions();
+    syncFilterUrl();
 
     var dispatchAjax = buildDataTableAjax("{{ route('dispatch.index') }}", {
         data: function (d) {
             d.date_from  = $('#dateFrom').val() || '';
             d.date_to    = $('#dateTo').val() || '';
-            d.dealer_id  = $('#dealerFilter').val() || 'all';
-            d.order_id   = $('#orderFilter').val() || 'all';
+            var orderType = $('#orderTypeFilter').val() || 'all';
+            d.order_type = orderType;
+            d.dealer_id  = orderType === 'retail' ? 'all' : ($('#dealerFilter').val() || 'all');
+            d.order_id   = orderType === 'retail' ? 'all' : ($('#orderFilter').val() || 'all');
             d.product_id = $('#productFilter').val() || 'all';
         }
     });
@@ -193,6 +223,7 @@ withDataTable(function () {
         { selector: '#dateFrom', key: 'date_from' },
         { selector: '#dateTo', key: 'date_to' },
         { selector: '#dealerFilter', key: 'dealer_id', select2: true },
+        { selector: '#orderTypeFilter', key: 'order_type', select2: true },
         { selector: '#orderFilter', key: 'order_id', select2: true },
         { selector: '#productFilter', key: 'product_id', select2: true }
     ]), {
@@ -210,6 +241,7 @@ withDataTable(function () {
             { data: 'id',              name: 'id',              visible: false,  orderable: false, searchable: false },
             { data: 'DT_RowIndex',     name: 'DT_RowIndex',                      orderable: false, searchable: false },
             { data: 'unique_order_id', name: 'unique_order_id',                  orderable: false,  searchable: false },
+            { data: 'order_type',      name: 'order_type',                       orderable: false, searchable: false },
             { data: 'product_name',    name: 'product_name',                     orderable: false, searchable: false },
             { data: 'no_of_bags',      name: 'no_of_bags',                       orderable: false,  searchable: false },
             { data: 'dispatch_amount', name: 'dispatch_amount', className: 'text-end', orderable: false, searchable: false },
@@ -240,10 +272,14 @@ withDataTable(function () {
         },
     }));
     dispatchAjax._bindTable(dispatch_table);
+    syncOrderTypeFilters();
     keepDataTablePage(dispatch_table);
 
-    $('#dealerFilter, #orderFilter, #productFilter').on('change', function () {
-        if (this.id === 'dealerFilter') {
+    $('#dealerFilter, #orderTypeFilter, #orderFilter, #productFilter').on('change', function () {
+        if (this.id === 'orderTypeFilter') {
+            syncOrderTypeFilters();
+        }
+        if (this.id === 'dealerFilter' || this.id === 'orderTypeFilter') {
             filterOrderOptions();
         }
         syncFilterUrl();
@@ -279,9 +315,10 @@ withDataTable(function () {
         if ($('#dealerFilter').length) {
             $('#dealerFilter').val('all');
         }
-        $('#orderFilter, #productFilter').val('all');
+        $('#orderTypeFilter, #orderFilter, #productFilter').val('all');
         $('.search-dropdown').trigger('change.select2');
 
+        syncOrderTypeFilters();
         filterOrderOptions();
         syncFilterUrl();
         dispatch_table.draw();

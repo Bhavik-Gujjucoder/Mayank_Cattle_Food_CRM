@@ -208,11 +208,13 @@ class SalesScope
         }
 
         if ($user->hasRole('broker')) {
-            return $query->where('broker_id', $user->id);
+            return $query->where('order_type', OrderManagement::TYPE_SODA)
+                ->where('broker_id', $user->id);
         }
 
         if ($user->hasRole('dealer')) {
-            return $query->whereHas('dealer', fn (Builder $q) => $q->where('user_id', $user->id));
+            return $query->where('order_type', OrderManagement::TYPE_SODA)
+                ->whereHas('dealer', fn (Builder $q) => $q->where('user_id', $user->id));
         }
 
         return $query;

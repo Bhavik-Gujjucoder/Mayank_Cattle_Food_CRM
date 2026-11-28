@@ -131,7 +131,8 @@ class OrderManagementController extends Controller
                 })
                 ->addColumn('broker_name', fn($row) => $row->broker?->name ?? '—')
                 ->addColumn('brand_name',  fn($row) => $row->brand?->name  ?? '—')
-                ->addColumn('dealer_name', fn($row) => $row->dealer?->user?->name ?? $row->dealer?->firm_shop_name ?? '—')
+                ->addColumn('order_type_label', fn ($row) => $row->orderTypeLabel())
+                ->addColumn('dealer_name', fn ($row) => $row->partyLabel())
                 ->editColumn('order_date',  fn($row) => $row->order_date?->format('d M Y') ?? '—')
                 ->addColumn('payment_status', fn($row) => $row->paymentBadge())
                 // ->addColumn('order_status', fn($row) => '<span class="badge badge-pill badge-status bg-secondary">Pending</span>')
@@ -226,6 +227,7 @@ class OrderManagementController extends Controller
         $data['locked_dealer'] = SalesScope::isDealer()
             ? DealerManagement::with('user')->where('user_id', auth()->id())->first()
             : null;
+        $data['allow_retail'] = SalesScope::hasGlobalAccess();
 
         /* Auto-generate financial-year Order ID */
         $now           = now();
@@ -237,8 +239,16 @@ class OrderManagementController extends Controller
         return view('order_management.create', $data);
     }
 
-    public function downloadImportSample()
+    public function downloadImportSample(Request $request)
     {
+        if ($request->query('order_type') === OrderManagement::TYPE_RETAIL) {
+            if (! SalesScope::hasGlobalAccess()) {
+                abort(403, 'Retail orders are available to admin and staff only.');
+            }
+
+            return Excel::download(new \App\Exports\RetailOrderImportSampleExport(), 'retail-order-import-sample.xlsx');
+        }
+
         return Excel::download(new OrderImportSampleExport(), 'soda-order-import-sample.xlsx');
     }
 
@@ -246,13 +256,21 @@ class OrderManagementController extends Controller
     {
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+            'order_type' => 'nullable|in:soda,retail',
         ], [
             'file.required' => 'Please choose an Excel file.',
             'file.mimes' => 'Upload an .xlsx, .xls, or .csv file.',
         ]);
 
+        $retail = $request->input('order_type') === OrderManagement::TYPE_RETAIL;
+        if ($retail && ! SalesScope::hasGlobalAccess()) {
+            abort(403, 'Retail orders are available to admin and staff only.');
+        }
+
         try {
-            $result = $importer->import($request->file('file'));
+            $result = $retail
+                ? $importer->importRetail($request->file('file'))
+                : $importer->import($request->file('file'));
         } catch (ValidationException $e) {
             return back()->with('error', collect($e->errors())->flatten()->implode("\n"));
         }
@@ -269,8 +287,11 @@ class OrderManagementController extends Controller
     public function store(Request $request)
     {
         $validated = $this->validateOrder($request);
-        $validated = SalesScope::enforceOrderAssignment($validated);
-        SalesScope::authorizeDealerId($validated['dealer_id']);
+        $isRetail = ($validated['order_type'] ?? OrderManagement::TYPE_SODA) === OrderManagement::TYPE_RETAIL;
+        if (! $isRetail) {
+            $validated = SalesScope::enforceOrderAssignment($validated);
+            SalesScope::authorizeDealerId($validated['dealer_id']);
+        }
 
         /* Calculate totals from submitted line items */
         $totalAmount = 0;
@@ -290,16 +311,19 @@ class OrderManagementController extends Controller
 
         /* The Order ID shown on the form may have been taken by another user
            in the meantime — walk forward to the next free number.          */
-        $order = DB::transaction(function () use ($validated, $totalAmount, $items) {
+        $order = DB::transaction(function () use ($validated, $totalAmount, $items, $isRetail) {
             $uniqueOrderId = $this->nextAvailableOrderId($validated['unique_order_id']);
 
             $order = OrderManagement::create([
                 'unique_order_id'     => $uniqueOrderId,
-                'broker_id'           => $validated['broker_id'],
+                'order_type'          => $isRetail ? OrderManagement::TYPE_RETAIL : OrderManagement::TYPE_SODA,
+                'broker_id'           => $isRetail ? null : $validated['broker_id'],
                 'brand_id'            => $validated['brand_id'],
-                'dealer_id'           => $validated['dealer_id'],
+                'dealer_id'           => $isRetail ? null : $validated['dealer_id'],
+                'party_name'          => $isRetail ? $validated['party_name'] : null,
                 'order_date'          => $validated['order_date'],
-                'delivery_address'    => $validated['delivery_address'],
+                'delivery_address'    => $isRetail ? null : $validated['delivery_address'],
+                'note'                => $isRetail ? ($validated['note'] ?? null) : null,
                 'payment_status'      => $validated['payment_status'],
                 'payment_type'        => $validated['payment_type'],
                 'partial_paid_amount' => $validated['payment_status'] === 'partial'
@@ -376,8 +400,11 @@ class OrderManagementController extends Controller
         SalesScope::authorizeOrderAccess($order);
 
         $validated = $this->validateOrder($request, $order->id);
-        $validated = SalesScope::enforceOrderAssignment($validated);
-        SalesScope::authorizeDealerId($validated['dealer_id']);
+        $isRetail = $order->isRetail();
+        if (! $isRetail) {
+            $validated = SalesScope::enforceOrderAssignment($validated);
+            SalesScope::authorizeDealerId($validated['dealer_id']);
+        }
 
         /* ── Guard: broker / brand / dealer are immutable once any item is dispatched ── */
         $order->loadMissing(['items.dispatches']);
@@ -385,19 +412,27 @@ class OrderManagementController extends Controller
             fn($item) => $item->dispatches->sum('no_of_bags') > 0
         );
         if ($hasDispatches) {
-            if ($request->broker_id != $order->broker_id) {
-                return back()->withInput()->withErrors([
-                    'broker_id' => 'Broker cannot be changed — this order has dispatched product items.',
-                ]);
+            if ($order->isRetail()) {
+                if (trim((string) $request->input('party_name')) !== trim((string) $order->party_name)) {
+                    return back()->withInput()->withErrors([
+                        'party_name' => 'Party name cannot be changed — this order has dispatched product items.',
+                    ]);
+                }
+            } else {
+                if ($request->broker_id != $order->broker_id) {
+                    return back()->withInput()->withErrors([
+                        'broker_id' => 'Broker cannot be changed — this order has dispatched product items.',
+                    ]);
+                }
+                if ($request->dealer_id != $order->dealer_id) {
+                    return back()->withInput()->withErrors([
+                        'dealer_id' => 'Dealer cannot be changed — this order has dispatched product items.',
+                    ]);
+                }
             }
             if ($request->brand_id != $order->brand_id) {
                 return back()->withInput()->withErrors([
                     'brand_id' => 'Brand cannot be changed — this order has dispatched product items.',
-                ]);
-            }
-            if ($request->dealer_id != $order->dealer_id) {
-                return back()->withInput()->withErrors([
-                    'dealer_id' => 'Dealer cannot be changed — this order has dispatched product items.',
                 ]);
             }
             if (($validated['payment_type'] ?? $order->payment_type) !== $order->payment_type) {
@@ -534,11 +569,14 @@ class OrderManagementController extends Controller
 
         $order->update([
             'unique_order_id'     => $validated['unique_order_id'],
-            'broker_id'           => $validated['broker_id'],
+            'order_type'          => $isRetail ? OrderManagement::TYPE_RETAIL : OrderManagement::TYPE_SODA,
+            'broker_id'           => $isRetail ? null : $validated['broker_id'],
             'brand_id'            => $validated['brand_id'],
-            'dealer_id'           => $validated['dealer_id'],
+            'dealer_id'           => $isRetail ? null : $validated['dealer_id'],
+            'party_name'          => $isRetail ? $validated['party_name'] : null,
             'order_date'          => $validated['order_date'],
-            'delivery_address'    => $validated['delivery_address'],
+            'delivery_address'    => $isRetail ? null : $validated['delivery_address'],
+            'note'                => $isRetail ? ($validated['note'] ?? null) : null,
             'payment_status'      => $validated['payment_status'],
             'payment_type'        => $validated['payment_type'],
             'partial_paid_amount' => $validated['payment_status'] === 'partial'
@@ -763,23 +801,50 @@ class OrderManagementController extends Controller
             ? "required|string|unique:order_management,unique_order_id,$ignoreId"
             : 'required|string';
 
-        return $request->validate([
+        if (! $request->filled('order_type')) {
+            $request->merge(['order_type' => OrderManagement::TYPE_SODA]);
+        }
+        $type = $request->input('order_type', OrderManagement::TYPE_SODA);
+        if ($ignoreId) {
+            $existing = OrderManagement::query()->find($ignoreId);
+            $type = $existing?->order_type ?: OrderManagement::TYPE_SODA;
+            $request->merge(['order_type' => $type]);
+        }
+        if (! in_array($type, [OrderManagement::TYPE_SODA, OrderManagement::TYPE_RETAIL], true)) {
+            $type = OrderManagement::TYPE_SODA;
+        }
+        if ($type === OrderManagement::TYPE_RETAIL && ! SalesScope::hasGlobalAccess()) {
+            abort(403, 'Retail orders are available to admin and staff only.');
+        }
+
+        $rules = [
+            'order_type'          => 'required|in:soda,retail',
             'unique_order_id'     => $uniqueRule,
-            'broker_id'           => ActiveDropdownValidation::brokerId(),
             'brand_id'            => ActiveDropdownValidation::brandId(),
-            'dealer_id'           => 'required|exists:dealer_management,id',
             'order_date'          => 'required|date',
-            'delivery_address'    => 'required|string',
             'payment_status'      => 'required|in:unpaid,paid,partial',
             'payment_type'        => 'required|in:cash,credit',
             'partial_paid_amount' => 'nullable|numeric|min:0|required_if:payment_status,partial',
-            'product_id'          => 'required|array|min:1',
+            'product_id'          => $type === OrderManagement::TYPE_RETAIL
+                ? 'required|array|size:1'
+                : 'required|array|min:1',
             'product_id.*'        => 'required|exists:products,id',
             'qty'                 => 'required|array|min:1',
             'qty.*'               => 'required|integer|min:1',
             'price'               => 'required|array|min:1',
             'price.*'             => 'required|numeric|min:0',
-        ], [
+        ];
+
+        if ($type === OrderManagement::TYPE_RETAIL) {
+            $rules['party_name'] = 'required|string|max:255';
+            $rules['note'] = 'nullable|string|max:2000';
+        } else {
+            $rules['broker_id'] = ActiveDropdownValidation::brokerId();
+            $rules['dealer_id'] = 'required|exists:dealer_management,id';
+            $rules['delivery_address'] = 'required|string';
+        }
+
+        return $request->validate($rules, [
             'broker_id.required'              => 'Please select a broker.',
             'brand_id.required'               => 'Please select a brand.',
             'dealer_id.required'              => 'Please select a dealer.',
@@ -789,7 +854,9 @@ class OrderManagementController extends Controller
             'payment_type.required'           => 'Please select a payment type.',
             'payment_type.in'                 => 'Payment type must be Cash or Credit.',
             'partial_paid_amount.required_if' => 'Please enter the paid amount.',
+            'party_name.required'             => 'Party name is required.',
             'product_id.required'             => 'At least one product is required.',
+            'product_id.size'                 => 'A retail order can have only one product.',
             'product_id.*.required'           => 'Please select a product.',
             'qty.*.required'                  => 'Quantity is required.',
             'qty.*.min'                       => 'Quantity must be at least 1.',
@@ -806,8 +873,8 @@ class OrderManagementController extends Controller
         }
 
         return Excel::download(
-            new SodaOrderExport($this->bagSummary(clone $query), $this->ordersForExport($query), 'Soda/Order Export'),
-            'soda-orders-' . now()->format('Y-m-d') . '.xlsx'
+            new SodaOrderExport($this->bagSummary(clone $query), $this->ordersForExport($query), $this->exportTitle($request, false)),
+            $this->exportBasename($request, false) . '.xlsx'
         );
     }
 
@@ -821,31 +888,51 @@ class OrderManagementController extends Controller
         return $this->downloadOrderPdf(
             $this->bagSummary(clone $query),
             $this->ordersForExport($query),
-            'Soda/Order Export',
-            'soda-orders-' . now()->format('Y-m-d') . '.pdf'
+            $this->exportTitle($request, false),
+            $this->exportBasename($request, false) . '.pdf'
         );
     }
 
-    public function exportFull()
+    public function exportFull(Request $request)
     {
-        $query = $this->scopedOrderQuery(request(), false);
+        $query = $this->scopedOrderQuery($request, false);
 
         return Excel::download(
-            new SodaOrderExport($this->bagSummary(clone $query), $this->ordersForExport($query), 'Soda/Order Full Export'),
-            'soda-orders-full-' . now()->format('Y-m-d') . '.xlsx'
+            new SodaOrderExport($this->bagSummary(clone $query), $this->ordersForExport($query), $this->exportTitle($request, true)),
+            $this->exportBasename($request, true) . '.xlsx'
         );
     }
 
-    public function exportFullPdf()
+    public function exportFullPdf(Request $request)
     {
-        $query = $this->scopedOrderQuery(request(), false);
+        $query = $this->scopedOrderQuery($request, false);
 
         return $this->downloadOrderPdf(
             $this->bagSummary(clone $query),
             $this->ordersForExport($query),
-            'Soda/Order Full Export',
-            'soda-orders-full-' . now()->format('Y-m-d') . '.pdf'
+            $this->exportTitle($request, true),
+            $this->exportBasename($request, true) . '.pdf'
         );
+    }
+
+    private function exportTitle(Request $request, bool $full): string
+    {
+        $name = match ($request->input('order_type')) {
+            OrderManagement::TYPE_RETAIL => 'Retail Order',
+            OrderManagement::TYPE_SODA => 'Soda Order',
+            default => 'Soda/Order',
+        };
+
+        return $full ? $name . ' Full Export' : $name . ' Export';
+    }
+
+    private function exportBasename(Request $request, bool $full): string
+    {
+        $prefix = $request->input('order_type') === OrderManagement::TYPE_RETAIL
+            ? 'retail-orders'
+            : 'soda-orders';
+
+        return $prefix . ($full ? '-full-' : '-') . now()->format('Y-m-d');
     }
 
     /**
@@ -894,6 +981,7 @@ class OrderManagementController extends Controller
     {
         $query = OrderManagement::query();
         SalesScope::scopeOrders($query);
+        $this->applyOrderTypeFilter($query, $request);
 
         if (! $applyListFilters) {
             return $query;
@@ -915,6 +1003,7 @@ class OrderManagementController extends Controller
             $term = trim($search);
             $query->where(function (Builder $inner) use ($term) {
                 $inner->where('unique_order_id', 'like', '%' . $term . '%')
+                    ->orWhere('party_name', 'like', '%' . $term . '%')
                     ->orWhere('payment_status', 'like', '%' . $term . '%');
             });
         }
@@ -962,6 +1051,23 @@ class OrderManagementController extends Controller
         }
 
         return $query;
+    }
+
+    /**
+     * @param  Builder<OrderManagement>  $query
+     */
+    private function applyOrderTypeFilter(Builder $query, Request $request): void
+    {
+        $type = $request->input('order_type');
+        if (! in_array($type, [OrderManagement::TYPE_SODA, OrderManagement::TYPE_RETAIL], true)) {
+            return;
+        }
+
+        if ($type === OrderManagement::TYPE_RETAIL && ! SalesScope::hasGlobalAccess()) {
+            abort(403, 'Retail orders are available to admin and staff only.');
+        }
+
+        $query->where('order_type', $type);
     }
 
     /**
